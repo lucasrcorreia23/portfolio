@@ -97,7 +97,7 @@ type copy_right_text_type = {
 
 const copy_right_text: copy_right_text_type = {
   copy_right: <>
-    © {new Date().getFullYear()}  Diego, All Rights Reserved • <span>Credits</span>
+    © {new Date().getFullYear()} Lucas R. C., Todos os direitos reservados • <span></span>
   </>
 }
 

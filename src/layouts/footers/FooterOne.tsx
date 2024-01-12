@@ -21,27 +21,27 @@ interface DataType {
 }
 
 const footer_content: DataType = {
-  title: "Let's talk about the next big thing",
-  title_2: <>Let's talk about <br /> the next big thing</>,
-  btn_text_1: 'Write a Message',
-  btn_text_2: 'Discuss Project',
+  title: "Vamos conversar :)",
+  title_2: <>Quer papear?</>,
+  btn_text_1: 'Envia uma mensagem no zap mesmo',
+  btn_text_2: 'Ou se preferir um e-mail :)',
   footer_data: [
     {
       id: 1,
       name: "Behance",
-      user_name: "@diego_des",
+      user_name: "@lucasrodriguxs",
       icon: <BehanceIconFooter />,
     },
     {
       id: 2,
-      name: "Google",
-      user_name: "@diego_des",
+      name: "Github",
+      user_name: "@lucasrcorreia23",
       icon: <GoogleIconFooter />,
     },
     {
       id: 3,
-      name: "Instagram",
-      user_name: "@diego_des",
+      name: "Linkedin",
+      user_name: "@lucasrcorreia",
       icon: <InstagramIconFooter />,
     },
   ]
@@ -88,18 +88,18 @@ const FooterOne = ({ style }: any) => {
                   <div className="row">
                     <div className="col-xl-6 col-lg-6 col-md-6">
                       <div className="tp-footer-btn text-center">
-                        <Link className="tp-btn-white-xl w-100" href="/contact">
+                        <Link className="tp-btn-white-xl w-100" href="wa.me/5548999247580">
                           <div>
-                            <span>Discuss Project</span>
+                            <span>Ou fale diretamente pelo Whatsapp</span>
                           </div>
                         </Link>
                       </div>
                     </div>
                     <div className="col-xl-6 col-lg-6 col-md-6">
                       <div className="tp-footer-btn text-center">
-                        <a className="tp-btn-grey-xl w-100" target="_blank" href="mailto:WriteaMessage">
+                        <a className="tp-btn-grey-xl w-100" target="_blank" href="mailto:lucas_rc15@live.com">
                           <div>
-                            <span>Write a Message</span>
+                            <span>Envie um e-mail!</span>
                           </div>
                         </a>
                       </div>

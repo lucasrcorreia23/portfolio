@@ -18,7 +18,7 @@ const service_content = {
       answer: "Concepção integral de produtos digitais, desde a fase inicial de descoberta, pesquisa de usuários e mercado, análise de dados e informações, até a etapa de prototipagem e testes.",
       some_features: [
         "Pesquisa e Documentação",
-        "Design de Interface",        
+        "Prototipação",        
         "Testes",
         "Iterações",
       ]

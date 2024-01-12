@@ -26,12 +26,13 @@ const hero_content: DataType = {
   slide_text: [
     "Designer",
     "Desenvolvedor",
+    "Negócios",
   ],
   sub_title: "Oi! :)",
   title_1: "Eu sou Lucas",
   words: ["Web", "App", "UX", "Visual", "UI","Product"],
   title_2: "designer",
-  sm_info: <>Apaixonado pela combinação de design, códigos & toda a interação entre eles.</>,
+  sm_info: <>Apaixonado pela combinação de design, códigos, negócios & toda a interação entre eles.</>,
   btn_text: <>Fale <br />comigo  </>,
 
 }
@@ -90,7 +91,7 @@ const HeroAreaHome = () => {
         </div>
         <div className="container">
           <div className="row align-items-end">
-            <div className="col-xl-9 col-lg-9 col-md-12 col-8">
+            <div className="col-xl-10 col-lg-10 col-md-12 col-8">
               <div className="tp-hero-left-wrapper">
                 <div className="tp-hero-content tp_text_anim p-relative z-index-1">
                   <span className="singleLine">{sub_title} </span>

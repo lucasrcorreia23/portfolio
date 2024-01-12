@@ -20,25 +20,25 @@ type DataType = {
 
 
 const about_content: DataType = {
-  subtitle: "About Me",
-  award_title: "Independent Of The Year",
-  award_des: "Annual Awards 2020 • awwwards.com",
-  about_des: <>Hello! I'm <span>Diego</span> a self-taught & award-winning <span>Digital Designer & Developer</span> with over <span>fifteen  years of work experience</span>. I started in my children's room and got pro at renowned digital<span> nexum AG</span> agencies.</>,
+  subtitle: "Sobre mim",
+  award_title: "",
+  award_des: "",
+  about_des: <>Olá! eu sou <span>Lucas</span> um autodidata <span>Designer & Desenvolvedor</span> com mais de <span>5 anos de experiência</span>. Com background em marketing, design e programação, atuo em projetos de ponta a ponta em um estudio de branding como freelancer.</>,
   counter_data: [
     {
       id: 1,
-      count: 180,
-      text: "Project Delivered",
+      count: 10,
+      text: "Projetos autorais",
     },
     {
       id: 2,
-      count: 13,
-      text: "Years of Experience",
+      count: 5,
+      text: "Anos de experiência",
     },
     {
       id: 3,
-      count: 40,
-      text: "Happy Clients",
+      count: 8000,
+      text: "Cafés degustados",
     }
   ],
 }
@@ -60,27 +60,18 @@ const AboutAreaHomeOne = () => {
                     <span className="tp-section-subtitle tp-section-subtitle-1 tp-about-subtitle">{subtitle}</span>
                   </div>
                   <div className="tp-about-thumb-wrapper p-relative z-index-1">
-                    <div className="tp-about-thumb p-relative z-index-1">
+                    {/*<div className="tp-about-thumb p-relative z-index-1">
                       <div className="tp-about-thumb-bg-shape include-bg"
                         style={{ backgroundImage: 'url(/assets/img/about/shape/about-shape-1.png)' }}></div>
                       <Image src={about_img} alt="image" />
-                    </div>
+  </div>*/}
                   </div>
+                  
                 </div>
               </div>
               <div className="col-xl-7 col-lg-7">
                 <div className="tp-about-desc">
-                  <div className="tp-about-award d-inline-block">
-                    <div className="tp-about-award-icon d-inline-block" style={{ marginRight: "15px" }}>
-                      <span>
-                        <Image src={award_img} alt="image" />
-                      </span>
-                    </div>
-                    <div className="tp-about-award-content d-inline-block">
-                      <h4 className="tp-about-award-title">{award_title}</h4>
-                      <p>{award_des}</p>
-                    </div>
-                  </div>
+                  
                   <div className="tp-about-desc-content mb-40">
                     <p>{about_des}</p>
                   </div>

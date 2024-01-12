@@ -45,8 +45,8 @@ const Offcanvas2 = ({ showCanvas, setShowCanvas }: any) => {
           </div>
           <div className="tp-offcanvas-main-2">
             <div className="tp-offcanvas-content-2">
-              <h3 className="tp-offcanvas-content-title-2">Hello There!</h3>
-              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, </p>
+              <h3 className="tp-offcanvas-content-title-2">Olá!</h3>
+              <p>Aqui tem as informações mais resumidas (: </p>
             </div>
             <div className="tp-main-menu-mobile d-lg-none">
               <nav>
@@ -78,12 +78,12 @@ const Offcanvas2 = ({ showCanvas, setShowCanvas }: any) => {
               </div>
             </div>
             <div className="tp-offcanvas-contact-2">
-              <h3 className="tp-offcanvas-contact-title-2">Information</h3>
+              <h3 className="tp-offcanvas-contact-title-2">Informações</h3>
 
               <ul>
-                <li><a href="tel:1245654">+ 4 20 7700 1007</a></li>
-                <li><a href="mailto:hello@diego.com">hello@diego.com</a></li>
-                <li><a href="#">Avenue de Roma 158b, Lisboa</a></li>
+                <li><a href="tel:1245654">+55 (48) 9 9924 7580</a></li>
+                <li><a href="mailto:hello@diego.com">lucas_rc15@live.com</a></li>
+                <li><a href="#">Santa Catarina - BR</a></li>
               </ul>
             </div>
             <div className="tp-offcanvas-social-2">

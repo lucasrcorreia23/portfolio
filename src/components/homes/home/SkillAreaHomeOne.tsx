@@ -8,6 +8,8 @@ import skill_img_4 from "@/assets/img/skill/html.png";
 import skill_img_5 from "@/assets/img/skill/webflow.png";
 import skill_img_6 from "@/assets/img/skill/vue.png";
 
+import skill_img_next from "@/assets/img/skill/next.svg"
+
 import skill_img_7 from "@/assets/img/skill/figma.png";
 import skill_img_8 from "@/assets/img/skill/sketch.png";
 import skill_img_9 from "@/assets/img/skill/photoshop.png";
@@ -17,22 +19,22 @@ import skill_img_12 from "@/assets/img/skill/ai.png";
 import Image from 'next/image';
 
 const skill_content = {
-  subtitle: "Advantage",
-  title: "Skills & tools",
-  info: "For those who know what they're looking for..",
+  subtitle: "",
+  title: "Skills & Ferramentas",
+  info: "Algumas das ferramentas que uso em design e desenvolvimento",
   skill_data: [
     {
       tab_id: "tech",
       items: [
         {
-          img: skill_img_1,
-          title: "Angular",
-          percent: 85
+          img: skill_img_next,
+          title: "Next",
+          percent: 90
         },
         {
           img: skill_img_2,
           title: "WordPress",
-          percent: 95
+          percent: 85
         },
         {
           img: skill_img_3,
@@ -42,18 +44,28 @@ const skill_content = {
         {
           img: skill_img_4,
           title: "HTML",
-          percent: 97
+          percent: 100
         },
         {
           img: skill_img_5,
-          title: "Webflow",
-          percent: 80,
+          title: "CSS",
+          percent: 100,
         },
         {
           img: skill_img_6,
-          title: "Vue",
+          title: "React",
           percent: 90
-        }
+        },
+        {
+          img: skill_img_6,
+          title: "Javascript",
+          percent: 80
+        },
+        {
+          img: skill_img_6,
+          title: "Git",
+          percent: 85
+        },
       ],
     },
     {
@@ -62,7 +74,7 @@ const skill_content = {
         {
           img: skill_img_7,
           title: "Figma",
-          percent: 95,
+          percent: 100,
         },
         {
           img: skill_img_8,
@@ -72,12 +84,12 @@ const skill_content = {
         {
           img: skill_img_9,
           title: "Photoshop",
-          percent: 98
+          percent: 100
         },
         {
           img: skill_img_10,
           title: "Adobe XD",
-          percent: 85
+          percent: 90
         },
         {
           img: skill_img_11,
@@ -87,7 +99,7 @@ const skill_content = {
         {
           img: skill_img_12,
           title: "Illustrator",
-          percent: 80
+          percent: 100
         }
 
       ],

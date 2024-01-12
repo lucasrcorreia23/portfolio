@@ -1,35 +1,6 @@
-<<<<<<< HEAD
-> Develope by [jamirayhan](https://jamil-rayhan.netlify.app), [Github](https://github.com/jamilrayhan10) ,  [Facebook](https://www.facebook.com/jamil.rayhan100) <br />
-> This is [Diego](https://softec-next.vercel.app) – Creative Personal Portfolio & Resume Next js Template
+Portfólio Lucas Rodrigues Correia
 
-> *✅ Diego – is a creative & unique Portfolio Resume specifically created for the developer, designer, programmer, freelancer, writer, artist, web developer, photographer, or any other digital professional. We believe – we have covered everything you need to set up a Personal Portfolio or Resume website but if there is something that you would like to know then we are happy to help you out.* <br />
-> *✅ This is highly customizable and looks awesome on tablets and mobile devices. We have included best practice of web development and you can create great website layout based on Bootstrap or Grid 1400px.*
-
-## [Live Link](https://diego-nextjs.vercel.app)
-
-
-> #### ✅ React js:
-> 👉 *React js is a most popular JavaScript library for building user interfaces&*
->
-> #### ✅ Next js:
-> 👉 *Next.js is a flexible React framework that gives you building blocks to create fast web applications.*
->
-> #### ✅ TypeScript:
->  👉 *TypeScript is a JavaScript version with a few extra features. To provide a more robust interface with your editor, TypeScript extends JavaScript with additional syntax. TypeScript is a scripting language that understands JavaScript and uses type inference to provide advanced capabilities without having to write any more code.*
->
-> #### ✅ Bootstrap 5.x Framework:
->  👉 *Bootstrap is the most popular HTML, CSS, and JS framework for developing responsive, mobile first projects on the web.*
->
-> #### ✅ Touch Friendly:
->  👉 *Easy browsing on touch devices.*
->
-> #### ✅ 100% Fully Responsive:
->  👉 *What ever you are using the device your site will run as it should be. tecz template is fully responsive layout for all type of devices.*
->
-> #### ✅ SASS CSS
->  👉 *Diego build with SASS.*
-
-
+Infos:
 
 ## Full Features List
 

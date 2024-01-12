@@ -11,8 +11,8 @@ import UpArrowIconPortfolio from '@/svg/home/PortfolioIcons/UpArrowIconPortfolio
 import RitghtArrowIconPortfolio from '@/svg/home/PortfolioIcons/RitghtArrowIconPortfolio';
 
 const portfolio_content = {
-  subtitle: 'Project',
-  title: 'Latest projects',
+  subtitle: '',
+  title: 'Principais projetos',
   portfolio_data: [
     {
       id: 2,
@@ -69,7 +69,7 @@ const PortfolioAreaHomeOne = () => {
                           </span>
                           <div className="tp-portfolio-meta-hover">
                             <span>Branding</span>
-                            <span className="tp-portfolio-meta-link">View Project</span>
+                            <span className="tp-portfolio-meta-link">Ver projeto</span>
                           </div>
                         </div>
                       </div>
@@ -80,7 +80,7 @@ const PortfolioAreaHomeOne = () => {
                   <Link href="/portfolio-details"
                     className="tp-hover-btn tp-hover-btn-item tp-btn-circle-2 d-flex align-items-center justify-content-center flex-column">
                     <span className="tp-btn-circle-text-2">
-                      Explore <br /> All Project
+                      Veja todos <br /> os projetos
                       <span className="tp-btn-circle-arrow-2">
                         <UpArrowIconPortfolio />
                       </span>
@@ -112,7 +112,7 @@ const PortfolioAreaHomeOne = () => {
                           </span>
                           <div className="tp-portfolio-meta-hover">
                             <span>Branding</span>
-                            <span className="tp-portfolio-meta-link">View Project</span>
+                            <span className="tp-portfolio-meta-link">Ver projeto</span>
                           </div>
                         </div>
                       </div>
