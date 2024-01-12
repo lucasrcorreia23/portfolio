@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 > Develope by [jamirayhan](https://jamil-rayhan.netlify.app), [Github](https://github.com/jamilrayhan10) ,  [Facebook](https://www.facebook.com/jamil.rayhan100) <br />
 > This is [Diego](https://softec-next.vercel.app) – Creative Personal Portfolio & Resume Next js Template
 
@@ -66,3 +67,6 @@
 
 
 
+=======
+# portfolio
+>>>>>>> d87dae4ad3f06c37c18255b93f89dc1b86a121e3
