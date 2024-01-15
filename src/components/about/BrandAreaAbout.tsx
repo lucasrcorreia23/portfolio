@@ -1,14 +1,20 @@
 
 import React from 'react';
-import BrandIcon from '@/svg/about/BrandIcon';
+import Zoomtech from '@/svg/about/zoomtech';
+import Ecosintese from '@/svg/about/ecosintese';
+import Organiconecta from '@/svg/about/organiconecta';
+import Brbassessoria from '@/svg/about/brbassessoria';
+import Prime8 from '@/svg/about/prime8';
+import Brisapollar from '@/svg/about/brisapollar';
+
 
 const brand_imgs = [
-  {icon: <BrandIcon />, delay: '.1s'}, 
-  {icon: <BrandIcon />, delay: '.2s'}, 
-  {icon: <BrandIcon />, delay: '.4s'}, 
-  {icon: <BrandIcon />, delay: '.5s'}, 
-  {icon: <BrandIcon />, delay: '.8s'}, 
-  {icon: <BrandIcon />, delay: '.9s'}, 
+  {icon: <Zoomtech />, delay: '.1s'}, 
+  {icon: <Brbassessoria />, delay: '.4s'}, 
+  {icon: <Ecosintese />, delay: '.2s'}, 
+  {icon: <Organiconecta />, delay: '.5s'}, 
+  {icon: <Prime8 />, delay: '.8s'}, 
+  {icon: <Brisapollar />, delay: '.9s'}, 
 ]
 
 const BrandAreaAbout = () => {
