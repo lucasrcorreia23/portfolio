@@ -9,6 +9,19 @@ import skill_img_5 from "@/assets/img/skill/webflow.png";
 import skill_img_6 from "@/assets/img/skill/vue.png";
 
 import skill_img_next from "@/assets/img/skill/next.svg"
+import skill_img_react from "@/assets/img/skill/react.svg"
+import skill_img_javascript from "@/assets/img/skill/javascript.svg"
+import skill_img_git from "@/assets/img/skill/git.svg"
+
+import skill_img_bootstrap5 from "@/assets/img/skill/boostrap5.svg"
+import skill_img_gsap from "@/assets/img/skill/gsap.svg"
+import skill_img_tailwindcss from "@/assets/img/skill/tailwindcss.svg"
+import skill_img_php from "@/assets/img/skill/php.svg"
+
+import skill_img_css from "@/assets/img/skill/css.svg"
+
+import skill_img_aftereffect from "@/assets/img/skill/aftereffect.svg"
+import skill_img_indesign from "@/assets/img/skill/indesign.svg"
 
 import skill_img_7 from "@/assets/img/skill/figma.png";
 import skill_img_8 from "@/assets/img/skill/sketch.png";
@@ -27,8 +40,44 @@ const skill_content = {
       tab_id: "tech",
       items: [
         {
+          img: skill_img_4,
+          title: "HTML",
+          percent: 100
+        },
+        {
+          img: skill_img_css,
+          title: "CSS",
+          percent: 100,
+        },
+        
+        {
+          img: skill_img_bootstrap5,
+          title: "Bootstrap 5",
+          percent: 100
+        },
+        {
+          img: skill_img_tailwindcss,
+          title: "Tailwindcss",
+          percent: 100
+        },
+        {
           img: skill_img_next,
           title: "Next",
+          percent: 90
+        },
+        {
+          img: skill_img_react,
+          title: "React",
+          percent: 90
+        },
+        {
+          img: skill_img_javascript,
+          title: "Javascript",
+          percent: 80
+        },
+        {
+          img: skill_img_gsap,
+          title: "GSAP",
           percent: 90
         },
         {
@@ -36,36 +85,27 @@ const skill_content = {
           title: "WordPress",
           percent: 85
         },
+        
+        
+        
+        
         {
-          img: skill_img_3,
-          title: "NodeJS",
-          percent: 60
-        },
-        {
-          img: skill_img_4,
-          title: "HTML",
-          percent: 100
-        },
-        {
-          img: skill_img_5,
-          title: "CSS",
-          percent: 100,
-        },
-        {
-          img: skill_img_6,
-          title: "React",
-          percent: 90
-        },
-        {
-          img: skill_img_6,
-          title: "Javascript",
-          percent: 80
-        },
-        {
-          img: skill_img_6,
+          img: skill_img_git,
           title: "Git",
           percent: 85
         },
+        {
+          img: skill_img_3,
+          title: "NodeJS",
+          percent: 70
+        },
+        
+        {
+          img: skill_img_php,
+          title: "PHP",
+          percent: 80
+        },
+        
       ],
     },
     {
@@ -77,9 +117,9 @@ const skill_content = {
           percent: 100,
         },
         {
-          img: skill_img_8,
-          title: "Sketch",
-          percent: 82
+          img: skill_img_10,
+          title: "Adobe XD",
+          percent: 90
         },
         {
           img: skill_img_9,
@@ -87,20 +127,24 @@ const skill_content = {
           percent: 100
         },
         {
-          img: skill_img_10,
-          title: "Adobe XD",
-          percent: 90
-        },
-        {
-          img: skill_img_11,
-          title: "InVision",
-          percent: 90
-        },
-        {
           img: skill_img_12,
           title: "Illustrator",
           percent: 100
-        }
+        },
+        {
+          img: skill_img_aftereffect,
+          title: "After Effects",
+          percent: 90
+        },
+        {
+          img: skill_img_indesign,
+          title: "InDesign",
+          percent: 90
+        },
+        
+        
+        
+        
 
       ],
     }
@@ -220,7 +264,7 @@ const SkillAreaHomeOne = () => {
                     <div className="tp-skill-tab-content tp-skill-radius">
                       <div className="row">
                         {item.items.map((inner_item, index) =>
-                          <div key={index} className="col-xl-2 col-lg-3 col-md-3 col-6">
+                          <div key={index} className="col-xl-2 col-lg-4 col-md-3 col-6">
                             <div className="tp-skill-item text-center">
                               <div
                                 className="tp-skill-thumb d-flex align-items-center justify-content-center flex-column">

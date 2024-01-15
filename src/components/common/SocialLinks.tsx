@@ -11,19 +11,15 @@ interface HeroDataType {
 }
 
 const hero_social_data: HeroDataType[] = [
+  
   {
     id: 1,
-    link: "https://mail.google.com",
-    icon: <HeroEmailIcon />,
-  },
-  {
-    id: 2,
-    link: "https://www.google.com",
+    link: "https://linkedin.com/in/lucasrcorreia",
     icon: <HeroGoogleIcon />,
   },
   {
-    id: 3,
-    link: "https://www.behance.net",
+    id: 2,
+    link: "https://www.be.net/lucasrodriguxs",
     icon: <HeroBehanceIcon />,
   }
 ]

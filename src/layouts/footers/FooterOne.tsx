@@ -17,6 +17,7 @@ interface DataType {
     name: string;
     user_name: string;
     icon: React.JSX.Element;
+    link: string;
   }[];
 }
 
@@ -31,18 +32,21 @@ const footer_content: DataType = {
       name: "Behance",
       user_name: "@lucasrodriguxs",
       icon: <BehanceIconFooter />,
+      link:'https://www.be.net/lucasrodriguxs',
     },
     {
       id: 2,
       name: "Github",
       user_name: "@lucasrcorreia23",
       icon: <GoogleIconFooter />,
+      link:'https://www.github.com/lucasrcorreia23',
     },
     {
       id: 3,
       name: "Linkedin",
       user_name: "@lucasrcorreia",
       icon: <InstagramIconFooter />,
+      link:'https://www.linkedin.com/in/lucasrcorreia',
     },
   ]
 }
@@ -134,7 +138,7 @@ const FooterOne = ({ style }: any) => {
               <div className="row gx-50">
                 {footer_data.map((item, index) => (
                   <div key={index} className="col-xl-4 col-lg-4 col-md-6" style={{ marginBottom: "30px" }}>
-                    <a href="#">
+                    <a href={item.link} target="_blank">
                       <div className="tp-footer-social-item d-flex align-items-center justify-content-between">
                         <span className="tp-footer-anim-border"></span>
                         <div className="tp-footer-social-text z-index-1">

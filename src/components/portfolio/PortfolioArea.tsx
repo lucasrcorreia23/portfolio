@@ -3,13 +3,13 @@ import React, { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
-import project_img_1 from '@/assets/img/portfolio/port-inner-up-1.jpg';
-import project_img_2 from '@/assets/img/portfolio/port-inner-up-4.jpg';
-import project_img_3 from '@/assets/img/portfolio/port-inner-up-5.jpg';
+import project_img_1 from '@/assets/img/portfolio/organiconecta-home.jpg';
+import project_img_2 from '@/assets/img/portfolio/prime8-home.jpg';
+import project_img_3 from '@/assets/img/portfolio/ecosintese-home.jpg';
 
-import project_img_4 from '@/assets/img/portfolio/port-inner-up-2.jpg';
-import project_img_5 from '@/assets/img/portfolio/port-inner-up-3.jpg';
-import project_img_6 from '@/assets/img/portfolio/portfolio-2.jpg';
+import project_img_4 from '@/assets/img/portfolio/ZOOMtech-home.jpg';
+import project_img_5 from '@/assets/img/portfolio/brbassessoria-home.jpg';
+import project_img_6 from '@/assets/img/portfolio/brisapollar-home.jpg';
 import { gsap } from 'gsap';
 
 
@@ -18,46 +18,46 @@ const project_content = {
     {
       id: 1,
       img: project_img_1,
-      bg_img: '/assets/img/portfolio/port-inner-up-1.jpg',
-      title: 'Space Needle',
-      category: 'Branding',
+      bg_img: '/assets/img/portfolio/organiconecta-home.jpg',
+      title: 'Organiconecta',
+      category: 'Visual Identity - UI - UX Research - Website',
     },
     {
-      id: 4,
+      id: 2,
       img: project_img_2,
-      bg_img: '/assets/img/portfolio/port-inner-up-4.jpg',
-      title: 'Crisis Cleanup',
-      category: 'Branding',
+      bg_img: '/assets/img/portfolio/prime8-home.jpg',
+      title: 'Prime8',
+      category: 'Visual Identity - UX/UI - Design System - eCommerce',
     },
     {
-      id: 1,
+      id: 3,
       img: project_img_3,
-      bg_img: '/assets/img/portfolio/port-inner-up-5.jpg',
-      title: 'Space Needle',
-      category: 'Branding',
+      bg_img: '/assets/img/portfolio/ecosintese-home.jpg',
+      title: 'ecoSíntese',
+      category: 'UX/UI - Website',
     }
   ],
   blog_data_2: [
     {
       id: 4,
       img: project_img_4,
-      bg_img: '/assets/img/portfolio/port-inner-up-2.jpg',
-      title: 'Space Needle',
-      category: 'Branding',
+      bg_img: '/assets/img/portfolio/ecosintese-home.jpg',
+      title: 'ZOOMtech',
+      category: 'Brand Architect - UX Research - Visual Identity - UI - Website',
     },
     {
-      id: 1,
+      id: 5,
       img: project_img_5,
-      bg_img: '/assets/img/portfolio/port-inner-up-3.jpg',
-      title: 'Crisis Cleanup',
-      category: 'Branding',
+      bg_img: '/assets/img/portfolio/brbassessoria-home.jpg',
+      title: 'BRB Assessoria',
+      category: 'Naming - Branding - UX/UI - Website',
     },
     {
-      id: 4,
+      id: 6,
       img: project_img_6,
-      bg_img: '/assets/img/portfolio/portfolio-2.jpg',
-      title: 'Space Needle',
-      category: 'Branding',
+      bg_img: '/assets/img/portfolio/brisapollar-home.jpg',
+      title: 'Brisapollar',
+      category: 'UX/UI - Website',
     }
   ]
 }
@@ -108,15 +108,16 @@ const PortfolioArea = () => {
       <div className="porfolio-inner__thumb-wrapper tp-portfolio-effect portfolio-list-scroll-text-animation p-relative fix  black-bg-3 pt-80 pb-50"
         data-scrub="0.0001">
         <div className="portfolio-list-scroll-text pb-80 d-flex align-items-center">
-          <p>Latest Project</p>
-          <p>Latest Project</p>
+          <p>Principais projetos</p>
+          <p>Principais projetos</p>
         </div>
         <div className="container">
           <div className="row grid gx-90">
             <div className="col-xl-6 grid-item">
               <div className="tp-portfolio-item-wrapper">
                 {blog_data_1.map((item, index) => (
-                  <div key={index} className="tp-portfolio-item mb-70">
+                  <div key={index + 2} className="tp-portfolio-item mb-70">
+                    
                     <Link href="/portfolio-details">
                       <div className={`tp-portfolio-thumb img-${item.id} w-img fix`}>
                         <div className="tp-portfolio-thumb-img include-bg d-none"
@@ -128,7 +129,7 @@ const PortfolioArea = () => {
                       <div className="tp-portfolio-content">
                         <h3 className="tp-portfolio-title">{item.title}</h3>
                         <div className="tp-portfolio-meta d-flex align-items-center">
-                          <span className="tp-portfolio-meta-count">0{index + 1}</span>                          
+                          <span className="tp-portfolio-meta-count">0{index}</span>                          
                           <span className="tp-portfolio-meta-arrow">
 
                             <svg width="42" height="13" viewBox="0 0 42 13" fill="none"
@@ -155,7 +156,7 @@ const PortfolioArea = () => {
             <div className="col-xl-6 grid-item">
               <div className="tp-portfolio-item-wrapper">
                 {blog_data_2.map((item, index) => (
-                  <div key={index} className="tp-portfolio-item mb-70">
+                  <div key={index + 1} className="tp-portfolio-item mb-70">
                     <Link href="/portfolio-details">
                       <div className={`tp-portfolio-thumb img-${item.id} w-img fix`}>
                         <div className="tp-portfolio-thumb-img include-bg d-none" style={{ backgroundImage: `url(${item.img})` }}></div>
@@ -166,7 +167,7 @@ const PortfolioArea = () => {
                       <div className="tp-portfolio-content">
                         <h3 className="tp-portfolio-title">{item.title}</h3>
                         <div className="tp-portfolio-meta d-flex align-items-center">
-                          <span className="tp-portfolio-meta-count">0{index + 1}</span>
+                          <span className="tp-portfolio-meta-count">0{index + 3}</span>
                           <span className="tp-portfolio-meta-arrow">
                             <svg width="42" height="13" viewBox="0 0 42 13" fill="none"
                               xmlns="http://www.w3.org/2000/svg">
@@ -177,7 +178,7 @@ const PortfolioArea = () => {
                             </svg>
                           </span>
                           <div className="tp-portfolio-meta-hover">
-                            <span>{item.title}</span>
+                            <span>{item.category}</span>
                             <span className="tp-portfolio-meta-link">View Project</span>
                           </div>
                         </div>

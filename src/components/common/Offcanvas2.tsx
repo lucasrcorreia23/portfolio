@@ -7,9 +7,10 @@ import bg_shape from "@/assets/img/offcanvas/bg-shape-3.png";
 import logo_white from "@/assets/img/logo/logo.png";
 import logo_black from "@/assets/img/logo/logo-black.png";
 
-import offcanvas_1 from "@/assets/img/offcanvas/offcanvas-1.jpg";
-import offcanvas_2 from "@/assets/img/offcanvas/offcanvas-2.jpg";
-import offcanvas_3 from "@/assets/img/offcanvas/offcanvas-3.jpg"; 
+import offcanvas_1 from "@/assets/img/portfolio/ZOOMtech-home.jpg";
+import offcanvas_2 from "@/assets/img/portfolio/organiconecta-home.jpg";
+import offcanvas_3 from "@/assets/img/portfolio/prime8-home.jpg";
+import offcanvas_4 from '@/assets/img/portfolio/brbassessoria-home.jpg';
 
 const Offcanvas2 = ({ showCanvas, setShowCanvas }: any) => {
   return (
@@ -46,7 +47,7 @@ const Offcanvas2 = ({ showCanvas, setShowCanvas }: any) => {
           <div className="tp-offcanvas-main-2">
             <div className="tp-offcanvas-content-2">
               <h3 className="tp-offcanvas-content-title-2">Olá!</h3>
-              <p>Aqui tem as informações mais resumidas (: </p>
+              <p>Aqui estão minhas informações mais resumidas </p>
             </div>
             <div className="tp-main-menu-mobile d-lg-none">
               <nav>
@@ -56,23 +57,23 @@ const Offcanvas2 = ({ showCanvas, setShowCanvas }: any) => {
             <div className="tp-offcanvas-gallery">
               <div className="row gx-2">
                 <div className="col-md-3 col-3">
-                  <div className="tp-offcanvas-gallery-img fix">
-                    <a href="#"><Image src={offcanvas_1} alt="image" /></a>
+                  <div className="tp-offcanvas-gallery-img fix h-10 w-10">
+                    <a className="h-10" href="#"><Image src={offcanvas_1} alt="image" /></a>
                   </div>
                 </div>
                 <div className="col-md-3 col-3">
-                  <div className="tp-offcanvas-gallery-img fix">
-                    <a href="#"><Image src={offcanvas_2} alt="image" /></a>
+                  <div className="tp-offcanvas-gallery-img fix h-10 w-10">
+                    <a className="h-10" href="#"><Image src={offcanvas_2} alt="image" /></a>
                   </div>
                 </div>
                 <div className="col-md-3 col-3">
-                  <div className="tp-offcanvas-gallery-img fix">
-                    <a href="#"><Image src={offcanvas_3} alt="image" /></a>
+                  <div className="tp-offcanvas-gallery-img fix h-10 w-10">
+                    <a className="h-10" href="#"><Image src={offcanvas_3} alt="image" /></a>
                   </div>
                 </div>
                 <div className="col-md-3 col-3">
-                  <div className="tp-offcanvas-gallery-img fix">
-                    <a href="#"><Image src={offcanvas_2} alt="image" /></a>
+                  <div className="tp-offcanvas-gallery-img fix h-10 w-10">
+                    <a className="h-10" href="#"><Image src={offcanvas_4} alt="image" /></a>
                   </div>
                 </div>
               </div>
@@ -87,36 +88,20 @@ const Offcanvas2 = ({ showCanvas, setShowCanvas }: any) => {
               </ul>
             </div>
             <div className="tp-offcanvas-social-2">
-              <h3 className="tp-offcanvas-contact-title-2">Follow Us</h3>
-              <ul>
+              <h3 className="tp-offcanvas-contact-title-2">Me segue ai!</h3>
+              <ul>  
+              <li>
+                  <a href="https://www.linkedin.com.br/in/lucasrcorreia" target="_blank">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                  </a>
+                </li>              
                 <li>
-                  <a href="#">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M11.25 1.5H4.75C2.95507 1.5 1.5 2.95507 1.5 4.75V11.25C1.5 13.0449 2.95507 14.5 4.75 14.5H11.25C13.0449 14.5 14.5 13.0449 14.5 11.25V4.75C14.5 2.95507 13.0449 1.5 11.25 1.5Z"
-                        stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      <path
-                        d="M10.6016 7.5907C10.6818 8.13166 10.5894 8.68414 10.3375 9.16955C10.0856 9.65497 9.68711 10.0486 9.19862 10.2945C8.71014 10.5404 8.15656 10.6259 7.61663 10.5391C7.0767 10.4522 6.57791 10.1972 6.19121 9.81055C5.80451 9.42385 5.54959 8.92506 5.46271 8.38513C5.37583 7.8452 5.46141 7.29163 5.70728 6.80314C5.95315 6.31465 6.34679 5.91613 6.83221 5.66425C7.31763 5.41238 7.87011 5.31998 8.41107 5.4002C8.96287 5.48202 9.47372 5.73915 9.86817 6.1336C10.2626 6.52804 10.5197 7.0389 10.6016 7.5907Z"
-                        stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M11.5742 4.42578H11.5842" stroke="currentColor" strokeWidth="1.5"
-                        strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                  <a href="https://www.github.com/lucasrcorreia23" target="_blank">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
                   </a>
                 </li>
                 <li>
-                  <a href="#">
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M2.50589 12.7494C4.57662 16.336 9.16278 17.5648 12.7494 15.4941C14.2113 14.65 15.2816 13.388 15.8962 11.9461C16.7895 9.85066 16.7208 7.37526 15.4941 5.25063C14.2674 3.12599 12.1581 1.82872 9.89669 1.55462C8.34063 1.366 6.71259 1.66183 5.25063 2.50589C1.66403 4.57662 0.435172 9.16278 2.50589 12.7494Z"
-                        stroke="currentColor" strokeWidth="1.5" />
-                      <path
-                        d="M12.7127 15.4292C12.7127 15.4292 12.0086 10.4867 10.5011 7.87559C8.99362 5.26451 5.28935 2.57155 5.28935 2.57155M5.68449 15.6124C6.79553 12.2606 12.34 8.54524 16.3975 9.43537M12.311 2.4082C11.1953 5.72344 5.75732 9.38453 1.71875 8.58915"
-                        stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                    </svg>
-                  </a>
-                </li>
-                <li>
-                  <a href="#">
+                  <a href="https://www.be.net/lucasrodriguxs" target="_blank">
                     <svg width="18" height="11" viewBox="0 0 18 11" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path
                         d="M1 5.5715H6.33342C7.62867 5.5715 8.61917 6.56199 8.61917 7.85725C8.61917 9.15251 7.62867 10.143 6.33342 10.143H1.76192C1.30477 10.143 1 9.83823 1 9.38108V1.76192C1 1.30477 1.30477 1 1.76192 1H5.5715C6.86676 1 7.85725 1.99049 7.85725 3.28575C7.85725 4.58101 6.86676 5.5715 5.5715 5.5715H1Z"
@@ -130,16 +115,18 @@ const Offcanvas2 = ({ showCanvas, setShowCanvas }: any) => {
                     </svg>
                   </a>
                 </li>
+                
                 <li>
-                  <a href="#">
-                    <svg width="18" height="14" viewBox="0 0 18 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <a href="https://www.instagram.com/lucasrodriguxs" target="_blank">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path
-                        d="M12.75 13H5.25C3 13 1.5 11.5 1.5 9.25V4.75C1.5 2.5 3 1 5.25 1H12.75C15 1 16.5 2.5 16.5 4.75V9.25C16.5 11.5 15 13 12.75 13Z"
-                        stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round"
-                        strokeLinejoin="round" />
+                        d="M11.25 1.5H4.75C2.95507 1.5 1.5 2.95507 1.5 4.75V11.25C1.5 13.0449 2.95507 14.5 4.75 14.5H11.25C13.0449 14.5 14.5 13.0449 14.5 11.25V4.75C14.5 2.95507 13.0449 1.5 11.25 1.5Z"
+                        stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       <path
-                        d="M8.70676 5.14837L10.8006 6.40465C11.5543 6.90716 11.5543 7.66093 10.8006 8.16344L8.70676 9.41972C7.86923 9.92224 7.19922 9.50348 7.19922 8.5822V6.06964C7.19922 4.98086 7.86923 4.64585 8.70676 5.14837Z"
-                        fill="currentColor" />
+                        d="M10.6016 7.5907C10.6818 8.13166 10.5894 8.68414 10.3375 9.16955C10.0856 9.65497 9.68711 10.0486 9.19862 10.2945C8.71014 10.5404 8.15656 10.6259 7.61663 10.5391C7.0767 10.4522 6.57791 10.1972 6.19121 9.81055C5.80451 9.42385 5.54959 8.92506 5.46271 8.38513C5.37583 7.8452 5.46141 7.29163 5.70728 6.80314C5.95315 6.31465 6.34679 5.91613 6.83221 5.66425C7.31763 5.41238 7.87011 5.31998 8.41107 5.4002C8.96287 5.48202 9.47372 5.73915 9.86817 6.1336C10.2626 6.52804 10.5197 7.0389 10.6016 7.5907Z"
+                        stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M11.5742 4.42578H11.5842" stroke="currentColor" strokeWidth="1.5"
+                        strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </a>
                 </li>

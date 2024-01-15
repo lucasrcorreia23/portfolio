@@ -308,3 +308,9 @@ Not supports in Firefox and IE */
 .fp-noscroll .fp-overflow{
     overflow: hidden;
 }
+
+.h-10 img {
+    max-width: 64px!important;
+    max-height: 64px!important;  
+    border-radius: 4px;
+}

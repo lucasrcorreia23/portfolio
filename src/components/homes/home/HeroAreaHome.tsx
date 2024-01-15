@@ -28,7 +28,7 @@ const hero_content: DataType = {
     "Desenvolvedor",
     "Negócios",
   ],
-  sub_title: "Oi! :)",
+  sub_title: "Oi!",
   title_1: "Eu sou Lucas",
   words: ["Web", "App", "UX", "Visual", "UI","Product"],
   title_2: "designer",

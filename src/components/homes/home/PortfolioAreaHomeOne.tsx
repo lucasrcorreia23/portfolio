@@ -3,9 +3,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import React from 'react';
 
-import portfolio_img_1 from "@/assets/img/portfolio/portfolio-2.jpg";
-import portfolio_img_2 from "@/assets/img/portfolio/portfolio-3.jpg";
-import portfolio_img_3 from "@/assets/img/portfolio/portfolio-1.jpg";
+import portfolio_img_1 from "@/assets/img/portfolio/ZOOMtech-home.jpg";
+import portfolio_img_2 from "@/assets/img/portfolio/organiconecta-home.jpg";
+import portfolio_img_3 from "@/assets/img/portfolio/prime8-home.jpg";
 
 import UpArrowIconPortfolio from '@/svg/home/PortfolioIcons/UpArrowIconPortfolio';
 import RitghtArrowIconPortfolio from '@/svg/home/PortfolioIcons/RitghtArrowIconPortfolio';
@@ -14,21 +14,24 @@ const portfolio_content = {
   subtitle: '',
   title: 'Principais projetos',
   portfolio_data: [
+    
     {
       id: 2,
-      img: portfolio_img_2,
-      bg_img: "/assets/img/portfolio/portfolio-3.jpg",
-      title: 'Space Needle',
+      img: portfolio_img_1,
+      bg_img: "/assets/img/portfolio/ZOOMtech-home.jpg",
+      title: 'ZOOMtech',
+      tags:"Brand Architect - Visual Identity - UX/UI - Website",
     },
     {
       id: 3,
       img: portfolio_img_3,
-      bg_img: "/assets/img/portfolio/portfolio-1.jpg",
-      title: "Crisis Cleanup",
+      bg_img: "/assets/img/portfolio/prime8-home.jpg",
+      title: "Prime8",
+      tags:"Visual Identity - UX/UI - Design System - eCommerce",
     }
   ]
 }
-const { subtitle, title, portfolio_data } = portfolio_content
+const { subtitle, title, portfolio_data, } = portfolio_content
 
 
 const PortfolioAreaHomeOne = () => {
@@ -55,20 +58,20 @@ const PortfolioAreaHomeOne = () => {
                     <Link href="/portfolio-details">
                       <div className="tp-portfolio-thumb img-1 w-img fix ">
                         <div className="tp-portfolio-thumb-img include-bg d-none"
-                          style={{ backgroundImage: 'url(/assets/img/portfolio/portfolio-2.jpg)' }}></div>
+                          style={{ backgroundImage: 'url(/assets/img/portfolio/Home.png)' }}></div>
                         <div className="tp-portfolio-thumb-img ">
-                          <Image data-speed="0.85" style={{ objectFit: 'cover', height: "auto" }} src={portfolio_img_1} alt="image-here" />
+                          <Image data-speed="0.85" style={{ objectFit: 'cover', height: "auto" }} src={portfolio_img_2} alt="image-here" />
                         </div>
                       </div>
                       <div className="tp-portfolio-content">
-                        <h3 className="tp-portfolio-title">Brand Identity </h3>
+                        <h3 className="tp-portfolio-title">Organiconecta </h3>
                         <div className="tp-portfolio-meta d-flex align-items-center">
-                          <span className="tp-portfolio-meta-count">01</span>
+                          <span className="tp-portfolio-meta-count">02</span>
                           <span className="tp-portfolio-meta-arrow">
                             <RitghtArrowIconPortfolio />
                           </span>
                           <div className="tp-portfolio-meta-hover">
-                            <span>Branding</span>
+                            <span> Visual Identity - Ui Design - UX Research - Website </span>
                             <span className="tp-portfolio-meta-link">Ver projeto</span>
                           </div>
                         </div>
@@ -77,7 +80,7 @@ const PortfolioAreaHomeOne = () => {
                   </div>
                 </div>
                 <div className="tp-portfolio-more tp-hover-btn-wrapper tp-btn-bounce-2 d-none d-lg-block">
-                  <Link href="/portfolio-details"
+                  <Link href="/portfolio"
                     className="tp-hover-btn tp-hover-btn-item tp-btn-circle-2 d-flex align-items-center justify-content-center flex-column">
                     <span className="tp-btn-circle-text-2">
                       Veja todos <br /> os projetos
@@ -106,12 +109,12 @@ const PortfolioAreaHomeOne = () => {
                       <div className="tp-portfolio-content">
                         <h3 className="tp-portfolio-title">{item.title}</h3>
                         <div className="tp-portfolio-meta d-flex align-items-center">
-                          <span className="tp-portfolio-meta-count">02</span>
+                          <span className="tp-portfolio-meta-count">01</span>
                           <span className="tp-portfolio-meta-arrow">
                             <RitghtArrowIconPortfolio />
                           </span>
                           <div className="tp-portfolio-meta-hover">
-                            <span>Branding</span>
+                            <span>{item.tags}</span>
                             <span className="tp-portfolio-meta-link">Ver projeto</span>
                           </div>
                         </div>
