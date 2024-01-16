@@ -15,8 +15,10 @@ const portfolio_content = {
   title: 'Principais projetos',
   portfolio_data: [
     
+    
     {
       id: 2,
+      link:"/zoomtech-project",
       img: portfolio_img_1,
       bg_img: "/assets/img/portfolio/ZOOMtech-home.jpg",
       title: 'ZOOMtech',
@@ -24,6 +26,7 @@ const portfolio_content = {
     },
     {
       id: 3,
+      link:"/prime8-project",
       img: portfolio_img_3,
       bg_img: "/assets/img/portfolio/prime8-home.jpg",
       title: "Prime8",
@@ -55,7 +58,7 @@ const PortfolioAreaHomeOne = () => {
                 </div>
                 <div className="tp-portfolio-item-wrapper">
                   <div className="tp-portfolio-item mb-70">
-                    <Link href="/portfolio-details">
+                    <Link href="/organiconect-project">
                       <div className="tp-portfolio-thumb img-1 w-img fix ">
                         <div className="tp-portfolio-thumb-img include-bg d-none"
                           style={{ backgroundImage: 'url(/assets/img/portfolio/Home.png)' }}></div>
@@ -71,7 +74,7 @@ const PortfolioAreaHomeOne = () => {
                             <RitghtArrowIconPortfolio />
                           </span>
                           <div className="tp-portfolio-meta-hover">
-                            <span> Visual Identity - Ui Design - UX Research - Website </span>
+                            <span> Visual Identity - UI Design - UX Research - Website </span>
                             <span className="tp-portfolio-meta-link">Ver projeto</span>
                           </div>
                         </div>
@@ -97,7 +100,7 @@ const PortfolioAreaHomeOne = () => {
               <div className="tp-portfolio-item-wrapper pl-50">
                 {portfolio_data.map((item, i) =>
                   <div key={i} className="tp-portfolio-item mb-70">
-                    <Link href="/portfolio-details">
+                    <Link href={item.link}>
                       <div className="tp-portfolio-thumb img-2 w-img fix">
 
                         <div className="tp-portfolio-thumb-img include-bg d-none"

@@ -23,9 +23,9 @@ interface DataType {
 
 const footer_content: DataType = {
   title: "Vamos conversar :)",
-  title_2: <>Quer papear?</>,
-  btn_text_1: 'Envia uma mensagem no zap mesmo',
-  btn_text_2: 'Ou se preferir um e-mail :)',
+  title_2: <>Vamos conversar?</>,
+  btn_text_1: 'Envia uma mensagem no zap :)',
+  btn_text_2: 'Ou se preferir um e-mail',
   footer_data: [
     {
       id: 1,
@@ -94,7 +94,7 @@ const FooterOne = ({ style }: any) => {
                       <div className="tp-footer-btn text-center">
                         <Link className="tp-btn-white-xl w-100" href="wa.me/5548999247580">
                           <div>
-                            <span>Ou fale diretamente pelo Whatsapp</span>
+                            <span>envia uma mensagem</span>
                           </div>
                         </Link>
                       </div>
@@ -115,7 +115,7 @@ const FooterOne = ({ style }: any) => {
                   <div className="row">
                     <div className="col-xl-6 col-lg-6 col-md-6">
                       <div className="tp-footer-btn text-center ">
-                        <a className="tp-btn-green w-100" href="mailto:WriteaMessage">
+                        <a className="tp-btn-green w-100" href="https://wa.me/5548999247580" target="_blank">
                           <div>
                             <span>{btn_text_1}</span>
                           </div>
@@ -124,7 +124,7 @@ const FooterOne = ({ style }: any) => {
                     </div>
                     <div className="col-xl-6 col-lg-6 col-md-6">
                       <div className="tp-footer-btn text-center ">
-                        <Link className="tp-btn-white-xl w-100" href="/contact">
+                        <Link className="tp-btn-white-xl w-100" href="mailto:lucas_rc15@live.com">
                           <div>
                             <span>{btn_text_2}</span>
                           </div>

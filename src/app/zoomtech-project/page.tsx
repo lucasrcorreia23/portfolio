@@ -1,18 +1,18 @@
 
-import PortfolioDetails from '@/components/portfolio-details';
+import ZoomtechProject from '@/components/zoomtech-project';
 import Wrapper from '@/layouts/Wrapper';
 import React from 'react';
 
 
 export const metadata = {
-  title: "Portfolio Details - Personal Creative Portfolio & Resume Next js Template",
+  title: "Projeto ZOOMtech",
 };
 
 
 const index = () => {
   return (
     <Wrapper>
-      <PortfolioDetails />
+      <ZoomtechProject />
     </Wrapper>
   );
 };

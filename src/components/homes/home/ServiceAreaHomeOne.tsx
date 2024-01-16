@@ -15,7 +15,7 @@ const service_content = {
       id: 1,
       tab_id: "One",
       question: "UI/UX Design",
-      answer: "Concepção integral de produtos digitais, desde a fase inicial de descoberta, pesquisa de usuários e mercado, análise de dados e informações, até a etapa de prototipagem e testes.",
+      answer: "Concepção integral de produtos digitais, desde a fase inicial de descoberta, pesquisas quanti/quali/desk, análise de dados e informações, até a etapa de prototipagem e testes.",
       some_features: [
         "Pesquisa e Documentação",
         "Prototipação",        
@@ -52,7 +52,7 @@ const service_content = {
       id: 4,
       tab_id: "Four",
       question: "Marketing",
-      answer: "Entendimento do contexto para planejar e executar nos canais ideais funis de venda que tragam maior ROI e menor CAC para o negócio",
+      answer: "Entendimento do contexto para planejar e executar campanhas em funis de venda que tragam maior LTV e menor CAC para o negócio",
       some_features: [
         "Inbound Marketing",
         "Marketing Digital",
