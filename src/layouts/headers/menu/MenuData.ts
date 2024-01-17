@@ -40,7 +40,7 @@ const menu_data: DataType[] = [
   
   {
     id: 4,
-    title: "Portfolio",
+    title: "Portfólio",
     link: "/portfolio",
     has_dropdown: false,
     sub_menus: [

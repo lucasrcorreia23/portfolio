@@ -15,7 +15,7 @@ const service_content = {
       id: 1,
       tab_id: "One",
       question: "UI/UX Design",
-      answer: "Concepção integral de produtos digitais, desde a fase inicial de descoberta, pesquisas quanti/quali/desk, análise de dados e informações, até a etapa de prototipagem e testes.",
+      answer: "Concepção integral de produtos digitais, desde a fase inicial de descoberta, pesquisas quanti/quali/desk, análise de dados e informações, até a etapa de prototipagem, testes e iterações.",
       some_features: [
         "Pesquisa e Documentação",
         "Prototipação",        
@@ -55,8 +55,8 @@ const service_content = {
       answer: "Entendimento do contexto para planejar e executar campanhas em funis de venda que tragam maior LTV e menor CAC para o negócio",
       some_features: [
         "Inbound Marketing",
-        "Marketing Digital",
-        "Social media platforms",
+        "Advertisement",
+        "Social Media Platforms",
         "e-Commerce",
         
       ]
@@ -107,7 +107,7 @@ const ServiceAreaHomeOne = () => {
                       <span className="tp-services-capsule-item" style={{ backgroundColor: "#FF759C" }}>Prototipagem</span>
                     </p>
                     <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>Soluções de design</span>
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>Soluções de Design</span>
                     </p>
                     <p data-tp-throwable-el="">
                       <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>Pesquisa</span>
@@ -119,7 +119,7 @@ const ServiceAreaHomeOne = () => {
                       <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>Documentação</span>
                     </p>
                     <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#00CC97" }}>Jornada de compra</span>
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#00CC97" }}>Jornada de Compra</span>
                     </p>
                     <p data-tp-throwable-el="">
                       <span className="tp-services-capsule-item" style={{ backgroundColor: "#19B3F1" }}>UI/UX Design</span>
