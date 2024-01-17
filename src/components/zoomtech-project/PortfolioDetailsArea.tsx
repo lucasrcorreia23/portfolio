@@ -26,20 +26,20 @@ interface DataType {
 
 
 const portfolio_detaisl_content: DataType = {
-  title: "Em reuniões diretas com o CEO, alinhei expectativas, requisitos e restrições para organizar o esquema de cores e naming da nova arquitetura de marca da companhia. Depois, embarquei nas 5 Forças de Porter para nortear meu fluxo de tarefas e realização de pesquisas, seguido de documentação e agrupamento das principais informações, de forma a todo o time de marketing e criação conseguir encontrar e utilizar as informações. Com todos os dados em mãos, comecei a desenvolver Manual de Marca, Identidade Visual e prototipar cada página do site conforme modelo mental dos usuários e necessidades  do time comercial com reporte mensal ao CEO do progresso do projeto.",
+  title: "Em reuniões diretas com o CEO, alinhei expectativas, requisitos e restrições para organizar o esquema de cores e naming da nova arquitetura de marca da companhia. Depois, embarquei nas 5 Forças de Porter para nortear meu fluxo de tarefas e realização de pesquisas, seguido de documentação e agrupamento das principais informações de forma a todo o time de marketing e criação conseguir encontrar e utiliza-las. Com todos os dados organizados em mãos, iniciei o processo de desenvolver Manual de Marca, Identidade Visual e prototipagem de cada página do site conforme modelo mental dos usuários e necessidades do time comercial, com reporte mensal ao CEO sobre a evolução do projeto.",
   features: [
     "Placeat laborum quam.",
-    "Corporis explicabo voluptas exercitationem",
+    "Corporis explicabo voluptas exercitationem", 
     "In inventore consequatur autem.",
   ],
   counter_data: [
     {
       counter: 120,
-      title: "Biblioteca completa de dados e informações mercadológicas ",
+      title: "Biblioteca Completa de Dados e Informações Mercadológicas ",
     },
     {
       counter: 45,
-      title: "Nova arquitetura de marca modelo Branded House",
+      title: "Nova Arquitetura de Marca Modelo Branded House",
     },
     {
       counter: 45,
@@ -47,7 +47,7 @@ const portfolio_detaisl_content: DataType = {
     },
     {
       counter: 45,
-      title: "Novo site institucional",
+      title: "Novo Site Institucional",
     },
     
   ],
@@ -144,9 +144,9 @@ const PortfolioDetailsArea = () => {
               <div className="row align-items-center">
                 <div className="col-xl-4 col-lg-4 col-md-4 col-12">
                   <div className="porfolio-details__navigation-content text-center text-md-start">
-                    <a href="#">
+                    <a href="/">
                       <i className="fa-regular fa-arrow-left"></i>
-                      <span>Preview</span>
+                      <span>Anterior</span>
                     </a>
                     <h4>
                       Prime8
@@ -169,7 +169,7 @@ const PortfolioDetailsArea = () => {
                 </div>
                 <div className="col-xl-4 col-lg-4 col-md-4 col-12">
                   <div className="porfolio-details__navigation-content next text-center text-md-end">
-                    <a href="#"><span>Next</span><i className="fa-regular fa-arrow-right"></i></a>
+                    <a href="/"><span>Próximo</span><i className="fa-regular fa-arrow-right"></i></a>
                     <h4>
                       Organiconecta
                     </h4>

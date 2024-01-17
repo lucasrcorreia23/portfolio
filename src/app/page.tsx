@@ -4,7 +4,7 @@ import React from 'react';
 
 
 export const metadata = {
-  title: "Lucas Rodrigues Correia - Designer & Desenvolvedor",
+  title: "Lucas R. C. | | Designer & Desenvolvedor",
 };
 
 const MainHome = () => {

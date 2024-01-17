@@ -11,10 +11,10 @@ import Brisapollar from '@/svg/about/brisapollar';
 const brand_imgs = [
   {icon: <Zoomtech />, delay: '.1s'}, 
   {icon: <Brbassessoria />, delay: '.4s'}, 
-  {icon: <Ecosintese />, delay: '.2s'}, 
+  {icon: <Ecosintese />, delay: '.2s', link:"https://www.ecosintese.com.br"}, 
   {icon: <Organiconecta />, delay: '.5s'}, 
-  {icon: <Prime8 />, delay: '.8s'}, 
-  {icon: <Brisapollar />, delay: '.9s'}, 
+  {icon: <Prime8 />, delay: '.8s', link:"https://www.prime8.com.br"}, 
+  {icon: <Brisapollar />, delay: '.9s', link:"https://www.brisapollar.com.br"}, 
 ]
 
 const BrandAreaAbout = () => {
@@ -27,7 +27,7 @@ const BrandAreaAbout = () => {
             {brand_imgs.map((item, index) => (
               <div key={index} className="col-xl mb-20">
                 <div className="ab-brand__item wow tpfadeUp" data-wow-duration=".9s" data-wow-delay={item.delay}>
-                  <a href="#">
+                  <a href={item.link} target="_blank">
                     <span>
                       {item.icon}
                     </span>

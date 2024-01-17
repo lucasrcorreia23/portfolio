@@ -21,12 +21,12 @@ const portfolio_content = {
       link:"/zoomtech-project",
       img: portfolio_img_1,
       bg_img: "/assets/img/portfolio/ZOOMtech-home.jpg",
-      title: 'ZOOMtech',
+      title: 'ZOOMtecnologia',
       tags:"Brand Architect - Visual Identity - UX/UI - Website",
     },
     {
       id: 3,
-      link:"/prime8-project",
+      link:"/construcao",
       img: portfolio_img_3,
       bg_img: "/assets/img/portfolio/prime8-home.jpg",
       title: "Prime8",
@@ -58,7 +58,7 @@ const PortfolioAreaHomeOne = () => {
                 </div>
                 <div className="tp-portfolio-item-wrapper">
                   <div className="tp-portfolio-item mb-70">
-                    <Link href="/organiconect-project">
+                    <Link href="/construcao">
                       <div className="tp-portfolio-thumb img-1 w-img fix ">
                         <div className="tp-portfolio-thumb-img include-bg d-none"
                           style={{ backgroundImage: 'url(/assets/img/portfolio/Home.png)' }}></div>
@@ -86,7 +86,7 @@ const PortfolioAreaHomeOne = () => {
                   <Link href="/portfolio"
                     className="tp-hover-btn tp-hover-btn-item tp-btn-circle-2 d-flex align-items-center justify-content-center flex-column">
                     <span className="tp-btn-circle-text-2">
-                      Veja todos <br /> os projetos
+                      Todos <br /> os projetos
                       <span className="tp-btn-circle-arrow-2">
                         <UpArrowIconPortfolio />
                       </span>

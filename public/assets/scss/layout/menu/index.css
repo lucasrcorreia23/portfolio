@@ -208,6 +208,14 @@
   padding: 23px 0;
   position: relative;
 }
+.main-menu > nav > ul > li > p {
+  display: inline-block;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--tp-common-white);
+  padding: 23px 0;
+  position: relative;
+}
 .main-menu > nav > ul > li > a::after {
   position: absolute;
   bottom: 0;

@@ -56,7 +56,7 @@ const service_content = {
       some_features: [
         "Inbound Marketing",
         "Marketing Digital",
-        "Redes Sociais",
+        "Social media platforms",
         "e-Commerce",
         
       ]

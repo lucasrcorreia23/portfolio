@@ -134,9 +134,7 @@ const HeaderOne = () => {
                   </div>
 
                   <div className="tp-header-cv ml-10  d-flex align-items-center margin-0 justify-center flex-row justify-center ">
-                  <a  className="tp-theme toggle"target="_blank" href="assets/img/cv/Curriculo.pdf">
-                    <p className="mr-20 mb-0">Download CV</p>
-                    </a>
+                  
                     <a className="tp-header-cv-btn" target="_blank" href="assets/img/cv/Curriculo.pdf">
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
                         xmlns="http://www.w3.org/2000/svg">
@@ -236,8 +234,9 @@ const HeaderOne = () => {
 
                     </label>
                   </div>
-                  <div className="tp-header-cv ml-10 d-none d-md-block">
-                    <a className="tp-header-cv-btn" href="assets/img/cv/mycv.docx">
+                  <div className="tp-header-cv ml-10  d-flex align-items-center margin-0 justify-center flex-row justify-center ">
+                  
+                    <a className="tp-header-cv-btn" target="_blank" href="assets/img/cv/Curriculo.pdf">
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
                         xmlns="http://www.w3.org/2000/svg">
                         <path d="M1 8C1 11.866 4.13401 15 8 15C11.866 15 15 11.866 15 8" stroke="currentColor"

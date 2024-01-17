@@ -119,6 +119,27 @@
                         transition: .3s;
                     }
                 }
+                & > a > p{
+                    display: inline-block;
+                    font-size: 16px;
+                    font-weight: 500;
+                    color: var(--tp-common-white);
+                    padding: 23px 0;
+                    position: relative;
+                    &::after{
+                        position: absolute;
+                        bottom: 0;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        height: 2px;
+                        width: 0%;
+                        background-color: var(--tp-common-white);
+                        content: '';
+                        opacity: 0;
+                        visibility: hidden;
+                        transition: .3s;
+                    }
+                }
                 &:hover{
                     & > a{
                         color: var(--tp-common-white);
@@ -133,6 +154,33 @@
         }
     }
 }
+body > header:nth-child(10) > div > div > div > div.col-xl-4.col-lg-3.col-md-7.col-6 > div > div.tp-header-cv.ml-10.d-flex.align-items-center.margin-0.justify-center.flex-row.justify-center > a.tp-theme.toggle > p{
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--tp-common-white);
+    padding: 23px 0;
+    position: relative;
+    
+}
+
+
+body > header:nth-child(9) > div > div > div > div.col-xl-4.col-lg-3.col-md-7.col-6 > div > div.tp-header-cv.ml-10.d-flex.align-items-center.margin-0.justify-center.flex-row.justify-center > a.tp-theme.toggle > p {
+    display: inline-block;
+                    font-size: 0.75rem;
+                    font-weight: 500;
+                    color: var(--tp-common-white);
+                    padding: 23px 0;
+                    position: relative;
+                    
+                }
+                html[tp-theme=tp-theme-light] > body > header:nth-child(9) > div > div > div > div.col-xl-4.col-lg-3.col-md-7.col-6 > div > div.tp-header-cv.ml-10.d-flex.align-items-center.margin-0.justify-center.flex-row.justify-center > a.tp-theme.toggle > p
+                {
+                    color: var(--tp-common-black-5);
+                }
+
+                
+               
 .counter-row {
 	counter-reset: count;
 }

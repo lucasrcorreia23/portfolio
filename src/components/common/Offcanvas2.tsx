@@ -47,7 +47,7 @@ const Offcanvas2 = ({ showCanvas, setShowCanvas }: any) => {
           <div className="tp-offcanvas-main-2">
             <div className="tp-offcanvas-content-2">
               <h3 className="tp-offcanvas-content-title-2">Tudo bem?</h3>
-              <p>Aqui estão algumas informações <br />de forma mais resumida </p>
+              <p>Aqui estão os principais cases <br />e meus contatos :) </p>
             </div>
             <div className="tp-main-menu-mobile d-lg-none">
               <nav>
@@ -58,28 +58,28 @@ const Offcanvas2 = ({ showCanvas, setShowCanvas }: any) => {
               <div className="row gx-2">
                 <div className="col-md-3 col-3">
                   <div className="tp-offcanvas-gallery-img fix h-10 w-10">
-                    <a className="h-10" href="#"><Image src={offcanvas_1} alt="image" /></a>
+                    <a className="h-10" href="/zoomtech-project"><Image src={offcanvas_1} alt="image" /></a>
                   </div>
                 </div>
                 <div className="col-md-3 col-3">
                   <div className="tp-offcanvas-gallery-img fix h-10 w-10">
-                    <a className="h-10" href="#"><Image src={offcanvas_2} alt="image" /></a>
+                    <a className="h-10" href="/construcao"><Image src={offcanvas_2} alt="image" /></a>
                   </div>
                 </div>
                 <div className="col-md-3 col-3">
                   <div className="tp-offcanvas-gallery-img fix h-10 w-10">
-                    <a className="h-10" href="#"><Image src={offcanvas_3} alt="image" /></a>
+                    <a className="h-10" href="/construcao"><Image src={offcanvas_3} alt="image" /></a>
                   </div>
                 </div>
                 <div className="col-md-3 col-3">
                   <div className="tp-offcanvas-gallery-img fix h-10 w-10">
-                    <a className="h-10" href="#"><Image src={offcanvas_4} alt="image" /></a>
+                    <a className="h-10" href="/construcao"><Image src={offcanvas_4} alt="image" /></a>
                   </div>
                 </div>
               </div>
             </div>
             <div className="tp-offcanvas-contact-2">
-              <h3 className="tp-offcanvas-contact-title-2">Informações</h3>
+              <h3 className="tp-offcanvas-contact-title-2">Contatos</h3>
 
               <ul>
                 <li><a href="tel:5548999247580">+55 (48) 9 9924 7580</a></li>

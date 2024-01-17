@@ -20,7 +20,9 @@ const project_content = {
       img: project_img_1,
       bg_img: '/assets/img/portfolio/organiconecta-home.jpg',
       title: 'Organiconecta',
-      category: 'Visual Identity - UI - UX Research - Website',
+      category: 'Startup - Visual Identity - UI - UX Research - Website',
+      link:"/construcao"
+      
     },
     {
       id: 2,
@@ -28,6 +30,7 @@ const project_content = {
       bg_img: '/assets/img/portfolio/prime8-home.jpg',
       title: 'Prime8',
       category: 'Visual Identity - UX/UI - Design System - eCommerce',
+      link:"/construcao"
     },
     {
       id: 3,
@@ -35,6 +38,7 @@ const project_content = {
       bg_img: '/assets/img/portfolio/ecosintese-home.jpg',
       title: 'ecoSíntese',
       category: 'UX/UI - Website',
+      link:"/construcao"
     }
   ],
   blog_data_2: [
@@ -42,8 +46,9 @@ const project_content = {
       id: 4,
       img: project_img_4,
       bg_img: '/assets/img/portfolio/ecosintese-home.jpg',
-      title: 'ZOOMtech',
+      title: 'ZOOMtecnologia',
       category: 'Brand Architect - UX Research - Visual Identity - UI - Website',
+      link:"/zoomtech-project"
     },
     {
       id: 5,
@@ -51,6 +56,7 @@ const project_content = {
       bg_img: '/assets/img/portfolio/brbassessoria-home.jpg',
       title: 'BRB Assessoria',
       category: 'Naming - Branding - UX/UI - Website',
+      link:"/construcao"
     },
     {
       id: 6,
@@ -58,6 +64,7 @@ const project_content = {
       bg_img: '/assets/img/portfolio/brisapollar-home.jpg',
       title: 'Brisapollar',
       category: 'UX/UI - Website',
+      link:"/construcao"
     }
   ]
 }
@@ -118,7 +125,7 @@ const PortfolioArea = () => {
                 {blog_data_1.map((item, index) => (
                   <div key={index + 2} className="tp-portfolio-item mb-70">
                     
-                    <Link href="/portfolio-details">
+                    <Link href="/construcao">
                       <div className={`tp-portfolio-thumb img-${item.id} w-img fix`}>
                         <div className="tp-portfolio-thumb-img include-bg d-none"
                           style={{ backgroundImage: `url(${item.bg_img})`}}></div>
@@ -143,7 +150,7 @@ const PortfolioArea = () => {
                           </span>
                           <div className="tp-portfolio-meta-hover">
                             <span>{item.category}</span>
-                            <span className="tp-portfolio-meta-link">View Project</span>
+                            <span className="tp-portfolio-meta-link">Ver projeto</span>
                           </div>
                         </div>
                       </div>
@@ -157,7 +164,7 @@ const PortfolioArea = () => {
               <div className="tp-portfolio-item-wrapper">
                 {blog_data_2.map((item, index) => (
                   <div key={index + 1} className="tp-portfolio-item mb-70">
-                    <Link href="/portfolio-details">
+                    <Link href={item.link}>
                       <div className={`tp-portfolio-thumb img-${item.id} w-img fix`}>
                         <div className="tp-portfolio-thumb-img include-bg d-none" style={{ backgroundImage: `url(${item.img})` }}></div>
                         <div className="tp-portfolio-thumb-img">
@@ -179,7 +186,7 @@ const PortfolioArea = () => {
                           </span>
                           <div className="tp-portfolio-meta-hover">
                             <span>{item.category}</span>
-                            <span className="tp-portfolio-meta-link">View Project</span>
+                            <span className="tp-portfolio-meta-link">Ver projeto</span>
                           </div>
                         </div>
                       </div>

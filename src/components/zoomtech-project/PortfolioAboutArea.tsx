@@ -5,7 +5,7 @@ import React from 'react';
 const portfolio_content = {
   subtitle: "Sobre o projeto",
   title: "Nova arquitetura de marcas, manual de identidade visual, estratégia de conteúdo e design do site.",
-  description: "Inicialmente, a ideia era reformular o site existente, porém logo percebeu-se a necessidade de maior clareza sobre o mercado, os usuários e a proposta de valor da empresa. Guiado pelas 5 Forças de Porter, mergulhei em uma pesquisa abrangente sobre os concorrentes, clientes e suas jornadas de compra, bem como o contexto mercadológico em que estávamos inseridos. Esse estudo foi essencial para fundamentar o projeto de rebranding, decisões de design e desenvolver um guia de conteúdo consistente para todos os pontos de contato de companhia.",
+  description: "Inicialmente, a ideia era reformular o site existente, porém logo percebeu-se a necessidade de maior clareza sobre o mercado, os usuários e a proposta de valor da empresa. Guiado pelas 5 Forças de Porter, mergulhei em uma pesquisa abrangente sobre os concorrentes, clientes e suas jornadas de compra, bem como o contexto mercadológico em que estávamos inseridos. Esse estudo foi essencial para fundamentar o projeto de rebranding, decisões de design e desenvolver um guia de conteúdo consistente para todos os pontos de contato da companhia.",
     
 }
 
@@ -52,6 +52,7 @@ const PortfolioAboutArea = () => {
                   <h4 className="tp-section-title-4 mb-35">{title}</h4>
                   <p>{description}</p>
                 </div>
+                {/*
                 <div className="porfolio-details__right-btn">
                   <a className="tp-btn-border-md" href="#">
                     View Website
@@ -65,6 +66,7 @@ const PortfolioAboutArea = () => {
 
                   </a>
                 </div>
+                */}
               </div>
             </div>
           </div>

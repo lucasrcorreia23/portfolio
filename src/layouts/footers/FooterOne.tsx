@@ -92,9 +92,9 @@ const FooterOne = ({ style }: any) => {
                   <div className="row">
                     <div className="col-xl-6 col-lg-6 col-md-6">
                       <div className="tp-footer-btn text-center">
-                        <Link className="tp-btn-white-xl w-100" href="wa.me/5548999247580">
+                        <Link className="tp-btn-white-xl w-100" href="https://wa.me/5548999247580" target="_blank">
                           <div>
-                            <span>envia uma mensagem</span>
+                            <span>Envia uma mensagem no zap :)</span>
                           </div>
                         </Link>
                       </div>
@@ -103,7 +103,7 @@ const FooterOne = ({ style }: any) => {
                       <div className="tp-footer-btn text-center">
                         <a className="tp-btn-grey-xl w-100" target="_blank" href="mailto:lucas_rc15@live.com">
                           <div>
-                            <span>Envie um e-mail!</span>
+                            <span>Ou se preferir um e-mail!</span>
                           </div>
                         </a>
                       </div>
