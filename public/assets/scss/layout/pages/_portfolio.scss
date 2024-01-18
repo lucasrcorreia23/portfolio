@@ -547,17 +547,23 @@
         }
     }
 }
+@media (max-width: 500px){
+#smooth-content > main > div.porfolio-details__area.porfolio-details__color-customize.p-relative.smooth > div > img{
+    height: 100vh;
+margin: -50px 0;
+}
+}
 .porfolio-details{
     &__hero-img{
         height: 955px;
         overflow: hidden;
-        @media #{$xl,$lg}{
+        @media (max-width: 500px){
             height: 800px;
         }
-        @media #{$md}{
+        @media (max-width: 500px){
             height: 700px;
         }
-        @media #{$xs}{
+        @media (max-width: 500px){
             height: 500px;
         }
         & img{

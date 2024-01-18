@@ -4,6 +4,8 @@ import Image, { StaticImageData } from 'next/image';
 import Count from '../common/Count';
 
 import portfolio_details_img_1 from "@/assets/img/portfolio/zoomtech-firstimage.jpg";
+import portfolio_img_9 from "@/assets/img/portfolio/tablet-id.jpg";
+import portfolio_img_8 from "@/assets/img/portfolio/arquitetura-marcas.jpg";
 import portfolio_img_7 from "@/assets/img/portfolio/zoomtech-fiftyimage.jpg";
 import portfolio_img_6 from "@/assets/img/portfolio/zoomtech-fourty.jpg";
 import portfolio_img_5 from "@/assets/img/portfolio/zoomtech-thirtyimage.jpg";
@@ -59,6 +61,8 @@ const portfolio_detaisl_content: DataType = {
     portfolio_img_5,
     portfolio_img_6,
     portfolio_img_7,
+    portfolio_img_8,
+    portfolio_img_9,
   ]
 }
 

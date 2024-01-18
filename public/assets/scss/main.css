@@ -14335,27 +14335,26 @@ xclip
 }
 
 .porfolio-details__hero-img {
-  height: 955px;
+  height: 100vh;
   overflow: hidden;
 }
 @media only screen and (min-width: 1200px) and (max-width: 1399px), only screen and (min-width: 992px) and (max-width: 1199px) {
   .porfolio-details__hero-img {
-    height: 800px;
+    height: 100vh;
   }
 }
 @media only screen and (min-width: 768px) and (max-width: 991px) {
   .porfolio-details__hero-img {
-    height: 700px;
+    height: 100vh;
   }
 }
 @media (max-width: 767px) {
   .porfolio-details__hero-img {
-    height: 500px;
+    height: 100vh;
   }
 }
-.porfolio-details__hero-img img {
-  margin-top: -50px;
-  height: 1200px;
+.porfolio-details__hero-img img {  
+  height: 100%;
   width: 100%;
   -o-object-fit: cover;
      object-fit: cover;
