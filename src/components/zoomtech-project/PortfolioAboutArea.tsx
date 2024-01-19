@@ -3,9 +3,9 @@ import React from 'react';
 
 
 const portfolio_content = {
-  subtitle: "Sobre o projeto",
-  title: "Nova arquitetura de marcas, manual de identidade visual, estratégia de conteúdo e design do site.",
-  description: "Inicialmente, a ideia era reformular o site existente, porém logo percebeu-se a necessidade de maior clareza sobre o mercado, os usuários e a proposta de valor da empresa. Guiado pelas 5 Forças de Porter, mergulhei em uma pesquisa abrangente sobre os concorrentes, clientes e suas jornadas de compra, bem como o contexto mercadológico em que estávamos inseridos. Esse estudo foi essencial para fundamentar o projeto de rebranding, decisões de design e desenvolver um guia de conteúdo consistente para todos os pontos de contato da companhia.",
+  subtitle: "Desafio",
+  title: "Entender o mercado de TIC para replicar em nova ID visual, website e estratégia de canais omnichannel.",
+  description: "Inicialmente, a ideia era reformular o site existente, porém logo percebeu-se a necessidade de maior clareza sobre o mercado, os usuários e a proposta de valor da empresa. Guiado pelas 5 Forças de Porter, mergulhei em uma pesquisa abrangente sobre os concorrentes, clientes e suas jornadas de compra, bem como o contexto mercadológico em que estávamos inseridos. Esse estudo foi essencial para fundamentar o projeto de rebranding, decisões de design e desenvolver um guia de conteúdo consistente para todos os pontos de contato da companhia",
     
 }
 
