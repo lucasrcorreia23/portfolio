@@ -1,5 +1,6 @@
 import "../styles/index.scss";
 import ThemeProvider from "@/components/provider/ThemeProvider";
+import { Analytics } from '@vercel/analytics/react';
 
 export default function RootLayout({
   children,
@@ -16,6 +17,7 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning={true} className="scroll-smooth">
         <ThemeProvider>{children}</ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
