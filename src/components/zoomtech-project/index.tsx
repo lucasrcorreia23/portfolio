@@ -14,7 +14,7 @@ const PortfolioDetails = () => {
       <div id="smooth-wrapper">
         <div id="smooth-content">
           <main>
-            <HeroPortfolioDetailsArea style={false} />
+            <HeroPortfolioDetailsArea />
             <PortfolioAboutArea />
             <PortfolioDetailsArea />
           </main>
