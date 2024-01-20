@@ -387,6 +387,9 @@
 	}
 }
 .tp-btn-green{
+	display: flex!important;
+    align-items: center!important;
+    justify-content: center!important;
 	height: 120px;
 	line-height: 120px;
 	border-radius: 100px;
@@ -394,7 +397,7 @@
 	font-size: 28px;
 	font-weight: 700;
 	text-align: center;
-	text-transform: capitalize;
+	text-transform:none;
 	display: inline-block;
 	overflow: hidden;
 	letter-spacing: -0.01em;
@@ -425,6 +428,9 @@
 	}
 }
 .tp-btn-white-xl{
+	display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 	height: 120px;
 	line-height: 120px;
 	border-radius: 100px;
@@ -432,7 +438,7 @@
 	font-size: 28px;
 	font-weight: 700;
 	text-align: center;
-	text-transform: capitalize;
+	text-transform: none;
 	display: inline-block;
 	overflow: hidden;
 	letter-spacing: -0.01em;
@@ -463,13 +469,16 @@
 	}
 }
 .tp-btn-grey-xl{
+	display: flex!important;
+	justify-content: center;
+	align-items: center;
 	height: 120px;
 	line-height: 120px;
 	padding: 0 20px;
 	font-size: 28px;
 	font-weight: 700;
 	text-align: center;
-	text-transform: capitalize;
+	text-transform: none;
 	display: inline-block;
 	overflow: hidden;
 	letter-spacing: -0.01em;

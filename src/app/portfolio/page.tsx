@@ -5,7 +5,7 @@ import React from 'react';
 
 
 export const metadata = {
-  title: "Portfolio | | Lucas R. C.",
+  title: "Portfólio",
 };
 
 

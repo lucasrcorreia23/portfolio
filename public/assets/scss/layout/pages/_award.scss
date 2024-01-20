@@ -33,44 +33,9 @@
             transition: .3s;
         }
         &::after{
-            position: absolute;
-            content: '';
-            left: 0;
-            bottom: 0;
-            width: 0;
-            background-color: #BCE70C;
-            height: 1px;
-            @extend %transition;
-            z-index: -1;
-            opacity: 0;
+            
         }
         &:hover{
-            padding-left: 36px;
-            z-index: 1;
-            &::after{
-                opacity: 1;
-                width: 100%;
-            }
-            #{$self}{
-                &-arrow{
-                    visibility: visible;
-                    opacity: 1;
-                }
-                &-btn{
-                    & span{
-                        & svg{
-                            &:first-child{
-                                @include transform(translate(16px, -16px));
-                            }
-                            &:last-child{
-                                opacity: 1;
-                                visibility: visible;
-                                @include transform(translate(13px, -13px));
-                            }
-                        }
-                    }
-                }
-            }
         }
 
         &-wrapper{

@@ -5,7 +5,7 @@ import React from "react";
  
  
 export const metadata = {
-  title: "Em construção | | Lucas R. C.",
+  title: "Em construção",
 };
 const construction = () => {
   return (

@@ -1,3 +1,5 @@
+/* eslint-disable no-cond-assign */
+/* eslint-disable no-undef */
 /*!
  * matter-js 0.19.0 by @liabru
  * http://brm.io/matter-js/

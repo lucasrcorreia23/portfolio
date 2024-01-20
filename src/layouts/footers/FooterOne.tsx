@@ -24,8 +24,8 @@ interface DataType {
 const footer_content: DataType = {
   title: "Vamos conversar :)",
   title_2: <>Vamos conversar?</>,
-  btn_text_1: 'Envia uma mensagem no zap :)',
-  btn_text_2: 'Ou se preferir um e-mail',
+  btn_text_1: 'Envia uma mensagem!',
+  btn_text_2: 'Ou um email',
   footer_data: [
     {
       id: 1,
@@ -57,6 +57,7 @@ const { btn_text_1, btn_text_2, title_2, footer_data } = footer_content
 
 
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const FooterOne = ({ style }: any) => {
   const bg_img = style ? "/assets/img/footer/overly-bg-2.png" : "/assets/img/skill/bg-distort.png";
 
@@ -94,7 +95,7 @@ const FooterOne = ({ style }: any) => {
                       <div className="tp-footer-btn text-center">
                         <Link className="tp-btn-white-xl w-100" href="https://wa.me/5548999247580" target="_blank">
                           <div>
-                            <span>Envia uma mensagem no zap :)</span>
+                            <span>Envia uma mensagem!</span>
                           </div>
                         </Link>
                       </div>
@@ -103,7 +104,7 @@ const FooterOne = ({ style }: any) => {
                       <div className="tp-footer-btn text-center">
                         <a className="tp-btn-grey-xl w-100" target="_blank" href="mailto:lucas_rc15@live.com">
                           <div>
-                            <span>Ou se preferir um e-mail!</span>
+                            <span>Ou um e-mail</span>
                           </div>
                         </a>
                       </div>

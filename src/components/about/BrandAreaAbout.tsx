@@ -1,11 +1,10 @@
-
 import React from 'react';
 import Zoomtech from '@/svg/about/zoomtech';
 import Ecosintese from '@/svg/about/ecosintese';
 import Organiconecta from '@/svg/about/organiconecta';
 import Brbassessoria from '@/svg/about/brbassessoria';
 import Prime8 from '@/svg/about/prime8';
-import Brisapollar from '@/svg/about/brisapollar';
+
 
 
 const brand_imgs = [
@@ -14,7 +13,7 @@ const brand_imgs = [
   {icon: <Ecosintese />, delay: '.2s', link:"https://www.ecosintese.com.br"}, 
   {icon: <Organiconecta />, delay: '.5s'}, 
   {icon: <Prime8 />, delay: '.8s', link:"https://www.prime8.com.br"}, 
-  {icon: <Brisapollar />, delay: '.9s', link:"https://www.brisapollar.com.br"}, 
+  
 ]
 
 const BrandAreaAbout = () => {
@@ -22,7 +21,7 @@ const BrandAreaAbout = () => {
     <>               
       <div className="ab-brand__area black-bg-3 pb-100 ab-brand__plr">
         <div className="container-fluid">
-          <div className="row gx-20 row-cols-xl-6 row-cols-lg-4 row-cols-md-3 row-cols-sm-2">
+          <div className="row gx-20 row-cols-xl-5 row-cols-lg-4 row-cols-md-3 row-cols-sm-2">
 
             {brand_imgs.map((item, index) => (
               <div key={index} className="col-xl mb-20">

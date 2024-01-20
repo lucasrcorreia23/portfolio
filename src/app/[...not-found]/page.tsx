@@ -4,7 +4,7 @@ import Wrapper from "@/layouts/Wrapper";
  
  
 export const metadata = {
-  title: "Erro 404 | | Lucas R. C.",
+  title: "Erro 404",
 };
 const index = () => {
   return (

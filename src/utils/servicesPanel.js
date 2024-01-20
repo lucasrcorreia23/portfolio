@@ -6,7 +6,7 @@ const servicesPanel = () => {
 	const parent = document.querySelector('.tp-service-3__area')
 	let servicesSpanels = document.querySelectorAll('.services-panel')
 
-	servicesSpanels.forEach((section, index) => {
+	servicesSpanels.forEach((section) => {
 		tl.to(section, {
 			scrollTrigger: {
 				trigger: section,

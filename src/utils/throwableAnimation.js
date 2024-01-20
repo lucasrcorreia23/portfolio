@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import jQuery from 'jquery';
 import Matter from '../../public/assets/plugins/matter.js';
 

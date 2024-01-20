@@ -12,7 +12,13 @@ import offcanvas_2 from "@/assets/img/portfolio/organiconecta-home.jpg";
 import offcanvas_3 from "@/assets/img/portfolio/prime8-home.jpg";
 import offcanvas_4 from '@/assets/img/portfolio/brbassessoria-home.jpg';
 
-const Offcanvas2 = ({ showCanvas, setShowCanvas }: any) => {
+interface Offcanvas2Props {
+  showCanvas: boolean;
+  setShowCanvas: (show: boolean) => void;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Offcanvas2: React.FC<Offcanvas2Props> = ({ showCanvas, setShowCanvas }) => {
   return (
     <>
       <div className={`tp-offcanvas-area-2 tp-menu-2 ${showCanvas ? 'opened' : ''}`}>
@@ -47,7 +53,7 @@ const Offcanvas2 = ({ showCanvas, setShowCanvas }: any) => {
           <div className="tp-offcanvas-main-2">
             <div className="tp-offcanvas-content-2">
               <h3 className="tp-offcanvas-content-title-2">Tudo bem?</h3>
-              <p>Aqui estão os principais cases <br />e meus contatos :) </p>
+              <p>Aqui estão os <a href="/portfolio">principais cases</a> <br />e logo abaixo meus contatos :&#41; </p>
             </div>
             <div className="tp-main-menu-mobile d-lg-none">
               <nav>

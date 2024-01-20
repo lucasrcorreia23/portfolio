@@ -1,9 +1,8 @@
 'use client';
 import React, {useState } from 'react';
-import Image from 'next/image';
 
-import shape_1 from "@/assets/img/services/shape/services-shape-1.png";
-import shape_2 from "@/assets/img/services/shape/services-shape-2.png";
+
+
 
 
 const service_content = {
@@ -133,16 +132,7 @@ const ServiceAreaHomeOne = () => {
                     <p data-tp-throwable-el="">
                       <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>Marketing</span>
                     </p>
-                    <p data-tp-throwable-el="">
-                      <span className="">
-                        <Image src={shape_1} alt="brand-img" />
-                      </span>
-                    </p>
-                    <p data-tp-throwable-el="">
-                      <span className="">
-                        <Image src={shape_2} alt="brand-img" />
-                      </span>
-                    </p>
+                   
                   </div>
 
                 </div>

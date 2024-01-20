@@ -151,18 +151,31 @@
     }
     &-btn{
         & a{
+            @media #{$xs}{
+                margin-bottom: 1rem;
+                
+               
+            }
             & div{
                 line-height: 1;
                 display: inline-block;
                 overflow: hidden;
-                @include transform(translateY(7px));
-                height: 32px;
+                
+                height: 30px;
+                @media #{$xs}{
+                    height: auto;
+                    
+                   
+                }
                 & span{
                     display: block;
                     @include transition(transform, .2s);
                     text-shadow: 0 30px 0 var(--tp-common-black);
+                    
+                   
                 }
             }
+           
 
             &:hover{
                 & div{
@@ -180,6 +193,9 @@
                 }
             }
         }
+    }
+    #smooth-content > footer > div > div.tp-footer-area.pb-80.pt-120 > div > div.tp-footer-btn-box > div > div:nth-child(1) > div > a > div > span{
+        line-height: 40px!important;
     }
     &-social-text{
         & span{

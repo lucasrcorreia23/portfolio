@@ -17,7 +17,7 @@ const portfolio_content = {
     
     
     {
-      id: 2,
+      id: 1,
       link:"/zoomtech-project",
       img: portfolio_img_1,
       bg_img: "/assets/img/portfolio/ZOOMtech-home.jpg",
@@ -25,7 +25,7 @@ const portfolio_content = {
       tags:"Brand Architect - Visual Identity - UX/UI - Website",
     },
     {
-      id: 3,
+      id: 3,      
       link:"/construcao",
       img: portfolio_img_3,
       bg_img: "/assets/img/portfolio/prime8-home.jpg",
@@ -69,7 +69,7 @@ const PortfolioAreaHomeOne = () => {
                       <div className="tp-portfolio-content">
                         <h3 className="tp-portfolio-title">Organiconecta </h3>
                         <div className="tp-portfolio-meta d-flex align-items-center">
-                          <span className="tp-portfolio-meta-count">02</span>
+                          
                           <span className="tp-portfolio-meta-arrow">
                             <RitghtArrowIconPortfolio />
                           </span>
@@ -98,7 +98,7 @@ const PortfolioAreaHomeOne = () => {
             </div>
             <div className="col-xl-6 col-lg-6">
               <div className="tp-portfolio-item-wrapper pl-50">
-                {portfolio_data.map((item, i) =>
+                {portfolio_data.map((item,i) =>
                   <div key={i} className="tp-portfolio-item mb-70">
                     <Link href={item.link}>
                       <div className="tp-portfolio-thumb img-2 w-img fix">
@@ -112,7 +112,7 @@ const PortfolioAreaHomeOne = () => {
                       <div className="tp-portfolio-content">
                         <h3 className="tp-portfolio-title">{item.title}</h3>
                         <div className="tp-portfolio-meta d-flex align-items-center">
-                          <span className="tp-portfolio-meta-count">01</span>
+                          
                           <span className="tp-portfolio-meta-arrow">
                             <RitghtArrowIconPortfolio />
                           </span>

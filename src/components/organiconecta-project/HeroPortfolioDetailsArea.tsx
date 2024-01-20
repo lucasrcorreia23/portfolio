@@ -17,7 +17,7 @@ const scrollTo = () => {
   });
 };
 
-const HeroPortfolioDetailsArea = ({ style }: any) => {
+const HeroPortfolioDetailsArea = () => {
   return (
     <>
       <div className="porfolio-details__area porfolio-details__color-customize p-relative smooth">

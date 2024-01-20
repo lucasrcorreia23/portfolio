@@ -1,12 +1,11 @@
 'use client'
 import React, { useEffect } from 'react';
 // skill images
-import skill_img_1 from "@/assets/img/skill/angular.png";
+
 import skill_img_2 from "@/assets/img/skill/wp.png";
 import skill_img_3 from "@/assets/img/skill/nodejs.png";
 import skill_img_4 from "@/assets/img/skill/html.png";
-import skill_img_5 from "@/assets/img/skill/webflow.png";
-import skill_img_6 from "@/assets/img/skill/vue.png";
+
 
 import skill_img_next from "@/assets/img/skill/next.svg"
 import skill_img_react from "@/assets/img/skill/react.svg"
@@ -24,17 +23,17 @@ import skill_img_aftereffect from "@/assets/img/skill/aftereffect.svg"
 import skill_img_indesign from "@/assets/img/skill/indesign.svg"
 
 import skill_img_7 from "@/assets/img/skill/figma.png";
-import skill_img_8 from "@/assets/img/skill/sketch.png";
+
 import skill_img_9 from "@/assets/img/skill/photoshop.png";
 import skill_img_10 from "@/assets/img/skill/xd.png";
-import skill_img_11 from "@/assets/img/skill/in.png";
+
 import skill_img_12 from "@/assets/img/skill/ai.png";
 import Image from 'next/image';
 
 const skill_content = {
   subtitle: "",
   title: "Skills & Ferramentas",
-  info: "Algumas das ferramentas que uso em design e desenvolvimento",
+  info: "Arsenal para entregar as melhores soluções digitais",
   skill_data: [
     {
       tab_id: "tech",
@@ -181,33 +180,9 @@ const SkillAreaHomeOne = () => {
 
       marker.style.display = 'block';
 
-      function anchorWidthCounter() {
-        let anchorWidths = 0;
-        let a: HTMLElement;
-        let aWidth: number;
-        let aPadLeft: number;
-        let aPadRight: number;
-        let aTotalWidth: number;
+      
 
-        item.forEach((elem) => {
-          const activeTest = elem.classList.contains('active');
-
-          if (activeTest) {
-            // Break out of the loop.
-            return;
-          }
-
-          a = elem.parentElement as HTMLElement; // Get the parent element
-          aWidth = a.offsetWidth;
-          aPadLeft = parseFloat(getComputedStyle(a).paddingLeft);
-          aPadRight = parseFloat(getComputedStyle(a).paddingRight);
-          aTotalWidth = aWidth + aPadLeft + aPadRight;
-
-          anchorWidths = anchorWidths + aTotalWidth;
-        });
-
-        return anchorWidths;
-      }
+        
     }
 
     tpTabLine2();
@@ -264,7 +239,7 @@ const SkillAreaHomeOne = () => {
                     <div className="tp-skill-tab-content tp-skill-radius">
                       <div className="row">
                         {item.items.map((inner_item, index) =>
-                          <div key={index} className="col-xl-2 col-lg-4 col-md-3 col-6">
+                          <div key={index} className="col-xl-2 col-lg-4 col-md-3 col-6 d-flex justify-content-center">
                             <div className="tp-skill-item text-center">
                               <div
                                 className="tp-skill-thumb d-flex align-items-center justify-content-center flex-column">

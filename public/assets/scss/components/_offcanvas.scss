@@ -439,16 +439,41 @@
     }
   }
   &-content {
-    &-2 {
-      margin-bottom: 45px;
-      & p {
-        color: var(--tp-common-white);
-        font-size: 16px;
-        font-weight: 400;
-        line-height: 24px;
-        @extend %ff-dmsans;
+  &-2 {
+    margin-bottom: 45px;
+
+    & p {
+      color: var(--tp-common-white);
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 24px;
+      @extend %ff-dmsans;
+    }
+
+    & a {
+      position: relative; // Adicionado para suportar o posicionamento absoluto do pseudo-elemento ::after
+
+      &::after {
+        background: currentColor;
+        bottom: 0;
+        content: "";
+        height: 1px;
+        left: 0;
+        position: absolute;
+        transition: transform .7s cubic-bezier(0.19, 1, 0.22, 1);
+        width: 100%;
+        transform: scaleX(1); // Defina a escala inicial para 1
+    transform-origin: left center; // Origem da transformação
+        
+        
+      }
+      &:hover::after { // Aplica o efeito hover ao pseudo-elemento ::after
+        transform: scaleX(0); // Altera a escala para 0 ao passar o mouse
+        transform-origin: right center; // Origem da transformação ao passar o mouse
       }
     }
+  }
+
     &-title-2 {
       color: var(--tp-common-white);
       font-size: 40px;

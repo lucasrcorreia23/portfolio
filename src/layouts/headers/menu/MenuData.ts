@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { StaticImageData } from "next/image";
 
 import demo_img_1 from "@/assets/img/menu/home-1.jpg";

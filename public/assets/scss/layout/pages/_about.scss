@@ -90,7 +90,7 @@
         &-content{
             & p{
                 font-size: 26px;
-                color: rgba($color: $white, $alpha: .5);
+                color: rgba($color: $white, $alpha: .9);
                 line-height: 1.3;
                 @media #{$lg}{
                     font-size: 21px;

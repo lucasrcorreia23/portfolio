@@ -1,6 +1,6 @@
 import Link from "next/link";
 import HeroBehanceIcon from "@/svg/home/HeroIcons/HeroBehanceIcon";
-import HeroEmailIcon from "@/svg/home/HeroIcons/HeroEmailIcon";
+
 import HeroGoogleIcon from "@/svg/home/HeroIcons/HeroGoogleIcon";
 
 // hero 01 social links

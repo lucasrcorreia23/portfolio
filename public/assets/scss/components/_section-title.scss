@@ -108,13 +108,13 @@
             display: inline-block;
             & .tp-section-title{
                 @media #{$xl}{
-                    font-size: 65px;
+                    font-size: 54px;
                     & br{
                         display: none;
                     }
                 }
                 @media #{$lg}{
-                    font-size: 60px;
+                    font-size: 54px;
                     & br{
                         display: none;
                     }

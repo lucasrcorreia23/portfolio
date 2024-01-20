@@ -1,16 +1,14 @@
 "use client";
-import React, { useEffect } from "react";
+import React from "react";
 import HeaderOne from "@/layouts/headers/HeaderOne";
 import HeroAreaHome from "./HeroAreaHome";
-import BrandAreaHomeOne from "./BrandAreaHomeOne";
+
 import ServiceAreaHomeOne from "./ServiceAreaHomeOne";
-import MarqueeAreaHomeOne from "./MarqueeAreaHomeOne";
+
 import AboutAreaHomeOne from "./AboutAreaHomeOne";
 import PortfolioAreaHomeOne from "./PortfolioAreaHomeOne";
 import SkillAreaHomeOne from "./SkillAreaHomeOne";
-import AwardAreaHomeOne from "./AwardAreaHomeOne";
-import TestimonialAreaHomeOne from "./TestimonialAreaHomeOne";
-import PriceAreaHomeOne from "./PriceAreaHomeOne";
+
 import FooterOne from "@/layouts/footers/FooterOne";
 
 

@@ -1,7 +1,7 @@
 'use client';
 import Image from 'next/image';
 import Slider from 'react-slick';
-import React, { useEffect } from 'react';
+
 import slider_img_1 from "@/assets/img/portfolio/port-inner-1.jpg";
 import slider_img_2 from "@/assets/img/portfolio/port-inner-2.jpg";
 import slider_img_3 from "@/assets/img/portfolio/port-inner-3.jpg";
@@ -76,7 +76,7 @@ const PortfolioSlider = () => {
                 <Slider {...setting} className="porfolio-inner__slider-active">
                   {slider_images.map((item, index) => (
                     <div key={index} className="porfolio-inner__thumb">
-                      <Image src={item} style={{ height: 'auto' }} alt="image-here" />
+                      <Image priority src={item} style={{ height: 'auto' }} alt="image-here" />
                     </div>
                   ))}
                 </Slider>

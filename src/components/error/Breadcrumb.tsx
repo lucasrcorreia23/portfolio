@@ -1,5 +1,5 @@
 
-import HeroArrowIcon from '@/svg/home/HeroIcons/HeroArrowIcon';
+
 import Link from 'next/link';
 import React from 'react';
 

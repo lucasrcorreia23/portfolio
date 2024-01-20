@@ -1,5 +1,4 @@
 'use client'
-import HeaderFour from '@/layouts/headers/HeaderFour';
 import React from 'react';
 import PortfolioSlider from './PortfolioSlider';
 import PortfolioArea from './PortfolioArea';

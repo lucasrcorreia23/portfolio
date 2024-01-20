@@ -21,9 +21,12 @@
         &:hover{
             #{$self}{
                 &-thumb{
-                    @include transform(scale(.95));
+                    
                     &-img{
-                        @include transform(scale(1.2));
+                        @include transform(scale(1.03));
+                        filter: blur(3px) brightness(0.5);
+                       
+                       
                     }
                 }
                 &-meta{
@@ -76,7 +79,7 @@
         &-count{
             font-size: 14px;
             font-weight: 500;
-            color: rgba($color: $white, $alpha: .7);
+            color: rgba($color: $white, $alpha: .9);
             display: inline-block;
             margin-right: 9px;
         }
@@ -94,7 +97,7 @@
                 position: absolute;
                 content: "";
                 top: 6px;
-                background: rgba($color: #FFFFFF, $alpha: .7);
+                background: rgba($color: #FFFFFF, $alpha: .9);
                 height: 1px;
                 width: 20px;
                 left: 0;  
@@ -116,7 +119,7 @@
                 display: inline-block;
                 font-size: 14px;
                 font-weight: 500;
-                color: rgba($color: $white, $alpha: .7);
+                color: rgba($color: $white, $alpha: .9);
                 position: relative;
                 padding-right: 27px;
                 margin-right: 6px;

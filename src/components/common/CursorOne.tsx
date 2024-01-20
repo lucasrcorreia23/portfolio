@@ -4,19 +4,7 @@ import React from 'react';
 
 const CursorOne = () => {
 
-  const handleMouseEnter = () => {
-    const cursorCircle = document.getElementById('awesome-cursor-circle');
-    if (cursorCircle) {
-      cursorCircle.classList.add('hide');
-    }
-  };
-
-  const handleMouseLeave = () => {
-    const cursorCircle = document.getElementById('awesome-cursor-circle');
-    if (cursorCircle) {
-      cursorCircle.classList.remove('hide');
-    }
-  }; 
+  
 
 
 

@@ -1,6 +1,5 @@
 
 import React from 'react';
-import HeaderFour from '@/layouts/headers/HeaderFour';
 import HeroPortfolioDetailsArea from './HeroPortfolioDetailsArea';
 import PortfolioAboutArea from './PortfolioAboutArea';
 import PortfolioDetailsArea from './PortfolioDetailsArea';

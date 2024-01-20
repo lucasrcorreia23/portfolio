@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { animationCreate } from "@/utils/utils";
 import { throwableAnimation } from "@/utils/throwableAnimation"; 
 import ScrollToTop from "@/components/common/ScrollToTop";
@@ -25,6 +25,7 @@ if (typeof window !== "undefined") {
   require("bootstrap/dist/js/bootstrap");
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Wrapper = ({ children }: any) => {
   const pathname = usePathname();
  

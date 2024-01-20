@@ -1,16 +1,14 @@
 'use client'
-import {gsap} from "gsap";
+
 import Link from 'next/link';
-import Image from 'next/image';
+
 import { useEffect, useState } from 'react';
 import { scroller } from 'react-scroll';
 import {animatedHeadline} from '@/utils/animatedHeadline';
-import HeroHand from "@/assets/img/hero/hero-hand.png";
+
 import HeroArrowIcon from '@/svg/home/HeroIcons/HeroArrowIcon';
 import { HeroSocialLinks } from '@/components/common/SocialLinks';
-import HeroShape1 from '@/assets/img/hero/shape/hero-shape-1.png';
-import HeroShape2 from '@/assets/img/hero/shape/hero-shape-2.png';
-import HeroImage from '@/assets/img/hero/hero-img.png';
+
 
 interface DataType {
   slide_text: string[];
@@ -28,9 +26,9 @@ const hero_content: DataType = {
     "Desenvolvedor",
     "Negócios",
   ],
-  sub_title: "Oi!",
+  sub_title: "Olá!",
   title_1: "Eu sou Lucas",
-  words: ["Web", "App", "UX", "Visual", "UI","Product"],
+  words: ["UX", "Product", "UI", "Visual", "Web","App"],
   title_2: "designer",
   sm_info: <>Apaixonado pela combinação de design, códigos, negócios & toda a interação entre eles.</>,
   btn_text: <>Meu <br />currículo  </>,

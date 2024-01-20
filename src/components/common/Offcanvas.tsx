@@ -8,6 +8,7 @@ import Shape from "@/assets/img/offcanvas/bg-shape-2.png"
 import MobileMenus from '@/layouts/headers/menu/mobile-menus';
 
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Offcanvas = ({ showCanvas, setShowCanvas }: any) => {
   return (
     <>

@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
-import React, { MouseEvent } from 'react';
+import React from 'react';
 
 import AwardUpArrowIcon from '@/svg/home/AwardIcons/AwardUpArrowIcon';
 import AwardLeftArrowIcon from '@/svg/home/AwardIcons/AwardLeftArrowIcon';
@@ -117,7 +117,7 @@ const AwardAreaHomeOne = ({ style_2 }: {style_2?: boolean}) => {
                               <span>
                                 <AwardUpArrowIcon />
                                 <AwardUpArrowIcon />
-                              </span>
+                              </span> 
                             </span>
                           </div>
                         </div>

@@ -4,7 +4,16 @@ import React from 'react';
 
 
 export const metadata = {
-  title: "Lucas R. C. | | Designer & Desenvolvedor",
+  
+  description: 'Lucas é um desenvolvedor e designer de Santa Catarina com foco em produtos criativos e de experiências únicas',
+  openGraph: {
+    type: 'website',
+    authors: ['Lucas Rodrigues Correia']
+  },
+  robots: {
+    follow: true,
+    index: true
+  }
 };
 
 const MainHome = () => {

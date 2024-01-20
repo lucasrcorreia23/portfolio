@@ -27,6 +27,7 @@ const Count = ({ number, text, add_style }: CountType) => {
             <strong ref={countUpRef} />
             <InView
               as="span"
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               onChange={(inView: any) => visibleChangeHandler(inView)}>
               {text && <span>{text}</span>} 
             </InView>

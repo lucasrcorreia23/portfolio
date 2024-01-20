@@ -5,7 +5,7 @@ import React from 'react';
 const portfolio_content = {
   subtitle: "Desafio",
   title: "Entender o mercado de TIC para desenvolver nova ID visual, website e estratégia de conteúdo omnichannel.",
-  description: "Inicialmente, a ideia era reformular o site existente, porém logo percebeu-se a necessidade de maior clareza sobre o mercado, os usuários e a proposta de valor da empresa. Guiado pelas 5 Forças de Porter, mergulhei em uma pesquisa abrangente sobre os concorrentes, clientes e suas jornadas de compra, bem como o contexto mercadológico em que estávamos inseridos. Esse estudo foi essencial para fundamentar o projeto de rebranding, decisões de design e desenvolver um guia de conteúdo consistente para todos os pontos de contato da companhia",
+  description: "Inicialmente, a ideia era reformular o site existente. Porém, logo percebeu-se a necessidade de maior clareza sobre o mercado, os usuários e a proposta de valor da empresa. Guiado pelo framework das 5 Forças de Porter, mergulhei em pesquisas desk e qualitativas em busca de respostas sobre os concorrentes, clientes e suas jornadas de compra, assim como, o contexto mercadológico em que estava inserido. Esse estudo foi essencial para fundamentar o projeto de rebranding, decisões de design e desenvolver um guia de conteúdo consistente para todos os pontos de contato da companhia",
     
 }
 

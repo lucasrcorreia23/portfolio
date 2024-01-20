@@ -62,7 +62,7 @@
             @media #{$xs}{
                 padding-left: 0;
                 font-size: 16px;
-                padding-right: 130px;
+                padding-right: 120px;
                 & br{
                     display: none;
                 }
@@ -84,7 +84,7 @@
             font-size: 85px;
         }
         @media #{$xs}{
-            font-size: 50px;
+            font-size: 40px;
         }
         & span,
         & span b{

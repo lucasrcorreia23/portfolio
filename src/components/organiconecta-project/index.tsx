@@ -1,6 +1,6 @@
 
 import React from 'react';
-import HeaderFour from '@/layouts/headers/HeaderFour';
+
 import HeroPortfolioDetailsArea from './HeroPortfolioDetailsArea';
 import PortfolioAboutArea from './PortfolioAboutArea';
 import PortfolioDetailsArea from './PortfolioDetailsArea';
@@ -15,7 +15,7 @@ const PortfolioDetails = () => {
       <div id="smooth-wrapper">
         <div id="smooth-content">
           <main>
-            <HeroPortfolioDetailsArea style={true} />
+            <HeroPortfolioDetailsArea  />
             <PortfolioAboutArea />
             <PortfolioDetailsArea />
           </main>

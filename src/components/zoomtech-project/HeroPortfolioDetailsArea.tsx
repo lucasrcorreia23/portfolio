@@ -17,7 +17,7 @@ const scrollTo = () => {
   });
 };
 
-const HeroPortfolioDetailsArea = ({ style }: any) => {
+const HeroPortfolioDetailsArea = () => {
   return (
     <>
       <div className="porfolio-details__area porfolio-details__color-customize p-relative smooth">
@@ -28,7 +28,7 @@ const HeroPortfolioDetailsArea = ({ style }: any) => {
           </div>
         </a>
         <div className="porfolio-details__hero-img">
-          <Image data-speed="1.1" src={banner_img} alt="image-here" />
+          <Image priority data-speed="1.1" src={banner_img} alt="Mockup site em todos os dispositivos" />
         </div>
       </div>
     </>

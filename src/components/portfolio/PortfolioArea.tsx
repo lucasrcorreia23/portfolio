@@ -5,73 +5,71 @@ import Image from 'next/image';
 
 import project_img_1 from '@/assets/img/portfolio/organiconecta-home.jpg';
 import project_img_2 from '@/assets/img/portfolio/prime8-home.jpg';
-import project_img_3 from '@/assets/img/portfolio/ecosintese-home.jpg';
 
 import project_img_4 from '@/assets/img/portfolio/ZOOMtech-home.jpg';
 import project_img_5 from '@/assets/img/portfolio/brbassessoria-home.jpg';
-import project_img_6 from '@/assets/img/portfolio/brisapollar-home.jpg';
+
 import { gsap } from 'gsap';
+
+import UseHoverReveal from '@/hooks/UseHoverReveal';
+
+
 
 
 const project_content = {
+ 
   blog_data_1: [
+    
+    
     {
-      id: 1,
+      id: 2,
       img: project_img_1,
       bg_img: '/assets/img/portfolio/organiconecta-home.jpg',
+      hover_img: '/assets/img/portfolio/hover/Organiconecta.png',
       title: 'Organiconecta',
       category: 'Startup - Visual Identity - UI - UX Research - Website',
       link:"/construcao"
       
     },
     {
-      id: 2,
+      id: 4,
       img: project_img_2,
       bg_img: '/assets/img/portfolio/prime8-home.jpg',
+      hover_img: '/assets/img/portfolio/hover/prime8.png',
       title: 'Prime8',
       category: 'Visual Identity - UX/UI - Design System - eCommerce',
       link:"/construcao"
     },
-    {
-      id: 3,
-      img: project_img_3,
-      bg_img: '/assets/img/portfolio/ecosintese-home.jpg',
-      title: 'ecoSíntese',
-      category: 'UX/UI - Website',
-      link:"/construcao"
-    }
+   
   ],
   blog_data_2: [
     {
-      id: 4,
+      id:2,
       img: project_img_4,
       bg_img: '/assets/img/portfolio/ecosintese-home.jpg',
+      hover_img:'/assets/img/portfolio/hover/zoomtech.png',
       title: 'ZOOMtecnologia',
       category: 'Brand Architect - UX Research - Visual Identity - UI - Website',
       link:"/zoomtech-project"
     },
     {
-      id: 5,
+      id: 4,
       img: project_img_5,
       bg_img: '/assets/img/portfolio/brbassessoria-home.jpg',
+      hover_img:'/assets/img/portfolio/hover/brbassessoria.png',
       title: 'BRB Assessoria',
       category: 'Naming - Branding - UX/UI - Website',
       link:"/construcao"
     },
-    {
-      id: 6,
-      img: project_img_6,
-      bg_img: '/assets/img/portfolio/brisapollar-home.jpg',
-      title: 'Brisapollar',
-      category: 'UX/UI - Website',
-      link:"/construcao"
-    }
+    
   ]
 }
 
-const { blog_data_1, blog_data_2 } = project_content
+const { blog_data_1, blog_data_2, } = project_content
+
 
 const PortfolioArea = () => {
+  const {handleMouseMove} = UseHoverReveal();
 
 
   useEffect(() => {
@@ -120,10 +118,11 @@ const PortfolioArea = () => {
         </div>
         <div className="container">
           <div className="row grid gx-90">
-            <div className="col-xl-6 grid-item">
+            <div className="col-xl-6 grid-item ">
               <div className="tp-portfolio-item-wrapper">
-                {blog_data_1.map((item, index) => (
-                  <div key={index + 2} className="tp-portfolio-item mb-70">
+                {blog_data_1.map((item, index ,) => (
+                  <div key={index} className="tp-portfolio-item mb-70 tp-hover-reveal-item tp-award-item"
+                  onMouseMove={(event) => handleMouseMove(event, '.tp-hover-reveal-item')} >
                     
                     <Link href="/construcao">
                       <div className={`tp-portfolio-thumb img-${item.id} w-img fix`}>
@@ -136,7 +135,7 @@ const PortfolioArea = () => {
                       <div className="tp-portfolio-content">
                         <h3 className="tp-portfolio-title">{item.title}</h3>
                         <div className="tp-portfolio-meta d-flex align-items-center">
-                          <span className="tp-portfolio-meta-count">0{index}</span>                          
+                                                 
                           <span className="tp-portfolio-meta-arrow">
 
                             <svg width="42" height="13" viewBox="0 0 42 13" fill="none"
@@ -155,15 +154,17 @@ const PortfolioArea = () => {
                         </div>
                       </div>
                     </Link>
+                    <div className="tp-hover-reveal-bg" style={{ backgroundImage: `url(${item.hover_img})` }}></div>
                   </div>
                 ))}
 
               </div>
             </div>
-            <div className="col-xl-6 grid-item">
+            <div className="col-xl-6 grid-item ">
               <div className="tp-portfolio-item-wrapper">
                 {blog_data_2.map((item, index) => (
-                  <div key={index + 1} className="tp-portfolio-item mb-70">
+                  <div key={index+3} className="tp-portfolio-item mb-70 tp-hover-reveal-item tp-award-item"
+                  onMouseMove={(event) => handleMouseMove(event, '.tp-hover-reveal-item')}>
                     <Link href={item.link}>
                       <div className={`tp-portfolio-thumb img-${item.id} w-img fix`}>
                         <div className="tp-portfolio-thumb-img include-bg d-none" style={{ backgroundImage: `url(${item.img})` }}></div>
@@ -174,7 +175,7 @@ const PortfolioArea = () => {
                       <div className="tp-portfolio-content">
                         <h3 className="tp-portfolio-title">{item.title}</h3>
                         <div className="tp-portfolio-meta d-flex align-items-center">
-                          <span className="tp-portfolio-meta-count">0{index + 3}</span>
+                         
                           <span className="tp-portfolio-meta-arrow">
                             <svg width="42" height="13" viewBox="0 0 42 13" fill="none"
                               xmlns="http://www.w3.org/2000/svg">
@@ -191,6 +192,7 @@ const PortfolioArea = () => {
                         </div>
                       </div>
                     </Link>
+                    <div className="tp-hover-reveal-bg" style={{ backgroundImage: `url(${item.hover_img})` }}></div>
                   </div>
                 ))}
               </div>
