@@ -12,7 +12,7 @@ const Content = () => {
               <span className="blog-list__subtitle tp-char-animation">Opa, projeto ainda em construção</span>
               
               <h4 className="blog-list__title tp-char-animation mb-3">Por favor volte em breve para conferir!</h4>
-              <p className=" tp-blog-title-sm pb-3">Hoje é 16/01, em umas duas semanas estará no ar. ;)  </p>
+             
               
             </div>
             <div className="tp-hover-btn-wrapper tp-btn-bounce mb-30">
