@@ -38,7 +38,7 @@ const project_content = {
       hover_img: '/assets/img/portfolio/hover/prime8.png',
       title: 'Prime8',
       category: 'Visual Identity - UX/UI - Design System - eCommerce',
-      link:"/construcao"
+      link:"/prime8-project"
     },
    
   ],
@@ -124,7 +124,7 @@ const PortfolioArea = () => {
                   <div key={index} className="tp-portfolio-item mb-70 tp-hover-reveal-item tp-award-item"
                   onMouseMove={(event) => handleMouseMove(event, '.tp-hover-reveal-item')} >
                     
-                    <Link href="/construcao">
+                    <Link href={item.link}>
                       <div className={`tp-portfolio-thumb img-${item.id} w-img fix`}>
                         <div className="tp-portfolio-thumb-img include-bg d-none"
                           style={{ backgroundImage: `url(${item.bg_img})`}}></div>

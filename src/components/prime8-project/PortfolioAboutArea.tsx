@@ -3,9 +3,9 @@ import React from 'react';
 
 
 const portfolio_content = {
-  subtitle: "ABOUT THE PROJECT",
-  title: "Delivering Better Business News With an Improved User Experience.",
-  description: "Booster is a B2B platform focused on increasing the revenues and overall efficiency of enterprises, whether big or small. The company offers trade analytics, consultations, and other commerce-related services to help businesses convert their visitors into leads.",
+  subtitle: "Desafio",
+  title: "Lançar uma unidade de negócio independente para distribuição, com marca própria e canal de e-commerce exclusivo.",
+  description: "Prime8 - Distribuidora de TIC iniciou sua operação em 2023 e necessitava de um canal próprio de venda online. Sua entrada ao mercado deveria comunica-la como um grande player, visto seu portfólio com produtos da lider global em TI Huawei, smartphones realme e soluções de telefonia Intelbras.  Sendo assim, para ter certeza que estava direcionando corretamente o design ao público deste modelo de negócio, foram feitas pesquisas desk e sessões de entrevistas com usuários e pessoas chaves com experiência no negócio, o que trouxe insights e respostas importantes para as tomadas de decisões de branding e design.",
     
 }
 
@@ -20,21 +20,24 @@ const PortfolioAboutArea = () => {
             <div className="col-xl-5 col-lg-4">
               <div className="porfolio-details__left-info">
                 <div className="porfolio-details__left-content">
-                  <h4 className="porfolio-details__left-info-title">Clients</h4>
-                  <span>The Organic Crave</span>
+                  <h4 className="porfolio-details__left-info-title">Cliente</h4>
+                  <span>Prime8 - Distrubuidora de TIC</span>
                 </div>
                 <div className="porfolio-details__left-content">
-                  <h4 className="porfolio-details__left-info-title">Role in project</h4>
-                  <span>UX/UI Design - branding</span>
+                  <h4 className="porfolio-details__left-info-title">Posições</h4>
+                  <span>UX/UI Design - Branding</span>
+                  
+
                 </div>
                 <div className="porfolio-details__left-content">
-                  <h4 className="porfolio-details__left-info-title mb-20">Services</h4>
-                  <span>Branding</span>
-                  <span>Graphic Design</span>
-                  <span>Packaging</span>
+                  <h4 className="porfolio-details__left-info-title mb-20">Tecnologias/Softwares</h4>
+                  <span>Figma</span>
+                  <span>Photoshop</span>
+                  <span>Illustrator</span>
+                  <span>Magento</span>                  
                 </div>
                 <div className="porfolio-details__left-content">
-                  <h4 className="porfolio-details__left-info-title">Year</h4>
+                  <h4 className="porfolio-details__left-info-title">Ano</h4>
                   <span>2023</span>
                 </div>
               </div>
@@ -47,8 +50,8 @@ const PortfolioAboutArea = () => {
                   <p>{description}</p>
                 </div>
                 <div className="porfolio-details__right-btn">
-                  <a className="tp-btn-border-md" href="#">
-                    View Website
+                  <a className="tp-btn-border-md" href="https://www.prime8.com.br">
+                    Ver site
 
                     <span>
                       <svg width="11" height="11" viewBox="0 0 11 11" fill="none" xmlns="http://www.w3.org/2000/svg">

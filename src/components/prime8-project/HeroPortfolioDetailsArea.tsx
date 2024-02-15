@@ -5,7 +5,7 @@ import React from 'react';
 import Image from 'next/image';
 import { scroller } from 'react-scroll';
 
-import banner_img from "@/assets/img/portfolio/portfolio-details-img.jpg";
+import banner_img from "@/assets/img/prime8-project/poster-prime8.png";
 import PortfolioDownArrowIcon from '@/svg/icons/PortfolioDownArrowIcon';
 
 
@@ -28,7 +28,7 @@ const HeroPortfolioDetailsArea = () => {
           </div>
         </a>
         <div className="porfolio-details__hero-img">
-          <Image data-speed="1.1" src={banner_img} alt="image-here" />
+          <Image data-speed="1.1" src={banner_img} alt="mockup de telas do projeto"  />
         </div>
       </div>
     </>
