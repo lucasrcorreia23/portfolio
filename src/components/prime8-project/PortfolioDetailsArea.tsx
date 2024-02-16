@@ -86,7 +86,7 @@ const PortfolioDetailsArea = () => {
                     <p>{title}</p>
                   </div>
                 </div>
-                <div className="col-xl-12">
+                <div className="col-xl-12 mb-100">
                   <div className="porfolio-details__overview-thumb mb-100">
                     <Image
                       data-speed="0.6"
@@ -146,11 +146,11 @@ const PortfolioDetailsArea = () => {
               <div className="row align-items-center">
                 <div className="col-xl-4 col-lg-4 col-md-4 col-12">
                   <div className="porfolio-details__navigation-content text-center text-md-start">
-                    <a href="#">
+                    <a href="/construcao">
                       <i className="fa-regular fa-arrow-left"></i>
-                      <span>Preview</span>
+                      <span>Anterior</span>
                     </a>
-                    <h4>Crisis Cleanup</h4>
+                    <h4>Organiconecta</h4>
                   </div>
                 </div>
                 <div className="col-xl-4 col-lg-4 col-md-4 col-12">
@@ -193,11 +193,11 @@ const PortfolioDetailsArea = () => {
                 </div>
                 <div className="col-xl-4 col-lg-4 col-md-4 col-12">
                   <div className="porfolio-details__navigation-content next text-center text-md-end">
-                    <a href="#">
-                      <span>Next</span>
+                    <a href="/zoomtech-project">
+                      <span>Próximo</span>
                       <i className="fa-regular fa-arrow-right"></i>
                     </a>
-                    <h4>Tough Built</h4>
+                    <h4>ZOOMtecnologia</h4>
                   </div>
                 </div>
               </div>

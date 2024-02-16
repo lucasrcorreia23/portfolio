@@ -24,8 +24,8 @@ const PortfolioAboutArea = () => {
                   <span>ZOOMtecnologia</span>
                 </div>
                 <div className="porfolio-details__left-content">
-                  <h4 className="porfolio-details__left-info-title">Posição no projeto</h4>
-                  <span>UX Designer - Branding -<br/><br/> User Research - Developer</span>
+                  <h4 className="porfolio-details__left-info-title">Posição</h4>
+                  <span>UX/UI Designer - Branding -<br/><br/> User Researcher - Developer -<br/><br/>Content Strategy - UI design</span>
                 </div>
                 <div className="porfolio-details__left-content">
                   <h4 className="porfolio-details__left-info-title mb-20">Tecnologias/Softwares</h4>

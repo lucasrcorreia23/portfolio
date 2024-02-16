@@ -26,7 +26,7 @@ const portfolio_content = {
     },
     {
       id: 3,      
-      link:"/construcao",
+      link:"/prime8-project",
       img: portfolio_img_3,
       bg_img: "/assets/img/portfolio/prime8-home.jpg",
       title: "Prime8",

@@ -148,7 +148,7 @@ const PortfolioDetailsArea = () => {
               <div className="row align-items-center">
                 <div className="col-xl-4 col-lg-4 col-md-4 col-12">
                   <div className="porfolio-details__navigation-content text-center text-md-start">
-                    <a href="/">
+                    <a href="/prime8-project">
                       <i className="fa-regular fa-arrow-left"></i>
                       <span>Anterior</span>
                     </a>
@@ -173,7 +173,7 @@ const PortfolioDetailsArea = () => {
                 </div>
                 <div className="col-xl-4 col-lg-4 col-md-4 col-12">
                   <div className="porfolio-details__navigation-content next text-center text-md-end">
-                    <a href="/"><span>Próximo</span><i className="fa-regular fa-arrow-right"></i></a>
+                    <a href="/construcao"><span>Próximo</span><i className="fa-regular fa-arrow-right"></i></a>
                     <h4>
                       Organiconecta
                     </h4>
