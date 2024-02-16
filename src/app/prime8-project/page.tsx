@@ -6,7 +6,9 @@ import React from 'react';
 
 export const metadata = {
   title: "Projeto Prime8",
+  description: 'Lançamento uma unidade de negócio independente para distribuição, com marca própria e canal de e-commerce exclusivo.',
 };
+
 
 
 const index = () => {

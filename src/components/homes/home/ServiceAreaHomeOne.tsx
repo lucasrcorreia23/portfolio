@@ -39,7 +39,7 @@ const service_content = {
       id: 3,
       tab_id: "Three",
       question: "Visual Design",
-      answer: "Desenvolvimento e documentação de projetos e materiais visuais, tanto físicos quanto digitais, que expressem de forma consistente e coesa a identidade da marca",
+      answer: "Concepção de projetos e materiais visuais, tanto físicos quanto digitais, que expressem de forma consistente e coesa a identidade visual da companhia",
       some_features: [
         "Diretrizes de Identidade Visual",        
         "Design Gráfico",
