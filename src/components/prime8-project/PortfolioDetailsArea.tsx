@@ -31,7 +31,7 @@ const portfolio_detaisl_content: DataType = {
   title:
     "Com a jornada de compra, personas, mapa de empatia e análise das principais concorrentes documentados, começamos o processo de criação e parametrização das regras de aplicação da marca, incluindo palheta de cores, tipografia, elementos de apoio e princípios de design da unidade de negócio.",
     title2:"Definida a identidade visual e as diretrizes da marca, criamos um sistema de design para o produto e documentamos todas as etapas de manipulação e otimização do sistema. Com todos os componentes visuais prontos, começamos a criar protótipos baseados nas informações que coletamos. Realizamos ciclos semanais de iterações, que incluiam testes com usuários ao final de cada ciclo, para aprimorar continuamente com base no feedback dos stakeholders internos e usuários. ",
-    title3:"O objetivo era mapear a jornada de compra mais eficiente, sem atrito algum, que fosse objetiva e ao mesmo tempo transmitisse segurança tanto para o comprador quanto para os nossos sistemas internos de atendimento ao cliente e processos de pós-compra.",
+    title3:"O objetivo era mapear a jornada de compra mais eficiente, sem atrito algum, que fosse objetiva e ao mesmo tempo transmitisse segurança tanto para o comprador quanto para os nossos sistemas internos de atendimento ao cliente e processos de pós-venda.",
   features: [
     "Placeat laborum quam.",
     "Corporis explicabo voluptas exercitationem",
@@ -118,7 +118,7 @@ const PortfolioDetailsArea = () => {
                 <div className="col-xl-6 col-lg-6 ">
                   <div className="porfolio-details__right-info ">
                     <p>{title3}</p>
-                    <p>Esse processo incluiu garantir uma transação suave de pagamento e a aprovação de crédito, além de verificação dos CNAE em cada CNPJ.</p>
+                    <p>Esse processo incluia garantir uma transação de pagamento dentro do SLA determinado, aprovação de crédito e processo de verificação dos CNAE em cada CNPJ.</p>
                   </div>
                 </div>
                 </div>

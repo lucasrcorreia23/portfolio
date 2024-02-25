@@ -69,12 +69,12 @@ const Offcanvas2: React.FC<Offcanvas2Props> = ({ showCanvas, setShowCanvas }) =>
                 </div>
                 <div className="col-md-3 col-3">
                   <div className="tp-offcanvas-gallery-img fix h-10 w-10">
-                    <a className="h-10" href="/construcao"><Image src={offcanvas_2} alt="image" /></a>
+                    <a className="h-10" href="/prime8-project"><Image src={offcanvas_3} alt="image" /></a>
                   </div>
                 </div>
                 <div className="col-md-3 col-3">
                   <div className="tp-offcanvas-gallery-img fix h-10 w-10">
-                    <a className="h-10" href="/construcao"><Image src={offcanvas_3} alt="image" /></a>
+                    <a className="h-10" href="/construcao"><Image src={offcanvas_2} alt="image" /></a>
                   </div>
                 </div>
                 <div className="col-md-3 col-3">
