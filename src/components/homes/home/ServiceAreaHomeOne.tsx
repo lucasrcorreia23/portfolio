@@ -13,6 +13,18 @@ const service_content = {
     {
       id: 1,
       tab_id: "One",
+      question: "Visual Designer",
+      answer: "Criação e desdobramentos de KVs em motions, ads, banners, social media e materias para PDV que comuniquem de forma consistente e coerente com o posicionamento e identidade visual da companhia",
+      some_features: [
+        "Diretrizes de Identidade Visual",        
+        "Design Gráfico",
+        "Design Digital",
+        "Key Visual Craft",
+      ]
+    },
+    {
+      id: 2,
+      tab_id: "Two",
       question: "UI/UX Design",
       answer: "Concepção integral de produtos digitais, desde a fase inicial de descoberta, pesquisas quanti/quali/desk, análise de dados e informações, até a etapa de prototipagem, testes e iterações.",
       some_features: [
@@ -23,10 +35,10 @@ const service_content = {
       ]
     },
     {
-      id: 2,
-      tab_id: "Two",
-      question: "Desenvolvimento Front-end",
-      answer: "Entendimento dos requisitos, controle de versão, códigos limpos e com manutenibilidade",
+      id: 3,
+      tab_id: "Three",
+      question: "Desenvolvedor Front-end",
+      answer: "Requisitos da aplicação, controle de versão, códigos limpos e de fácil manutenção",
       some_features: [
         "HTML, CSS, JS, TS",
         "Next.js, React.js, Node.js",
@@ -35,27 +47,17 @@ const service_content = {
         "SQL",
       ]
     },
-    {
-      id: 3,
-      tab_id: "Three",
-      question: "Visual Design",
-      answer: "Concepção de projetos e materiais visuais, tanto físicos quanto digitais, que expressem de forma consistente e coesa a identidade visual da companhia",
-      some_features: [
-        "Diretrizes de Identidade Visual",        
-        "Design Gráfico",
-        "Design Digital",
-        "Brandbook",
-      ]
-    },
+    
     {
       id: 4,
       tab_id: "Four",
       question: "Marketing",
-      answer: "Entendimento do contexto para planejar e executar campanhas em funis de venda que tragam maior LTV e menor CAC para o negócio",
+      answer: "Execução e análise de campanhas publicitárias nos principais canais e plataformas de Ads seguindo estratégias eficazes de funis de venda",
       some_features: [
         "Inbound Marketing",
         "Advertisement",
-        "Social Media Platforms",
+        "Go-to-market",
+        "Social Media",
         "e-Commerce",
         
       ]
@@ -106,7 +108,7 @@ const ServiceAreaHomeOne = () => {
                       <span className="tp-services-capsule-item" style={{ backgroundColor: "#FF759C" }}>Prototipagem</span>
                     </p>
                     <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>Soluções de Design</span>
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>Key Visual</span>
                     </p>
                     <p data-tp-throwable-el="">
                       <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>Pesquisa</span>
@@ -124,7 +126,7 @@ const ServiceAreaHomeOne = () => {
                       <span className="tp-services-capsule-item" style={{ backgroundColor: "#19B3F1" }}>UI/UX Design</span>
                     </p>
                     <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FF759C" }}>Product Design</span>
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FF759C" }}>Visual Design</span>
                     </p>
                     <p data-tp-throwable-el="">
                       <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>Testes</span>

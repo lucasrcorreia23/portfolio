@@ -28,7 +28,7 @@ const hero_content: DataType = {
   ],
   sub_title: "Olá!",
   title_1: "Eu sou Lucas",
-  words: ["UX", "Product", "UI", "Visual", "Web","App", "Digital"],
+  words: ["Visual", "Digital", "UI", "UX", "Web","App", "Product"],
   title_2: "designer",
   sm_info: <>Apaixonado pela combinação de design, códigos, negócios & toda a interação entre eles.</>,
   btn_text: <>Meu <br />currículo  </>,

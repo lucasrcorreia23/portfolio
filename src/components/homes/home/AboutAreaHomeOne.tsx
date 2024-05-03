@@ -22,7 +22,7 @@ const about_content: DataType = {
   award_title: "",
   award_des: "",
   about_des: <>
-  Com mais de 5 anos de experiência no mercado, sou um UX/UI Designer e Desenvolvedor com versatilidade para marketing, design e programação.<br/><br/>Atualmente, sou discente no MBA de UX Design & Strategy da FIAP e Digital Designer na Nestlé.</>,
+  Com mais de 5 anos de experiência, sou um designer e desenvolvedor versátil com habilidades em marketing e negócios. Minha trajetória inclui passagens pela Nestlé, ZOOMtecnologia e Secretaria do Estado de SC.<br/><br/> Atualmente, estou cursando um MBA em UX Design & Strategy na FIAP e atuo como freelancer especializado em marcas, visual design e desenvolvimento web.</>,
   counter_data: [
     {
       id: 1,

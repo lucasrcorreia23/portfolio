@@ -169,7 +169,7 @@ const FooterOne = ({ style }: any) => {
                 </div>
                 <div className="col-xl-6 col-md-6">
                   <div className="tp-copyright-content-right text-center text-md-end">
-                    <span>{new Date().getFullYear()} Portfolio</span>
+                    <span>{new Date().getFullYear()} Abril</span>
                   </div>
                 </div>
               </div>
