@@ -110,7 +110,7 @@ const HeroAreaHome = () => {
                   <p>{sm_info}</p>
                   <div className="tp-hero-btn wrap">
                     <div className="tp-hover-btn-wrapper tp-btn-bounce">
-                      <Link href="assets/img/cv/Curriculo-Maio.pdf" target="_blank" className="tp-hover-btn tp-hover-btn-item tp-btn-circle square">
+                      <Link href="assets/img/cv/Curriculo.pdf" target="_blank" className="tp-hover-btn tp-hover-btn-item tp-btn-circle square">
                         <span className="tp-btn-circle-text" >
                           {btn_text}
                         </span>
