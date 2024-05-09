@@ -31,7 +31,7 @@ const portfolio_data:DataType = {
     {title: 'Softwares', subtitle: <>Adobe Photoshop, Adobe Illustrator <br /> Figma, After Effects </>},
     {title: 'Serviços', subtitle: <>Anúncios, PDV, marketing digital, <br /> e-commerce, trade, eventos</>},
   ],
-  subtitle: 'Descrição:',
+  subtitle: '',
   description: `Como Digital Designer, criei materiais de comunicação tanto online quanto offline, atendendo a uma ampla rede de parceiros, além de demandas de trade, eventos e marketing digital dos setores internos. Colaborei diretamente com agências internacionais como Ogilvy, Oliver e Publicis, adaptando os projetos às necessidades de internacionalização. Fui responsável pelo desenvolvimento, adaptação e criação de Key Visuals (KVs) para as Business Units (BUs) de Nestlé Professional e Nutrição Infantil. Além disso, trabalhei na otimização da jornada do cliente na plataforma de e-commerce Lojinha Baby & Me, visando melhorar a experiência do usuário e aumentar as conversões.
   `,
   portfolio_img: [portfolio_img_1, portfolio_img_5,  portfolio_img_3, portfolio_img_2, portfolio_img_4,portfolio_img_7,portfolio_img_6, ],
@@ -41,7 +41,7 @@ const portfolio_data:DataType = {
 const {
   title,
   info,
-  subtitle,
+ 
   description,
   portfolio_img
 } = portfolio_data
@@ -71,7 +71,7 @@ const PortfolioDetailsThreeArea = () => {
                     ))} 
                   </div>
                   <div className="tp-port-3-content-description mb-40">
-                    <span>{subtitle}</span>
+                    
                     <p>{description}</p>
                   </div>
                   
