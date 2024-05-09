@@ -58,7 +58,7 @@ const project_content = {
       bg_img: '/assets/img/nestle/capa2.jpg',
       hover_img:'',
       title: 'Nestlé',
-      category: 'Ads - Trade - eCommerce - Motion - Motion',
+      category: 'Ads - Trade - eCommerce - Motion - App',
       link:"/nestle"
     },
     

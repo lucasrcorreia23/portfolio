@@ -74,7 +74,7 @@ const PortfolioAreaHomeOne = () => {
                             <RitghtArrowIconPortfolio />
                           </span>
                           <div className="tp-portfolio-meta-hover">
-                            <span> Ads - Trade - eCommerce - Motion - Motion </span>
+                            <span> Ads - Trade - eCommerce - Motion - App </span>
                             <span className="tp-portfolio-meta-link">Ver projeto</span>
                           </div>
                         </div>

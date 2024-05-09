@@ -32,7 +32,7 @@ const portfolio_data:DataType = {
     {title: 'Serviços', subtitle: <>Anúncios, PDV, marketing digital, <br /> e-commerce, trade, eventos</>},
   ],
   subtitle: 'Descrição:',
-  description: `Como Designer Digital, desenvolvi materiais visuais tanto para plataformas online quanto offline, atendendo às necessidades específicas de internacionalização das demandas das agências Ogilvy, Oliver e Publicis. No decorrer deste projeto, assumi a responsabilidade pelo desenvolvimento, adaptação e criação de Key Visuals (KVs) para as Business Units (BUs) de Nestlé Professional e Nutrição Infantil. Além disso, atuei na otimização da jornada do cliente na plataforma de e-commerce Lojinha Baby & Me, com o objetivo de aprimorar a experiência do usuário e aumentar as conversões.
+  description: `Como Digital Designer, criei materiais de comunicação tanto online quanto offline, atendendo a uma ampla rede de parceiros, além de demandas de trade, eventos e marketing digital dos setores internos. Colaborei diretamente com agências internacionais como Ogilvy, Oliver e Publicis, adaptando os projetos às necessidades de internacionalização. Fui responsável pelo desenvolvimento, adaptação e criação de Key Visuals (KVs) para as Business Units (BUs) de Nestlé Professional e Nutrição Infantil. Além disso, trabalhei na otimização da jornada do cliente na plataforma de e-commerce Lojinha Baby & Me, visando melhorar a experiência do usuário e aumentar as conversões.
   `,
   portfolio_img: [portfolio_img_1, portfolio_img_5,  portfolio_img_3, portfolio_img_2, portfolio_img_4,portfolio_img_7,portfolio_img_6, ],
 
@@ -74,9 +74,7 @@ const PortfolioDetailsThreeArea = () => {
                     <span>{subtitle}</span>
                     <p>{description}</p>
                   </div>
-                  <div className="tp-port-2-title-box">
-                    <a className="tp-btn-4-1-price sm" href="#">Visit Link</a>
-                  </div>
+                  
                 </div>
               </div>
               <div className="col-xl-6 col-lg-7">

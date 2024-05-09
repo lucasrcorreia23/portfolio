@@ -33,6 +33,7 @@ if (typeof window !== "undefined") {
   require("bootstrap/dist/js/bootstrap");
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Wrapper = ({ children }: any) => {
   const pathname = usePathname();
 
@@ -60,7 +61,7 @@ const Wrapper = ({ children }: any) => {
   useEffect(() => {
     // Sticky section
     if (typeof window !== "undefined") {
-      let mm = gsap.matchMedia();
+      const mm = gsap.matchMedia();
   
       // Para telas com largura de pelo menos 1199px
       mm.add("(min-width: 1199px) and (max-width: 1599px)", () => {

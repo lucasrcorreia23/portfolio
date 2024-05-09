@@ -146,11 +146,11 @@ const PortfolioDetailsArea = () => {
               <div className="row align-items-center">
                 <div className="col-xl-4 col-lg-4 col-md-4 col-12">
                   <div className="porfolio-details__navigation-content text-center text-md-start">
-                    <a href="/construcao">
+                    <a href="/nestle">
                       <i className="fa-regular fa-arrow-left"></i>
                       <span>Anterior</span>
                     </a>
-                    <h4>Organiconecta</h4>
+                    <h4>Nestlé</h4>
                   </div>
                 </div>
                 <div className="col-xl-4 col-lg-4 col-md-4 col-12">
@@ -197,7 +197,7 @@ const PortfolioDetailsArea = () => {
                       <span>Próximo</span>
                       <i className="fa-regular fa-arrow-right"></i>
                     </a>
-                    <h4>ZOOMtecnologia</h4>
+                    <h4>ZOOMtech</h4>
                   </div>
                 </div>
               </div>
