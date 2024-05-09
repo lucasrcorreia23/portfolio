@@ -1,12 +1,12 @@
 "use client";
 import { useEffect } from "react";
 import { animationCreate } from "@/utils/utils";
-import { throwableAnimation } from "@/utils/throwableAnimation"; 
+import { throwableAnimation } from "@/utils/throwableAnimation";
 import ScrollToTop from "@/components/common/ScrollToTop";
-import { ToastContainer } from 'react-toastify';
-import AnimatedCursor from "react-animated-cursor";
+import { ToastContainer } from "react-toastify";
 import { usePathname } from "next/navigation";
-import { gsap } from 'gsap';
+import { gsap } from "gsap";
+ 
 
 import animationTitle from "@/utils/animationTitle";
 import animationTitleChar from "@/utils/animationTitleChar";
@@ -17,18 +17,25 @@ import linesAnimation from "@/utils/linesAnimation";
 import { buttonAnimation } from "@/utils/buttonAnimation";
 import { scrollSmother } from "@/utils/scrollSmother";
 import { scrollTextAnimation } from "@/utils/scrollTextAnimation";
+import textInvert from "@/utils/textInvert";
+import ContextProvider from "@/context/app-context";
 
-import { ScrollSmoother, ScrollToPlugin, ScrollTrigger, SplitText } from "@/plugins";
-gsap.registerPlugin(ScrollSmoother,ScrollTrigger,ScrollToPlugin,SplitText);
+import {
+  ScrollSmoother,
+  ScrollToPlugin,
+  ScrollTrigger,
+  SplitText,
+} from "@/plugins";
+
+gsap.registerPlugin(ScrollSmoother, ScrollTrigger, ScrollToPlugin, SplitText);
 
 if (typeof window !== "undefined") {
   require("bootstrap/dist/js/bootstrap");
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Wrapper = ({ children }: any) => {
   const pathname = usePathname();
- 
+
   useEffect(() => {
     // animation
     const timer = setTimeout(() => {
@@ -37,8 +44,6 @@ const Wrapper = ({ children }: any) => {
 
     return () => clearTimeout(timer);
   }, []);
-
-
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -52,6 +57,35 @@ const Wrapper = ({ children }: any) => {
     }
   }, []);
 
+  useEffect(() => {
+    // Sticky section
+    if (typeof window !== "undefined") {
+      let mm = gsap.matchMedia();
+  
+      // Para telas com largura de pelo menos 1199px
+      mm.add("(min-width: 1199px) and (max-width: 1599px)", () => {
+        ScrollTrigger.create({
+          trigger: ".tp-port-3-area",
+          start: "top -80%",
+          end: "bottom 160%",
+          pin: ".tp-port-3-content-left",
+          pinSpacing: false,
+        });
+      });
+  
+      // Para telas com largura de pelo menos 1400px
+      mm.add("(min-width: 1600px)", () => {
+        ScrollTrigger.create({
+          trigger: ".tp-port-3-area",
+          start: "top -55%", // Ajuste conforme necessário para telas maiores
+          end: "bottom 120%", // Ajuste conforme necessário para telas maiores
+          pin: ".tp-port-3-content-left",
+          pinSpacing: false,
+        });
+      });
+    }
+  }, []);
+ 
 
   useEffect(() => {
     throwableAnimation();
@@ -64,28 +98,17 @@ const Wrapper = ({ children }: any) => {
     buttonAnimation();
     scrollSmother();
     scrollTextAnimation();
-  },[pathname])
+    textInvert();
+  }, [pathname]);
 
-
-  return <>
-    {children}
-
-    
-    <ToastContainer position="top-right" />
-    <AnimatedCursor
-      innerSize={0}
-      outerSize={15}
-      innerScale={1}
-      outerScale={1.7}
-      outerAlpha={0}
-      outerStyle={{
-        backgroundColor: 'rgba(255, 255, 255, 0.5)',
-        cursor: 'pointer',
-      }}
-      showSystemCursor={true}
-    />
-    <ScrollToTop />  
-  </>;
+  return (
+    <ContextProvider>
+      {children}
+      <ToastContainer position="top-right" />
+     
+      <ScrollToTop />
+    </ContextProvider>
+  );
 };
 
 export default Wrapper;

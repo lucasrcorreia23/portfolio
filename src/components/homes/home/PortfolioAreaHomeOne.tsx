@@ -4,7 +4,7 @@ import Image from 'next/image';
 import React from 'react';
 
 import portfolio_img_1 from "@/assets/img/portfolio/ZOOMtech-home.jpg";
-import portfolio_img_2 from "@/assets/img/portfolio/organiconecta-home.jpg";
+import portfolio_img_2 from "@/assets/img/nestle/capa2.jpg";
 import portfolio_img_3 from "@/assets/img/portfolio/prime8-home.jpg";
 
 import UpArrowIconPortfolio from '@/svg/home/PortfolioIcons/UpArrowIconPortfolio';
@@ -58,23 +58,23 @@ const PortfolioAreaHomeOne = () => {
                 </div>
                 <div className="tp-portfolio-item-wrapper">
                   <div className="tp-portfolio-item mb-70">
-                    <Link href="/construcao">
+                    <Link href="/nestle">
                       <div className="tp-portfolio-thumb img-1 w-img fix ">
                         <div className="tp-portfolio-thumb-img include-bg d-none"
-                          style={{ backgroundImage: 'url(/assets/img/portfolio/Home.png)' }}></div>
+                          style={{ backgroundImage: 'url(/assets/img/nestle/capa2.jpg)' }}></div>
                         <div className="tp-portfolio-thumb-img ">
                           <Image data-speed="0.85" style={{ objectFit: 'cover', height: "auto" }} src={portfolio_img_2} alt="image-here" />
                         </div>
                       </div>
                       <div className="tp-portfolio-content">
-                        <h3 className="tp-portfolio-title">Organiconecta </h3>
+                        <h3 className="tp-portfolio-title">Nestlé </h3>
                         <div className="tp-portfolio-meta d-flex align-items-center">
                           
                           <span className="tp-portfolio-meta-arrow">
                             <RitghtArrowIconPortfolio />
                           </span>
                           <div className="tp-portfolio-meta-hover">
-                            <span> Startup - Visual Identity - UI Design - UX Research - Website </span>
+                            <span> Ads - Trade - eCommerce - Motion - Motion </span>
                             <span className="tp-portfolio-meta-link">Ver projeto</span>
                           </div>
                         </div>

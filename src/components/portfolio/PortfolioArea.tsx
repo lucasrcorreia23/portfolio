@@ -7,7 +7,7 @@ import project_img_1 from '@/assets/img/portfolio/organiconecta-home.jpg';
 import project_img_2 from '@/assets/img/portfolio/prime8-home.jpg';
 
 import project_img_4 from '@/assets/img/portfolio/ZOOMtech-home.jpg';
-import project_img_5 from '@/assets/img/portfolio/brbassessoria-home.jpg';
+import project_img_5 from '@/assets/img/nestle/capa2.jpg';
 
 import { gsap } from 'gsap';
 
@@ -55,11 +55,11 @@ const project_content = {
     {
       id: 4,
       img: project_img_5,
-      bg_img: '/assets/img/portfolio/brbassessoria-home.jpg',
-      hover_img:'/assets/img/portfolio/hover/brbassessoria.png',
-      title: 'BRB Assessoria',
-      category: 'Naming - Branding - UX/UI - Website',
-      link:"/construcao"
+      bg_img: '/assets/img/nestle/capa2.jpg',
+      hover_img:'',
+      title: 'Nestlé',
+      category: 'Ads - Trade - eCommerce - Motion - Motion',
+      link:"/nestle"
     },
     
   ]
