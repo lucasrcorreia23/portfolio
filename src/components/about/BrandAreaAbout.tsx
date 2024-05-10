@@ -2,14 +2,14 @@ import React from 'react';
 import Zoomtech from '@/svg/about/zoomtech';
 import Ecosintese from '@/svg/about/ecosintese';
 import Organiconecta from '@/svg/about/organiconecta';
-import Brbassessoria from '@/svg/about/brbassessoria';
+import Nestle from '@/svg/about/nestle';
 import Prime8 from '@/svg/about/prime8';
 
 
 
 const brand_imgs = [
   {icon: <Zoomtech />, delay: '.1s'}, 
-  {icon: <Brbassessoria />, delay: '.4s'}, 
+  {icon: <Nestle />, delay: '.4s'}, 
   {icon: <Ecosintese />, delay: '.2s', link:"https://www.ecosintese.com.br"}, 
   {icon: <Organiconecta />, delay: '.5s'}, 
   {icon: <Prime8 />, delay: '.8s', link:"https://www.prime8.com.br"}, 

@@ -10,7 +10,7 @@ import logo_black from "@/assets/img/logo/logo-black.png";
 import offcanvas_1 from "@/assets/img/portfolio/ZOOMtech-home.jpg";
 import offcanvas_2 from "@/assets/img/portfolio/organiconecta-home.jpg";
 import offcanvas_3 from "@/assets/img/portfolio/prime8-home.jpg";
-import offcanvas_4 from '@/assets/img/portfolio/brbassessoria-home.jpg';
+import offcanvas_4 from '@/assets/img/nestle/capa2.jpg';
 
 interface Offcanvas2Props {
   showCanvas: boolean;
@@ -62,11 +62,7 @@ const Offcanvas2: React.FC<Offcanvas2Props> = ({ showCanvas, setShowCanvas }) =>
             </div>
             <div className="tp-offcanvas-gallery">
               <div className="row gx-2">
-                <div className="col-md-3 col-3">
-                  <div className="tp-offcanvas-gallery-img fix h-10 w-10">
-                    <a className="h-10" href="/zoomtech-project"><Image src={offcanvas_1} alt="image" /></a>
-                  </div>
-                </div>
+                
                 <div className="col-md-3 col-3">
                   <div className="tp-offcanvas-gallery-img fix h-10 w-10">
                     <a className="h-10" href="/prime8-project"><Image src={offcanvas_3} alt="image" /></a>
@@ -74,14 +70,21 @@ const Offcanvas2: React.FC<Offcanvas2Props> = ({ showCanvas, setShowCanvas }) =>
                 </div>
                 <div className="col-md-3 col-3">
                   <div className="tp-offcanvas-gallery-img fix h-10 w-10">
-                    <a className="h-10" href="/construcao"><Image src={offcanvas_2} alt="image" /></a>
+                    <a className="h-10" href="/nestle"><Image src={offcanvas_4} alt="image" /></a>
+                  </div>
+                </div>
+                
+                <div className="col-md-3 col-3">
+                  <div className="tp-offcanvas-gallery-img fix h-10 w-10">
+                    <a className="h-10" href="/zoomtech-project"><Image src={offcanvas_1} alt="image" /></a>
                   </div>
                 </div>
                 <div className="col-md-3 col-3">
                   <div className="tp-offcanvas-gallery-img fix h-10 w-10">
-                    <a className="h-10" href="/construcao"><Image src={offcanvas_4} alt="image" /></a>
+                    <a className="h-10" href="/construcao"><Image src={offcanvas_2} alt="image" /></a>
                   </div>
                 </div>
+                
               </div>
             </div>
             <div className="tp-offcanvas-contact-2">
