@@ -1,7 +1,7 @@
 
 import React from 'react';
 
-import Count from '@/components/common/Count';
+//import Count from '@/components/common/Count';
 
 
 type DataType = {
@@ -22,7 +22,10 @@ const about_content: DataType = {
   award_title: "",
   award_des: "",
   about_des: <>
-  Com mais de 5 anos de experiência, sou um designer e desenvolvedor versátil com habilidades em marketing e negócios. Minha trajetória inclui passagens pela Nestlé, ZOOMtecnologia e Secretaria do Estado de SC.<br/><br/> Atualmente, estou cursando um MBA em UX Design & Strategy na FIAP e atuo como freelancer especializado em marcas, visual design e desenvolvimento web.</>,
+  Com mais de 6 anos de experiência como designer e 2 com produto, sempre trabalhei em ambientes colaborativos e de ritmo acelerado.
+
+  <br/><br/>A paixão pelo universo tech começou cedo nos jogos online, onde me destaquei e tive contato com diversos paises e culturas digitalmente.
+  <br/><br/>Minha trajetória inclui passagens pela Nestlé, ZOOMtecnologia, Grupo Rumo.On e Secretaria do Estado de SC. Sou formado em Design com MBA em Estratégia e Design de UX pela FIAP. <br/><br/>Como destaque, participei da concepção e evolução de produtos inovadores de IA em diferentes mercados: dados, contábil, telemarketing e saúde. </>,
   counter_data: [
     {
       id: 1,
@@ -42,7 +45,7 @@ const about_content: DataType = {
   ],
 }
 
-const { subtitle,about_des, counter_data } = about_content
+const { subtitle,about_des,  } = about_content
 
 const AboutAreaHomeOne = () => {
   return (
@@ -74,6 +77,7 @@ const AboutAreaHomeOne = () => {
                   <div className="tp-about-desc-content mb-40">
                     <p>{about_des}</p>
                   </div>
+                  {/*
                   <div className="tp-about-fact">
                     <div className="row">
                       {counter_data.map((item, index) => (
@@ -89,7 +93,7 @@ const AboutAreaHomeOne = () => {
                         </div>
                       ))} 
                     </div>
-                  </div>
+                  </div>*/}
                 </div>
               </div>
             </div>

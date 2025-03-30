@@ -7,38 +7,39 @@ import React, {useState } from 'react';
 
 const service_content = {
   subtitle: "",
-  title: <>Competências <br />e interesses.</>,
-  sm_des: <>Com background em estratégias de marketing ajudo a impulsionar negócios com soluções digitais .</>,
+  title: <>Competencias, habilidades</>,
+  sm_des: <>E uma brincadeirinha com os assuntos que mais me interessam </>,
   accordion_data: [
     {
       id: 1,
       tab_id: "One",
-      question: "Visual Designer",
-      answer: "Criação e desdobramentos de KVs em motions, ads, banners, social media e materias para PDV que comuniquem de forma consistente e coerente com o posicionamento e identidade visual da companhia",
+      question: "Product Designer/UX Designer",
+      answer: "Atuação completa do ciclo de produtos digitais: discovery, design, delivery, GTM e acompanhamento métricas de sucesso.",
       some_features: [
-        "Diretrizes de Identidade Visual",        
-        "Design Gráfico",
-        "Design Digital",
-        "Key Visual Craft",
+        "Prototipação e Wireframe",        
+        "Pesquisas Quanti., Quali., Desk",
+        "Testes e jornada do usuário",
+        "Design System, DesignOps",
+        "Métricas de sucesso",
       ]
     },
     {
       id: 2,
       tab_id: "Two",
-      question: "UI/UX Design",
-      answer: "Concepção integral de produtos digitais, desde a fase inicial de descoberta, pesquisas quanti/quali/desk, análise de dados e informações, até a etapa de prototipagem, testes e iterações.",
-      some_features: [
-        "Pesquisa e Documentação",
-        "Prototipação",        
-        "Testes",
-        "Iterações",
+      question: "Gestão de Produto",
+      answer: "Compreensão das boas práticas ágeis e rituais em gestão de produto.",
+      some_features: [       
+        "BDD, Adaptabilidade, Lean",        
+        "Aprendizado contínuo e iterações",
+        "Documentação",
+        "Jira, Miro, Gitlab",
       ]
     },
     {
       id: 3,
       tab_id: "Three",
       question: "Desenvolvedor Front-end",
-      answer: "Requisitos da aplicação, controle de versão, códigos limpos e de fácil manutenção",
+      answer: "Compreensão e vivência nas principais tecnologias, frameworks e bibliotecas para estreita colaboração",
       some_features: [
         "HTML, CSS, JS, TS",
         "Next.js, React.js, Node.js",
@@ -52,13 +53,9 @@ const service_content = {
       id: 4,
       tab_id: "Four",
       question: "Marketing",
-      answer: "Execução e análise de campanhas publicitárias nos principais canais e plataformas de Ads seguindo estratégias eficazes de funis de venda",
+      answer: "Acompanhamento e desenvolvimento do Go-To-Market junto ao departamento para garantir a mensagem da marca e sucesso do produto",
       some_features: [
-        "Inbound Marketing",
-        "Advertisement",
-        "Go-to-market",
-        "Social Media",
-        "e-Commerce",
+       
         
       ]
     }
@@ -79,14 +76,14 @@ const ServiceAreaHomeOne = () => {
     <>
       <section className="tp-services-area tp-sv tp-services-bg-text-animation fix" id="tp-sv">
         <div className="container container-large">
-          <div className="tp-services-inner pb-195 p-relative z-index-1">
+          <div className="tp-services-inner p-relative z-index-1">
 
             <span className="tp-services-inner-border tp-vertical-line transition-3"></span>
             <span className="tp-services-inner-border right tp-vertical-line transition-3"></span>
 
-            <div className="tp-services-bottom-text tp-services-bg-text">
+           {/*} <div className="tp-services-bottom-text tp-services-bg-text">
               <p>Oportunidades</p>
-            </div>
+            </div> */}
             <div className="row gx-0">
 
               <div className="col-xl-6 col-lg-7">
@@ -108,16 +105,22 @@ const ServiceAreaHomeOne = () => {
                       <span className="tp-services-capsule-item" style={{ backgroundColor: "#FF759C" }}>Prototipagem</span>
                     </p>
                     <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>Key Visual</span>
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>IA</span>
                     </p>
                     <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>Pesquisa</span>
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>Discovery</span>
                     </p>
                     <p data-tp-throwable-el="">
                       <span className="tp-services-capsule-item" style={{ backgroundColor: "#00CC97" }}>Estratégia de Marca</span>
                     </p>
                     <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>Documentação</span>
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#00CC97" }}>Usuários</span>
+                    </p>
+                    <p data-tp-throwable-el="">
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>Métricas</span>
+                    </p>
+                    <p data-tp-throwable-el="">
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>Problemas</span>
                     </p>
                     <p data-tp-throwable-el="">
                       <span className="tp-services-capsule-item" style={{ backgroundColor: "#00CC97" }}>Jornada de Compra</span>
@@ -126,13 +129,16 @@ const ServiceAreaHomeOne = () => {
                       <span className="tp-services-capsule-item" style={{ backgroundColor: "#19B3F1" }}>UI/UX Design</span>
                     </p>
                     <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FF759C" }}>Visual Design</span>
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FF759C" }}>KPI</span>
                     </p>
                     <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>Testes</span>
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#19B3F1" }}>User Testing</span>
                     </p>
                     <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>Marketing</span>
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#19B3F1" }}>Product Design</span>
+                    </p>
+                    <p data-tp-throwable-el="">
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#19B3F1" }}>Rascunhoframe</span>
                     </p>
                    
                   </div>

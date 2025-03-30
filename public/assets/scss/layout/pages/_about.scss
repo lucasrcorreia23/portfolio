@@ -16,7 +16,8 @@
             left: 0;
             height: 1px;
             width: 100%;
-            background-color: rgba($color: $white, $alpha: 1);
+            background-color: rgba($color: $white, $alpha: 0.3);
+          
         }
         @media #{$lg}{
             padding-left: 35px;
@@ -91,7 +92,7 @@
             & p{
                 font-size: 26px;
                 color: rgba($color: $white, $alpha: .9);
-                line-height: 1.3;
+                line-height: 1.5;
                 @media #{$lg}{
                     font-size: 21px;
                 }

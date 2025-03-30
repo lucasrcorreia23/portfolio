@@ -22,15 +22,15 @@ interface DataType {
 
 const hero_content: DataType = {
   slide_text: [
-    "Designer",
-    "Desenvolvedor",
+    "Product Designer",
     "Negócios",
+    "Developer",
   ],
   sub_title: "Olá!",
   title_1: "Eu sou Lucas",
-  words: ["Visual", "Digital", "UI", "UX", "Web","App", "Product"],
+  words: ["Product", "UX", "UI", "Visual","Web",],
   title_2: "designer",
-  sm_info: <>Apaixonado pela combinação de design, códigos, negócios & toda a interação entre eles.</>,
+  sm_info: <>Uma paixão: usar design, código e negócios para resolver desafios reais. </>,
   btn_text: <>Meu <br />currículo  </>,
 
 }

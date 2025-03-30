@@ -24,10 +24,10 @@ const HomeOne = () => {
         <div id="smooth-content">
           <main>
             <HeroAreaHome />
-            
+            <AboutAreaHomeOne />
             <ServiceAreaHomeOne />
             
-            <AboutAreaHomeOne />
+           
             <PortfolioAreaHomeOne />
             <SkillAreaHomeOne />
             
