@@ -14,7 +14,7 @@ const service_content = {
       id: 1,
       tab_id: "One",
       question: "Product Designer/UX Designer",
-      answer: "Atuação completa do ciclo de produtos digitais: discovery, design, delivery, GTM e acompanhamento métricas de sucesso.",
+      answer: "Atuação completa do ciclo de produtos digitais: discovery, design, delivery, GTM e acompanhamento das métricas de sucesso.",
       some_features: [
         "Prototipação e Wireframe",        
         "Pesquisas Quanti., Quali., Desk",

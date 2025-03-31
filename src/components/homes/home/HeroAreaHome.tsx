@@ -30,7 +30,7 @@ const hero_content: DataType = {
   title_1: "Eu sou Lucas",
   words: ["Product", "UX", "UI", "Visual","Web",],
   title_2: "designer",
-  sm_info: <>Uma paixão: usar design, código e negócios para resolver desafios reais. </>,
+  sm_info: <>Um apaixonado por usar design, código e negócios para solucionar desafios humanos. </>,
   btn_text: <>Meu <br />currículo  </>,
 
 }

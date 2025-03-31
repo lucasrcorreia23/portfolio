@@ -22,9 +22,11 @@ const about_content: DataType = {
   award_title: "",
   award_des: "",
   about_des: <>
-  Com mais de 6 anos de experiência como designer e 2 com produto, sempre trabalhei em ambientes colaborativos e de ritmo acelerado.
 
-  <br/><br/>A paixão pelo universo tech começou cedo nos jogos online, onde me destaquei e tive contato com diversos paises e culturas digitalmente.
+A paixão pelo universo tech começou cedo nos jogos online, onde me destaquei e tive contato com diversos paises e culturas digitalmente.
+  
+
+  <br/><br/>Com mais de 6 anos de experiência como designer e 2 com produto, sempre trabalhei em ambientes colaborativos e de ritmo acelerado.
   <br/><br/>Minha trajetória inclui passagens pela Nestlé, ZOOMtecnologia, Grupo Rumo.On e Secretaria do Estado de SC. Sou formado em Design com MBA em Estratégia e Design de UX pela FIAP. <br/><br/>Como destaque, participei da concepção e evolução de produtos inovadores de IA em diferentes mercados: dados, contábil, telemarketing e saúde. </>,
   counter_data: [
     {
