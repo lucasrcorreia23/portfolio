@@ -7,7 +7,7 @@ import React, {useState } from 'react';
 
 const service_content = {
   subtitle: "",
-  title: <>Competencias, habilidades</>,
+  title: <>Competências, habilidades</>,
   sm_des: <>E uma brincadeirinha com os assuntos que mais me interessam </>,
   accordion_data: [
     {
@@ -99,22 +99,25 @@ const ServiceAreaHomeOne = () => {
 
                   <div className="tp-services-capsule-item-wrapper">
                     <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#00CC97" }}>Front-end</span>
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#19B3F1",color: "#121212" }}>Front-end</span>
                     </p>
                     <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FF759C" }}>Prototipagem</span>
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59",color: "#121212" }}>Prototipagem</span>
                     </p>
                     <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>IA</span>
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#19B3F1",color: "#121212" }}>IA</span>
                     </p>
                     <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>Discovery</span>
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#00CC97", color: "#121212" }}>Discovery</span>
                     </p>
                     <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#00CC97" }}>Estratégia de Marca</span>
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#00CC97", color: "#121212" }}>Ideação</span>
                     </p>
                     <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#00CC97" }}>Usuários</span>
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#00CC97",color: "#121212" }}>Posicionamento de Marca</span>
+                    </p>
+                    <p data-tp-throwable-el="">
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59",color: "#121212" }}>Pessoas</span>
                     </p>
                     <p data-tp-throwable-el="">
                       <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>Métricas</span>
@@ -123,22 +126,19 @@ const ServiceAreaHomeOne = () => {
                       <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59", color: "#121212" }}>Problemas</span>
                     </p>
                     <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#00CC97" }}>Jornada de Compra</span>
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#00CC97",color: "#121212" }}>Jornada de Compra</span>
+                    </p>                   
+                    <p data-tp-throwable-el="">
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59",color: "#121212" }}>KPI</span>
                     </p>
                     <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#19B3F1" }}>UI/UX Design</span>
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#00CC97",color: "#121212" }}>User Testing</span>
                     </p>
                     <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FF759C" }}>KPI</span>
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FFDB59",color: "#121212" }}>Product Design</span>
                     </p>
                     <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#19B3F1" }}>User Testing</span>
-                    </p>
-                    <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#19B3F1" }}>Product Design</span>
-                    </p>
-                    <p data-tp-throwable-el="">
-                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#19B3F1" }}>Rascunhoframe</span>
+                      <span className="tp-services-capsule-item" style={{ backgroundColor: "#FF759C",color: "#121212" }}>Games</span>
                     </p>
                    
                   </div>
