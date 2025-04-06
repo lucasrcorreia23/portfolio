@@ -2,12 +2,12 @@ import React from "react";
 import Image, { StaticImageData } from "next/image";
 
 import portfolio_details_img_1 from "@/assets/img/decision-suite/take-01.png";
-import portfolio_img_1 from "@/assets/img/decision-suite/take-01.png";
-import portfolio_img_4 from "@/assets/img/prime8-project/tablet-1.jpg";
-import portfolio_img_2 from "@/assets/img/prime8-project/id-visual-2.png";
+import portfolio_img_1 from "@/assets/img/decision-suite/design-process.jpg";
+import portfolio_img_4 from "@/assets/img/decision-suite/design-process-2.jpg";
+import portfolio_img_2 from "@/assets/img/decision-suite/design-process-3.jpg";
 
-import portfolio_img_5 from "@/assets/img/prime8-project/foto1.jpg";
-import portfolio_img_6 from "@/assets/img/prime8-project/foto2.png";
+import portfolio_img_5 from "@/assets/img/decision-suite/final-01.jpg";
+import portfolio_img_6 from "@/assets/img/decision-suite/final-02.png";
 import portfolio_img_7 from "@/assets/img/prime8-project/foto6.png";
 import portfolio_img_8 from "@/assets/img/prime8-project/foto5.png";
 import portfolio_img_9 from "@/assets/img/prime8-project/foto4.png";
@@ -30,13 +30,13 @@ interface DataType {
 }
 
 const portfolio_detaisl_content: DataType = {
-  title: `O primeiro passo foi, junto com meu PM, planejar os temas que gostaríamos de aprofundar nas entrevistas exploratórias, utilizando a matriz CSD para mapear certezas, suposições e dúvidas. Com a matriz documentada, buscamos realizar, primeiramente, entrevistas com quem está mais próximo e se relaciona diretamente com a persona que mais sente essas dores: nossos especialistas em dados e principais stakeholders do projeto.<br /><br /> Após isso, conversamos com alguns potenciais clientes para entender suas necessidades na prática e, com isso, ouvimos falas que validaram várias das hipóteses que já tínhamos sobre os principais desafios enfrentados por esse mercado.`,
+  title: `Meu primeiro passo foi, junto do PM, planejar os temas que gostaríamos de aprofundar nas entrevistas exploratórias, utilizando a matriz CSD para mapear certezas, suposições e dúvidas. Com a matriz documentada, buscamos realizar, primeiramente, entrevistas com quem está mais próximo e se relaciona diretamente com a persona que mais sente essas dores: nossos especialistas em dados e principais stakeholders do projeto.<br /><br /> Após isso, conversamos com alguns potenciais clientes para entender suas necessidades na prática e, com isso, ouvimos falas que validaram várias das hipóteses que já tínhamos sobre os principais desafios enfrentados por esse mercado.`,
   title2:
-    "Agora, com informações em mãos fomos para o processo de brainstorming de ideias para o produto, seguido de clusterização das ideias relevantes e aplicação de MoSCoW para criar a esteira de priorização.",
+    "Com informações em mãos fizemos um brainstorming de ideias para o produto, seguido de clusterização das ideias mais relevantes e aplicação de MoSCoW para criar a esteira de priorização.",
   title3:
     "De forma geral, começava mapeando um fluxo funcional para entender e delimitar o escopo daquela parte da aplicação. Em seguida, criava os primeiros wireframes (baixa fidelidade) para validar rapidamente com as pessoas envolvidas. <br /><br />A partir desses alinhamentos, evoluía para o protótipo de alta fidelidade, refinando em ciclos de iteração até chegarmos em documentação e acompanhamento de handoff para uma entrega sólida e alinhada com os objetivos do produto, negócio e engenharia.",
   step4:
-    "Este projeto me proporcionou a oportunidade de exercitar pensamento crítico, atenção aos detalhes e uma abordagem de design centrada no ser humano, sempre considerando como tornar uma plataforma complexa e avançada em uma solução simples e de baixa curva de aprendizagem do usuário. Tive muita liberdade em explorar interações e padrões inovadores, além de investigar casos extremos que não haviam sido previstos no briefing inicial. A colaboração próxima com a engenharia de dados me permitiu entender melhor a lógica e chamadas de visualização dos dashboards e como considerar exceções na construção do Design System do produto.",
+    "Este projeto me proporcionou a oportunidade de exercitar pensamento crítico, atenção aos detalhes e me mostrou a importância de trazer os stakeholder para perto na construção do produto, visando a tradução de informações densas e complexas em uma solução simples e de baixa curva de aprendizagem do usuário.<br /><br /> Tive muita liberdade em explorar interações e padrões inovadores, além de investigar casos extremos que não haviam sido previstos no briefing inicial. A colaboração próxima com a engenharia de dados me permitiu entender melhor a lógica e chamadas de visualização dos dashboards e como considerar exceções na construção do Design System do produto.",
   step5:
     "Além de tudo, tive a oportunidade de trabalhar com agentes de IA utilizando as plataformas n8n e Dify, o que ampliou significativamente minha visão sobre automações inteligentes e experiências assistidas. Também colaborei com grandes parceiros da Qlik na geração de dashboards personalizados e nativos, aprofundando meu entendimento em soluções de Business Intelligence aplicadas a contextos reais.",
   features: [
@@ -91,42 +91,44 @@ const PortfolioDetailsArea = () => {
             </div>
             <div className="porfolio-details__overview-box mt-120 pb-100  ">
               <div className="row">
-                <div className="col-xl-5 col-lg-4 ">
+                <div className="col-xl-3 col-lg-2 ">
                   <div className="porfolio-details__overview-left">
                     <h4 className="porfolio-details__overview-title mb-40">
-                      Descobertas
+                      Design Process
                     </h4>
                   </div>
                 </div>
-                <div className="col-xl-7 col-lg-8">
+                <div className="col-xl-9 col-lg-10">
                   <div className="porfolio-details__right-info mb-100">
                     <p dangerouslySetInnerHTML={{ __html: title }} />
+                    <div className="service-details__fea-list">
                     <ul>
                       <li>
-                        Falta a informação correta e clara para tomar as
-                        decisões que preciso
+                        "Falta a informação correta e clara para tomar as
+                        decisões que preciso"
                       </li>
                       <li>
-                        Tenho a informação, mas a visualização em planilha não
-                        me dá um contexto completo
+                        "Tenho a informação, mas a visualização em planilha não
+                        me dá um contexto completo"
                       </li>
                       <li>
-                       Tenho o mesmo tipo de informação em vários locais
-                        diferentes e não sei qual é verdadeira
+                      "Tenho o mesmo tipo de informação em vários locais
+                        diferentes e não sei qual é verdadeira"
                       </li>
                       <li>
-                        Tenho muitos painéis na empresa, mas não com as
-                        informações que preciso
+                      "Tenho muitos painéis na empresa, mas não com as
+                        informações que preciso"
                       </li>
                       <li>
-                        Custa muito caro ter um escritório de ciência de dados
-                        na empresa
+                      "Custa muito caro ter um escritório de ciência de dados
+                        na empresa"
                       </li>
                       <li>
-                        Não tenho um time capacitado para me auxiliar na
-                        elaboração dos painéis que preciso
+                      "Não tenho um time capacitado para me auxiliar na
+                        elaboração dos painéis que preciso"
                       </li>
                     </ul>
+                    </div>
                   </div>
                 </div>
                 <div className="col-xl-12 mb-100">
@@ -138,25 +140,15 @@ const PortfolioDetailsArea = () => {
                       alt="image-here"
                     />
                   </div>
-                </div>
-                <div className="col-xl-12 mb-100">
-                  <div className="porfolio-details__overview-thumb mb-100">
-                    <Image
-                      data-speed="0.6"
-                      src={portfolio_img_2}
-                      style={{ height: "auto" }}
-                      alt="image-here"
-                    />
-                  </div>
-                </div>
+                </div>                
               </div>
               <div className="row ">
                 <div className="col-xl-6 col-lg-6">
                   <div className="porfolio-details__right-info">
                     <p>{title2}</p>
                     <p>
-                      Por se tratar de um projeto complexo e construído do zero,
-                      meu processo de design variou conforme o módulo ou
+                      Por se tratar de um projeto construído do zero,
+                      meu processo para desenvolvimento de propostas de design variou conforme o módulo ou
                       funcionalidade que estava sendo priorizado em cada
                       momento.
                     </p>
@@ -172,7 +164,7 @@ const PortfolioDetailsArea = () => {
                 <div className="porfolio-details__overview-thumb mb-100">
                   <Image
                     data-speed="0.6"
-                    src={portfolio_img_1}
+                    src={portfolio_img_4}
                     style={{ height: "auto" }}
                     alt="image-here"
                   />
@@ -189,16 +181,16 @@ const PortfolioDetailsArea = () => {
                 </div>
               </div>
               <div className="row ">
-              <div className="col-xl-5 col-lg-4 ">
+              <div className="col-xl-4 col-lg-3 ">
                   <div className="porfolio-details__overview-left">
                     <h4 className="porfolio-details__overview-title mb-40">
                       Resultados<br/> e aprendizados
                     </h4>
                   </div>
                 </div>
-                <div className="col-xl-6 col-lg-6">
+                <div className="col-xl-8 col-lg-9">
                   <div className="porfolio-details__right-info">
-                    <p>{step4}</p>
+                  <p dangerouslySetInnerHTML={{ __html: step4 }} />
                     
                   </div>
                 </div>
