@@ -24,7 +24,7 @@ const PortfolioAboutArea = () => {
                   <span>Newral - Decision Suite</span>
                 </div>
                 <div className="porfolio-details__left-content">
-                  <h4 className="porfolio-details__left-info-title">Posições</h4>
+                  <h4 className="porfolio-details__left-info-title">Posição</h4>
                   <span>Product Designer</span>
                   
 

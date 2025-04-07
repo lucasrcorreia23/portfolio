@@ -8,12 +8,12 @@ import portfolio_img_2 from "@/assets/img/decision-suite/design-process-3.jpg";
 
 import portfolio_img_5 from "@/assets/img/decision-suite/final-01.jpg";
 import portfolio_img_6 from "@/assets/img/decision-suite/final-02.png";
-import portfolio_img_7 from "@/assets/img/prime8-project/foto6.png";
-import portfolio_img_8 from "@/assets/img/prime8-project/foto5.png";
-import portfolio_img_9 from "@/assets/img/prime8-project/foto4.png";
-import portfolio_img_11 from "@/assets/img/prime8-project/mobile.png";
-import portfolio_img_12 from "@/assets/img/prime8-project/prototipo1.png";
-import portfolio_img_10 from "@/assets/img/prime8-project/fotocapa.png";
+import portfolio_img_7 from "@/assets/img/decision-suite/final-4.jpg";
+import portfolio_img_8 from "@/assets/img/decision-suite/take-05.jpg";
+import portfolio_img_9 from "@/assets/img/decision-suite/take-07.jpg";
+import portfolio_img_11 from "@/assets/img/decision-suite/take-06.png";
+import portfolio_img_12 from "@/assets/img/decision-suite/assistente-nike.jpg";
+
 
 interface DataType {
   title: string;
@@ -61,13 +61,12 @@ const portfolio_detaisl_content: DataType = {
   images: [
     portfolio_img_5,
     portfolio_img_6,
-    portfolio_img_12,
-    portfolio_img_7,
+    portfolio_img_7,    
     portfolio_img_8,
     portfolio_img_9,
     portfolio_img_11,
-    portfolio_img_4,
-    portfolio_img_10,
+   
+    portfolio_img_12,
   ],
 };
 

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import React from 'react';
 
-import portfolio_img_1 from "@/assets/img/portfolio/ZOOMtech-home.jpg";
+import portfolio_img_1 from "@/assets/img/decision-suite/cover-img.jpg";
 import portfolio_img_2 from "@/assets/img/nestle/capa2.jpg";
 import portfolio_img_3 from "@/assets/img/portfolio/prime8-home.jpg";
 
@@ -18,11 +18,11 @@ const portfolio_content = {
     
     {
       id: 1,
-      link:"/zoomtech-project",
+      link:"/decision-suite",
       img: portfolio_img_1,
-      bg_img: "/assets/img/portfolio/ZOOMtech-home.jpg",
-      title: 'ZOOMtecnologia',
-      tags:"Brand Architect - Visual Identity - UX/UI - Website",
+      bg_img: "/assets/img/decision-suite/cover-img.jpg",
+      title: 'Decision Suite',
+      tags:"SaaS - Research - Dados - IA - Mobile - End to End",
     },
     {
       id: 3,      

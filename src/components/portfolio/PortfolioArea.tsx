@@ -5,6 +5,7 @@ import Image from 'next/image';
 
 import project_img_1 from '@/assets/img/portfolio/organiconecta-home.jpg';
 import project_img_2 from '@/assets/img/portfolio/prime8-home.jpg';
+import project_img_3 from '@/assets/img/decision-suite/cover-img.jpg';
 
 import project_img_4 from '@/assets/img/portfolio/ZOOMtech-home.jpg';
 import project_img_5 from '@/assets/img/nestle/capa2.jpg';
@@ -22,7 +23,17 @@ const project_content = {
     
     
     {
-      id: 2,
+      id: 5,
+      img: project_img_3,
+      bg_img: '/assets/img/decision-suite/cover-img.jpg',
+      hover_img: '/assets/img/decision-suite/hover-port.jpg',
+      title: 'Decision Suite',
+      category: 'SaaS - Research - Dados - IA - Mobile - End to End',
+      link:"/decision-suite"
+      
+    },
+    {
+      id: 1,
       img: project_img_1,
       bg_img: '/assets/img/portfolio/organiconecta-home.jpg',
       hover_img: '/assets/img/portfolio/hover/Organiconecta.png',
@@ -31,20 +42,9 @@ const project_content = {
       link:"/construcao"
       
     },
-    {
-      id: 4,
-      img: project_img_2,
-      bg_img: '/assets/img/portfolio/prime8-home.jpg',
-      hover_img: '/assets/img/portfolio/hover/prime8.png',
-      title: 'Prime8',
-      category: 'Visual Identity - UX/UI - Design System - eCommerce',
-      link:"/prime8-project"
-    },
    
-  ],
-  blog_data_2: [
     {
-      id:2,
+      id:3,
       img: project_img_4,
       bg_img: '/assets/img/portfolio/ecosintese-home.jpg',
       hover_img:'/assets/img/portfolio/hover/zoomtech.png',
@@ -52,6 +52,20 @@ const project_content = {
       category: 'Brand Architect - UX Research - Visual Identity - UI - Website',
       link:"/zoomtech-project"
     },
+   
+  ],
+  blog_data_2: [
+    {
+      id: 2,
+      img: project_img_2,
+      bg_img: '/assets/img/portfolio/prime8-home.jpg',
+      hover_img: '/assets/img/portfolio/hover/prime8.png',
+      title: 'Prime8',
+      category: 'Visual Identity - UX/UI - Design System - eCommerce',
+      link:"/prime8-project"
+    },
+    
+    
     {
       id: 4,
       img: project_img_5,
@@ -60,6 +74,15 @@ const project_content = {
       title: 'Nestlé',
       category: 'Ads - Trade - eCommerce - Motion - App',
       link:"/nestle"
+    },
+    {
+      id: 4,
+      img: project_img_5,
+      bg_img: '/assets/img/nestle/capa2.jpg',
+      hover_img:'',
+      title: 'Orbsofty',
+      category: 'Telemarketing - SaaS - Omnichannel - UI',
+      link:"/contrucao"
     },
     
   ]
