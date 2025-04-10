@@ -9,6 +9,7 @@ import project_img_3 from '@/assets/img/decision-suite/cover-img.jpg';
 
 import project_img_4 from '@/assets/img/portfolio/ZOOMtech-home.jpg';
 import project_img_5 from '@/assets/img/nestle/capa2.jpg';
+import project_img_6 from '@/assets/img/orbsofty/cover.jpg';
 
 import { gsap } from 'gsap';
 
@@ -28,7 +29,7 @@ const project_content = {
       bg_img: '/assets/img/decision-suite/cover-img.jpg',
       hover_img: '/assets/img/decision-suite/hover-port.jpg',
       title: 'Decision Suite',
-      category: 'SaaS - Research - Dados - IA - Mobile - End to End',
+      category: 'SaaS - Research - Dados - IA - Mobile',
       link:"/decision-suite"
       
     },
@@ -66,6 +67,16 @@ const project_content = {
     },
     
     
+    
+    {
+      id: 5,
+      img: project_img_6,
+      bg_img: '/assets/img/orbsofty/capa2.jpg',
+      hover_img:'',
+      title: 'Orbsofty',
+      category: 'Telemarketing - SaaS - Omnichannel - UI - Voice IA - Mobile',
+      link:"/contrucao"
+    },
     {
       id: 4,
       img: project_img_5,
@@ -74,15 +85,6 @@ const project_content = {
       title: 'Nestlé',
       category: 'Ads - Trade - eCommerce - Motion - App',
       link:"/nestle"
-    },
-    {
-      id: 4,
-      img: project_img_5,
-      bg_img: '/assets/img/nestle/capa2.jpg',
-      hover_img:'',
-      title: 'Orbsofty',
-      category: 'Telemarketing - SaaS - Omnichannel - UI',
-      link:"/contrucao"
     },
     
   ]
