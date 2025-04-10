@@ -75,7 +75,7 @@ const project_content = {
       hover_img:'',
       title: 'Orbsofty',
       category: 'Telemarketing - SaaS - Omnichannel - UI - Voice IA - Mobile',
-      link:"/contrucao"
+      link:"/construcao"
     },
     {
       id: 4,
