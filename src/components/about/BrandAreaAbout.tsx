@@ -14,7 +14,7 @@ const brand_imgs = [
   {icon: <Nestle />, delay: '.4s'},   
   {icon: <Prime8 />, delay: '.8s', link:"https://www.prime8.com.br"}, 
   {icon: <Orbsofty />, delay: '.8s', link:"https://www.orbsofty.com.br"}, 
-  {icon: <R4 />, delay: '.8s', link:"https://www.r4renovaveis.com.br"}, 
+  {icon: <R4/>, delay: '.8s', link:"https://www.r4renovaveis.com.br"}, 
 
   
 ]
