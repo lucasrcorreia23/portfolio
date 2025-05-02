@@ -68,6 +68,8 @@
     transform: translateY(-100%);
     background: #324623;
     transition: transform 500ms ease, visibility 500ms ease;
+    backdrop-filter: blur(40px);
+    background: #1f1f1f50;
   }
   &.tp-header-pinned {
     transform: translateY(0%);

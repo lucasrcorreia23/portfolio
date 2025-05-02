@@ -31,15 +31,18 @@ const PortfolioAboutArea = () => {
                 </div>
                 <div className="porfolio-details__left-content">
                   <h4 className="porfolio-details__left-info-title mb-20">Serviços</h4>
+                 
                   <span>Pesquisa desk</span>
+                  <span>Pesquisa qualitativa e quantitativa</span>
                   <span>Ideação</span>                 
                   <span>CSD</span>
-                  <span>Persona</span>                  
-                  <span>Princípios de design</span>  
-                  <span>Prototipação</span>                  
-                  <span>Pesquisa qualitativa e quantitativa</span>
+                  <span>MoSCoW</span>   
+                  <span>Persona</span> 
+                  <span>Wireframe</span>                             
+                  <span>Prototipação</span>               
                   <span>Arquitetura de informação</span>                                  
-                  <span>Componentização</span>                 
+                  <span>Componentização</span>
+                  <span>Métricas de sucesso</span>
                 </div>
                 <div className="porfolio-details__left-content">
                   <h4 className="porfolio-details__left-info-title">Ano</h4>

@@ -14523,6 +14523,10 @@ xclip
   color: rgba(255, 255, 255, 0.5);
   margin-bottom: 45px;
 }
+
+
+
+
 @media (max-width: 767px) {
   .porfolio-details__right-info p {
     font-size: 15px;

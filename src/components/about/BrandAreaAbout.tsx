@@ -1,18 +1,21 @@
 import React from 'react';
 import Zoomtech from '@/svg/about/zoomtech';
-import Ecosintese from '@/svg/about/ecosintese';
-import Organiconecta from '@/svg/about/organiconecta';
+
+
 import Nestle from '@/svg/about/nestle';
 import Prime8 from '@/svg/about/prime8';
+import Orbsofty from '@/svg/about/orbsofty';
+import R4 from '@/svg/about/r4';
 
 
 
 const brand_imgs = [
   {icon: <Zoomtech />, delay: '.1s'}, 
-  {icon: <Nestle />, delay: '.4s'}, 
-  {icon: <Ecosintese />, delay: '.2s', link:"https://www.ecosintese.com.br"}, 
-  {icon: <Organiconecta />, delay: '.5s'}, 
+  {icon: <Nestle />, delay: '.4s'},   
   {icon: <Prime8 />, delay: '.8s', link:"https://www.prime8.com.br"}, 
+  {icon: <Orbsofty />, delay: '.8s', link:"https://www.orbsofty.com.br"}, 
+  {icon: <R4 />, delay: '.8s', link:"https://www.r4renovaveis.com.br"}, 
+
   
 ]
 

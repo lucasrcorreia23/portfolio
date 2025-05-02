@@ -3,6 +3,11 @@
 /*----------------------------------------*/
 /*  7.9 About css
 /*----------------------------------------*/
+@media #{$xs}{
+    #smooth-content > main > div.porfolio-details__overview-wrapper.black-bg-3 > div > div > div.porfolio-details__overview-box.mt-120.pb-100 > div:nth-child(5) > div.col-xl-5.col-lg-4 > div:nth-child(2){
+        margin-bottom:40px;
+    }
+}
 
 .tp-portfolio{
     $self : &;
@@ -409,7 +414,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(100% 1330.1% at 0% 52.65%, #0F183E 0%, rgba(15, 24, 62, 0.77) 52.08%, #0F183E 100%);
+            background: radial-gradient(100% 1330.1% at 0% 52.65%, #1a1f1d 0%, rgba(25, 26, 25, 0.77) 52.08%, #131a19 100%);
             content: '';
         }
     }
@@ -438,6 +443,7 @@
             & br{
                 display: none;
             }
+           
         }
     }
     &__text{

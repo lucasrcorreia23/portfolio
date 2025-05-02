@@ -82,6 +82,7 @@
             & svg{
                 color: var(--tp-common-white);
                 transition: .3s;
+                max-width: 120px;
             }
             &:hover{
                 background-color: var(--tp-common-white);

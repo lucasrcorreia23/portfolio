@@ -4,6 +4,14 @@
 /*  7.12 Services css
 /*----------------------------------------*/
 
+#smooth-content > main > div.porfolio-details__overview-wrapper.black-bg-3 > div > div > div.porfolio-details__overview-box.mt-120.pb-100 > div:nth-child(5) > div.col-xl-12.col-lg-12 > div > p{
+    margin-top: 32px!important;
+  }
+
+  #smooth-content > main > div.porfolio-details__overview-wrapper.black-bg-3 > div > div > div.porfolio-details__overview-box.mt-120.pb-100 > div:nth-child(5) > div.col-xl-8.col-lg-9 > div > p{
+    margin-bottom: 16px;
+  }
+
 .tp-services{
     &-inner{
         padding-right: 65px;

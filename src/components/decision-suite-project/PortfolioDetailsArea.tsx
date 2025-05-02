@@ -13,6 +13,7 @@ import portfolio_img_8 from "@/assets/img/decision-suite/take-05.jpg";
 import portfolio_img_9 from "@/assets/img/decision-suite/take-07.jpg";
 import portfolio_img_11 from "@/assets/img/decision-suite/take-06.png";
 import portfolio_img_12 from "@/assets/img/decision-suite/assistente-nike.jpg";
+import portfolio_img_13 from "@/assets/img/decision-suite/decisiongif01.gif";
 
 
 interface DataType {
@@ -30,13 +31,13 @@ interface DataType {
 }
 
 const portfolio_detaisl_content: DataType = {
-  title: `Meu primeiro passo foi, junto do PM, planejar os temas que gostaríamos de aprofundar nas entrevistas exploratórias, utilizando a matriz CSD para mapear certezas, suposições e dúvidas. Com a matriz documentada, buscamos realizar, primeiramente, entrevistas com quem está mais próximo e se relaciona diretamente com a persona que mais sente essas dores: nossos especialistas em dados e principais stakeholders do projeto.<br /><br /> Após isso, conversamos com alguns potenciais clientes para entender suas necessidades na prática e, com isso, ouvimos falas que validaram várias das hipóteses que já tínhamos sobre os principais desafios enfrentados por esse mercado.`,
+  title: `Meu primeiro passo foi, junto ao PM, planejar os assuntos que gostaríamos de aprofundar nas entrevistas exploratórias por meio da matriz CSD, mapeando certezas, suposições e dúvidas que tínhamos. Com a matriz documentada, buscamos sanar as dúvidas e suposições entrevistando primeiramente os nossos stakeholders do produto e especialistas de dados.<br /><br /> Após isso, conversamos com alguns potenciais clientes para entender suas necessidades na prática e com isso, ouvimos falas que validaram várias das hipóteses sobre os principais desafios enfrentados no mercado em relação a dados.`,
   title2:
     "Com informações em mãos fizemos um brainstorming de ideias para o produto, seguido de clusterização das ideias mais relevantes e aplicação de MoSCoW para criar a esteira de priorização.",
   title3:
     "De forma geral, começava mapeando um fluxo funcional para entender e delimitar o escopo daquela parte da aplicação. Em seguida, criava os primeiros wireframes (baixa fidelidade) para validar rapidamente com as pessoas envolvidas. <br /><br />A partir desses alinhamentos, evoluía para o protótipo de alta fidelidade, refinando em ciclos de iteração até chegarmos em documentação e acompanhamento de handoff para uma entrega sólida e alinhada com os objetivos do produto, negócio e engenharia.",
   step4:
-    "Este projeto me proporcionou a oportunidade de exercitar pensamento crítico, atenção aos detalhes e me mostrou a importância de trazer os stakeholder para perto na construção do produto, visando a tradução de informações densas e complexas em uma solução simples e de baixa curva de aprendizagem do usuário.<br /><br /> Tive muita liberdade em explorar interações e padrões inovadores, além de investigar casos extremos que não haviam sido previstos no briefing inicial. A colaboração próxima com a engenharia de dados me permitiu entender melhor a lógica e chamadas de visualização dos dashboards e como considerar exceções na construção do Design System do produto.",
+    "Este projeto me proporcionou a oportunidade de exercitar pensamento crítico, atenção aos detalhes e me mostrou a importância de trazer os stakeholder para perto na construção do produto, visando a tradução e aprofundamento em assuntos densos e complexos afim transforma-los em experiências fluidas e de baixa curva de aprendizagem do usuário.<br /><br /> Tive muita liberdade em explorar interações e padrões inovadores, além de investigar casos extremos que não haviam sido previstos no briefing inicial. A colaboração próxima com a engenharia de dados também me permitiu entender melhor a lógica e chamadas de visualização dos dashboards e como considerar exceções na construção do Design System do produto.",
   step5:
     "Além de tudo, tive a oportunidade de trabalhar com agentes de IA utilizando as plataformas n8n e Dify, o que ampliou significativamente minha visão sobre automações inteligentes e experiências assistidas. Também colaborei com grandes parceiros da Qlik na geração de dashboards personalizados e nativos, aprofundando meu entendimento em soluções de Business Intelligence aplicadas a contextos reais.",
   features: [
@@ -180,20 +181,30 @@ const PortfolioDetailsArea = () => {
                 </div>
               </div>
               <div className="row ">
-              <div className="col-xl-4 col-lg-3 ">
+              <div className="col-xl-5 col-lg-4 ">
                   <div className="porfolio-details__overview-left">
                     <h4 className="porfolio-details__overview-title mb-40">
                       Resultados<br/> e aprendizados
                     </h4>
+                    
                   </div>
+                  <div>
+                  <Image
+                      data-speed="0.9"
+                      src={portfolio_img_13}
+                      style={{ height: "auto", zIndex:"0",position:"relative" }}
+                      alt="image-here"
+                    />
+                    </div>
                 </div>
-                <div className="col-xl-8 col-lg-9">
+                
+                <div className="col-xl-6 col-lg-8">
                   <div className="porfolio-details__right-info">
                   <p dangerouslySetInnerHTML={{ __html: step4 }} />
                     
                   </div>
                 </div>
-                <div className="col-xl-12 col-lg-12 ">
+                <div className="col-xl-11 col-lg-11 ">
                   <div className="porfolio-details__right-info ">
                     <p>{step5}</p>
                   </div>
