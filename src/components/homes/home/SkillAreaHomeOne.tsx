@@ -248,7 +248,7 @@ const SkillAreaHomeOne = () => {
                                     <Image src={inner_item.img} alt="image-here" />
                                   </span>
                                 </div>
-                                <h3 className="tp-skill-count"><span>{inner_item.percent}</span>%</h3>
+                                {/*<h3 className="tp-skill-count"><span>{inner_item.percent}</span>%</h3>*/}
                               </div>
                               <div className="tp-skill-content">
                                 <h3 className="tp-skill-title">{inner_item.title}</h3>
