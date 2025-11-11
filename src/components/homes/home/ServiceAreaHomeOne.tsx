@@ -14,13 +14,13 @@ const service_content = {
       id: 1,
       tab_id: "One",
       question: "Product Designer/UX Designer",
-      answer: "Atuação completa do ciclo de produtos digitais: discovery, design, delivery, GTM e acompanhamento das métricas de sucesso.",
+      answer: "Atuação completa e proativa na construção e refinamento de produtos digitais",
       some_features: [
         "Prototipação e Wireframe",        
         "Pesquisas Quanti., Quali., Desk",
-        "Testes e jornada do usuário",
-        "Design System, DesignOps",
-        "Métricas de sucesso",
+        "Discovery, Testes e Jornada do Usuário",
+        "Design System, Discovery",
+        "Métricas de Sucesso",
       ]
     },
     {
@@ -29,10 +29,9 @@ const service_content = {
       question: "Gestão de Produto",
       answer: "Compreensão das boas práticas ágeis e rituais em gestão de produto.",
       some_features: [       
-        "BDD, Adaptabilidade, Lean",        
-        "Aprendizado contínuo e iterações",
-        "Documentação",
-        "Jira, Miro, Gitlab",
+        "Relacionamento com Stakeholders", 
+        "Discovery e Documentações",
+        "Jira, Miro, Gitlab, Grain",
       ]
     },
     {
@@ -44,8 +43,8 @@ const service_content = {
         "HTML, CSS, JS, TS",
         "Next.js, React.js, Node.js",
         "Tailwindcss, Bootstrap",       
+        "Shadcn, MUI, Remix, RadixUI",
         "Git, Github",        
-        "SQL",
       ]
     },
     
@@ -53,7 +52,7 @@ const service_content = {
       id: 4,
       tab_id: "Four",
       question: "Marketing",
-      answer: "Acompanhamento e desenvolvimento do Go-To-Market junto ao departamento para garantir a mensagem da marca e sucesso do produto",
+      answer: "Desenvolvimento de GTM e campanhas para retenção e melhorias das métricas de sucesso em modelos de negócio SLG e PLG",
       some_features: [
        
         
