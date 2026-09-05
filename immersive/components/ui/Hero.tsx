@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from 'react'
 import { gsap } from 'gsap'
-import Link from 'next/link'
 
 export default function Hero() {
   const heroRef = useRef<HTMLElement>(null)
@@ -63,14 +62,16 @@ export default function Hero() {
     >
       <div className="max-w-6xl w-full space-y-8 text-center">
         <h1 className="hero-title font-display text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight">
-          <span className="block text-cyber-cyan glow-text">Lucas R. Correia</span>
+          <span className="block text-cyber-cyan glow-text glitch-text" data-text="Lucas R. Correia">
+            Lucas R. Correia
+          </span>
         </h1>
         
         <div className="hero-subtitle space-y-2">
           <p className="text-2xl md:text-3xl lg:text-4xl font-medium text-white/90">
             Designer Engineer
           </p>
-          <p className="text-xl md:text-2xl text-cyber-magenta/80">
+          <p className="text-xl md:text-2xl text-cyber-magenta glow-magenta">
             Product Builder @ Atomsix
           </p>
         </div>
@@ -84,19 +85,19 @@ export default function Hero() {
         <div className="hero-cta flex flex-col sm:flex-row gap-4 justify-center items-center pt-8">
           <button
             onClick={scrollToWork}
-            className="group relative px-8 py-4 bg-transparent border-2 border-cyber-cyan text-cyber-cyan font-medium rounded-lg overflow-hidden transition-all duration-300 hover:scale-105 glow-border"
+            className="group relative px-8 py-4 bg-transparent border-2 border-cyber-cyan text-cyber-cyan font-medium rounded-lg overflow-hidden transition-all duration-300 hover:scale-105 glow-border hover:border-cyber-magenta hover:text-cyber-magenta"
           >
-            <span className="relative z-10">Explorar Trabalhos</span>
-            <div className="absolute inset-0 bg-cyber-cyan/10 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
+            <span className="relative z-10 transition-all duration-300">Explorar Trabalhos</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-cyber-cyan/10 to-cyber-magenta/10 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
           </button>
 
           <a
             href="https://www.lucasrc.com.br"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-8 py-4 text-white/80 hover:text-white transition-colors duration-300"
+            className="px-8 py-4 text-white/70 hover:text-cyber-cyan transition-all duration-300 font-mono text-sm"
           >
-            Site Atual →
+            [SITE_ATUAL] →
           </a>
         </div>
 

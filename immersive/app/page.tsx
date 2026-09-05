@@ -22,13 +22,13 @@ export default function Home() {
     // Smooth scroll animations
     const sections = gsap.utils.toArray('.section')
     
-    sections.forEach((section: any) => {
-      gsap.from(section, {
+    sections.forEach((section) => {
+      gsap.from(section as Element, {
         opacity: 0,
         y: 50,
         duration: 1,
         scrollTrigger: {
-          trigger: section,
+          trigger: section as Element,
           start: 'top 80%',
           end: 'top 50%',
           scrub: 1,
@@ -39,8 +39,14 @@ export default function Home() {
 
   return (
     <main ref={containerRef} className="relative">
+      {/* Atmospheric gradient (teal → warm) */}
+      <div className="atmos-gradient" />
+      
       {/* Grain overlay */}
       <div className="grain-overlay" />
+      
+      {/* Scanline overlay */}
+      <div className="scanline-overlay" />
       
       {/* WebGL Background */}
       <div className="fixed inset-0 -z-10">

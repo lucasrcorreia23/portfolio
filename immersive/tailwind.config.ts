@@ -14,7 +14,12 @@ const config: Config = {
           dark: '#121218',
           gray: '#1a1a24',
           cyan: '#00fff9',
+          'cyan-dark': '#00b8b8',
           magenta: '#ff00ff',
+          'magenta-dark': '#b800b8',
+          teal: '#14b8a6',
+          peach: '#ffb299',
+          warm: '#ff9966',
           purple: '#8b5cf6',
           blue: '#3b82f6',
         },
@@ -27,6 +32,8 @@ const config: Config = {
         'glow': 'glow 2s ease-in-out infinite alternate',
         'float': 'float 6s ease-in-out infinite',
         'grain': 'grain 8s steps(10) infinite',
+        'glitch': 'glitch 3s ease-in-out infinite',
+        'scanline': 'scanline 8s linear infinite',
       },
       keyframes: {
         glow: {
@@ -48,6 +55,15 @@ const config: Config = {
           '70%': { transform: 'translate(0%, 15%)' },
           '80%': { transform: 'translate(3%, 35%)' },
           '90%': { transform: 'translate(-10%, 10%)' },
+        },
+        glitch: {
+          '0%, 100%': { transform: 'translate(0)' },
+          '33%': { transform: 'translate(-2px, 0)' },
+          '66%': { transform: 'translate(2px, 0)' },
+        },
+        scanline: {
+          '0%': { transform: 'translateY(-100%)' },
+          '100%': { transform: 'translateY(100vh)' },
         },
       },
     },

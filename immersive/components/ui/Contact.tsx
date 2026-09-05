@@ -5,7 +5,9 @@ export default function Contact() {
     <section id="contact" className="section relative py-24 px-6 md:px-12 mb-12">
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold mb-8">
-          <span className="text-cyber-cyan glow-text">Vamos Conversar?</span>
+          <span className="text-cyber-cyan glow-text glitch-text" data-text="Vamos Conversar?">
+            Vamos Conversar?
+          </span>
         </h2>
         
         <p className="text-lg md:text-xl text-white/70 mb-12 max-w-2xl mx-auto">
@@ -16,9 +18,9 @@ export default function Contact() {
         <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
           <a
             href="mailto:contato@lucasrc.com.br"
-            className="group relative px-8 py-4 bg-gradient-to-r from-cyber-cyan to-cyber-magenta text-cyber-black font-bold rounded-lg overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+            className="group relative px-8 py-4 bg-gradient-to-r from-cyber-cyan via-cyber-teal to-cyber-magenta text-cyber-black font-bold rounded-lg overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-cyber-cyan/50 font-mono"
           >
-            <span className="relative z-10">Enviar Email</span>
+            <span className="relative z-10">[ENVIAR_EMAIL]</span>
             <div className="absolute inset-0 bg-white/20 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
           </a>
 
@@ -26,14 +28,14 @@ export default function Contact() {
             href="https://www.linkedin.com/in/lucasrcorreia/"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-8 py-4 border-2 border-cyber-magenta text-cyber-magenta font-medium rounded-lg transition-all duration-300 hover:bg-cyber-magenta/10 hover:scale-105"
+            className="px-8 py-4 border-2 border-cyber-magenta text-cyber-magenta font-medium rounded-lg transition-all duration-300 hover:bg-cyber-magenta/10 hover:scale-105 hover:border-cyber-cyan hover:text-cyber-cyan glow-border-magenta font-mono"
           >
-            LinkedIn
+            [LINKEDIN]
           </a>
         </div>
 
         <div className="mt-16 pt-12 border-t border-cyber-gray/30">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-white/50 text-sm">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-white/50 text-xs font-mono">
             <p>© 2024 Lucas R. Correia. Todos os direitos reservados.</p>
             <div className="flex gap-6">
               <a 
@@ -42,23 +44,24 @@ export default function Contact() {
                 rel="noopener noreferrer"
                 className="hover:text-cyber-cyan transition-colors duration-300"
               >
-                GitHub
+                [GitHub]
               </a>
               <a 
                 href="https://www.lucasrc.com.br"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-cyber-cyan transition-colors duration-300"
+                className="hover:text-cyber-magenta transition-colors duration-300"
               >
-                Portfólio Atual
+                [Portfólio_Atual]
               </a>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Decorative bottom gradient */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyber-cyan to-transparent" />
+      {/* Decorative bottom gradient with teal-warm blend */}
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyber-cyan via-cyber-teal to-transparent opacity-50" />
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-cyber-teal/10 via-cyber-peach/5 to-transparent pointer-events-none" />
     </section>
   )
 }

@@ -85,13 +85,14 @@ export default function CyberpunkEnvironment() {
 
   return (
     <>
-      {/* Ambient lighting */}
-      <ambientLight intensity={0.2} />
-      <pointLight position={[10, 10, 10]} intensity={0.5} color="#00fff9" />
-      <pointLight position={[-10, -10, -10]} intensity={0.3} color="#ff00ff" />
+      {/* Ambient lighting with warm undertone */}
+      <ambientLight intensity={0.15} color="#14b8a6" />
+      <pointLight position={[10, 10, 10]} intensity={0.6} color="#00fff9" />
+      <pointLight position={[-10, -10, -10]} intensity={0.4} color="#ff00ff" />
+      <pointLight position={[0, 5, 5]} intensity={0.3} color="#ffb299" />
 
-      {/* Fog for depth */}
-      <fog attach="fog" args={['#0a0a0f', 5, 15]} />
+      {/* Atmospheric fog with teal-warm blend */}
+      <fog attach="fog" args={['#0f1215', 5, 18]} />
 
       {/* Floating particles */}
       {particles.map((pos, i) => (
