@@ -4,11 +4,17 @@ An experimental, immersive portfolio experience built with Next.js 15, React Thr
 
 ## 🎨 Design Vision
 
-- **Aesthetic**: Cyberpunk meets modern design — neon cyan/magenta on near-black backgrounds
-- **Visual Elements**: Atmospheric fog, floating geometric particles, subtle bloom/glow effects
-- **Grain & Noise**: Film grain overlay for texture and depth
-- **Smooth Animations**: GSAP-powered scroll animations and WebGL interactions
+**Hybrid Cyberpunk Aesthetic** — Blending three moods:
+
+1. **Neon Grid City**: Infinite grid floor, cyan fog, mouse parallax, HUD-like UI
+2. **Signal Glitch**: Magenta accents, scanlines, micro-glitch on type, floating HUD panels
+3. **Atmos Grain**: Grainy teal→peach gradient undertone, art-directed (not pure neon-noir)
+
+- **Visual Recipe**: Near-black base + teal→warm grain fog + cyan primary glow + magenta secondary accents
+- **Typography**: Bold display with restrained glitch effects
 - **Performance-Conscious**: Graceful degradation for lower-end devices, reduced motion support
+
+This is a **deliberate redesign** away from the live site's forest-green editorial palette.
 
 ## 🚀 Getting Started
 
