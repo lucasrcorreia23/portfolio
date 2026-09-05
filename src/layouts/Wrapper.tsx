@@ -30,6 +30,7 @@ import {
 gsap.registerPlugin(ScrollSmoother, ScrollTrigger, ScrollToPlugin, SplitText);
 
 if (typeof window !== "undefined") {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   require("bootstrap/dist/js/bootstrap");
 }
 
