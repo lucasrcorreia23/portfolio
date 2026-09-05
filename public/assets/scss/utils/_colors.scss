@@ -1,54 +1,54 @@
 $colors: (
     'common': (
         'white': #ffffff,
-        'white-2': #E4E6DC,
+        'white-2': #E4E8F0,
         'white-3': #F0F0F6,
         'black-solid': #000,
-        'black': #020B18,
-        'black-2': #0C1B05,
-        'black-3': #252525,
+        'black': #0A0F17,
+        'black-2': #0C121C,
+        'black-3': #121A24,
         'black-4': #5B5B5C,
-        'black-5': #171718,
+        'black-5': #0A0F17,
         'black-6': #192553,
     ),
     'dark': (
         'white': #ffffff,
         'black-solid': #000,
-        'black': #020B18,
-        'black-2': #000F4A,
-        'black-3': #162251,
-        'black-4': hsl(84.37deg 7.61% 7.55%),
-        'black-5': #213617,
+        'black': #0A0F17,
+        'black-2': #0C121C,
+        'black-3': #121A24,
+        'black-4': #0A0F17,
+        'black-5': #0A0F17,
     ),
     'yellow': (
-        '1': #FFB342,
+        '1': #FF8C66,
     ),
     'pink': (
-        '1': #FD4B6B,
-        '2': #FF5746,
+        '1': #FF268C,
+        '2': #FF268C,
     ),
     'green': (
-        'dark': #115061,
-        '1': #31B757,
-        '2': #BCE70C,
+        'dark': #1AF2F2,
+        '1': #1AF2F2,
+        '2': #1AF2F2,
     ),
     'khaki': (
         '1': #AB9774,
     ),
     'blue': (
-        '1': #0989FF,
-        '2': #4C40F7,
+        '1': #1AF2F2,
+        '2': #1AF2F2,
     ),
     'orange': (
-        '1': #FF6736,
+        '1': #FF8C66,
     ),
     'heading': (
-        'primary': #020B18,
-        'secondary': #021D35,
+        'primary': #0A0F17,
+        'secondary': #0C121C,
     ),
     'headingDark': (
-        'primary': #020B18,
-        'secondary': #021D35,
+        'primary': #0A0F17,
+        'secondary': #0C121C,
     ),
     'grey': (
         '1':#F6F7F9,
@@ -61,8 +61,8 @@ $colors: (
         '1':#767A7D,
     ),
     'theme': (
-        'primary': #0989FF,
-        'secondary': #1A2813,
+        'primary': #1AF2F2,
+        'secondary': #0C121C,
     ),
     'footer': (
         'grey-1': #F4F7F9
@@ -74,6 +74,6 @@ $colors: (
 );
 
 $white : #fff;
-$black : #020B18;
-$theme-primary : #0989FF;
+$black : #0A0F17;
+$theme-primary : #1AF2F2;
 $border-primary : #EAEBED;

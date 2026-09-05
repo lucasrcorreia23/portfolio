@@ -89,7 +89,7 @@
         & span,
         & span b{
             @extend %ff-garamond;
-            @include gradient((90.68deg, #BCFFA4 8.59%, #BCFFA4 8.59%, #F59571 86.19%));
+            @include gradient((90.68deg, #1AF2F2 8.59%, #FF8C66 86.19%));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -314,8 +314,8 @@
             }
 
             &:hover{
-                background-color: #BCE70C;
-                border-color: #BCE70C;
+                background-color: #1AF2F2;
+                border-color: #1AF2F2;
                 color: #292D32;
             }
         }
