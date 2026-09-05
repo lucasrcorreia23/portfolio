@@ -2,35 +2,35 @@
 
 interface Project {
   title: string
-  category: string
+  tags: string[]
   description: string
   year: string
 }
 
 const projects: Project[] = [
   {
-    title: 'Decision Suite',
-    category: 'Product Design & Development',
-    description: 'Sistema de decisão empresarial com interface moderna e análise de dados em tempo real.',
+    title: 'Nestlé',
+    tags: ['Ads', 'Trade', 'eCommerce', 'Motion', 'App'],
+    description: 'Experiências digitais multiplataforma para a Nestlé, unindo campanhas publicitárias, plataformas de trade marketing, soluções de eCommerce e aplicativos mobile.',
     year: '2024',
   },
   {
-    title: 'Nestlé Experience',
-    category: 'UX/UI Design',
-    description: 'Experiência digital interativa para produtos Nestlé, focada em engajamento do usuário.',
+    title: 'Decision Suite',
+    tags: ['SaaS', 'Research', 'Dados', 'IA', 'Mobile', 'End to End'],
+    description: 'Plataforma SaaS completa de pesquisa e análise de dados com inteligência artificial, cobrindo todo o ciclo de decisão empresarial.',
+    year: '2024',
+  },
+  {
+    title: 'Prime8',
+    tags: ['Visual Identity', 'UX/UI', 'Design System', 'eCommerce'],
+    description: 'Identidade visual completa, sistema de design modular e plataforma de eCommerce para a Prime8.',
     year: '2023',
   },
   {
-    title: 'Prime8 Platform',
-    category: 'Full Stack Development',
-    description: 'Plataforma completa de gerenciamento com foco em performance e escalabilidade.',
+    title: 'Zoomtech',
+    tags: ['Product Design', 'Development', 'SaaS'],
+    description: 'Design e desenvolvimento de produto SaaS com foco em experiência do usuário e performance.',
     year: '2023',
-  },
-  {
-    title: 'Zoomtech Solutions',
-    category: 'Design System',
-    description: 'Sistema de design modular e componentes reutilizáveis para produto SaaS.',
-    year: '2022',
   },
 ]
 
@@ -66,7 +66,7 @@ export default function Work() {
 
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
                 <div className="flex-1">
-                  <div className="flex items-start gap-3 mb-2">
+                  <div className="flex items-start gap-3 mb-3">
                     <span className="text-cyber-cyan/60 font-mono text-xs mt-1.5">
                       [{(index + 1).toString().padStart(2, '0')}]
                     </span>
@@ -76,7 +76,18 @@ export default function Work() {
                       </span>
                     </h3>
                   </div>
-                  <p className="text-cyber-magenta md:ml-10 font-mono text-sm">{project.category}</p>
+                  
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-2 md:ml-10 mb-3">
+                    {project.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-xs font-mono px-2 py-1 bg-cyber-magenta/10 border border-cyber-magenta/30 text-cyber-magenta/80 rounded"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
                 <span className="text-white/40 font-mono text-xs bg-cyber-black/50 px-3 py-1 rounded border border-cyber-gray/30">
                   {project.year}

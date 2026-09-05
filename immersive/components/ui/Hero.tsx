@@ -1,10 +1,13 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 
 export default function Hero() {
   const heroRef = useRef<HTMLElement>(null)
+  const [roleIndex, setRoleIndex] = useState(0)
+  
+  const roles = ['Designer', 'Engineer', 'Builder', 'Creator']
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -50,6 +53,15 @@ export default function Hero() {
     return () => ctx.revert()
   }, [])
 
+  // Animated role switching
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRoleIndex((prev) => (prev + 1) % roles.length)
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [roles.length])
+
   const scrollToWork = () => {
     const workSection = document.getElementById('work')
     workSection?.scrollIntoView({ behavior: 'smooth' })
@@ -62,17 +74,22 @@ export default function Hero() {
     >
       <div className="max-w-6xl w-full space-y-8 text-center">
         <h1 className="hero-title font-display text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight">
-          <span className="block text-cyber-cyan glow-text glitch-text" data-text="Lucas R. Correia">
-            Lucas R. Correia
+          <span className="block text-white/90 mb-4">Eu sou Lucas</span>
+          <span 
+            className="block text-cyber-cyan glow-text glitch-text transition-all duration-500" 
+            data-text={roles[roleIndex]}
+            key={roleIndex}
+          >
+            {roles[roleIndex]}
           </span>
         </h1>
         
         <div className="hero-subtitle space-y-2">
-          <p className="text-2xl md:text-3xl lg:text-4xl font-medium text-white/90">
-            Designer Engineer
+          <p className="text-2xl md:text-3xl lg:text-4xl font-medium text-white/90 font-mono">
+            Designer Engineer / Product Builder
           </p>
           <p className="text-xl md:text-2xl text-cyber-magenta glow-magenta">
-            Product Builder @ Atomsix
+            @ Atomsix
           </p>
         </div>
 
