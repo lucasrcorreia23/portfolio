@@ -72,19 +72,24 @@ immersive/
 
 ### Landing Experience
 - Full-viewport WebGL canvas with React Three Fiber
-- Floating geometric particles with individual animation
-- Animated grid floor with infinite scroll effect
+- Teal→peach atmospheric gradient undertone
+- Film grain + scanline overlays
+- 30 floating geometric particles with individual animation
+- Animated grid floor with infinite scroll effect (cyan glow)
 - Floating torus rings with smooth float animations
 - Mouse-controlled parallax via OrbitControls
-- Atmospheric fog for depth
+- Blended atmospheric fog (teal-warm)
 
 ### UI Overlay
-- Hero section with name, role, tagline, and CTAs
-- Selected Work section with project cards
-- About section with bio and skills
-- Contact section with email/LinkedIn links
-- Smooth scroll between sections
-- GSAP scroll-triggered animations
+- **Hero**: "Eu sou Lucas" + animated role cycling (Designer/Engineer/Builder/Creator)
+- **Selected Work**: HUD-style floating panels with tag chips, corner brackets, signal bars
+  - Nestlé (Ads, Trade, eCommerce, Motion, App)
+  - Decision Suite (SaaS, Research, Dados, IA, Mobile, End to End)
+  - Prime8 (Visual Identity, UX/UI, Design System, eCommerce)
+  - Zoomtech (Product Design, Development, SaaS)
+- **About**: Bio and HUD-style skill chips
+- **Contact**: Email/WhatsApp/LinkedIn CTAs + Behance/GitHub links
+- Smooth scroll between sections with GSAP scroll-triggered animations
 
 ### Accessibility
 - Keyboard navigation support
