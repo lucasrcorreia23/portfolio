@@ -20,7 +20,8 @@ interface DataType {
     demo_img?: StaticImageData | any;
     mobile_menu?: boolean;
   }[];
-}[]
+}
+
 // menu data 
 const menu_data: DataType[] = [
   {

@@ -405,14 +405,14 @@ html[tp-theme='tp-theme-light']{
         color: var(--tp-common-black-5);
     }
     & .tp-course-pirce-offer p {
-        color: #9ABF03;
+        color: #1AF2F2;
     }
     & .tp-section-subtitle {
-        background-image: -webkit-linear-gradient(91deg, #9ABF03 5.09%, #FF8D62 98.42%);
-        background-image: -moz-linear-gradient(91deg, #9ABF03 5.09%, #FF8D62 98.42%);
-        background-image: -ms-linear-gradient(91deg, #9ABF03 5.09%, #FF8D62 98.42%);
-        background-image: -o-linear-gradient(91deg, #9ABF03 5.09%, #FF8D62 98.42%);
-        background-image: linear-gradient(91deg, #9ABF03 5.09%, #FF8D62 98.42%);
+        background-image: -webkit-linear-gradient(91deg, #1AF2F2 5.09%, #FF8C66 98.42%);
+        background-image: -moz-linear-gradient(91deg, #1AF2F2 5.09%, #FF8C66 98.42%);
+        background-image: -ms-linear-gradient(91deg, #1AF2F2 5.09%, #FF8C66 98.42%);
+        background-image: -o-linear-gradient(91deg, #1AF2F2 5.09%, #FF8C66 98.42%);
+        background-image: linear-gradient(91deg, #1AF2F2 5.09%, #FF8C66 98.42%);
     }
     & .tp-price-head-title {
         color: var(--tp-common-black-5);
@@ -427,10 +427,10 @@ html[tp-theme='tp-theme-light']{
         color: var(--tp-common-black-5);
     }
     & .tp-btn-price-border {
-        color: #9ABF03;
+        color: #1AF2F2;
     }
     .tp-price-btn-box .tp-btn-price-border div span {
-        text-shadow: 0 16px 0 #9ABF03;
+        text-shadow: 0 16px 0 #1AF2F2;
     }
     & .tp-blog-title-sm {
         color: var(--tp-common-black);
@@ -501,18 +501,18 @@ html[tp-theme='tp-theme-light']{
         }
     }
     & .tp-hero-title span, .tp-hero-title span b {
-        background-image: -webkit-linear-gradient(91deg, #C0E42B 8.59%, #F59571 86.19%);
-        background-image: -moz-linear-gradient(91deg, #C0E42B 8.59%, #F59571 86.19%);
-        background-image: -ms-linear-gradient(91deg, #C0E42B 8.59%, #F59571 86.19%);
-        background-image: -o-linear-gradient(91deg, #C0E42B 8.59%, #F59571 86.19%); 
-        background-image: linear-gradient(91deg, #C0E42B 8.59%, #F59571 86.19%);
+        background-image: -webkit-linear-gradient(91deg, #1AF2F2 8.59%, #FF8C66 86.19%);
+        background-image: -moz-linear-gradient(91deg, #1AF2F2 8.59%, #FF8C66 86.19%);
+        background-image: -ms-linear-gradient(91deg, #1AF2F2 8.59%, #FF8C66 86.19%);
+        background-image: -o-linear-gradient(91deg, #1AF2F2 8.59%, #FF8C66 86.19%); 
+        background-image: linear-gradient(91deg, #1AF2F2 8.59%, #FF8C66 86.19%);
     }
     & .tp-about-fact-item h4 {
-        background-image: -webkit-linear-gradient(91deg, #C0E42B 8.59%, #F59571 86.19%);
-        background-image: -moz-linear-gradient(91deg, #C0E42B 8.59%, #F59571 86.19%);
-        background-image: -ms-linear-gradient(91deg, #C0E42B 8.59%, #F59571 86.19%);
-        background-image: -o-linear-gradient(91deg, #C0E42B 8.59%, #F59571 86.19%);
-        background-image: linear-gradient(91deg, #C0E42B 8.59%, #F59571 86.19%);
+        background-image: -webkit-linear-gradient(91deg, #1AF2F2 8.59%, #FF8C66 86.19%);
+        background-image: -moz-linear-gradient(91deg, #1AF2F2 8.59%, #FF8C66 86.19%);
+        background-image: -ms-linear-gradient(91deg, #1AF2F2 8.59%, #FF8C66 86.19%);
+        background-image: -o-linear-gradient(91deg, #1AF2F2 8.59%, #FF8C66 86.19%);
+        background-image: linear-gradient(91deg, #1AF2F2 8.59%, #FF8C66 86.19%);
     }
     & .tp-header-2__main-menu nav ul li a {
         color: var(--tp-common-black-4);
@@ -572,7 +572,7 @@ html[tp-theme='tp-theme-light']{
         color: var(--tp-common-white);
         &:hover{
             color: var(--tp-common-black-5);
-            background-color: #BCE70C;
+            background-color: #1AF2F2;
         }
     }
     & .tp-theme-toggle-slide {

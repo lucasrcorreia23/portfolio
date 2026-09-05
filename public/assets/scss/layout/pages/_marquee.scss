@@ -8,14 +8,14 @@
     &-slider{
         @include transform(rotate(-3deg) translateY(-35px));
         &-active{
-            background-color: #BCE70C;
+            background-color: #1AF2F2;
             height: 84px;
         }
     }
     &-item{
         & p{
             margin-bottom: 0;
-            color: #1A2813;
+            color: #0A0F17;
             font-size: 30px;
             font-weight: 600;
             @extend %ff-garamond;
