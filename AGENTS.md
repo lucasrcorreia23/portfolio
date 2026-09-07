@@ -12,6 +12,18 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 Site pessoal de Lucas Rodrigues Correia. Produção: https://www.lucasrc.com.br
 
+**O site novo substitui o antigo no mesmo domínio, sem redirects.** Os caminhos
+do site anterior (`/nestle`, `/prime8-project`, `/zoomtech-project`,
+`/decision-suite`, `/portfolio`, `/construcao`) simplesmente deixam de existir e
+respondem 404. Não escreva rewrites, redirects nem rotas de compatibilidade —
+não é economia de esforço, é decisão: uma camada de redirects para um site
+descartado seria manutenção permanente a serviço de links que ninguém tem.
+
+O site antigo fica **arquivado no próprio repositório**, na tag
+`template-legado` — não no deploy. Recuperar qualquer coisa dele é
+`git show template-legado:<caminho>`, não visitar uma URL. O deploy é
+substituído inteiro.
+
 **Leia `PROJECT.md` e `DIRECTION.md` antes de qualquer coisa.** O `PROJECT.md` é
 a verdade do projeto; o `DIRECTION.md` é como essa verdade se parece; onde os
 dois divergirem, o `PROJECT.md` ganha. Este arquivo é só o mapa do código.
@@ -280,10 +292,16 @@ por disciplina, DIRECTION.md §4) e `generated` (opcional, PROJECT.md §6).
 `content/cases/exemplo.mdx` é um **fixture descartável**, não conteúdo: existe
 só para o pipeline ter o que compilar enquanto os cases não chegam. Ele fica
 até o **Prompt 5**, onde é **apagado inteiro** — não renomeado, não copiado,
-não usado como molde para os cases reais. Os três cases nascem do PROJECT.md
+não usado como molde para os cases reais. Os nove cases nascem do PROJECT.md
 §6, não deste arquivo; herdar a estrutura dele significaria herdar os travessões
 de placeholder e o `generated: true` que ele carrega só para não fingir ser
 conteúdo. Se ele ainda existir depois do Prompt 5, alguma coisa deu errado.
+
+**São nove cases no repositório**, não três: os três escritos do zero e os seis
+já publicados no site antigo. Estar no repositório não é estar no rio — a
+curadoria de quais aparecem no beat de Trabalho é decidida depois, olhando os
+cards montados na cena. Os que ficarem de fora continuam existindo, indexáveis
+e acessíveis por `/work/[slug]`.
 
 ### Beats
 
@@ -291,6 +309,13 @@ conteúdo. Se ele ainda existir depois do Prompt 5, alguma coisa deu errado.
 progresso e altura em `vh`, desktop e mobile. As alturas viram custom
 properties inline e o `min-height` mora no CSS, para o componente não saber de
 breakpoint.
+
+**O comprimento do beat de Trabalho é fixo** (8.4 vh no desktop, 5.1 no
+mobile), com três cases ou com nove. A contagem determina o **espaçamento entre
+os cards**, não o comprimento do rio — a capacidade real sai do Prompt 4.5 e
+entra como valor derivado. Até lá não existe número de espaçamento; não invente
+um. Um rio que cresce a cada case seria uma punição por ter trabalhado, e
+esticá-lo quebraria os totais e a regra dos oito segundos.
 
 ---
 

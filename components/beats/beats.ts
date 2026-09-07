@@ -45,7 +45,10 @@ export const BEATS: readonly Beat[] = [
   { id: "emergence", from: 0.0, to: 0.1, vh: 2.1, mobileVh: 2.1 },
   { id: "identity", from: 0.1, to: 0.28, vh: 3.8, mobileVh: 3.8 },
   { id: "about", from: 0.28, to: 0.45, vh: 3.6, mobileVh: 3.6 },
-  // O rio: 2.8 vh por case no desktop, 1.7 no mobile, três cases.
+  // O rio. Comprimento FIXO: 8.4 vh no desktop, 5.1 no mobile, com três cases
+  // ou com nove. A contagem determina o espaçamento entre os cards, não o
+  // comprimento do beat — a capacidade real sai do Prompt 4.5 e entra como
+  // valor derivado. Até lá não existe número de espaçamento; não invente um.
   { id: "work", from: 0.45, to: 0.85, vh: 8.4, mobileVh: 5.1 },
   { id: "surface", from: 0.85, to: 1.0, vh: 3.15, mobileVh: 3.15 },
 ] as const;

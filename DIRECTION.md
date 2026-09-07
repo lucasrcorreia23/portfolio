@@ -103,8 +103,24 @@ faixa rolável, mais a viewport). Distribuídas pelos beats:
 | Emergência | 0.00 – 0.10 | 2.1 |
 | Identidade | 0.10 – 0.28 | 3.8 |
 | Quem sou | 0.28 – 0.45 | 3.6 |
-| Trabalho | 0.45 – 0.85 | 8.4 (2.8 por case) |
+| Trabalho | 0.45 – 0.85 | 8.4 |
 | Superfície | 0.85 – 1.00 | 3.15 |
+
+**O comprimento do beat de Trabalho é fixo.** 8.4 vh no desktop, 5.1 no
+mobile, com três cases ou com nove. A contagem de cases não estica o rio: ela
+determina o **espaçamento entre os cards** dentro de um comprimento que não
+muda. Rio mais longo a cada case novo transformaria o portfólio numa punição
+por ter trabalhado.
+
+> ⏳ **PENDENTE — Prompt 4.5.** As linhas antigas diziam **2.8 vh por case no
+> desktop** e **1.7 vh por case no mobile**, dimensionadas para **três cases**.
+> Elas ficam registradas aqui porque foram o raciocínio original, mas **não
+> valem mais como regra**: eram comprimento derivado da contagem, e a relação
+> agora é a inversa. A capacidade real do rio — quantos cards cabem em 8.4 vh
+> sem virar galeria, e qual o espaçamento mínimo entre esteiras — será
+> calculada no Prompt 4.5, olhando os cards na cena, e entra aqui como valor
+> derivado. **Até lá não existe número de espaçamento**, e inventar um seria
+> escolher a curadoria antes de ver o rio.
 
 Soma: `2.1 + 3.8 + 3.6 + 8.4 + 3.15 = ` **21.05 vh** de faixa rolável.
 
@@ -123,9 +139,17 @@ mais devagar que um único gesto decidido de trackpad.
 Isso vira teste: rolagem sintética a 0.6 vh/s a partir do clique de entrada,
 cronometrando até o quadro de separação máxima. Portão: ≤ 8 s.
 
-**Mobile:** o rio comprime para 1.7 vh por case (5.1 vh) e os outros beats são
-mantidos, o que dá `2.1 + 3.8 + 3.6 + 5.1 + 3.15 = ` **17.75 vh** de faixa
-rolável, **18.75 de altura virtual total**.
+**Mobile:** o rio comprime para **5.1 vh** — fixo, como no desktop — e os
+outros beats são mantidos, o que dá `2.1 + 3.8 + 3.6 + 5.1 + 3.15 = ` **17.75
+vh** de faixa rolável, **18.75 de altura virtual total**.
+
+> ⏳ **PENDENTE — Prompt 4.5.** O 5.1 nasceu de `1.7 × 3 cases`, uma derivação
+> que não vale mais (ver o aviso acima). O número permanece como o comprimento
+> fixo do rio no mobile; o que muda é que ele deixou de ser consequência da
+> contagem. Se a capacidade calculada no Prompt 4.5 mostrar que 5.1 vh não
+> comporta os cards escolhidos com espaçamento legível, é o **espaçamento** que
+> cede, ou a curadoria — nunca o comprimento, porque esticá-lo quebraria os
+> totais e a regra dos oito segundos.
 
 O quadro do descolamento cai em `0.18 × 17.75 = 3.20 vh`. O polegar cobre 2 a
 3 vh/s: a 2 vh/s são 1.60 s + 0.64 de assentamento = **~2.2 s**; a 3 vh/s,
@@ -207,8 +231,18 @@ Cada card carrega uma placa de cota gravada: cliente, ano, estação.
 | WeCann Atena | ● | ● | |
 | Unifique Energia | ● | ● | ● |
 
-Nenhum filtro devolve menos de dois cases, e nenhum esvazia o rio. Cinco
-categorias sobre três cases só anunciava que são três.
+Nenhum filtro devolve menos de dois cases, e nenhum esvazia o rio.
+
+> ⏳ **PENDENTE — Prompt 4.5.** Esta matriz cobre três cases; o repositório
+> agora tem nove (PROJECT.md §6). Os três eixos continuam valendo — são
+> disciplinas, não categorias, e não crescem com o acervo. O que falta é a
+> marcação dos seis cases novos, e ela sai junto com a curadoria de quem
+> aparece no rio, olhando os cards na cena. Não preencher agora é deliberado:
+> classificar por disciplina um case que ainda não foi visto montado é
+> escolher o filtro antes de conhecer o escoamento.
+>
+> A regra que sobrevive à ampliação: nenhum filtro devolve menos de dois
+> cases, e nenhum esvazia o rio.
 
 **E o filtro nunca remove.** Ele **promove**: as peças que casam vêm para o eixo
 da câmara, as outras recuam para a periferia e continuam montadas, ainda

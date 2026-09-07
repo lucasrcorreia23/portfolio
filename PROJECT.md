@@ -199,7 +199,12 @@ Não é a versão desktop encolhida. A descida continua, o organismo continua, m
 
 ## 6. Conteúdo
 
-Três cases, em `content/cases/`:
+Nove cases, em `content/cases/`. **Estar no repositório não é estar no rio:** a
+curadoria de quais aparecem no beat de Trabalho acontece depois, olhando os
+cards montados na cena (DIRECTION.md §4). Os que não entrarem no rio continuam
+existindo, indexáveis e acessíveis pela rota própria.
+
+Os três escritos do zero:
 
 1. **Perfecting.** Produto B2B SaaS de roleplay e treino de vendas com IA. Case de produto ponta a ponta, com fluxo, sistema de marca e analytics.
 2. **WeCann Atena.** Plataforma de prontuário eletrônico, feita pela Atomsix. Case de domínio complexo e design de sistema.
@@ -208,6 +213,16 @@ Três cases, em `content/cases/`:
    contratação tratada como produto, não como formulário. Trabalho feito no Estúdio Nákama;
    material de origem (imagens e texto) em
    https://www.estudionakama.com.br/projetos/unifique-energia
+
+Os seis já publicados no site antigo, cujo material de origem sai de
+lucasrc.com.br antes da substituição:
+
+4. **Decision Suite**
+5. **Organiconecta**
+6. **ZOOMtecnologia**
+7. **Prime8**
+8. **Orbsofty**
+9. **Nestlé**
 
 Cada case tem no frontmatter: `title`, `client`, `year`, `role`, `stack`, `summary_pt`, `summary_en`, `accent` (um token da paleta), `cover`, `media[]`.
 
