@@ -107,20 +107,25 @@ faixa rolável, mais a viewport). Distribuídas pelos beats:
 | Superfície | 0.85 – 1.00 | 3.15 |
 
 **O comprimento do beat de Trabalho é fixo.** 8.4 vh no desktop, 5.1 no
-mobile, com três cases ou com nove. A contagem de cases não estica o rio: ela
+mobile, com três cases ou com sete. A contagem de cases não estica o rio: ela
 determina o **espaçamento entre os cards** dentro de um comprimento que não
 muda. Rio mais longo a cada case novo transformaria o portfólio numa punição
 por ter trabalhado.
 
-> ⏳ **PENDENTE — Prompt 4.5.** As linhas antigas diziam **2.8 vh por case no
-> desktop** e **1.7 vh por case no mobile**, dimensionadas para **três cases**.
-> Elas ficam registradas aqui porque foram o raciocínio original, mas **não
-> valem mais como regra**: eram comprimento derivado da contagem, e a relação
-> agora é a inversa. A capacidade real do rio — quantos cards cabem em 8.4 vh
-> sem virar galeria, e qual o espaçamento mínimo entre esteiras — será
-> calculada no Prompt 4.5, olhando os cards na cena, e entra aqui como valor
-> derivado. **Até lá não existe número de espaçamento**, e inventar um seria
-> escolher a curadoria antes de ver o rio.
+> ⏳ **PENDENTE — prompt de migração, antes do rio.** Todo o dimensionamento
+> abaixo foi feito para **três cases** e não vale mais como regra:
+>
+> - **2.8 vh por case no desktop** (8.4 ÷ 3)
+> - **1.7 vh por case no mobile** (5.1 ÷ 3)
+>
+> Eram comprimento derivado da contagem, e a relação agora é a inversa. Ficam
+> registrados porque foram o raciocínio original, não porque ainda valem.
+>
+> A capacidade real do rio — quantos cards cabem em 8.4 vh sem virar galeria,
+> e qual o espaçamento mínimo entre esteiras — é calculada no **prompt de
+> migração, que roda antes do rio**, olhando os cards montados na cena, e
+> entra aqui como **valor derivado**. **Até lá não existe número de
+> espaçamento**, e inventar um seria escolher a curadoria antes de ver o rio.
 
 Soma: `2.1 + 3.8 + 3.6 + 8.4 + 3.15 = ` **21.05 vh** de faixa rolável.
 
@@ -143,13 +148,14 @@ cronometrando até o quadro de separação máxima. Portão: ≤ 8 s.
 outros beats são mantidos, o que dá `2.1 + 3.8 + 3.6 + 5.1 + 3.15 = ` **17.75
 vh** de faixa rolável, **18.75 de altura virtual total**.
 
-> ⏳ **PENDENTE — Prompt 4.5.** O 5.1 nasceu de `1.7 × 3 cases`, uma derivação
-> que não vale mais (ver o aviso acima). O número permanece como o comprimento
-> fixo do rio no mobile; o que muda é que ele deixou de ser consequência da
-> contagem. Se a capacidade calculada no Prompt 4.5 mostrar que 5.1 vh não
-> comporta os cards escolhidos com espaçamento legível, é o **espaçamento** que
-> cede, ou a curadoria — nunca o comprimento, porque esticá-lo quebraria os
-> totais e a regra dos oito segundos.
+> ⏳ **PENDENTE — prompt de migração, antes do rio.** O 5.1 nasceu de
+> `1.7 × 3 cases`, uma derivação que não vale mais (ver o aviso acima). O
+> número permanece como o comprimento fixo do rio no mobile; o que muda é que
+> ele deixou de ser consequência da contagem. Se a capacidade calculada no
+> prompt de migração mostrar que 5.1 vh não comporta os cards escolhidos com
+> espaçamento legível, é o **espaçamento** que cede, ou a curadoria — nunca o
+> comprimento, porque esticá-lo quebraria os totais e a regra dos oito
+> segundos.
 
 O quadro do descolamento cai em `0.18 × 17.75 = 3.20 vh`. O polegar cobre 2 a
 3 vh/s: a 2 vh/s são 1.60 s + 0.64 de assentamento = **~2.2 s**; a 3 vh/s,
@@ -160,6 +166,12 @@ PROJECT.md já diz: ninguém abre um portfólio no celular para rolar dez minuto
 Se um beat precisar de mais ar, ele tira do rio, nunca da Identidade — encurtar
 a Identidade encurta a aproximação, e a aproximação é o que faz o descolamento
 valer.
+
+Isso **não** contradiz o comprimento fixo do rio: fixo é em relação à
+**contagem de cases**, não a uma decisão de composição. O rio pode encolher
+para dar ar a outro beat; o que ele nunca faz é **crescer porque entrou um
+case** — crescer quebraria os totais e a regra dos oito segundos, e é
+exatamente a direção que a contagem empurraria se deixassem.
 
 ### pré — Portão
 
@@ -222,6 +234,19 @@ beat de identidade, em escala menor, e é o que impede o rio de virar uma galeri
 
 Cada card carrega uma placa de cota gravada: cliente, ano, estação.
 
+**Quem entra no rio é um campo do frontmatter.** O acervo em `content/cases/`
+é maior que o rio, e essa diferença é intencional. A curadoria vive num
+**booleano no frontmatter de cada case** — `in_river` — decidido **olhando os
+cards montados na cena**, não lendo a lista de projetos. Um case só sai do rio
+virando esse campo `false`.
+
+**Nenhum case é apagado para sair do rio.** Ele continua em `content/cases/`,
+continua com rota própria em `/work/[slug]`, continua indexável e linkável.
+Sair do rio é uma decisão de composição — quantos corpos de prova a câmara
+comporta antes de o escoamento virar galeria —, não um julgamento sobre o
+trabalho. Apagar um case para encurtar o rio confundiria as duas coisas e
+perderia a única cópia do material migrado.
+
 **Filtros por disciplina, não por categoria.** Três eixos — **produto**,
 **sistema**, **marca** — e cada case aparece em mais de um:
 
@@ -233,13 +258,17 @@ Cada card carrega uma placa de cota gravada: cliente, ano, estação.
 
 Nenhum filtro devolve menos de dois cases, e nenhum esvazia o rio.
 
-> ⏳ **PENDENTE — Prompt 4.5.** Esta matriz cobre três cases; o repositório
-> agora tem nove (PROJECT.md §6). Os três eixos continuam valendo — são
-> disciplinas, não categorias, e não crescem com o acervo. O que falta é a
-> marcação dos seis cases novos, e ela sai junto com a curadoria de quem
-> aparece no rio, olhando os cards na cena. Não preencher agora é deliberado:
-> classificar por disciplina um case que ainda não foi visto montado é
-> escolher o filtro antes de conhecer o escoamento.
+> ⏳ **PENDENTE — prompt de migração, antes do rio.** Esta matriz cobre três
+> cases; o repositório terá sete (PROJECT.md §6). Os três eixos continuam
+> valendo — são disciplinas, não categorias, e não crescem com o acervo. O que
+> falta é a marcação dos quatro cases migrados, e ela sai junto com a curadoria
+> de quem aparece no rio, olhando os cards na cena. Não preencher agora é
+> deliberado: classificar por disciplina um case que ainda não foi visto
+> montado é escolher o filtro antes de conhecer o escoamento.
+>
+> Os filtros operam sobre **quem está no rio** (`in_river: true`), não sobre o
+> acervo inteiro — senão promover um card que não está montado na câmara não
+> teria o que promover.
 >
 > A regra que sobrevive à ampliação: nenhum filtro devolve menos de dois
 > cases, e nenhum esvazia o rio.

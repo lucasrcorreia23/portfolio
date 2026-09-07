@@ -62,6 +62,15 @@ export type CaseFrontmatterInput = {
   cover: string;
   media: Array<Omit<CaseMedia, "generated"> & { generated?: boolean }>;
   disciplines: Discipline[];
+  /**
+   * A curadoria do rio — DIRECTION.md §4. **Obrigatório de propósito:** um
+   * padrão implícito decidiria a curadoria em silêncio, e essa decisão é de
+   * composição, tomada olhando os cards montados na cena.
+   *
+   * `false` tira o case do beat de Trabalho e **não o apaga**: ele continua
+   * em `content/cases/`, com rota própria, indexável e linkável.
+   */
+  in_river: boolean;
   generated?: boolean;
 };
 
@@ -78,6 +87,7 @@ export type CaseFrontmatter = {
   cover: string;
   media: readonly CaseMedia[];
   disciplines: readonly Discipline[];
+  in_river: boolean;
   generated: boolean;
 };
 
@@ -115,6 +125,7 @@ export async function loadCase(slug: string): Promise<LoadedCase> {
   };
 }
 
+/** Todo o acervo. É isto que gera rotas: um case fora do rio ainda tem página. */
 export async function getAllCases(): Promise<CaseEntry[]> {
   const slugs = await getCaseSlugs();
   const cases = await Promise.all(
@@ -124,6 +135,16 @@ export async function getAllCases(): Promise<CaseEntry[]> {
     }),
   );
   return cases;
+}
+
+/**
+ * Só os cases montados na câmara — DIRECTION.md §4. O acervo é maior que o
+ * rio, e a diferença é intencional: quem monta o beat de Trabalho e quem
+ * aplica os filtros por disciplina usa esta lista, não `getAllCases()`.
+ */
+export async function getRiverCases(): Promise<CaseEntry[]> {
+  const cases = await getAllCases();
+  return cases.filter((entry) => entry.frontmatter.in_river);
 }
 
 export function caseSummary(
@@ -178,6 +199,18 @@ function requireStringArray(
     fail(slug, `\`${key}\` precisa ser um array de strings não vazio.`);
   }
   return value as string[];
+}
+
+function requireBoolean(
+  slug: string,
+  raw: Record<string, unknown>,
+  key: string,
+): boolean {
+  const value = raw[key];
+  if (typeof value !== "boolean") {
+    fail(slug, `\`${key}\` precisa ser \`true\` ou \`false\`, escrito explicitamente.`);
+  }
+  return value;
 }
 
 function requireOneOf<T extends string>(
@@ -252,6 +285,9 @@ export function parseFrontmatter(
     cover: requireString(slug, record, "cover"),
     media: parseMedia(slug, record["media"]),
     disciplines: disciplines as Discipline[],
+    // Obrigatório: `record["in_river"] === true` aceitaria a ausência do
+    // campo como "fora do rio", e a curadoria teria sido decidida por omissão.
+    in_river: requireBoolean(slug, record, "in_river"),
     generated: record["generated"] === true,
   };
 }

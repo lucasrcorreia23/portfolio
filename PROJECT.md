@@ -199,10 +199,11 @@ Não é a versão desktop encolhida. A descida continua, o organismo continua, m
 
 ## 6. Conteúdo
 
-Nove cases, em `content/cases/`. **Estar no repositório não é estar no rio:** a
+Sete cases, em `content/cases/`. **Estar no repositório não é estar no rio:** a
 curadoria de quais aparecem no beat de Trabalho acontece depois, olhando os
-cards montados na cena (DIRECTION.md §4). Os que não entrarem no rio continuam
-existindo, indexáveis e acessíveis pela rota própria.
+cards montados na cena, e é gravada num campo booleano do frontmatter
+(DIRECTION.md §4). Um case fora do rio **não é apagado** — continua existindo,
+indexável e acessível pela rota própria.
 
 Os três escritos do zero:
 
@@ -214,15 +215,18 @@ Os três escritos do zero:
    material de origem (imagens e texto) em
    https://www.estudionakama.com.br/projetos/unifique-energia
 
-Os seis já publicados no site antigo, cujo material de origem sai de
-lucasrc.com.br antes da substituição:
+Os quatro migrados do portfólio antigo, cuja mídia e cujo texto saem do
+repositório do site anterior (ver AGENTS.md, "Migração do site antigo"):
 
 4. **Decision Suite**
-5. **Organiconecta**
-6. **ZOOMtecnologia**
-7. **Prime8**
-8. **Orbsofty**
-9. **Nestlé**
+5. **ZOOMtecnologia**
+6. **Prime8**
+7. **Nestlé**
+
+**Fora por ora:** **Organiconecta** e **Orbsofty**. Não foram descartados — não
+entram nesta rodada. O material dos dois continua no repositório antigo e a
+decisão pode ser revista; até lá eles não existem em `content/cases/`, não têm
+rota e não contam para nenhum dimensionamento.
 
 Cada case tem no frontmatter: `title`, `client`, `year`, `role`, `stack`, `summary_pt`, `summary_en`, `accent` (um token da paleta), `cover`, `media[]`.
 

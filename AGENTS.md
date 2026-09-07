@@ -24,6 +24,33 @@ O site antigo fica **arquivado no próprio repositório**, na tag
 `git show template-legado:<caminho>`, não visitar uma URL. O deploy é
 substituído inteiro.
 
+### Migração do site antigo
+
+**`github.com/lucasrcorreia23/portfolio` precisa continuar existindo.** É este
+mesmo repositório — o `origin` não mudou —, e é de lá que sai a mídia e o texto
+dos quatro cases migrados. Concretamente: **não apague a tag `template-legado`,
+não force-push por cima dela, não recrie o repositório do zero.** Enquanto os
+quatro cases não estiverem escritos em `content/cases/`, aquela tag é a única
+cópia do material.
+
+Onde as coisas estão dentro da tag:
+
+```bash
+git show template-legado:<caminho>                    # um arquivo
+git ls-tree -r --name-only template-legado | grep -i nestle   # achar arquivos
+git checkout template-legado -- public/assets/img/nestle      # trazer mídia
+```
+
+- **Texto e estrutura:** `src/components/<case>/` — `nestle`,
+  `decision-suite-project`, `prime8-project`, `zoomtech-project`.
+- **Imagens:** `public/assets/img/<case>/`.
+- **Rotas antigas, para achar o que era público:** `src/app/`.
+
+Sobre os dois que ficaram de fora: **Organiconecta** tem componentes e imagens
+na tag mas nunca teve rota em `src/app`, e **Orbsofty** só tem um diretório de
+imagens, sem página. É material incompleto, e é bom saber disso antes de
+alguém propor trazê-los de volta.
+
 **Leia `PROJECT.md` e `DIRECTION.md` antes de qualquer coisa.** O `PROJECT.md` é
 a verdade do projeto; o `DIRECTION.md` é como essa verdade se parece; onde os
 dois divergirem, o `PROJECT.md` ganha. Este arquivo é só o mapa do código.
@@ -286,22 +313,31 @@ a mesma que renderiza.
 rotas são estáticas, um frontmatter errado quebra `next build`, não a página em
 produção.
 
-Campos além do PROJECT.md §6: `disciplines` (obrigatório — os filtros do rio são
-por disciplina, DIRECTION.md §4) e `generated` (opcional, PROJECT.md §6).
+Campos além do PROJECT.md §6: `disciplines` e `in_river` (os dois obrigatórios,
+DIRECTION.md §4) e `generated` (opcional, PROJECT.md §6).
 
 `content/cases/exemplo.mdx` é um **fixture descartável**, não conteúdo: existe
 só para o pipeline ter o que compilar enquanto os cases não chegam. Ele fica
 até o **Prompt 5**, onde é **apagado inteiro** — não renomeado, não copiado,
-não usado como molde para os cases reais. Os nove cases nascem do PROJECT.md
+não usado como molde para os cases reais. Os sete cases nascem do PROJECT.md
 §6, não deste arquivo; herdar a estrutura dele significaria herdar os travessões
 de placeholder e o `generated: true` que ele carrega só para não fingir ser
 conteúdo. Se ele ainda existir depois do Prompt 5, alguma coisa deu errado.
 
-**São nove cases no repositório**, não três: os três escritos do zero e os seis
-já publicados no site antigo. Estar no repositório não é estar no rio — a
-curadoria de quais aparecem no beat de Trabalho é decidida depois, olhando os
-cards montados na cena. Os que ficarem de fora continuam existindo, indexáveis
-e acessíveis por `/work/[slug]`.
+**São sete cases no repositório**, não três: Perfecting, WeCann Atena e
+Unifique Energia escritos do zero, mais Decision Suite, ZOOMtecnologia, Prime8
+e Nestlé migrados do portfólio antigo. Organiconecta e Orbsofty ficam de fora
+por ora — não foram descartados, só não entram nesta rodada.
+
+**Estar no repositório não é estar no rio.** A curadoria é um booleano
+obrigatório no frontmatter, `in_river`, decidido olhando os cards montados na
+cena — não lendo a lista de projetos. É obrigatório de propósito: um padrão
+implícito decidiria a curadoria em silêncio.
+
+**Nenhum case é apagado para sair do rio.** `in_river: false` tira o card do
+beat de Trabalho e mantém tudo o mais — o arquivo, a rota `/work/[slug]`, a
+indexação. Use `getRiverCases()` para montar o rio e aplicar os filtros por
+disciplina; `getAllCases()` é o acervo inteiro e é o que gera as rotas.
 
 ### Beats
 
@@ -311,11 +347,12 @@ properties inline e o `min-height` mora no CSS, para o componente não saber de
 breakpoint.
 
 **O comprimento do beat de Trabalho é fixo** (8.4 vh no desktop, 5.1 no
-mobile), com três cases ou com nove. A contagem determina o **espaçamento entre
-os cards**, não o comprimento do rio — a capacidade real sai do Prompt 4.5 e
-entra como valor derivado. Até lá não existe número de espaçamento; não invente
-um. Um rio que cresce a cada case seria uma punição por ter trabalhado, e
-esticá-lo quebraria os totais e a regra dos oito segundos.
+mobile), com três cases ou com sete. A contagem determina o **espaçamento entre
+os cards**, não o comprimento do rio — a capacidade real sai do **prompt de
+migração, que roda antes do rio**, e entra como valor derivado. Até lá não
+existe número de espaçamento; não invente um. Um rio que cresce a cada case
+seria uma punição por ter trabalhado, e esticá-lo quebraria os totais e a regra
+dos oito segundos.
 
 ---
 
