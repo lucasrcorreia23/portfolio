@@ -1,5 +1,7 @@
 {
   "label": "Gate",
   "enter": "Enter",
-  "unit": "M/S"
+  "unit": "M/S",
+  "loading": "Bringing the chamber up to speed.",
+  "ready": "The chamber is at speed."
 }

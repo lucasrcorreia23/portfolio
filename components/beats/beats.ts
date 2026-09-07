@@ -71,9 +71,39 @@ export const SCROLL_VH_MOBILE = round2(
   BEATS.reduce((total, beat) => total + beat.mobileVh, 0),
 );
 
-/** Altura virtual total: a faixa rolável mais a viewport que fica na tela. */
-export const TOTAL_VH = SCROLL_VH + 1;
-export const TOTAL_VH_MOBILE = SCROLL_VH_MOBILE + 1;
+/**
+ * O viewport que qualquer página rolável deixa parado no fim: quando o
+ * scroll esgota a faixa rolável, o último viewport de conteúdo continua na
+ * tela sem custar rolagem nenhuma — não é um sexto beat, é o resto que sobra
+ * de graça. `TOTAL_VH` sempre excede `SCROLL_VH` em exatamente isto.
+ *
+ * **Ele pertence à Superfície e fica fora da faixa de progresso.** O
+ * DIRECTION.md §4 já descrevia esse frame — "o último frame é a câmara
+ * vazia, com luz, e um número gravado" —, mas o beat de Superfície só
+ * reservava altura para o seu próprio intervalo rolável (`0.85–1.00`, 3.15
+ * vh). Este vh é a continuação *depois* de 1.00: o progresso trava lá, nada
+ * mais se move, e o que fica na tela é esse quadro parado. `beatHoldVh()`
+ * é quem soma isto à altura renderizada da Superfície — nunca a `vh` do
+ * `Beat`, que continua sendo só a parte rolável e é o que entra em
+ * `SCROLL_VH` e na verificação dos oito segundos.
+ */
+export const TERMINAL_HOLD_VH = 1;
+
+/** Altura virtual total: a faixa rolável mais o viewport que fica parado. */
+export const TOTAL_VH = SCROLL_VH + TERMINAL_HOLD_VH;
+export const TOTAL_VH_MOBILE = SCROLL_VH_MOBILE + TERMINAL_HOLD_VH;
+
+/** O único beat que carrega o viewport parado — ver `TERMINAL_HOLD_VH`. */
+const TERMINAL_BEAT: BeatId = "surface";
+
+/**
+ * Quanto de altura extra, além da própria `vh` do beat, a seção de um beat
+ * deve renderizar para incluir o viewport parado do fim da descida. Zero
+ * para todo mundo, exceto a Superfície.
+ */
+export function beatHoldVh(id: BeatId): number {
+  return id === TERMINAL_BEAT ? TERMINAL_HOLD_VH : 0;
+}
 
 /** Onde o quadro do descolamento cai — DIRECTION.md §4. */
 export const SEPARATION_PROGRESS = 0.18;

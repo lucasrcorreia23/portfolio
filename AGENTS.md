@@ -71,9 +71,11 @@ dois divergirem, o `PROJECT.md` ganha. Este arquivo é só o mapa do código.
 
 ## Estado atual
 
-**Fundação montada. Sem conteúdo e sem 3D.** O que existe é o esqueleto: rotas,
-idiomas, tokens, escala tipográfica, o driver de scroll, os hooks de capacidade
-e o pipeline de MDX. Nenhum beat tem conteúdo; a cena é uma camada vazia.
+**Fundação montada, mais o portão. Sem conteúdo de beat e sem 3D.** O que
+existe é o esqueleto — rotas, idiomas, tokens, escala tipográfica, driver de
+scroll, hooks de capacidade, pipeline de MDX — e, em cima dele, o **preloader
+e o portão de entrada**, que já são um beat de verdade e não andaime.
+Nenhum dos cinco beats da descida tem conteúdo; a cena é uma camada vazia.
 
 O template HTML comprado que ocupava este repositório foi **descartado, não
 migrado** (PROJECT.md §5). Nada dele sobreviveu: nem SCSS, nem jQuery, nem
@@ -131,15 +133,21 @@ Node 24 (`.nvmrc`); o mínimo do Next 16 é 20.9. Não há suíte de testes.
 
 ```
 app/[locale]/          rotas; o layout raiz é app/[locale]/layout.tsx
+components/gate/       o preloader e o portão de entrada (o beat "pré")
 components/scene/      a cena 3D e o portão que escolhe qual versão roda
 components/hud/        a HUD lateral fixa (substitui o rodapé; não há rodapé)
 components/beats/      as cinco seções da descida
 components/type/       DisplayLine — a linha de display que se auto-dimensiona
 content/cases/         os cases, em .mdx
 content/messages/      dicionários, um arquivo por beat, por idioma
-lib/                   capabilities/, i18n/, scroll/ e módulos soltos
+lib/                   audio/, capabilities/, i18n/, preload/, scroll/ e soltos
 styles/                globals.css + tokens.css
 ```
+
+**Dois "portões", e eles não são a mesma coisa.** `components/gate/` é o portão
+de entrada — o preloader, o contador, a veneziana. `components/scene/SceneGate`
+é o portão *da cena*, que decide qual das três versões dela roda
+(`driven | composed | poster`). Nomes parecidos, papéis sem interseção.
 
 Não existe `src/`. O alias é um só: `@/*` → raiz do repositório.
 
@@ -177,23 +185,34 @@ caixa. Um pacote que apareça na primeira caixa por engano — um `import`
 estático que escapou para o `SceneGate`, por exemplo — não é 350 kB de cena, é
 350 kB de rota inicial estourada.
 
-Estado medido nesta fundação, com a cena ainda vazia:
+Estado medido, com o portão montado e a cena ainda vazia:
+
+| Rota | gz | contra |
+|---|---|---|
+| `/` e `/pt` — a descida, com portão e preloader | **178.8 kB** | 200 kB ✅ |
+| `/work/[slug]` — case, sem portão | 174.3 kB | 200 kB ✅ |
+| chunk do driver de scroll (gsap + ScrollTrigger + lenis) | 49.0 kB | fora da rota inicial |
+
+Histórico da medição, porque as duas linhas explicam a arquitetura:
 
 | Composição da rota inicial | gz |
 |---|---|
 | Next 16 + React 19 + o DOM deste site, sem gsap e sem lenis | 175 kB |
-| \+ gsap/ScrollTrigger e lenis (o driver de scroll) | **223 kB** |
+| \+ gsap/ScrollTrigger e lenis estaticamente no layout (estado antigo) | 223 kB |
 | \+ next-intl no cliente (estado descartado) | 236 kB |
 
-**A fundação está 23 kB acima do teto de 200 kB**, e a cena nem entrou. Duas
-leituras disso:
+**O que fechou o orçamento foi tirar o driver de scroll da rota inicial**, que
+era o conserto que esta tabela já prescrevia. Ele não serve ao primeiro quadro:
+o portão é DOM, não rola, e a descida só começa no clique de entrada. Hoje
+`lib/scroll/ScrollProvider.tsx` é uma casca leve que renderiza os filhos na
+hora e monta o `ScrollDriver` — gsap e lenis — por `import()` dinâmico depois
+do primeiro quadro. Na home o preloader do portão pede o mesmo chunk e conta
+o carregamento como progresso; a promessa memoizada em
+`lib/scroll/load-driver.ts` faz os dois convergirem num download só.
 
-- O piso do framework é 175 kB. Sobra pouquíssimo para código nosso, então
-  nenhuma dependência de cliente entra sem medição.
-- Os 48 kB do gsap + lenis estão na caixa errada. **O driver de scroll não é
-  necessário para o primeiro quadro** — o portão é DOM e o scroll só começa
-  depois do clique de entrada. Ele deve ser carregado por import dinâmico
-  junto com a cena, o que devolve a rota inicial aos 175 kB.
+O piso do framework continua sendo 175 kB. **Sobram ~21 kB para tudo que este
+site escrever de cliente**, e o portão já gastou 4.5 deles. Nenhuma dependência
+de cliente entra sem medição.
 
 A regra do next-intl continua valendo — **nenhum componente de cliente importa
 o next-intl**, traduza no servidor e desça strings como props —, mas pela razão
@@ -231,14 +250,14 @@ Consequências práticas:
   ele, uma visita futura a `/` volta a negociar por `Accept-Language`.
 - Antes de adicionar qualquer dependência de cliente, meça: rode o build,
   some o gzip dos `<script>` da home e compare com a tabela acima.
-- Quando a cena entrar, ela é carregada por `next/dynamic` com `ssr: false`,
+- Quando a cena entrar, ela é carregada por import dinâmico com `ssr: false`,
   a partir do `SceneGate` e só depois do primeiro quadro útil. Meça as duas
   caixas separadamente: os `<script>` do HTML inicial contra 200 kB, e o
   chunk da cena contra 350 kB.
-- **O `ScrollProvider` vai junto nesse import dinâmico.** Gsap e lenis são
-  48 kB que hoje pesam na rota inicial sem servir ao primeiro quadro: o portão
-  é DOM e não rola. Mover os dois para a segunda caixa é o que traz a rota
-  inicial de 223 para 175 kB e faz o orçamento fechar.
+- **A cena entra como mais uma tarefa do manifesto do preloader**
+  (`lib/preload/manifest.ts`), com peso maior que as outras — é o chunk de
+  350 kB, e o portão é exatamente o momento de baixá-lo. Não invente um
+  segundo mecanismo de carregamento; há um, e o contador já sabe medi-lo.
 
 ### A variável única
 
@@ -249,11 +268,15 @@ e as revelações de texto. Isso é literal no código.
   progresso muda a cada frame e quase nenhum consumidor quer um render por
   frame. O snapshot é mutado no lugar; não guarde a referência, copie os
   números.
-- `lib/scroll/ScrollProvider.tsx` é o **único** publicador. Ele instancia o
+- `lib/scroll/ScrollDriver.tsx` é o **único** publicador. Ele instancia o
   Lenis (`lerp` 0.075), roda o `raf` pelo ticker do GSAP com
   `lagSmoothing(0)`, e chama `ScrollTrigger.update()` a cada scroll. Com
   `prefers-reduced-motion` ele troca o Lenis por scroll nativo — e continua
-  publicando o mesmo progresso.
+  publicando o mesmo progresso. **Ele não está na rota inicial**: quem o monta
+  é o `ScrollProvider`, uma casca de layout que o carrega por `import()`
+  depois do primeiro quadro (ver "Orçamento de JS"). Se o chunk não chegar, o
+  scroll continua nativo e o progresso fica em 0 — perde-se a cena e a régua
+  da HUD, não o conteúdo.
 - `lib/scroll/use-scroll-progress.ts` é o **único** acesso de leitura.
   Sem argumento devolve um ref atualizado por frame e nenhum render; com
   `{ steps: N }` devolve também o valor quantizado como estado, para quem
@@ -276,6 +299,63 @@ própria combinação. O modo escolhido fica no DOM em `data-scene-mode`.
 
 `lib/capabilities/scene-mode.ts` (sem `"use client"`) guarda os nomes dos
 modos, porque quem traduz os rótulos é o servidor.
+
+A regra é sobre **combinar** as duas capacidades, não sobre tocar em uma:
+`ScrollDriver` e `GateOverlay` consultam `useReducedMotion` sozinho, porque
+nenhum dos dois depende de WebGL. Quem precisa das duas juntas usa
+`useSceneMode`.
+
+### O portão de entrada
+
+`components/gate/` — o beat "pré" do PROJECT.md §4. Ele **mora na home**
+(`app/[locale]/page.tsx`), não no layout: quem chega direto num case por link
+não tem cena para carregar nem descida para destravar.
+
+```
+Gate.tsx           servidor: resolve os rótulos, escreve a trava e o <noscript>
+GateOverlay.tsx    cliente: o relógio único — contador, veneziana, campo
+dormant-field.ts   o organismo dormente, canvas 2D sem dependência
+readout.ts         14.617 M/S, COTA −38.402, ↓ — e por que esses números
+```
+
+**O contador não é uma barra e não mente.** Ele conta o manifesto real
+(`lib/preload/manifest.ts`) e mostra uma leitura de velocidade. Como
+`import()` e `fonts.ready` só sabem informar "pronto", o progresso avança em
+degraus; quem os transforma numa subida é o amortecimento, travado por
+`Math.min(perseguidor, alvo)` para **nunca mostrar mais do que já chegou**.
+O perseguidor mira 1.03 e não 1 — é o que faz a leitura *chegar* a 14.617 num
+tempo finito em vez de se aproximar dele para sempre. Detalhe tipográfico e
+justificativa dos números: `readout.ts` e DIRECTION.md §4.
+
+**Um relógio só.** O `GateOverlay` tem um `requestAnimationFrame` que dirige o
+contador, o `transform` de cada lâmina e o avanço da câmera no canvas. Não é
+transição de CSS: a mesma curva (`easeStrong`, em `lib/motion.ts`) precisa
+valer para o DOM e para o canvas, e dois relógios divergem em 1.45 s. O React
+só re-renderiza na troca de fase — o número é escrito em `textContent`, pela
+mesma razão que o progresso do scroll fica fora do React.
+
+**No modo calmo não existe `requestAnimationFrame` nenhum.** O campo vira uma
+composição fixa, o contador é escrito no callback do carregamento (dois ou três
+eventos), e a abertura vira o corte de 120 ms — que é a única coisa do portão
+que esmaece.
+
+**`data-gate` no `<html>` é o contrato**, e vale para CSS e para teste:
+`closed` (trava `overflow: hidden`), `opening`, `open`. Ele é escrito no parse
+por um script inline, e não na hidratação — senão a página rola por trás de um
+portão opaco e um reload restaura a posição no meio da descida. Sem JS o
+script não roda e o `<noscript>` esconde o portão: o site sem JS é o site sem
+cena, não um site trancado.
+
+**O clique faz três coisas no mesmo handler, síncronas** — destrava o áudio,
+libera a descida e dispara a veneziana. O `unlockAudio()` precisa ser síncrono
+dentro do gesto; um `await` antes dele já perde o gesto em alguns navegadores.
+E a descida é liberada no clique, não no fim da transição: prender o scroll por
+mais 1.45 s comeria da regra dos oito segundos sem nada em troca.
+
+**O áudio é sintetizado, não é arquivo.** `lib/audio/audio-context.ts` monta o
+baque de pressão com um oscilador grave caindo de tom mais um estouro de ruído
+filtrado — ~1 kB de código contra dezenas de kB de mp3. O módulo já expõe
+`getAudioContext()` e `setAudioMuted()` para o controle de áudio da HUD.
 
 ### Tipografia e a regra dos 80%
 
@@ -422,24 +502,40 @@ delas**, e o DIRECTION.md foi corrigido para dizer isso.
 | desktop | 21.05 vh | 22.05 vh |
 | mobile | 17.75 vh | 18.75 vh |
 
-No código isso é literal: `SCROLL_VH`, `SCROLL_VH_MOBILE`, `TOTAL_VH` e
-`TOTAL_VH_MOBILE` em `components/beats/beats.ts` são somas calculadas sobre
-`BEATS`, nunca constantes digitadas. Mexer numa linha move os totais sozinho.
-**Não reintroduza um total literal** — foi exatamente assim que a divergência
-nasceu.
+No código isso é literal: `SCROLL_VH` e `SCROLL_VH_MOBILE`, em
+`components/beats/beats.ts`, são somas calculadas sobre `BEATS`, nunca
+constantes digitadas. `TOTAL_VH`/`TOTAL_VH_MOBILE` são derivados por cima
+delas — `SCROLL_VH + TERMINAL_HOLD_VH` — e não somam `BEATS` diretamente,
+porque o viewport final não pertence a nenhuma linha da tabela (ver abaixo).
+Mexer numa linha move os dois totais sozinho. **Não reintroduza um total
+literal** — foi exatamente assim que a divergência nasceu.
 
 A regra dos oito segundos foi reverificada com os números novos e passa com
 folga nos dois: o descolamento cai em 3.79 vh no desktop e 3.20 vh no mobile,
 e para falhar seria preciso rolar abaixo de 0.52 vh/s (desktop) ou 0.43 vh/s
 (mobile). A conta completa está no DIRECTION.md §4.
 
+**O viewport que separa "rolável" de "total" agora existe no DOM.** Antes, as
+seções renderizadas somavam só `SCROLL_VH` (21.05 vh) — a página era um
+viewport mais curta do que devia, e `scrollHeight − innerHeight` media 20.05
+vh em vez de 21.05. O viewport que faltava é o quadro parado do fim da
+descida: pertence à Superfície e fica fora da faixa de progresso — progresso
+trava em 1.00, nada mais se move (DIRECTION.md §4). `TERMINAL_HOLD_VH` em
+`beats.ts` nomeia esse vh, e `beatHoldVh(id)` diz quem o carrega (só
+`"surface"`); `BeatSection` soma isso à própria altura da seção — sem
+elemento novo, sem espaçador. Verificado: `scrollHeight − innerHeight` bate
+com `SCROLL_VH × 100vh` de novo.
+
 ## O que falta
 
 Nesta ordem, porque cada uma depende da anterior:
 
-1. Os três cases em `content/cases/` (e apagar o fixture).
+1. Os sete cases em `content/cases/` (e apagar o fixture).
 2. O conteúdo dos beats em DOM — manifesto, contato, placas de cota.
-3. A cena: `three` + R3F, a câmara, a névoa, o bando.
+3. A cena: `three` + R3F, a câmara, a névoa, o bando. Ela entra como mais uma
+   tarefa do manifesto do preloader, e aí o portão passa a esperar por ela —
+   que é o que o PROJECT.md §4 sempre quis dizer com "nada carrega além do
+   necessário para o primeiro frame".
 4. `TypeArticle` e o `troika-three-text` — o corpo de prova dentro da cena.
    Atenção: o troika precisa de um **arquivo** de fonte, e o `next/font` não
    expõe uma URL estável. Vai ser preciso servir o `.woff2` do Archivo por

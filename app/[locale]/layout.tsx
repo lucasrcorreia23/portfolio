@@ -47,7 +47,7 @@ export default async function LocaleLayout({
     <html lang={locale} className={fontVariables}>
       {/* Sem `NextIntlClientProvider`: nenhum componente de cliente deste
           projeto traduz. As strings são resolvidas no servidor e descem como
-          props, o que mantém o formatador ICU fora do navegador — 67 kB
+          props, o que mantém o formatador ICU fora do navegador — 13 kB
           comprimidos de diferença medida. Ver AGENTS.md, "Orçamento de JS". */}
       <body className="bg-void text-mist">
         <ScrollProvider>

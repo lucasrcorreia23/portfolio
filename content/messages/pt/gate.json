@@ -1,5 +1,7 @@
 {
   "label": "Portão",
   "enter": "Entrar",
-  "unit": "M/S"
+  "unit": "M/S",
+  "loading": "Levando a câmara à velocidade.",
+  "ready": "A câmara está em velocidade."
 }

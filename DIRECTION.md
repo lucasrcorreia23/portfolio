@@ -129,6 +129,27 @@ por ter trabalhado.
 
 Soma: `2.1 + 3.8 + 3.6 + 8.4 + 3.15 = ` **21.05 vh** de faixa rolável.
 
+**O viewport que falta para os 22.05 totais não é rolável, e é da
+Superfície.** Toda página rolável termina assim: quando o scroll esgota a
+faixa rolável, o último viewport de conteúdo continua na tela sem custar
+rolagem nenhuma — é por isso que a altura virtual total sempre excede a faixa
+rolável em exatamente um viewport, não por escolha deste projeto. Ele não é
+um sexto beat nem um espaçador solto entre beats: é a continuação da própria
+Superfície, *depois* de progresso 1.00. É onde mora o quadro final que esta
+seção já descreve mais abaixo — a câmera chegou à veneziana, o bando já saiu,
+e o que fica parado na tela é a luz, o contato em DOM e o último número
+gravado. Progresso trava em 1.00 e nada mais se move; nada de novo entra em
+cena ali.
+
+Esse vh fica **fora da faixa de progresso** — ele nunca teve, e não ganha, um
+intervalo de `from`–`to` próprio. Se uma linha da tabela mudar e os totais
+forem recalculados, este vh não se redistribui entre os beats: ele é o resto
+que qualquer documento rolável tem, sempre exatamente 1, e continua pertencendo
+à Superfície. No código é `TERMINAL_HOLD_VH` em `components/beats/beats.ts`,
+somado à altura renderizada da própria seção de Superfície — nunca à sua `vh`,
+que continua sendo só a parte rolável e é o que entra nesta soma e na
+verificação abaixo.
+
 **Verificação contra a regra dos oito segundos.** O quadro do descolamento cai
 em progresso ≈ 0.18, ou seja, `0.18 × 21.05 = 3.79 vh` de rolagem a partir do
 topo. Lenis com lerp 0.075 a 60 fps converge a 95% em `ln(0.05)/ln(0.925) ≈ 38`
@@ -146,7 +167,8 @@ cronometrando até o quadro de separação máxima. Portão: ≤ 8 s.
 
 **Mobile:** o rio comprime para **5.1 vh** — fixo, como no desktop — e os
 outros beats são mantidos, o que dá `2.1 + 3.8 + 3.6 + 5.1 + 3.15 = ` **17.75
-vh** de faixa rolável, **18.75 de altura virtual total**.
+vh** de faixa rolável, **18.75 de altura virtual total** — o mesmo viewport
+parado do fim, descrito acima, sempre 1 inteiro independente do breakpoint.
 
 > ⏳ **PENDENTE — prompt de migração, antes do rio.** O 5.1 nasceu de
 > `1.7 × 3 cases`, uma derivação que não vale mais (ver o aviso acima). O
@@ -176,12 +198,63 @@ exatamente a direção que a contagem empurraria se deixassem.
 ### pré — Portão
 
 Preto absoluto. Só mono, DOM, nítida. O contador não é porcentagem de
-carregamento: é uma leitura de velocidade subindo, `00.0` → `14.6 M/S`, com a
-cota da câmara ao lado. Uma linha: entrar.
+carregamento: é uma leitura de velocidade subindo, `00.000` → `14.617 M/S`,
+com a cota da câmara ao lado. Uma linha: entrar.
 
 O clique abre a veneziana: um baque grave de pressão, o áudio destrava, e a
 primeira onda de densidade atravessa o quadro antes de qualquer texto aparecer.
 Sem animação de logotipo. Sem barra de progresso.
+
+**Três casas decimais, e o desconforto é o ponto.** A instrumentação tem uma
+casa a mais do que o olho acompanha: a terceira borra durante a subida, e é
+isso que faz a leitura parecer medida em vez de animada. `87%` é uma promessa;
+`07.284 M/S` é um instrumento. O valor terminal é `14.617` e não `14.600` pelo
+mesmo motivo — número redondo em leitura de instrumento é a marca de que
+alguém digitou o número. A cota é `COTA −38.402`, do léxico da §2 (`Z −38`),
+e não sobe: é onde a câmara está, e a câmara não saiu do lugar.
+
+**O que o contador conta é o carregamento de verdade**, e ele nunca mostra mais
+do que já chegou. `import()` e `fonts.ready` só sabem informar "pronto", em
+degraus; quem transforma dois degraus numa subida é o amortecimento, não um
+temporizador fingindo ser rede.
+
+**A mono carrega o papel de display, e só aqui.** O `PROJECT.md` §3.2 descreve
+a mono em corpo pequeno porque a descreve como HUD. No portão não há HUD nem
+display — "só mono, DOM, nítida" —, então ela é a única tipografia do quadro.
+Fora do portão a regra do §3.2 continua inteira.
+
+**Ao chegar a 100 o contador vira um caractere só: `↓`.** Não um botão com
+rótulo, não "entrar" escrito: o convite ocupa exatamente a casa que o número
+ocupava, e a palavra continua existindo como nome acessível do controle. A
+seta é a única coisa que o site pede — a §4 do `PROJECT.md` é uma descida
+vertical, e o gesto é esse.
+
+**A veneziana fechada não é opaca.** Sobra uma fresta por lâmina — cobertura de
+0.76 da faixa —, e é por ela que o organismo dormente aparece enquanto o site
+carrega. Uma veneziana cem por cento fechada seria uma tela preta com um número
+em cima, e o portão precisa ter alguma coisa viva nele. Ver de relance é a
+regra da §2, não uma concessão.
+
+**O organismo do portão é dormente, e é um degrau antes da Emergência.** Nem
+bando nem boids: matéria à deriva numa corrente lenta, respirando, com corpos
+lenticulares. Ele não é a cena — a cena é o chunk que ainda está baixando —,
+então é canvas 2D e custa algumas centenas de bytes.
+
+**A abertura dura 1.45 s e não é um fade.** As lâminas encolhem a partir do
+próprio centro, escalonadas do meio para as bordas, com opacidade cheia do
+começo ao fim; atrás delas o bolsão de névoa abre e os corpos passam pela
+câmera. Nada esmaece para revelar o que está atrás. O que muda de opacidade é
+a densidade da névoa quando a câmera sai do bolsão e a energia dos corpos que
+incham ao passar pela lente — as duas são física, não transição.
+
+**As três coisas do clique acontecem juntas.** O áudio destrava, a veneziana
+abre e a descida é liberada no mesmo handler, síncronas. Prender o scroll até
+o fim da transição comeria 1.45 s da regra dos oito segundos da §1 sem nada em
+troca.
+
+**Com `prefers-reduced-motion` o portão continua inteiro** — contador, convite,
+áudio, descida — e só a abertura vira o corte de 120 ms da §5. O campo dormente
+vira uma composição fixa e não roda `requestAnimationFrame` nenhum.
 
 ### 0.00 – 0.10 — Emergência
 

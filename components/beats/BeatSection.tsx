@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import type { Beat } from "./beats";
+import { beatHoldVh, type Beat } from "./beats";
 
 type BeatSectionProps = {
   beat: Beat;
@@ -15,8 +15,16 @@ type BeatSectionProps = {
  *
  * A altura vem de custom properties para o breakpoint mobile poder trocar o
  * número sem o componente saber de media query (ver `styles/globals.css`).
+ *
+ * A Superfície soma o viewport parado do fim da descida (`beatHoldVh`) à
+ * própria altura — a mesma seção, sem elemento novo e sem espaçador vazio.
+ * `beat.vh`/`beat.mobileVh` continuam representando só a parte rolável: é o
+ * que a HUD e a verificação dos oito segundos leem, e não deve mudar por
+ * causa de um viewport que não é rolagem.
  */
 export function BeatSection({ beat, label, children }: BeatSectionProps) {
+  const hold = beatHoldVh(beat.id);
+
   return (
     <section
       id={beat.id}
@@ -24,8 +32,8 @@ export function BeatSection({ beat, label, children }: BeatSectionProps) {
       aria-labelledby={`${beat.id}-label`}
       style={
         {
-          "--beat-vh": beat.vh,
-          "--beat-vh-mobile": beat.mobileVh,
+          "--beat-vh": beat.vh + hold,
+          "--beat-vh-mobile": beat.mobileVh + hold,
         } as CSSProperties
       }
       className="relative flex flex-col justify-center px-6 py-24 md:px-12"

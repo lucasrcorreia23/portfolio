@@ -139,6 +139,17 @@
   --text-body-sm: clamp(0.875rem, 0.8333rem + 0.1852vw, 1rem);
   --text-body-sm--line-height: 1.55;
 
+  /* Leitura do portão — o único lugar do site onde a mono é grande.
+     Não contradiz o PROJECT.md §3.2 ("mono em tamanho pequeno"): aquilo
+     descreve a mono como HUD, e o portão não tem HUD nem display. O
+     DIRECTION.md §4 é explícito — "Só mono, DOM, nítida" —, então a mono é a
+     única tipografia do quadro e carrega o papel de display sozinha.
+     Tracking positivo mesmo grande, porque continua sendo instrumento. */
+  --text-readout: clamp(3rem, 12vw, 11rem);
+  --text-readout--line-height: 0.86;
+  --text-readout--letter-spacing: 0.02em;
+  --text-readout--font-weight: 500;
+
   /* HUD e cotas — mono, caixa alta, tracking positivo, corpo pequeno.
      Fixos de propósito: a régua da HUD não deve crescer com a viewport.
      O tom baixo vem daqui, nunca de opacidade (DIRECTION.md §5). */

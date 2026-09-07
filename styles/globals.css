@@ -33,6 +33,15 @@
     }
   }
 
+  /* Antes do clique de entrada a descida não rola. O atributo é escrito no
+     parse pelo script inline do portão (ver components/gate/Gate.tsx), então
+     a trava vale desde o primeiro paint e não depende da hidratação. Ela sai
+     no clique, junto com o áudio e a veneziana — não no fim da transição. */
+  html[data-gate="closed"] {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
   ::selection {
     background-color: var(--deep);
     color: var(--mist);
@@ -75,6 +84,87 @@
   .measure {
     max-width: var(--measure);
     text-wrap: pretty;
+  }
+
+  /* ---------------------------------------------------------------------
+   * O portão.
+   *
+   * A veneziana é feita de lâminas de --void que encolhem a partir do
+   * próprio centro. O escuro não esmaece para revelar o que está atrás: ele
+   * se abre, e por isso cada lâmina mantém opacidade cheia do começo ao fim.
+   * O `transform` de cada uma é escrito pelo relógio do GateOverlay, e não
+   * por uma transição de CSS, porque a mesma curva precisa dirigir também o
+   * avanço da câmera no canvas — dois relógios divergiriam em 1.45 s.
+   * ------------------------------------------------------------------- */
+  .gate-slat {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    background-color: var(--void);
+    transform-origin: center;
+    /* Fechada não é opaca: sobra uma fresta por lâmina, e é por ela que o
+       organismo dormente aparece enquanto o site carrega. O número mora em
+       GateOverlay.tsx e chega como custom property — é o mesmo que o relógio
+       multiplica ao abrir. */
+    transform: scaleY(var(--slat-shut, 0.76));
+    will-change: transform;
+  }
+
+  /* A quina da lâmina. "O brilho pega a quina da gravação, não a face"
+     (DIRECTION.md §2): é uma linha de um pixel, nunca um degradê e nunca um
+     box-shadow — a luz deste site não vem de sombra de CSS. Em repouso ela
+     deixa a veneziana fechada visível dentro do preto; no meio da travessia
+     ela acende. É ornamento puro, então pode ter alfa (DIRECTION.md §5). */
+  .gate-slat::before,
+  .gate-slat::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background-color: var(--cyan);
+    opacity: var(--slat-edge, 0.14);
+  }
+
+  .gate-slat::before {
+    top: 0;
+  }
+
+  .gate-slat::after {
+    bottom: 0;
+  }
+
+  /* A leitura passa pela câmera a partir da própria âncora, não do centro
+     do quadro. */
+  .gate-readout {
+    transform-origin: 10% 100%;
+    will-change: transform;
+  }
+
+  .gate-enter {
+    cursor: pointer;
+    transition: transform var(--dur-aperture) var(--ease-strong);
+  }
+
+  /* O convite desce dois pixels ao ser apontado. É a mesma direção que ele
+     está propondo. */
+  .gate-enter:hover,
+  .gate-enter:focus-visible {
+    transform: translateY(0.06em);
+  }
+
+  /* O corte do modo de movimento reduzido: 120 ms, e é a única coisa do
+     portão que esmaece — porque o DIRECTION.md §5 define o corte como um
+     dissolve de 120 ms, e não como uma câmera se movendo. */
+  .gate-cut {
+    opacity: 0;
+    transition: opacity var(--dur-cut) var(--ease-strong);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gate-enter {
+      transition: none;
+    }
   }
 
   /* Altura dos beats. Os números vêm de components/beats/beats.ts e chegam

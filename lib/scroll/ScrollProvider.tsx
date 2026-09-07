@@ -1,89 +1,59 @@
 "use client";
 
-import { useEffect } from "react";
-import type { ReactNode } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import Lenis from "lenis";
-import { useReducedMotion } from "@/lib/capabilities/use-reduced-motion";
-import { LENIS_LERP } from "@/lib/motion";
-import { publishScroll, resetScroll } from "./scroll-store";
+import { useEffect, useState } from "react";
+import type { ComponentType, ReactNode } from "react";
+import { loadScrollDriver } from "./load-driver";
 
 /**
- * O único driver de scroll do site, e o único lugar que publica no store.
+ * A casca do driver de scroll. Fica no layout, renderiza os filhos na hora e
+ * monta o `ScrollDriver` — gsap e lenis, 48 kB comprimidos — só depois do
+ * primeiro quadro útil.
  *
- * Dois caminhos, um contrato: aconteça o que acontecer, o progresso
- * normalizado de 0 a 1 continua sendo publicado. No modo calmo ele corta
- * entre composições em vez de dirigir a câmera, mas quem lê não muda.
+ * **Por que isso existe.** O orçamento do PROJECT.md §5 é por momento de
+ * carregamento: a rota inicial tem 200 kB para chegar ao primeiro quadro, e o
+ * piso do framework já come 175. O scroll não participa desse quadro — o
+ * portão é DOM, não rola, e a descida só começa no clique de entrada. Com o
+ * driver aqui dentro a rota inicial media 223 kB; com ele num chunk à parte
+ * volta para a faixa dos 175.
+ *
+ * Os dois `requestAnimationFrame` encadeados são a definição operacional de
+ * "depois do primeiro quadro": o primeiro roda antes do paint, o segundo
+ * depois dele. Na home o portão pede o mesmo chunk antes disso, e a promessa
+ * memoizada faz os dois convergirem num download só.
+ *
+ * Se o chunk não chegar, o scroll continua nativo e o progresso fica em 0:
+ * a descida perde a cena e a régua da HUD, não o conteúdo.
  */
 export function ScrollProvider({ children }: { children: ReactNode }) {
-  const reducedMotion = useReducedMotion();
+  const [Driver, setDriver] = useState<ComponentType | null>(null);
 
   useEffect(() => {
-    // `null` = ainda não sabemos. Não vale ligar o Lenis "por enquanto" e
-    // desligar no frame seguinte.
-    if (reducedMotion === null) return;
+    let alive = true;
+    let second = 0;
 
-    gsap.registerPlugin(ScrollTrigger);
-
-    if (reducedMotion) {
-      const readNativeScroll = () => {
-        const limit =
-          document.documentElement.scrollHeight - window.innerHeight;
-        publishScroll({
-          progress: limit > 0 ? window.scrollY / limit : 0,
-          velocity: 0,
-        });
-      };
-
-      readNativeScroll();
-      window.addEventListener("scroll", readNativeScroll, { passive: true });
-      window.addEventListener("resize", readNativeScroll);
-      ScrollTrigger.refresh();
-
-      return () => {
-        window.removeEventListener("scroll", readNativeScroll);
-        window.removeEventListener("resize", readNativeScroll);
-        resetScroll();
-      };
-    }
-
-    const lenis = new Lenis({
-      lerp: LENIS_LERP,
-      smoothWheel: true,
-      // O rAF é o do GSAP: um relógio só para o scroll, as animações e,
-      // mais adiante, o loop de render da cena.
-      autoRaf: false,
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => {
+        void loadScrollDriver()
+          .then((component) => {
+            // `setState` com função trata o componente como updater; a arrow
+            // extra é o que faz o React guardá-lo em vez de chamá-lo.
+            if (alive) setDriver(() => component);
+          })
+          .catch(() => {});
+      });
     });
 
-    const onLenisScroll = (instance: Lenis) => {
-      publishScroll({
-        progress: instance.progress,
-        velocity: instance.velocity,
-      });
-      ScrollTrigger.update();
-    };
-
-    const tick = (time: number) => {
-      // O ticker do GSAP conta em segundos; o Lenis quer milissegundos.
-      lenis.raf(time * 1000);
-    };
-
-    lenis.on("scroll", onLenisScroll);
-    gsap.ticker.add(tick);
-    // Sem isto o GSAP "engole" quadros longos e o scroll dá um salto ao
-    // voltar de uma aba em segundo plano.
-    gsap.ticker.lagSmoothing(0);
-    ScrollTrigger.refresh();
-
     return () => {
-      lenis.off("scroll", onLenisScroll);
-      gsap.ticker.remove(tick);
-      gsap.ticker.lagSmoothing(500, 33);
-      lenis.destroy();
-      resetScroll();
+      alive = false;
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
     };
-  }, [reducedMotion]);
+  }, []);
 
-  return children;
+  return (
+    <>
+      {Driver === null ? null : <Driver />}
+      {children}
+    </>
+  );
 }
