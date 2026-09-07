@@ -179,18 +179,46 @@ estático que escapou para o `SceneGate`, por exemplo — não é 350 kB de cena
 
 Estado medido nesta fundação, com a cena ainda vazia:
 
-| Estado | Rota inicial gz |
+| Composição da rota inicial | gz |
 |---|---|
-| `useTranslations` em componentes de cliente | 236 kB |
-| HUD virando Server Component, strings como props | 169 kB |
-| Zero next-intl no cliente (sem `NextIntlClientProvider`) | **112 kB** |
+| Next 16 + React 19 + o DOM deste site, sem gsap e sem lenis | 175 kB |
+| \+ gsap/ScrollTrigger e lenis (o driver de scroll) | **223 kB** |
+| \+ next-intl no cliente (estado descartado) | 236 kB |
 
-Daí a regra: **nenhum componente de cliente importa o next-intl.** Traduza no
-servidor e desça strings como props. O formatador ICU e o dicionário inteiro
-custam 67 kB comprimidos por si só; a HUD está em toda página.
+**A fundação está 23 kB acima do teto de 200 kB**, e a cena nem entrou. Duas
+leituras disso:
 
-Sobram 88 kB de folga na primeira caixa. Eles são para o resto do site, não
-para a cena — a cena tem caixa própria.
+- O piso do framework é 175 kB. Sobra pouquíssimo para código nosso, então
+  nenhuma dependência de cliente entra sem medição.
+- Os 48 kB do gsap + lenis estão na caixa errada. **O driver de scroll não é
+  necessário para o primeiro quadro** — o portão é DOM e o scroll só começa
+  depois do clique de entrada. Ele deve ser carregado por import dinâmico
+  junto com a cena, o que devolve a rota inicial aos 175 kB.
+
+A regra do next-intl continua valendo — **nenhum componente de cliente importa
+o next-intl**, traduza no servidor e desça strings como props —, mas pela razão
+certa: são 13 kB, não os 67 kB que uma medição errada sugeriu. Vale porque 13 kB
+é muito quando o piso é 175 e o teto é 200, e porque manter a tradução no
+servidor é mais simples, não porque seja um corte dramático.
+
+#### Como medir, e como eu errei
+
+O erro que produziu números falsos: eu media contra um **servidor antigo ainda
+no ar** (`pkill -f "next start"` não pega o processo) enquanto o `.next` já
+tinha sido reconstruído. O HTML servido citava chunks com hash velho, o laço de
+medição pulava em silêncio os arquivos que não existiam mais, e o total
+encolhia a cada rebuild. Três precauções:
+
+```bash
+# 1. matar pela porta, não pelo nome do processo
+P=$(lsof -nP -tiTCP:3100 -sTCP:LISTEN); [ -n "$P" ] && kill -9 $P
+# 2. build limpa, e confirmar que o servidor subiu ("Ready in ...")
+rm -rf .next && npm run build && npm run start -- -p 3100
+# 3. somar só as tags <script src>, e FALHAR se um chunk não existir no disco
+```
+
+Um chunk citado no HTML e ausente no disco não vale zero — vale "a medição está
+errada". Se o número cair de repente, desconfie da medição antes de comemorar.
 
 Consequências práticas:
 
@@ -207,6 +235,10 @@ Consequências práticas:
   a partir do `SceneGate` e só depois do primeiro quadro útil. Meça as duas
   caixas separadamente: os `<script>` do HTML inicial contra 200 kB, e o
   chunk da cena contra 350 kB.
+- **O `ScrollProvider` vai junto nesse import dinâmico.** Gsap e lenis são
+  48 kB que hoje pesam na rota inicial sem servir ao primeiro quadro: o portão
+  é DOM e não rola. Mover os dois para a segunda caixa é o que traz a rota
+  inicial de 223 para 175 kB e faz o orçamento fechar.
 
 ### A variável única
 

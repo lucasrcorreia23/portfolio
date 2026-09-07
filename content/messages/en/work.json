@@ -4,5 +4,10 @@
     "produto": "Product",
     "sistema": "System",
     "marca": "Brand"
+  },
+  "archive": {
+    "title": "Archive",
+    "empty": "No cases yet.",
+    "outsideRiver": "Archive only"
   }
 }

@@ -4,5 +4,10 @@
     "produto": "Produto",
     "sistema": "Sistema",
     "marca": "Marca"
+  },
+  "archive": {
+    "title": "Acervo",
+    "empty": "Nenhum case ainda.",
+    "outsideRiver": "Só no acervo"
   }
 }

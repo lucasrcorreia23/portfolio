@@ -225,8 +225,14 @@ regular, medida de 60 a 70 caracteres.
 
 ### 0.45 – 0.85 — Trabalho
 
-O rio. Os cards de projeto são outros corpos de prova montados ao longo da
-câmara, em perspectiva real, e a câmera atravessa por entre eles.
+O rio. Os cards são outros corpos de prova montados ao longo da câmara, em
+perspectiva real, e a câmera atravessa por entre eles.
+
+**O rio mostra os cases curados, não o acervo.** Só entram na câmara os cases
+com `in_river: true` no frontmatter; o acervo completo é maior e vive na lista
+em DOM da HUD. Isso não é uma limitação da cena, é o princípio do PROJECT.md §4
+— o acervo é maior que o rio, e o rio é curadoria, não índice. Ver PROJECT.md
+§6 para a lista dos cases e §4 para o princípio.
 
 Cada card tem sua própria esteira: ao se aproximar, o bando se descola nele
 também. O bando é o tecido conjuntivo entre os projetos — é a mesma física do
@@ -234,18 +240,16 @@ beat de identidade, em escala menor, e é o que impede o rio de virar uma galeri
 
 Cada card carrega uma placa de cota gravada: cliente, ano, estação.
 
-**Quem entra no rio é um campo do frontmatter.** O acervo em `content/cases/`
-é maior que o rio, e essa diferença é intencional. A curadoria vive num
-**booleano no frontmatter de cada case** — `in_river` — decidido **olhando os
-cards montados na cena**, não lendo a lista de projetos. Um case só sai do rio
-virando esse campo `false`.
+**Quem entra no rio é um campo do frontmatter.** A curadoria vive num
+**booleano** — `in_river` — decidido **olhando os cards montados na cena**, não
+lendo a lista de projetos. Um case só sai do rio virando esse campo `false`.
 
 **Nenhum case é apagado para sair do rio.** Ele continua em `content/cases/`,
-continua com rota própria em `/work/[slug]`, continua indexável e linkável.
-Sair do rio é uma decisão de composição — quantos corpos de prova a câmara
-comporta antes de o escoamento virar galeria —, não um julgamento sobre o
-trabalho. Apagar um case para encurtar o rio confundiria as duas coisas e
-perderia a única cópia do material migrado.
+continua na lista de acervo, continua com rota própria em `/work/[slug]`,
+continua indexável e linkável. Sair do rio é uma decisão de composição —
+quantos corpos de prova a câmara comporta antes de o escoamento virar galeria
+—, não um julgamento sobre o trabalho. Apagar um case para encurtar o rio
+confundiria as duas coisas e perderia a única cópia do material migrado.
 
 **Filtros por disciplina, não por categoria.** Três eixos — **produto**,
 **sistema**, **marca** — e cada case aparece em mais de um:
@@ -294,10 +298,17 @@ convite. O último frame é a câmara vazia, com luz, e um número gravado.
 
 ### HUD lateral fixa
 
-Coluna estreita permanente, mono pequena, em uma das laterais. Contato, filtros
-do trabalho, controle de áudio, toggle de idioma — e o **indicador de progresso
-desenhado como régua graduada com cotas**, não como barra. Substitui o rodapé; o
-site não tem rodapé. No mobile colapsa num acionador no topo.
+Coluna estreita permanente, mono pequena, em uma das laterais. Contato, acervo,
+filtros do trabalho, controle de áudio, toggle de idioma — e o **indicador de
+progresso desenhado como régua graduada com cotas**, não como barra. Substitui
+o rodapé; o site não tem rodapé. No mobile colapsa num acionador no topo.
+
+**A entrada de acervo** abre a lista completa dos cases em `/work`: DOM puro,
+mono, sem cena, sem 3D, com o link de cada um e a cota de cliente e ano. É a
+única forma de chegar num case fora do rio (PROJECT.md §4), e é a peça que
+impede a curadoria de virar exclusão. Ela é deliberadamente sem graça — quem
+chega ali está procurando uma coisa específica, não sendo apresentado ao
+trabalho. A cena é o argumento; o acervo é o índice.
 
 ---
 
@@ -502,26 +513,43 @@ câmera, uniforms, abertura da DOF, rampa da névoa e revelação de texto.
 
 ### Movimento reduzido: uma composição por beat
 
+**O modo calmo é o mesmo site, mais calmo.** Ele nunca mostra nem esconde
+conteúdo diferente do modo normal — não é uma versão reduzida do portfólio, é o
+mesmo portfólio sem câmera em movimento. Qualquer coisa que apareça só num dos
+dois modos é bug, não adaptação.
+
 Congelar a cena inteira num quadro só apagaria o rio de projetos — os cards são
 objetos na câmara, e câmera parada nunca chega neles. Então `prefers-reduced-
 motion` não congela o site: ele o transforma numa **sequência de composições
-fixas**, uma por beat, e a câmera **corta** entre elas.
+fixas, uma por beat** — cinco ao todo —, e a câmera **corta** entre elas.
 
 | Beat | Composição estática |
 |---|---|
 | Emergência | câmara quase vazia, um corpo isolado raspando a primeira cota |
 | Identidade | **o quadro do descolamento**, no auge da separação |
 | Quem sou | o poleiro colunar assentado contra a parede graduada |
-| Trabalho | **uma composição por case**, cada card de face com sua esteira parada |
+| Trabalho | **os cards do rio**, de face, cada um com sua esteira parada |
 | Superfície | a veneziana aberta, bando saindo, luz em lâminas |
+
+**Uma composição por beat, não uma por case.** A composição do beat de Trabalho
+enquadra **os cases do rio** — os de `in_river: true` —, os mesmos que o modo
+normal mostra, pelo mesmo motivo: o modo calmo não cura de novo. Cada card
+continua sendo um link.
+
+Os cases **fora** do rio são alcançados pela lista de acervo em DOM, exatamente
+como no modo normal. Ela já é estática por natureza — é texto em mono, sem cena
+— e por isso **não precisa de tratamento especial neste modo**. É também o que
+garante que o modo calmo não esconde nada: o acervo inteiro continua a um
+clique de distância nos dois modos.
 
 - A troca é **corte**, não movimento de câmera: 120 ms de dissolve, nada de
   interpolação de posição. Movimento de câmera é exatamente o que o modo tira.
-- Cada composição é uma pose diferente do bando, não a mesma congelada seis
+- Cada composição é uma pose diferente do bando, não a mesma congelada cinco
   vezes.
 - Scroll nativo, cada composição presa à sua seção. Névoa e grão estáticos em
   0.03. Abertura de DOF fixa por composição, sem transição.
-- O rio continua navegável: cada case tem seu quadro e seu link.
+- Dentro de `/work/[slug]` não há composição a escolher: a rota de case já é
+  texto plano e névoa parada nos dois modos.
 
 ### Outros estados degradados
 

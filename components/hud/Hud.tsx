@@ -1,6 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { SCENE_MODES, type SceneMode } from "@/lib/capabilities/scene-mode";
 import { requireLocale } from "@/lib/i18n/locale";
+import { ArchiveLink } from "./ArchiveLink";
 import { LanguageToggle } from "./LanguageToggle";
 import { SceneReadout } from "./SceneReadout";
 import { ScrollRule } from "./ScrollRule";
@@ -39,6 +40,7 @@ export async function Hud() {
       className="fixed inset-x-0 top-0 z-50 flex items-center justify-between gap-6 px-6 py-4 md:inset-x-auto md:inset-y-0 md:left-0 md:w-24 md:flex-col md:items-start md:justify-between md:px-6 md:py-8"
     >
       <SceneReadout labels={sceneLabels} />
+      <ArchiveLink />
       <ScrollRule
         progressLabel={t("progress")}
         stationLabel={t("lexicon.station")}
