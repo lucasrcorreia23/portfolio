@@ -1,0 +1,20 @@
+{
+  "label": "Panel",
+  "contact": "Contact",
+  "work": "Work",
+  "audio": "Audio",
+  "language": "Language",
+  "progress": "Progress",
+  "lexicon": {
+    "station": "EST.",
+    "level": "COTA",
+    "density": "DENS.",
+    "velocity": "V"
+  },
+  "scene": {
+    "pending": "READING",
+    "driven": "DRIVEN",
+    "composed": "COMPOSED",
+    "poster": "POSTER"
+  }
+}

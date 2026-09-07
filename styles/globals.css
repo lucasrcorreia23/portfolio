@@ -1,0 +1,92 @@
+@import "tailwindcss";
+@import "lenis/dist/lenis.css";
+@import "./tokens.css";
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background-color: var(--void);
+    color: var(--mist);
+    -webkit-text-size-adjust: 100%;
+    /* O scroll suave é do Lenis. O nativo só atrapalharia. */
+    scroll-behavior: auto;
+  }
+
+  body {
+    min-height: 100svh;
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Movimento reduzido não é o site quebrado, é o site calmo
+     (PROJECT.md §5, DIRECTION.md §5). O que ele desliga de verdade é a
+     câmera dirigida por scroll, e isso é decidido em componente via
+     useReducedMotion — não com um !important global. Aqui só cai o que
+     nunca teria valor nesse modo. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
+  ::selection {
+    background-color: var(--deep);
+    color: var(--mist);
+  }
+
+  :focus-visible {
+    outline: 1px solid var(--cyan);
+    outline-offset: 3px;
+  }
+
+  /* O canvas é decorativo; todo conteúdo textual vive no DOM. */
+  canvas {
+    display: block;
+    touch-action: none;
+  }
+}
+
+@layer components {
+  /* O papel display: Archivo levado à largura Expanded pelo eixo `wdth`,
+     peso alto, tracking negativo, caixa alta. PROJECT.md §3.2. */
+  .type-display {
+    font-family: var(--font-display);
+    font-stretch: 125%;
+    font-variation-settings: "wdth" 125;
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+
+  /* O papel mono: HUD, cotas, estações, metadados. Caixa alta, tracking
+     largo, corpo pequeno — e opacidade cheia, porque carrega informação
+     (DIRECTION.md §5, "Legibilidade sobre luz variável"). */
+  .type-mono {
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+    color: var(--mist);
+  }
+
+  /* Coluna de leitura: 60 a 70 caracteres, nunca centralizada. */
+  .measure {
+    max-width: var(--measure);
+    text-wrap: pretty;
+  }
+
+  /* Altura dos beats. Os números vêm de components/beats/beats.ts e chegam
+     como custom properties inline; a media query só escolhe qual dos dois
+     ler, para o componente não precisar saber de breakpoint. */
+  [data-beat] {
+    min-height: calc(var(--beat-vh) * 100svh);
+  }
+
+  @media (max-width: 48rem) {
+    [data-beat] {
+      min-height: calc(var(--beat-vh-mobile) * 100svh);
+    }
+  }
+}

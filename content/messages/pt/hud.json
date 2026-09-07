@@ -1,0 +1,20 @@
+{
+  "label": "Painel",
+  "contact": "Contato",
+  "work": "Trabalho",
+  "audio": "Áudio",
+  "language": "Idioma",
+  "progress": "Progresso",
+  "lexicon": {
+    "station": "EST.",
+    "level": "COTA",
+    "density": "DENS.",
+    "velocity": "V"
+  },
+  "scene": {
+    "pending": "LENDO",
+    "driven": "DIRIGIDA",
+    "composed": "COMPOSTA",
+    "poster": "POSTER"
+  }
+}
