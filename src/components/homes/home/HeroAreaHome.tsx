@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type JSX } from 'react';
 import { scroller } from 'react-scroll';
 import {animatedHeadline} from '@/utils/animatedHeadline';
 

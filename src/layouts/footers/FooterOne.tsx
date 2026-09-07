@@ -9,7 +9,7 @@ import Link from 'next/link';
 
 interface DataType {
   title: string;
-  title_2: JSX.Element;
+  title_2: React.JSX.Element;
   btn_text_1: string;
   btn_text_2: string;
   footer_data: {

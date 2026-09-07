@@ -22,7 +22,7 @@ interface DataType {
     tab_items?: {
       time?: string;
       info_1?: string;
-      info_2?: string | JSX.Element;
+      info_2?: string | React.JSX.Element;
       price?: string;
       btn_text?: string;
       img?: StaticImageData | any;

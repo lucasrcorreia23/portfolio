@@ -16,7 +16,7 @@ interface DataType {
   title: string;
   info: ({
       title: string;
-      subtitle?: string | JSX.Element;
+      subtitle?: string | React.JSX.Element;
   })[];
   subtitle: string;
   description: string;
