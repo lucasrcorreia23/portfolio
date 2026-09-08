@@ -35,30 +35,62 @@ import type { Vector4 } from "three";
 /** L de `--mist` (#DCE9EC) em luz relativa. */
 const MIST_LUMINANCE = 0.796;
 
-/** O piso de contraste do PROJECT.md §5. */
-const CONTRAST_FLOOR = 4.5;
+/**
+ * A razão de contraste que o solucionador mira — **não** o piso de
+ * reprovação do PROJECT.md §5 (esse continua 4.5, e é aplicado separado, em
+ * `probe-contrast.ts`, contra o pixel entregue).
+ *
+ * Até esta revisão os dois eram o mesmo número: `f` resolvia exatamente para
+ * 4.5:1, sem folga nenhuma. Medido: as quatro condições da varredura
+ * pousaram em 4.59–4.65 — a poucas centenas de um por cento da linha. Isso é
+ * o esperado de um mecanismo exato (ele pousa onde mandarem), mas descreve
+ * uma margem zero bem no momento em que ela some de vez: o rio entra em 0.45
+ * com capas de card — brilho de imagem atrás de texto —, e a HUD, que está
+ * na tela o tempo todo, fica na borda por onde os cards passam por baixo
+ * dela. Mirar exatamente no piso deixa de fazer sentido quando o que vem a
+ * seguir é justamente mais luz atrás do texto.
+ *
+ * Subir este número escurece mais a cena atrás do texto sempre que ela
+ * precisar de véu — o preço direto da margem. Três valores foram comparados
+ * lado a lado (screenshots do beat de Quem sou + pior contraste medido por
+ * `__probe.contrast()`) antes da escolha; ver AGENTS.md, "Comparação do alvo
+ * do véu".
+ *
+ * **Travado em 5.5 — pior quadro medido 5.57:1 —, e é setpoint de
+ * controlador, não valor final.** Foi escolhido olhando a imagem: em 5.5 o
+ * retângulo escurecido atrás do texto já é visível (a região lê como mais
+ * escura que a vizinhança, não como scrim opaco), contra 4.5 onde o véu não
+ * se via a olho nu. Ele volta à mesa depois que o rio existir de verdade —
+ * capa de card é brilho de imagem atrás de texto, um caso que esta
+ * comparação não podia testar porque o card ainda não existe, e a HUD, que
+ * está na tela o tempo todo, fica exatamente na borda por onde os cards
+ * passam.
+ */
+export const VEIL_TARGET_CONTRAST = 5.5;
 
 /**
  * O teto de luminância sob uma caixa de texto, na luminância **entregue** —
  * depois do tonemap, antes do grão.
  *
- * O alvo do DIRECTION.md §5 é `(0.796 + 0.05) / (L + 0.05) ≥ 4.5`, ou seja
- * `L ≤ 0.138`. O teto aqui é menor, e a diferença é o grão: ele é somado
- * **depois** do véu (o PROJECT.md §3.1 quer o grão sobre o quadro composto), com
- * intensidade `0.045 ± 0.015` pesada por `0.12 + 0.88 · √L`.
+ * A fórmula é `(0.796 + 0.05) / (L + 0.05) ≥ VEIL_TARGET_CONTRAST`, ou seja
+ * `L ≤ 0.846 / VEIL_TARGET_CONTRAST − 0.05`. O teto aqui é menor que isso, e
+ * a diferença é o grão: ele é somado **depois** do véu (o PROJECT.md §3.1
+ * quer o grão sobre o quadro composto), com intensidade `0.045 ± 0.015`
+ * pesada por `0.12 + 0.88 · √L`.
  *
- * **A margem foi medida, não estimada.** Com o teto em 0.125, a varredura
- * devolveu um pior pixel de exatamente 0.138 — ou seja o grão somou 0.013, e a
- * razão pousou em 4.50, em cima da linha. Com 0.017 de margem o pior quadro
- * entrega ~0.134 e sobra folga. Um mecanismo exato pousa onde você o mandar
- * pousar; a margem existe porque a linha não é lugar de pousar.
+ * **A margem do grão foi medida, não estimada**, no alvo de 4.5: com o teto
+ * em 0.125, a varredura devolveu um pior pixel de exatamente 0.138 — ou seja
+ * o grão somou 0.013, e a razão pousou em 4.50, em cima da linha. Com 0.017
+ * de margem o pior quadro entrega ~0.134 e sobra folga. A mesma margem de
+ * grão vale para qualquer `VEIL_TARGET_CONTRAST`, porque o grão não muda com
+ * o alvo — só a cena por trás muda.
  *
  * A faixa medida da entrada — a luminância que a cena de fato entrega atrás de
  * cada caixa — está no relatório de `__probe.contrast()` e no AGENTS.md. É ela
  * que valida este número, como o PROJECT.md §7 exige de todo limiar.
  */
 export const VEIL_CEILING =
-  (MIST_LUMINANCE + 0.05) / CONTRAST_FLOOR - 0.05 - 0.017;
+  (MIST_LUMINANCE + 0.05) / VEIL_TARGET_CONTRAST - 0.05 - 0.017;
 
 /**
  * Quantas caixas o véu cobre ao mesmo tempo.

@@ -117,7 +117,7 @@ Uma descida vertical contínua. O visitante começa no escuro absoluto e termina
 | 0.00 a 0.10 | Emergência | Escuro quase total. Partículas suspensas, quase paradas. Uma luz distante. O nome aparece pequeno, em mono. |
 | 0.10 a 0.28 | Identidade | O título display gigante atravessa o organismo em profundidade. Parte da tipografia passa na frente do objeto 3D, parte passa atrás. Ao lado, coluna mono com posicionamento em três linhas curtas. |
 | 0.28 a 0.45 | Quem sou | O organismo se organiza. Uma estrutura de medida se sobrepõe a ele. Texto de manifesto em coluna estreita, alinhada a uma das margens, nunca centralizada. |
-| 0.45 a 0.85 | Trabalho | O rio. Os cards dos cases **curados** — os de `in_river: true`, não o acervo inteiro — flutuam em perspectiva real e a câmera atravessa por dentro deles. Filtros na HUD lateral reorganizam o rio sem recarregar a página. |
+| 0.45 a 0.85 | Trabalho | O rio. Os cards **curados** — o topo do ranking `river_rank` até onde couber no aparelho, não o acervo inteiro — flutuam em perspectiva real e a câmera atravessa por dentro deles. Filtros na HUD lateral reorganizam o rio sem recarregar a página. |
 | 0.85 a 1.00 | Superfície | A luz chega ao topo. Contato, sem formulário, sem "vamos construir algo incrível juntos". Só o e-mail, os perfis e o seletor de idioma. |
 
 ### Princípio: o acervo é maior que o rio
@@ -133,13 +133,14 @@ faria um link antigo apontar para lugar nenhum.
 
 Três consequências, e todas valem em qualquer modo de renderização:
 
-1. **Nenhum case é apagado para sair do rio.** Ficar de fora é `in_river: false`
-   no frontmatter (§6), e mais nada muda: o arquivo continua, a rota continua,
-   a indexação continua.
+1. **Nenhum case é apagado para sair do rio.** A curadoria é `river_rank`
+   (§6), um ranking único, não um booleano por aparelho: ficar fora do corte
+   de um aparelho não muda mais nada — o arquivo continua, a rota continua, a
+   indexação continua.
 2. **A HUD tem uma entrada de acervo.** Ela abre a lista completa dos cases em
    DOM puro, sem cena, com o link de cada um. É a única forma de chegar num
-   case fora do rio, e por isso não é opcional. Custa texto em mono.
-3. **Promover um case depois é virar um booleano**, não reconstruí-lo. A
+   case fora do corte, e por isso não é opcional. Custa texto em mono.
+3. **Promover um case depois é reordenar um número**, não reconstruí-lo. A
    alternativa — cases fora do rio sem rota — deixaria de existir para quem
    chega por link antigo e transformaria cada promoção futura em trabalho novo.
 
@@ -251,10 +252,11 @@ Não é a versão desktop encolhida. A descida continua, o organismo continua, m
 
 Sete cases, em `content/cases/`. **O acervo é maior que o rio** — ver o
 princípio na §4. A curadoria de quais aparecem no beat de Trabalho acontece
-depois, olhando os cards montados na cena, e é gravada em `in_river`, um
-booleano obrigatório do frontmatter. Um case com `in_river: false` **não é
-apagado**: continua no acervo, na lista de `/work`, na rota `/work/[slug]` e
-no índice dos buscadores.
+depois, olhando os cards montados na cena, e é gravada em `river_rank`, um
+ranking único obrigatório do frontmatter — não duas listas, uma por aparelho:
+cada aparelho corta a mesma lista ordenada pela capacidade que couber. Ficar
+fora do corte de um aparelho **não apaga** o case: ele continua no acervo, na
+lista de `/work`, na rota `/work/[slug]` e no índice dos buscadores.
 
 Os três escritos do zero:
 
@@ -279,7 +281,7 @@ entram nesta rodada. O material dos dois continua no repositório antigo e a
 decisão pode ser revista; até lá eles não existem em `content/cases/`, não têm
 rota e não contam para nenhum dimensionamento.
 
-Cada case tem no frontmatter: `title`, `client`, `year`, `role`, `stack`, `summary_pt`, `summary_en`, `accent` (um token da paleta), `cover`, `media[]`, `disciplines[]` e `in_river`.
+Cada case tem no frontmatter: `title`, `client`, `year`, `role`, `stack`, `summary_pt`, `summary_en`, `accent` (um token da paleta), `cover`, `media[]`, `disciplines[]` e `river_rank`.
 
 **Material visual.** Parte existe, parte falta. Onde faltar, o agente gera imagem em vez de deixar retângulo cinza ou emoji. As imagens geradas seguem a paleta e a metáfora, e são marcadas no frontmatter com `generated: true` para serem trocadas depois.
 

@@ -104,11 +104,11 @@ export default async function ArchivePage({
               >
                 <p className="type-mono text-hud-sm">
                   {frontmatter.client} · {frontmatter.year}
-                  {/* Estar fora do rio é público e sem estigma: é uma decisão
-                      de composição, não um julgamento sobre o trabalho. */}
-                  {frontmatter.in_river ? null : (
-                    <> · {t("archive.outsideRiver")}</>
-                  )}
+                  {/* A curadoria é um ranking único (DIRECTION.md §4), não um
+                      dentro/fora: todo case tem um posto, e cada aparelho
+                      corta a mesma lista pela capacidade que couber. */}
+                  {" · "}
+                  {t("archive.riverRank", { rank: frontmatter.river_rank })}
                 </p>
                 <h2 className="type-display text-display-3 mt-2 group-hover:text-cyan">
                   {frontmatter.title}

@@ -112,20 +112,61 @@ determina o **espaçamento entre os cards** dentro de um comprimento que não
 muda. Rio mais longo a cada case novo transformaria o portfólio numa punição
 por ter trabalhado.
 
-> ⏳ **PENDENTE — prompt de migração, antes do rio.** Todo o dimensionamento
-> abaixo foi feito para **três cases** e não vale mais como regra:
+> ✅ **RESOLVIDO — prompt de migração.** O dimensionamento antigo, para três
+> cases, não vale mais como regra:
 >
-> - **2.8 vh por case no desktop** (8.4 ÷ 3)
-> - **1.7 vh por case no mobile** (5.1 ÷ 3)
+> - ~~2.8 vh por case no desktop~~ (8.4 ÷ 3)
+> - ~~1.7 vh por case no mobile~~ (5.1 ÷ 3)
 >
 > Eram comprimento derivado da contagem, e a relação agora é a inversa. Ficam
-> registrados porque foram o raciocínio original, não porque ainda valem.
->
-> A capacidade real do rio — quantos cards cabem em 8.4 vh sem virar galeria,
-> e qual o espaçamento mínimo entre esteiras — é calculada no **prompt de
-> migração, que roda antes do rio**, olhando os cards montados na cena, e
-> entra aqui como **valor derivado**. **Até lá não existe número de
-> espaçamento**, e inventar um seria escolher a curadoria antes de ver o rio.
+> riscados porque foram o raciocínio original, não porque ainda valem.
+
+**Capacidade do rio — valor derivado, calculado antes de o beat de Trabalho
+existir.** O componente de card ainda não foi escrito e a curva de câmera de
+0.45 a 0.85 continua provisória (`lib/scene/curve.ts`, docblock de `STOPS`),
+então este número não pode vir de medir pixel entregue como o resto deste
+documento exige — ele é uma extensão do mesmo método já usado para
+`SPECIMEN_SIZE` (`lib/scene/world.ts`): ocupação angular a uma distância de
+leitura conhecida. **Precisa ser reconferido** quando o card e a curva
+definitiva existirem — ele entra como piso de planejamento, não como medição.
+
+**O piso de distância.** Dois cards se atropelam quando o mais distante não
+encolheu o bastante, na perspectiva, para o olho ler "o próximo", e não "o
+mesmo, ainda". Usando a mesma distância de leitura do corpo de prova (14
+unidades, `SPECIMEN_Z` + `ROOST_AHEAD`-like approach) e o mesmo FOV vertical
+de 45°, exigir que o card seguinte projete pelo menos 30% menos largura que o
+atual — o suficiente para ler como duas camadas de profundidade distintas sem
+exigir um vão desproporcional — dá `D_seguinte ≥ 1.3 × D_atual`. Com a
+distância de leitura em torno de 14, isso é `ΔZ ≈ 0.3 × 14 ≈ 4.2`, arredondado
+para **4.5 unidades de mundo entre centros de card**: o piso abaixo do qual
+eles se atropelam.
+
+**A extensão do beat.** Sem curva definitiva, o comprimento em mundo do rio é
+estimativa, pela taxa das duas esticadas já fechadas nesta mesma curva:
+Identidade percorre 16 unidades em 3.8 vh (4.2 u/vh) e Quem sou percorre 20 em
+3.6 vh (5.6 u/vh). Com a média das duas, ~5 u/vh, os 8.4 vh do desktop valem
+**~42 unidades**. Descontando meio piso de margem para a entrada e a saída do
+beat, `(42 − 4.5) ÷ 4.5 ≈` **8 cards no desktop**.
+
+**O mobile não herda o mesmo comprimento em mundo.** Este documento já pede
+uma "travessia mais curta" para o rio no mobile (PROJECT.md §5), não a mesma
+travessia rolada mais rápido — então o corredor do mobile encolhe na mesma
+proporção que o vh encolheu (5.1 ÷ 8.4 ≈ 0.61), o que dá **~26 unidades**, e
+com o mesmo piso de 4.5, `(26 − 4.5) ÷ 4.5 ≈` **4 cards no mobile**.
+
+**A meta de curadoria é 8 cards no desktop e 4 no mobile.** Com sete cases no
+acervo (PROJECT.md §6), o desktop comporta o acervo inteiro se a curadoria
+decidir por isso; o mobile não — exige um corte de até quatro.
+
+**A curadoria é um ranking único, não duas listas por aparelho.** `river_rank`
+(`lib/cases.ts`) é uma ordem só, decidida olhando os cards montados; cada
+aparelho corta essa mesma ordem pela capacidade que couber — o mobile não
+ganha uma seleção própria, ele é sempre os quatro primeiros postos do ranking
+que o desktop também usa. Duas listas independentes permitiriam o mobile
+mostrar um conjunto sem relação com o do desktop, e essa divergência não serve
+a nada: o rio é um só projeto de curadoria, só o corte muda por tela. **O
+comprimento do beat continua sem crescer com a contagem** — só o espaçamento
+entre os cards escolhidos muda, sempre respeitando o piso de 4.5.
 
 Soma: `2.1 + 3.8 + 3.6 + 8.4 + 3.15 = ` **21.05 vh** de faixa rolável.
 
@@ -170,14 +211,15 @@ outros beats são mantidos, o que dá `2.1 + 3.8 + 3.6 + 5.1 + 3.15 = ` **17.75
 vh** de faixa rolável, **18.75 de altura virtual total** — o mesmo viewport
 parado do fim, descrito acima, sempre 1 inteiro independente do breakpoint.
 
-> ⏳ **PENDENTE — prompt de migração, antes do rio.** O 5.1 nasceu de
-> `1.7 × 3 cases`, uma derivação que não vale mais (ver o aviso acima). O
-> número permanece como o comprimento fixo do rio no mobile; o que muda é que
-> ele deixou de ser consequência da contagem. Se a capacidade calculada no
-> prompt de migração mostrar que 5.1 vh não comporta os cards escolhidos com
-> espaçamento legível, é o **espaçamento** que cede, ou a curadoria — nunca o
-> comprimento, porque esticá-lo quebraria os totais e a regra dos oito
-> segundos.
+> ✅ **RESOLVIDO — prompt de migração.** ~~O 5.1 nasceu de `1.7 × 3 cases`~~,
+> uma derivação que não vale mais. O número permanece como o comprimento fixo
+> do rio no mobile — o que mudou é que ele deixou de ser consequência da
+> contagem: com o piso de 4.5 unidades e o corredor estimado de ~26 unidades
+> (ver a capacidade do rio, acima), 5.1 vh comportam **4 cards**, que é a meta
+> de curadoria do mobile. Se a curadoria eventual pedir mais que isso no
+> mobile, é o **espaçamento** que cede primeiro, ou o subconjunto exibido —
+> nunca o comprimento do beat, porque esticá-lo quebraria os totais e a regra
+> dos oito segundos.
 
 O quadro do descolamento cai em `0.18 × 17.75 = 3.20 vh`. O polegar cobre 2 a
 3 vh/s: a 2 vh/s são 1.60 s + 0.64 de assentamento = **~2.2 s**; a 3 vh/s,
@@ -338,10 +380,11 @@ O rio. Os cards são outros corpos de prova montados ao longo da câmara, em
 perspectiva real, e a câmera atravessa por entre eles.
 
 **O rio mostra os cases curados, não o acervo.** Só entram na câmara os cases
-com `in_river: true` no frontmatter; o acervo completo é maior e vive na lista
-em DOM da HUD. Isso não é uma limitação da cena, é o princípio do PROJECT.md §4
-— o acervo é maior que o rio, e o rio é curadoria, não índice. Ver PROJECT.md
-§6 para a lista dos cases e §4 para o princípio.
+no topo do ranking `river_rank`, até onde a capacidade do aparelho couber; o
+acervo completo é maior e vive na lista em DOM da HUD. Isso não é uma
+limitação da cena, é o princípio do PROJECT.md §4 — o acervo é maior que o
+rio, e o rio é curadoria, não índice. Ver PROJECT.md §6 para a lista dos cases
+e §4 para o princípio.
 
 Cada card tem sua própria esteira: ao se aproximar, o bando se descola nele
 também. O bando é o tecido conjuntivo entre os projetos — é a mesma física do
@@ -349,16 +392,29 @@ beat de identidade, em escala menor, e é o que impede o rio de virar uma galeri
 
 Cada card carrega uma placa de cota gravada: cliente, ano, estação.
 
-**Quem entra no rio é um campo do frontmatter.** A curadoria vive num
-**booleano** — `in_river` — decidido **olhando os cards montados na cena**, não
-lendo a lista de projetos. Um case só sai do rio virando esse campo `false`.
+**A curadoria é um ranking único, não um booleano por aparelho.** `river_rank`
+(um número, obrigatório e único em todo o acervo — `lib/cases.ts` falha a
+build se dois cases colidirem no mesmo posto) é decidido **olhando os cards
+montados na cena**, não lendo a lista de projetos. **Não existem duas listas
+de curadoria, uma por aparelho**: existe uma ordem só, e cada aparelho corta
+essa mesma ordem pela capacidade que couber — hoje ~8 cards no desktop e ~4 no
+mobile (ver "Capacidade do rio", abaixo). Editar a curadoria é reordenar um
+número; o corte por tela é derivado, não escolhido caso a caso.
 
-**Nenhum case é apagado para sair do rio.** Ele continua em `content/cases/`,
-continua na lista de acervo, continua com rota própria em `/work/[slug]`,
-continua indexável e linkável. Sair do rio é uma decisão de composição —
-quantos corpos de prova a câmara comporta antes de o escoamento virar galeria
-—, não um julgamento sobre o trabalho. Apagar um case para encurtar o rio
-confundiria as duas coisas e perderia a única cópia do material migrado.
+Isto substitui o desenho anterior, em que cada case tinha um `in_river:
+true/false` e "quem está no rio" era a mesma pergunta em toda tela. Um
+booleano por aparelho exigiria decidir a curadoria duas vezes e permitiria as
+duas listas divergirem sem ordem nenhuma entre si — o mobile poderia mostrar
+um conjunto sem relação com o do desktop, quando o que este documento sempre
+pediu foi um corte mais curto da mesma fila, não uma segunda fila.
+
+**Nenhum case é apagado para sair do corte de um aparelho.** Ele continua em
+`content/cases/`, continua na lista de acervo, continua com rota própria em
+`/work/[slug]`, continua indexável e linkável. Ficar fora do corte é uma
+decisão de composição — quantos corpos de prova a câmara comporta antes de o
+escoamento virar galeria —, não um julgamento sobre o trabalho. Apagar um case
+para encurtar o rio confundiria as duas coisas e perderia a única cópia do
+material migrado.
 
 **Filtros por disciplina, não por categoria.** Três eixos — **produto**,
 **sistema**, **marca** — e cada case aparece em mais de um:
@@ -374,14 +430,25 @@ Nenhum filtro devolve menos de dois cases, e nenhum esvazia o rio.
 > ⏳ **PENDENTE — prompt de migração, antes do rio.** Esta matriz cobre três
 > cases; o repositório terá sete (PROJECT.md §6). Os três eixos continuam
 > valendo — são disciplinas, não categorias, e não crescem com o acervo. O que
-> falta é a marcação dos quatro cases migrados, e ela sai junto com a curadoria
-> de quem aparece no rio, olhando os cards na cena. Não preencher agora é
+> falta é a marcação **desta matriz** para os quatro cases migrados — a que
+> decide os filtros do rio — e ela sai junto com a curadoria de quem aparece
+> no rio, olhando os cards na cena. Não preencher esta matriz agora é
 > deliberado: classificar por disciplina um case que ainda não foi visto
 > montado é escolher o filtro antes de conhecer o escoamento.
 >
-> Os filtros operam sobre **quem está no rio** (`in_river: true`), não sobre o
-> acervo inteiro — senão promover um card que não está montado na câmara não
-> teria o que promover.
+> **Isto não é o mesmo `disciplines` que já foi escrito no frontmatter dos
+> quatro migrados.** `parseFrontmatter` (`lib/cases.ts`) exige o campo não
+> vazio para o `next build` não quebrar, então os quatro têm uma tag de
+> primeira passada — pelo conteúdo do case, não pela composição da câmara —,
+> registrada no AGENTS.md ("São sete cases no repositório"). Os quatro também
+> têm um `river_rank` provisório (posto arbitrário, ordem alfabética, ver o
+> mesmo trecho do AGENTS.md); nem essa tag nem esse posto afetam a garantia
+> abaixo — o que ainda não existe é a decisão final, que só chega com a
+> curadoria.
+>
+> Os filtros operam sobre **quem está no rio** — o topo do ranking `river_rank`
+> até a capacidade do aparelho —, não sobre o acervo inteiro — senão promover
+> um card que não está montado na câmara não teria o que promover.
 >
 > A regra que sobrevive à ampliação: nenhum filtro devolve menos de dois
 > cases, e nenhum esvazia o rio.
@@ -521,6 +588,26 @@ Com a luminância medida do quadro, a mesma varredura devolve **4.62:1 no pior
 quadro** (en, 1440×900) e uma mediana de 5.21 — o véu pousa no teto e fica lá,
 que é como se reconhece um mecanismo exato. As faixas medidas por caixa estão no
 AGENTS.md.
+
+**O alvo que o solucionador mira e o piso de reprovação são dois números
+diferentes, não um só.** Essa medição pousou o `f` exatamente em cima do piso
+de 4.5:1 — margem zero, por construção — e isso deixou de fazer sentido assim
+que se pensa no que vem depois de Quem sou: o rio (0.45) entra com capas de
+card, que são brilho de imagem atrás de texto, e a HUD — a caixa mais exposta
+do site, na tela o tempo todo — fica na borda por onde os cards passam. O
+piso de 4.5:1 continua sendo o critério de reprovação, e não muda. O alvo que
+o `f` mira para chegar lá é outra constante (`VEIL_TARGET_CONTRAST` em
+`lib/scene/veil.ts`), e **está travado em 5.5** — o primeiro ponto, entre
+quatro comparados lado a lado com screenshot do beat, em que o retângulo do
+véu passa a ser visível sem virar um scrim opaco (ver AGENTS.md, "Comparação
+do alvo do véu", para os quatro valores e as capturas).
+
+**E 5.5 é setpoint de controlador, não valor final.** A comparação que o
+escolheu rodou sem o beat de Trabalho existir — nenhum card, nenhuma capa de
+imagem atrás de texto, exatamente o caso que motivou separar o alvo do piso.
+Ele volta à mesa depois que o rio existir de verdade, com cards montados e
+capas de brilho variável passando atrás da HUD; 5.5 é o ponto de partida para
+essa etapa, não a palavra final sobre o assunto.
 
 **O teto de 0.138 só vale para `--mist` em opacidade cheia.** Isso colide com a
 mono "de opacidade reduzida" do `PROJECT.md` §3.2: a 60% sobre `--void` a mono
@@ -709,9 +796,9 @@ fixas, uma por beat** — cinco ao todo —, e a câmera **corta** entre elas.
 | Superfície | a veneziana aberta, bando saindo, luz em lâminas |
 
 **Uma composição por beat, não uma por case.** A composição do beat de Trabalho
-enquadra **os cases do rio** — os de `in_river: true` —, os mesmos que o modo
-normal mostra, pelo mesmo motivo: o modo calmo não cura de novo. Cada card
-continua sendo um link.
+enquadra **os cases do rio** — o topo do ranking `river_rank` até a capacidade
+do aparelho —, os mesmos que o modo normal mostra, pelo mesmo motivo: o modo
+calmo não cura de novo. Cada card continua sendo um link.
 
 Os cases **fora** do rio são alcançados pela lista de acervo em DOM, exatamente
 como no modo normal. Ela já é estática por natureza — é texto em mono, sem cena

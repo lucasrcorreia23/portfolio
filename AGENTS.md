@@ -871,6 +871,14 @@ mesmo ponto. É a margem mais apertada da cena inteira, e ela cai justo em 0.44,
 onde o poleiro está mais denso pouco antes de soltar. Quem mexer na densidade do
 poleiro mede isto de novo.
 
+**E 0.44 não é um progresso qualquer: é a fronteira do beat de Trabalho, que
+começa em 0.45.** O ponto mais apertado da cena inteira contra o teto de calor
+cai exatamente onde o rio — com capas de card, ou seja mais brilho atrás de
+texto — está prestes a entrar. Quem calibrar a cor do rio herda 1.5 a 3.5
+pontos de margem, não os ~9 a ~11 que o resto da descida tem, e deve remedir o
+pico de 0.44 depois de qualquer mudança na densidade do poleiro ou na paleta
+dos primeiros cards.
+
 #### O véu de legibilidade, e por que o mecanismo mudou
 
 O DIRECTION.md §5 desenhou o véu como um termo de densidade ancorado à caixa do
@@ -980,6 +988,70 @@ do bloom, que espalha a diferença com amplitude baixa até ~98 px além dela.
    de Quem sou. A **posição** das caixas está certa (ela sai de layout, que é
    síncrono), então a medição de luminância vale; o que não vale é ler o nome do
    beat no identificador da caixa.
+
+##### Comparação do alvo do véu
+
+O mecanismo mirava exatamente no piso de 4.5:1 — `VEIL_TARGET_CONTRAST` em
+`lib/scene/veil.ts` era o mesmo número que `CONTRAST_FLOOR`. Medido, isso
+produz margem zero: as quatro condições da tabela acima pousam em 4.59–4.65,
+a poucas centenas de um por cento da reprovação. Enquanto a cena inteira até
+0.44 é escura o bastante para o véu quase nunca precisar agir, isso não
+custava nada; o rio (0.45) entra com capas de card — brilho de imagem atrás
+de texto — e a HUD, que está na tela o tempo todo, fica na borda por onde os
+cards passam por baixo dela. Antes de decidir a curadoria, valia comparar o
+que subir o alvo custa em imagem.
+
+`VEIL_TARGET_CONTRAST` foi desacoplado de `CONTRAST_FLOOR` (que continua
+sendo só o piso de reprovação, aplicado em `probe-contrast.ts`), e três
+valores acima do piso foram testados um de cada vez — editar a constante,
+recarregar, e para cada um: `__probe.contrast()` para o pior quadro medido no
+beat de Quem sou (0.28–0.45, en, 1440×757, mesma metodologia da tabela
+acima), e `__probe.descend({from:0.20, to:0.40, rate:1, settleSteps:700})`
+seguido de screenshot para ver a cena no momento em que o poleiro já está
+formado (roost.amount = 1) e o manifesto está na tela.
+
+| alvo | pior razão medida | mediana por quadro | L teto entregue |
+|---|---|---|---|
+| 4.5 (piso, sem margem) | 4.55 | 5.02 | ~0.121 |
+| 5.5 | 5.57 | 6.02 | ~0.087 |
+| 6.5 | 6.73 | 7.21 | ~0.063 |
+| 7.5 | 7.97 | 8.45 | ~0.046 |
+
+Todos os quatro passam pelo piso com folga crescente — o pior quadro medido
+fica sempre ~0.05–0.07 acima do alvo, a mesma margem de grão de sempre. A
+captura visual, no mesmo quadro (progresso 0.40, poleiro formado, manifesto na
+tela):
+
+- **4.5** — o retângulo do véu não é visível a olho nu: a coluna de texto lê
+  contra a cena viva, o cacho rose/cyan do poleiro continua brilhante logo
+  atrás dela. É o estado atual do repositório.
+- **5.5** — o retângulo escurecido atrás do texto passa a ser visível — não
+  como um scrim opaco, mas como uma região claramente mais escura que a
+  vizinhança, com a queda de `VEIL_FALLOFF` suavizando a borda.
+- **6.5** — o retângulo é sensivelmente mais escuro que em 5.5; o salto de 4.5
+  para 5.5 e de 5.5 para 6.5 são visíveis em quantidade parecida.
+- **7.5** — quase indistinguível de 6.5 a olho nu neste quadro. A luminância
+  linear segue caindo (0.063 → 0.046), mas depois do tonemap e num quadro que
+  já não estava no pico de brilho, a diferença marginal fica pequena. Subir o
+  alvo além de 6.5 compra mais margem numérica do que efeito visível.
+
+Os quatro screenshots foram gerados nesta sessão e não fazem parte do
+repositório — refazer é reproduzir a tabela acima e capturar de novo.
+
+**Escolhido: 5.5.** Olhando as quatro imagens lado a lado, foi o primeiro
+ponto em que o retângulo do véu passa a ser visível sem virar um scrim — 6.5
+já lia perceptivelmente mais escuro pelo mesmo motivo que 7.5 quase não lia
+diferente de 6.5 (ver acima). `VEIL_TARGET_CONTRAST` está travado nesse valor
+em `lib/scene/veil.ts`, com o piso de reprovação (`CONTRAST_FLOOR`, em
+`probe-contrast.ts`) intocado em 4.5.
+
+**E 5.5 é setpoint de controlador, não valor final — DIRECTION.md §5
+registra isso.** Esta comparação rodou sem o beat de Trabalho existir: nenhum
+card, nenhuma capa de imagem atrás de texto. O rio entra em 0.45 com
+exatamente esse caso — brilho de foto, não de bando —, e a HUD (a caixa mais
+exposta do site, na tela o tempo todo) fica na borda por onde os cards
+passam por baixo dela. 5.5 é o ponto de partida para o beat de Trabalho, não
+a palavra final; reavaliar quando o rio existir.
 
 #### O compositor
 
@@ -1110,31 +1182,90 @@ a mesma que renderiza.
 rotas são estáticas, um frontmatter errado quebra `next build`, não a página em
 produção.
 
-Campos além do PROJECT.md §6: `disciplines` e `in_river` (os dois obrigatórios,
-DIRECTION.md §4) e `generated` (opcional, PROJECT.md §6).
+Campos além do PROJECT.md §6: `disciplines` e `river_rank` (os dois
+obrigatórios, DIRECTION.md §4) e `generated` (opcional, PROJECT.md §6).
 
 `content/cases/exemplo.mdx` é um **fixture descartável**, não conteúdo: existe
 só para o pipeline ter o que compilar enquanto os cases não chegam. Ele fica
-até o **Prompt 5**, onde é **apagado inteiro** — não renomeado, não copiado,
+até o **Prompt 5B**, onde é **apagado inteiro** — não renomeado, não copiado,
 não usado como molde para os cases reais. Os sete cases nascem do PROJECT.md
 §6, não deste arquivo; herdar a estrutura dele significaria herdar os travessões
 de placeholder e o `generated: true` que ele carrega só para não fingir ser
-conteúdo. Se ele ainda existir depois do Prompt 5, alguma coisa deu errado.
+conteúdo. Se ele ainda existir depois do Prompt 5B, alguma coisa deu errado.
+
+`river_rank: 99` (ver acima) é a mesma regra aplicada ao ranking: um posto
+fora da faixa real de propósito, para nunca ser confundido com curadoria nem
+copiado para dentro de um case novo junto com o resto do arquivo.
 
 **São sete cases no repositório**, não três: Perfecting, WeCann Atena e
 Unifique Energia escritos do zero, mais Decision Suite, ZOOMtecnologia, Prime8
 e Nestlé migrados do portfólio antigo. Organiconecta e Orbsofty ficam de fora
 por ora — não foram descartados, só não entram nesta rodada.
 
-**Estar no repositório não é estar no rio.** A curadoria é um booleano
-obrigatório no frontmatter, `in_river`, decidido olhando os cards montados na
-cena — não lendo a lista de projetos. É obrigatório de propósito: um padrão
-implícito decidiria a curadoria em silêncio.
+**Os quatro migrados já existem em `content/cases/`** — `decision-suite.mdx`,
+`nestle.mdx`, `prime8.mdx`, `zoomtecnologia.mdx` —, todos com um `river_rank`
+provisório de nascença (ver abaixo). Faltam os três escritos do zero, e com eles o momento
+de apagar `exemplo.mdx`. A migração não passou pelo `resgatar-midia.sh` que
+esta seção descrevia: o arquivo nunca existiu no repositório. Como a tag
+`template-legado` já está local, o resgate saiu direto dela — `git checkout
+template-legado -- <caminho>` para os diretórios que não mudaram de nome
+(`decision-suite`, `nestle`) e `git show template-legado:<caminho> ><destino>`
+para os que mudaram (`prime8-project` → `prime8`, e os arquivos
+`zoomtech-*`/`tablet-id.jpg`/`arquitetura-marcas.jpg` espalhados em
+`portfolio/`, que foram para `zoomtecnologia/`) — sem clone, sem `.migracao/`.
+Texto extraído dos componentes em `src/components/<slug>/*.tsx` da mesma tag,
+verbatim; os campos claramente falsos do tema comprado (`features: ["Placeat
+laborum quam."...]`, `counter_data` com "Average daily signups") não foram
+migrados — são lorem ipsum do template, nunca renderizados, não conteúdo do
+Lucas.
 
-**Nenhum case é apagado para sair do rio.** `in_river: false` tira o card do
-beat de Trabalho e mantém tudo o mais — o arquivo, a rota `/work/[slug]`, a
-indexação. Use `getRiverCases()` para montar o rio e aplicar os filtros por
-disciplina; `getAllCases()` é o acervo inteiro e é o que gera as rotas.
+**`summary_en` e os `alt_en` de mídia não são traduções.** A rodada de
+migração foi só de português — "não traduza nada nesta rodada" —, então
+`summary_en` dos quatro cases é hoje uma cópia literal de `summary_pt` (o
+schema em `lib/cases.ts` exige os dois campos; duplicar em vez de inventar uma
+versão em inglês foi a única leitura que não desrespeita a instrução), e
+precisa virar tradução de verdade antes de `en` ser uma rota que alguém visita
+de propósito. Os `alt_pt`/`alt_en` de cada imagem, ao contrário, **não** são
+cópia: são descrição de acessibilidade escrita para esta migração — o site
+antigo não tinha alt text nenhum, só placeholders como `"image-here"` — então
+escrever os dois idiomas ali não fere a regra de não traduzir conteúdo do
+Lucas, porque não é conteúdo dele.
+
+**`disciplines`, `accent` e `river_rank` dos quatro são palpite de primeira
+passada, não curadoria.** O DIRECTION.md §4 adia deliberadamente a
+classificação por disciplina e o ranking do rio até ver os cards montados na
+cena, mas `parseFrontmatter` exige os dois campos — `disciplines` não vazio,
+`river_rank` um inteiro positivo e único em todo o acervo — sem isso `next
+build` quebra (`assertUniqueRiverRank` em `lib/cases.ts` verificado: um
+segundo case com o mesmo posto derruba a build, e um case sem o campo
+também). A saída: um palpite editorial pelo conteúdo do case (não pela
+composição da câmara), seguro por agora porque não é isso que decide a
+garantia "nenhum filtro devolve menos de dois cases" nem o corte por
+aparelho — os dois só passam a valer quando a curadoria de verdade escolher
+a ordem. Ficou: Decision Suite produto+sistema, cyan, posto 1; Nestlé
+marca+produto, coral, posto 2; Prime8 produto+marca+sistema, rose, posto 3;
+ZOOMtecnologia produto+marca, teal, posto 4 — ordem alfabética dos slugs,
+arbitrária, revisitável inteira no Prompt 5A.
+
+**Contagem de palavras dos quatro migrados** (corpo do MDX, título+parágrafos+
+listas, sem contar frontmatter nem legenda de imagem): Decision Suite 566,
+ZOOMtecnologia 283, Prime8 335, Nestlé 130 — **1.314 no total**. É o número
+para dimensionar a tradução de `en`; ele não inclui os três cases que ainda
+não existem.
+
+**Estar no repositório não é estar no rio.** A curadoria é um ranking único
+obrigatório no frontmatter, `river_rank` — não um booleano, e não duas listas
+por aparelho —, decidido olhando os cards montados na cena, não lendo a lista
+de projetos. É obrigatório e único de propósito: um padrão implícito
+decidiria a curadoria em silêncio, e dois cases no mesmo posto não formam uma
+ordem.
+
+**Nenhum case é apagado para sair do corte de um aparelho.** Ficar fora do
+corte mantém tudo o mais — o arquivo, a rota `/work/[slug]`, a indexação. Use
+`getRiverCases()` para pegar o rio inteiro **em ordem de `river_rank`** e
+cortar pela capacidade do aparelho que estiver montando (~8 no desktop, ~4 no
+mobile — DIRECTION.md, "Capacidade do rio"); `getAllCases()` é o acervo
+inteiro, sem ordenar por rank, e é o que gera as rotas.
 
 ### Beats
 
@@ -1550,7 +1681,11 @@ regime certo, mas ninguém mediu a cena aberta por dez minutos.
 
 Nesta ordem, porque cada uma depende da anterior:
 
-1. Os sete cases em `content/cases/` (e apagar o fixture).
+1. Os sete cases em `content/cases/` (e apagar o fixture). **Quatro já
+   migrados** — Decision Suite, ZOOMtecnologia, Prime8, Nestlé, todos com
+   `river_rank` provisório — ver "São sete cases no repositório" acima. Faltam os
+   três escritos do zero (Perfecting, WeCann Atena, Unifique Energia); só
+   depois deles o fixture sai.
 2. O conteúdo dos beats de baixo em DOM — contato e placas de cota. **O
    manifesto já existe** (`components/beats/AboutBeat.tsx`).
 3. ~~O descolamento~~ — **feito e medido**, ver "O descolamento, medido". Sobrou

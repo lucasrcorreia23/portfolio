@@ -68,14 +68,23 @@ export type CaseFrontmatterInput = {
   media: Array<Omit<CaseMedia, "generated"> & { generated?: boolean }>;
   disciplines: Discipline[];
   /**
-   * A curadoria do rio — DIRECTION.md §4. **Obrigatório de propósito:** um
-   * padrão implícito decidiria a curadoria em silêncio, e essa decisão é de
-   * composição, tomada olhando os cards montados na cena.
+   * A curadoria do rio — DIRECTION.md §4. **Uma lista ordenada única, não um
+   * booleano.** Todo case do acervo carrega um posto nesse ranking, e cada
+   * aparelho corta a mesma lista pela capacidade que couber (hoje ~8 no
+   * desktop, ~4 no mobile — DIRECTION.md, "Capacidade do rio"): não existem
+   * duas listas de curadoria, uma por aparelho, existe uma ordem e um corte
+   * diferente por tela.
    *
-   * `false` tira o case do beat de Trabalho e **não o apaga**: ele continua
-   * em `content/cases/`, com rota própria, indexável e linkável.
+   * **Obrigatório e único de propósito:** um padrão implícito decidiria a
+   * curadoria em silêncio, e dois cases no mesmo posto não formam uma ordem.
+   * `getAllCases()` falha a build se dois arquivos colidirem no mesmo
+   * `river_rank`.
+   *
+   * Ficar fora do corte de um aparelho **não apaga** o case: ele continua em
+   * `content/cases/`, com rota própria, indexável e linkável — só não entra
+   * na câmara daquele aparelho.
    */
-  in_river: boolean;
+  river_rank: number;
   generated?: boolean;
 };
 
@@ -92,7 +101,7 @@ export type CaseFrontmatter = {
   cover: string;
   media: readonly CaseMedia[];
   disciplines: readonly Discipline[];
-  in_river: boolean;
+  river_rank: number;
   generated: boolean;
 };
 
@@ -130,7 +139,7 @@ export async function loadCase(slug: string): Promise<LoadedCase> {
   };
 }
 
-/** Todo o acervo. É isto que gera rotas: um case fora do rio ainda tem página. */
+/** Todo o acervo. É isto que gera rotas: um case fora do corte do rio ainda tem página. */
 export async function getAllCases(): Promise<CaseEntry[]> {
   const slugs = await getCaseSlugs();
   const cases = await Promise.all(
@@ -139,17 +148,24 @@ export async function getAllCases(): Promise<CaseEntry[]> {
       return { slug, frontmatter };
     }),
   );
+  assertUniqueRiverRank(cases);
   return cases;
 }
 
 /**
- * Só os cases montados na câmara — DIRECTION.md §4. O acervo é maior que o
- * rio, e a diferença é intencional: quem monta o beat de Trabalho e quem
- * aplica os filtros por disciplina usa esta lista, não `getAllCases()`.
+ * O rio inteiro, em ordem de curadoria — DIRECTION.md §4. **Uma lista só,
+ * não uma por aparelho:** este módulo devolve todo o acervo ordenado por
+ * `river_rank` crescente, e quem monta o beat de Trabalho corta essa mesma
+ * lista pela capacidade do aparelho (hoje ~8 no desktop, ~4 no mobile — ver
+ * DIRECTION.md, "Capacidade do rio"). O corte não é responsabilidade deste
+ * módulo: um número de capacidade aqui amarraria `lib/cases.ts`, que não
+ * sabe de viewport, à composição da câmara, que sabe.
  */
 export async function getRiverCases(): Promise<CaseEntry[]> {
   const cases = await getAllCases();
-  return cases.filter((entry) => entry.frontmatter.in_river);
+  return cases
+    .slice()
+    .sort((a, b) => a.frontmatter.river_rank - b.frontmatter.river_rank);
 }
 
 export function caseSummary(
@@ -204,18 +220,6 @@ function requireStringArray(
     fail(slug, `\`${key}\` precisa ser um array de strings não vazio.`);
   }
   return value as string[];
-}
-
-function requireBoolean(
-  slug: string,
-  raw: Record<string, unknown>,
-  key: string,
-): boolean {
-  const value = raw[key];
-  if (typeof value !== "boolean") {
-    fail(slug, `\`${key}\` precisa ser \`true\` ou \`false\`, escrito explicitamente.`);
-  }
-  return value;
 }
 
 function requireOneOf<T extends string>(
@@ -290,9 +294,39 @@ export function parseFrontmatter(
     cover: requireString(slug, record, "cover"),
     media: parseMedia(slug, record["media"]),
     disciplines: disciplines as Discipline[],
-    // Obrigatório: `record["in_river"] === true` aceitaria a ausência do
-    // campo como "fora do rio", e a curadoria teria sido decidida por omissão.
-    in_river: requireBoolean(slug, record, "in_river"),
+    river_rank: requirePositiveInteger(slug, record, "river_rank"),
     generated: record["generated"] === true,
   };
+}
+
+function requirePositiveInteger(
+  slug: string,
+  raw: Record<string, unknown>,
+  key: string,
+): number {
+  const value = raw[key];
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 1) {
+    fail(slug, `\`${key}\` precisa ser um número inteiro positivo (a posição do case no ranking único de curadoria).`);
+  }
+  return value;
+}
+
+/**
+ * A curadoria é uma lista ordenada única (DIRECTION.md §4): dois cases no
+ * mesmo posto não têm como formar uma ordem, e deixar a colisão passar
+ * amarraria o desempate à ordem de iteração do sistema de arquivos.
+ */
+function assertUniqueRiverRank(cases: readonly CaseEntry[]): void {
+  const seen = new Map<number, string>();
+  for (const { slug, frontmatter } of cases) {
+    const rank = frontmatter.river_rank;
+    const clashing = seen.get(rank);
+    if (clashing !== undefined) {
+      fail(
+        slug,
+        `\`river_rank: ${rank}\` já está em uso por \`${clashing}.mdx\`. A curadoria é um ranking único — cada posto pertence a um só case.`,
+      );
+    }
+    seen.set(rank, slug);
+  }
 }

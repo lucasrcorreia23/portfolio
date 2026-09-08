@@ -23,6 +23,10 @@
 # histórico do repositório
 /.screens/
 
+# staging temporário de migração do site antigo — mídia e componentes crus
+# vindos da tag template-legado, nunca conteúdo final (ver AGENTS.md)
+/.migracao/
+
 # debug
 npm-debug.log*
 yarn-debug.log*

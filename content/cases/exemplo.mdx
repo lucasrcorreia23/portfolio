@@ -10,7 +10,9 @@ export const frontmatter = {
   cover: "/cases/exemplo/cover.webp",
   media: [],
   disciplines: ["produto"],
-  in_river: false,
+  // Fixture: posto fora da faixa real (1-7) de propósito, para nunca colidir
+  // com o `river_rank` de um case de verdade enquanto os dois coexistirem.
+  river_rank: 99,
   generated: true,
 };
 

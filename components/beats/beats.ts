@@ -47,10 +47,12 @@ export const BEATS: readonly Beat[] = [
   { id: "about", from: 0.28, to: 0.45, vh: 3.6, mobileVh: 3.6 },
   // O rio. Comprimento FIXO: 8.4 vh no desktop, 5.1 no mobile, com três cases
   // ou com sete. A contagem determina o espaçamento entre os cards, não o
-  // comprimento do beat — a capacidade real sai do prompt de migração, que
-  // roda antes do rio, e entra como valor derivado. Até lá não existe número
-  // de espaçamento; não invente um. E o rio é só quem tem `in_river: true`
-  // no frontmatter, que é menos que o acervo (ver lib/cases.ts).
+  // comprimento do beat. Capacidade derivada (DIRECTION.md §4, "Capacidade
+  // do rio"): piso de 4.5 unidades de mundo entre centros de card, ~8 cards
+  // no desktop e ~4 no mobile — a reconferir quando o card e a curva de
+  // 0.45–0.85 deixarem de ser provisórios. A curadoria é um `river_rank`
+  // (número, ranking único) no frontmatter, não um booleano: cada aparelho
+  // corta a mesma lista ordenada pela capacidade que couber (ver lib/cases.ts).
   { id: "work", from: 0.45, to: 0.85, vh: 8.4, mobileVh: 5.1 },
   { id: "surface", from: 0.85, to: 1.0, vh: 3.15, mobileVh: 3.15 },
 ] as const;
