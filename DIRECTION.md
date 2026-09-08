@@ -581,8 +581,27 @@ SDF continua **fino** — uma banda estreita em Z, não uma laje extrudada. Laje
 contradiz a entrada de perfil: se a peça é um volume, a lâmina do beat de
 identidade vira um bloco e o momento se perde.
 
-- Banda de influência em Z: `t = 0.02 · H` (H = altura de caixa alta), com queda
+- Banda do **sólido** em Z: `t = 0.02 · H` (H = altura de caixa alta), com queda
   suave até `±0.05 · H`.
+
+  > **Esta linha dizia "banda de influência", e a releitura tem motivo.** Os
+  > `±0.05 · H` são 0.20 unidade de mundo. O escoamento anda a ~6 u/s e o quadro
+  > dura 1/60 s, ou seja **0.10 unidade por quadro**: um corpo atravessa a banda
+  > inteira em dois quadros, e num quadro lento, em nenhum. Lida como alcance da
+  > força, ela produz um repuxo em vez de um descolamento — e, pior, um repuxo
+  > cuja intensidade **depende da taxa de quadros**, o que é um defeito, não uma
+  > escolha estética.
+  >
+  > Então os `±0.05 · H` passam a descrever a **espessura da lâmina** (que é o
+  > que "os dois finos" sempre quis dizer), e a força ganha uma rampa de
+  > aproximação a montante de `1.5 · H`, derivada do gradiente do mesmo SDF. Não
+  > é invenção: é a linha logo abaixo desta lista — "em escoamento real a
+  > separação começa **antes** do corpo, e é isso que o olho espera ver".
+  >
+  > A banda do sólido continua fina e continua sendo integrada com cuidado: o
+  > impulso dentro dela é calculado por Simpson ao longo do deslocamento do
+  > quadro, e não amostrado na posição final, para não perder corpos que a
+  > cruzam inteira num passo. Ver o docblock de `lib/scene/shaders/boids.ts`.
 - Envelope de desvio lateral: isosuperfície deslocada `d = 0.015 · H` para fora
   da silhueta. É pouco — os corpos raspam a letra.
 - Nada disso é trapaça: em escoamento real a separação começa **antes** do

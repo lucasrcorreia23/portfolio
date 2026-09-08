@@ -71,19 +71,24 @@ dois divergirem, o `PROJECT.md` ganha. Este arquivo é só o mapa do código.
 
 ## Estado atual
 
-**Fundação, portão, e a cena com os dois primeiros beats.** Sobre o esqueleto —
-rotas, idiomas, tokens, escala tipográfica, driver de scroll, hooks de
-capacidade, pipeline de MDX — existem o **preloader e o portão de entrada** e,
-agora, a **cena contínua de R3F** com Emergência e Identidade (progresso 0.00 a
-0.28): câmara, névoa em três paradas, bando de 16.384 corpos em FBO ping-pong,
-estrutura gravada, e o corpo de prova em `troika-three-text` com oclusão real.
+**Fundação, portão, e a cena com os dois primeiros beats — com o descolamento.**
+Sobre o esqueleto — rotas, idiomas, tokens, escala tipográfica, driver de
+scroll, hooks de capacidade, pipeline de MDX — existem o **preloader e o portão
+de entrada** e a **cena contínua de R3F** com Emergência e Identidade (progresso
+0.00 a 0.28): câmara, névoa em três paradas, bando de 16.384 corpos em FBO
+ping-pong, estrutura gravada, e o corpo de prova em `troika-three-text` com
+oclusão real.
+
+**O descolamento está feito e medido** (ver "O descolamento, medido"): campo de
+distância assado do próprio mesh do troika, aresta de ataque pelo gradiente,
+turbulência nas contra-formas e atrator de baixa pressão na esteira. O desvio de
+campo distante — a caixa de cantos macios contra `SPECIMEN_HALF_*` — foi
+removido; `world.ts` guarda essas duas constantes agora só para as cotas
+gravadas da `Structure`.
 
 Os três beats de baixo — Quem sou, Trabalho, Superfície — continuam sem
 conteúdo, e os pontos de controle da câmera de 0.45 em diante são provisórios
-(ver `lib/scene/curve.ts`). O **descolamento** — turbulência nas contra-formas e
-recolamento na esteira — **não** está feito: o que existe é oclusão verdadeira e
-um desvio de campo distante. Ele depende do SDF assado do próprio mesh e é o
-prompt seguinte.
+(ver `lib/scene/curve.ts`).
 
 O template HTML comprado que ocupava este repositório foi **descartado, não
 migrado** (PROJECT.md §5). Nada dele sobreviveu: nem SCSS, nem jQuery, nem
@@ -150,6 +155,7 @@ npm run build      # build de produção
 npm run start      # roda o build
 npm run lint       # eslint (flat config)
 npm run typecheck  # tsc --noEmit
+npm run collect    # o coletor de medições, em :3131 (ver "Desempenho da cena")
 ```
 
 Node 24 (`.nvmrc`); o mínimo do Next 16 é 20.9. Não há suíte de testes.
@@ -220,10 +226,18 @@ Estado medido, com o portão e a cena dos dois primeiros beats:
 
 | Rota / chunk | gz | contra |
 |---|---|---|
-| `/` e `/pt` — a descida, com portão e preloader | **181.0 kB** | 200 kB ✅ |
+| `/` e `/pt` — a descida, com portão e preloader | **181.1 kB** | 200 kB ✅ |
 | `/work/[slug]` — case, sem portão e sem cena | 174.1 kB | 200 kB ✅ |
-| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders | **284.0 kB** | 350 kB ✅ |
-| chunk do driver de scroll (gsap + ScrollTrigger + lenis) | 48.4 kB | fora da rota inicial |
+| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, **campo de distância e descolamento** | **292.5 kB** | 350 kB ✅ |
+| chunk do driver de scroll (gsap + ScrollTrigger + lenis) | 47.8 kB | fora da rota inicial |
+
+O descolamento inteiro — o assado do campo (`type-field.ts` + `shaders/field.ts`)
+e as três forças no shader dos boids — custou **8.5 kB gz**, de 284.0 para 292.5.
+Sobram 57.5 kB do teto para o rio e a transição para o case.
+
+**A sonda de medição não aparece nesta conta porque não existe em produção.**
+Verificado no build: nenhum chunk de `.next/static/chunks` menciona `__probe`,
+`installProbe` ou `probe-measure`. Ver "A sonda" abaixo.
 
 Os dois chunks dinâmicos são separados **por conteúdo**, não por momento: o
 preloader pede a cena antes do clique, então dividir por "o que chegou depois de
@@ -360,6 +374,9 @@ nenhum dos dois depende de WebGL. Quem precisa das duas juntas usa
 ```
 lib/scene/load-scene.ts    promessa memoizada — espelho de load-driver.ts
 lib/scene/world.ts         as medidas da câmara; uma unidade ≈ um metro
+lib/scene/type-field.ts    o assado do campo de distância, do próprio mesh
+lib/scene/probe.ts         a sonda de medição (`?probe=1`, só em dev)
+lib/scene/probe-measure.ts as quatro medidas de aceite e seus controles
 lib/scene/curve.ts         a coreografia: câmera, ângulo de ataque, abertura
 lib/scene/proxy-sim.ts     64 macro-partículas a 15 Hz — luz, estrutura, véu
 lib/scene/veil.ts          resolve o f do véu por quadro
@@ -470,10 +487,162 @@ concordam entre si**: 6.84 contra 6.72 é 1.8% de diferença, e é essa concord�
 que descarta a explicação alternativa — um bando mais rarefeito na altura do
 título produziria exatamente a mesma queda no meio, sem ocluir nada. Se as
 vizinhas divergirem (9 acima e 4 abaixo, digamos), a medição está lendo
-distribuição, não oclusão, e a faixa central não decide nada. Refazer a
-verificação depois do descolamento é reportar as três, sempre, e na ordem certa:
-primeiro as de fora concordando, depois a do meio caindo. Ver PROJECT.md §7,
+distribuição, não oclusão, e a faixa central não decide nada. Ver PROJECT.md §7,
 "Toda medição é feita no ponto de entrega".
+
+##### O tripleto foi refeito depois do descolamento, e ele deixou de funcionar
+
+Com a geometria agora registrada em `lib/scene/probe.ts` (τ = 0.070, coluna do
+título, faixa das letras `|y| ≤ 0.5 · H`, vizinhas em `[0.6, 1.1] · H` acima e
+abaixo, 40 quadros espaçados por um trânsito):
+
+| | por mil |
+|---|---|
+| acima | 44.71 |
+| abaixo | 44.52 |
+| **faixa das letras** | **46.69** |
+
+As duas de fora concordam em **0.4%** — controle melhor do que o original. Mas a
+do meio **não cai**: sobe 4.7%.
+
+**Isso não é oclusão que sumiu; é o teste que deixou de medir oclusão.** O
+tripleto antigo funcionava porque o desvio de campo distante *esvaziava* a faixa
+das letras — empurrava todo mundo para fora de uma caixa de 3.2 unidades de
+margem. O descolamento faz o contrário: ele **comprime** contra a aresta (anel a
+1.361× o fluxo livre). Os dois efeitos — menos corpos atrás por oclusão, mais
+corpos na frente por compressão — caem na mesma faixa de tela e se cancelam.
+
+Há um segundo motivo, e ele vale para qualquer medida de oclusão feita a partir
+desta câmera: a **cobertura de pixel é dominada pelos corpos perto da lente**.
+Um corpo a 2 unidades cobre ordens de grandeza mais pixels que um a 30, e a peça
+está a 14 — então esconder tudo que está entre 14 e 66 unidades tira pouca área
+da conta. A faixa de tela é o instrumento errado para esta pergunta nesta pose.
+
+**O que continua valendo, e por quê.** A oclusão é estrutural e está no código,
+não na calibragem: os corpos são opacos, com `depthWrite` e `depthTest`, e
+desenham antes do glifo (ver acima). O que a medição de hoje mostra é a
+consequência disso na região que a projeção *consegue* recortar — dentro da
+silhueta só aparece o que está entre a peça e a câmera —, e ali o número responde
+ao efeito como deve: **56.9 por mil com `?detach=0` contra 28.9 com o
+descolamento ligado**, que é o buraco da esteira aparecendo.
+
+**Fica aberto** um teste de oclusão feito para a pergunta certa — alternar o
+`depthWrite` do corpo de prova e comparar o mesmo quadro — em vez de reaproveitar
+um tripleto de faixas que media outra coisa. É pequeno e não estava no escopo
+deste prompt.
+
+#### O descolamento, medido
+
+O frame que o DIRECTION.md §1 chama de "o motivo do site existir". Três forças
+no passo de velocidade (`lib/scene/shaders/boids.ts`), todas amostrando **um
+campo de distância assado do próprio mesh do troika** — nunca de uma
+rasterização paralela.
+
+**O assado** (`lib/scene/type-field.ts`) roda no `onSync` do troika, **uma vez**
+por carregamento de fonte, troca de idioma ou troca de corpo: máscara → semente
+→ jump flood (11×) → enclausuramento → empacotamento, num RGBA16F de 1024×256
+com ~114 texels por caixa alta. A máscara é o **mesh vivo com o material vivo**
+numa passagem ortográfica: o troika termina o fragmento com
+`gl_FragColor.a *= edgeAlpha`, então o alfa do alvo já é a cobertura do glifo.
+Não há segundo material, segundo kerning nem segundo arredondamento.
+
+Três coisas que **não** funcionam e custaram tempo:
+
+- **`scene.overrideMaterial` não serve para a máscara.** O `onBeforeRender` do
+  troika pula `_prepareForRender` quando o material não é dele, os uniforms
+  `uTroika*` ficam vazios e os quads de glifo rasterizam como retângulos
+  sólidos — um campo de distância de uma cerca.
+- **Semear o jump flood no centro do texel não basta.** O envelope de raspagem
+  do DIRECTION.md §5 (`0.015 · H`) tem 1.7 texels de largura, então ±0.5 texel
+  seria 30% de erro. A semente guarda a posição sub-texel da fronteira,
+  estimada da cobertura.
+- **O alvo precisa ser religado no nulo antes de `readPixels`.** O `blit()`
+  restaura o alvo anterior, então o composite final devolve o alvo da cena: os
+  pixels chegaram à tela e a leitura sai toda preta.
+
+Verificação do campo, e ela é forte: gradiente unitário (mediana 0.9998);
+**marchar 4 texels na direção do gradiente muda `d` em 4 texels** (mediana
+0.9994, ou seja o campo é métrico e não um borrão da silhueta); o anel de um
+texel fora da tinta tem `d` espalhado pelo texel inteiro (p10 0.121, mediana
+0.500, p90 0.907, só 0.44% em zero — semeadura sub-texel de verdade); e o
+enclausuramento é **exatamente zero** além de 0.30 · H da tinta.
+
+##### As quatro medidas, com dois controles cada
+
+Instrumento e geometria estão em `lib/scene/probe.ts` e `probe-measure.ts`, e é
+de propósito que estejam em código: os três números da prova de oclusão ficaram
+sem nenhum registro de onde eram as faixas, qual o limiar ou como se contava, e
+por isso não são comparáveis com nada. Aqui a geometria é o código, e os
+parâmetros abaixo são o registro.
+
+Progresso 0.18, locale `en`, buffer 1456×857, DPR 1. **700 quadros de
+assentamento e 1300 de medição** (ver "a lâmina viajante" abaixo). Controles:
+fluxo livre deslocado `3 · H` a montante — mesma pegada de x e y, volume
+idêntico — e a mesma máscara com `?detach=0`.
+
+| medida | descolamento on | `?detach=0` |
+|---|---|---|
+| corpos dentro da pegada da tinta, no plano | **0.167×** o fluxo livre | 1.027× |
+| densidade no anel de 0 a 0.12 · H | **1.361×** | 1.065× |
+| dispersão angular na contra-forma | **0.047** contra 0.004 | 0.004 contra 0.004 |
+| desvio angular médio | **16.0°** contra 4.9° | 4.8° contra 5.0° |
+| **comprimento de correlação da direção** | **0.202 · H** contra 0.687 · H | 0.620 · H contra 0.672 · H |
+| sombra a 1, 2 e 4 larguras de letra | **0.700 → 1.041 → 1.008** | 1.070 → 1.087 → 1.091 |
+| quadro composto: esteira dentro da silhueta | **28.9 por mil** | 56.9 por mil |
+| quadro composto: aresta externa | 32.4 por mil | 55.9 por mil |
+| coral, fração dos pixels de corpo | 0.00% | 0.00% |
+
+**A linha da correlação é a que fecha o argumento, e ela não estava no plano
+original.** Variância angular sozinha não prova turbulência aqui: a força foi
+desenhada perpendicular à velocidade, ou seja para produzir exatamente essa
+grandeza — um tremor branco passaria. O que separa vórtice de tremor é escala. E
+a primeira versão da força **era** tremor: ela montava a base ortonormal a
+partir da velocidade de cada corpo, então dois vizinhos recebiam o mesmo ruído
+em direções diferentes, e C(r) partia de 0.26 e zerava em 0.45 · H. Com o ruído
+virando campo vetorial do espaço, o comprimento medido é 0.202 · H contra
+0.687 · H no fluxo livre. E a coluna do `?detach=0` mostra por que isso é a
+turbulência e não a geometria do vazio: **sem o efeito, a contra-forma mede o
+mesmo que o fluxo livre** (0.620 contra 0.672).
+
+##### Três armadilhas do método, e é aqui que elas ficam registradas
+
+1. **O limiar de "corpo visível" é τ = 0.070 em luminância linear, e não podia
+   sair do vale do histograma.** O vale óbvio do quadro em 0.18 fica em L ≈
+   0.045, e 0.045 **é a face das letras**: a densidade dentro da silhueta cai de
+   666 por mil em τ = 0.040 para 12.4 em τ = 0.048, e de lá até 0.14 é um platô
+   suave. O 0.070 fica no meio do platô e foi escolhido para que **também o
+   braço de 0.8×** da varredura de sensibilidade (0.056) fique acima do degrau.
+   Sensibilidade medida: aresta 44.1 → 39.4 → 34.3 e esteira 39.2 → 36.3 → 32.2
+   em 0.8τ / τ / 1.25τ, monotônicas.
+2. **Não existe faixa de fluxo livre nas mesmas alturas nesta cena.** As letras
+   alcançam 0.5 · H, a força alcança mais 0.5 · H, e o tubo do bando acaba em
+   1.5 · H (raio 4.6 achatado a 0.72 em Y). As duas fronteiras coincidem: uma
+   faixa em `[1.2, 2.0] · H` mede a borda do tubo, não escoamento livre. Entram
+   no lugar o **perfil vertical inteiro**, com as metades de cima e de baixo
+   tendo que concordar (15.1% de discordância média, contra 5.9% sem o efeito),
+   e o `?detach=0`.
+3. **Com o progresso travado, o bando vira uma lâmina viajante.** Todo corpo que
+   passa pela lente renasce em `uCameraZ − 64`, que é um **plano**; com a câmera
+   parada é sempre o mesmo plano, e a população se organiza numa lâmina — medido,
+   um terço do bando (5.7 mil de 16.4 mil) num único bin de quatro unidades, com
+   bins vizinhos vazios. A lâmina cruza o duto em ~640 quadros. Medir menos que
+   isso mede a fase dela: a mesma configuração devolveu razão de compressão 1.60
+   numa rodada e 1.12 na seguinte, e controles de fluxo livre com **zero**
+   corpos. Daí os 700 + 1300 quadros, e daí tudo ser **fração da própria laje**
+   em vez de contagem — assim a lâmina se cancela entre numerador e denominador.
+   Na descida real a câmera desce, o plano de renascimento se move junto e a
+   lâmina se desmancha: é artefato de medir parado, não defeito do bando.
+
+##### As letras das pontas não são tocadas
+
+O título tem meia-largura **7.97** unidades e o tubo do bando tem raio **4.6**.
+Corpos que cruzam o plano da peça, por quinto do título, da esquerda para a
+direita: **`[0, 96, 308, 114, 0]`**. O C e o A não recebem um único corpo, em
+nenhum quadro, com ou sem descolamento (`?detach=0` dá `[0, 101, 316, 106, 0]`).
+Não é ruído nem calibragem: é geometria, e o remédio seria largura de tubo ou
+tamanho de tipo — os dois com consequência fora deste beat. **Está aberto e é
+decisão de composição, não de código.** A contact sheet
+(`.screens/03b-descolamento.png`) mostra os doze quadros.
 
 #### O compositor
 
@@ -830,10 +999,60 @@ no aparelho. Ele entra no portão sozinho, roda as quatro configurações do pla
 — dof on/off cruzado com 16.384 e 4.096 corpos — e recarrega entre elas; um
 painel no canto mostra o progresso e, no fim, os números. `?chain=0` mede uma
 configuração só, e `?dof=`/`?flock=` escolhem qual. O relatório é postado em
-`http://<mesmo-ip>:3131/report`; se não houver nada escutando ali, o painel diz
-"COLETOR MUDO" e os números ficam na tela para serem lidos à mão. **Nada disso
-existe sem `?bench=1`** — o banco custa 3.1 kB gz no chunk da cena e não roda
-sozinho. No celular, tire o Modo de Baixo Consumo (ele trava o rAF em 30 Hz e
+`http://<mesmo-ip>:3131/report`. **Agora existe um coletor** — `npm run collect`
+(`scripts/collector.mjs`, só builtins do Node): ele grava
+`.screens/bench/<run>.json`, imprime uma linha por configuração e imprime na
+subida o endereço para digitar no telefone. Sem ele o painel continua dizendo
+"COLETOR MUDO" e os números ficam na tela para serem copiados à mão — e
+transcrição à mão já produziu número falso neste projeto. **Nada disso existe
+sem `?bench=1`** — o banco custa 3.1 kB gz no chunk da cena e não roda sozinho.
+
+**`?plan=detach`** roda o plano focado de duas células — descolamento ligado
+contra desligado, com dof e bando no padrão. Duas e não oito porque o
+comportamento térmico do aparelho é a única coisa desta seção que continua **não
+verificada**: cada configuração roda 22 a 25 s, e um 2×2×2 são três minutos e
+meio de telefone na mão. `?plan=grid` (o padrão) continua sendo o 2×2 de
+regressão. A **linha 0 de todo plano tem que ser igual aos `DEFAULTS` de
+`settings.ts`**: o primeiro passo é entrado por um `?bench=1` pelado, então ele
+renderiza o padrão — um plano que diga outra coisa na linha 0 reporta uma
+configuração e mede outra, em silêncio.
+
+O relatório ganhou `gpuPerFrameMedianMs` ao lado do p95 e da manchete. As três
+juntas, nunca a mediana sozinha: **a mediana descreve o quadro típico e a média
+descreve o trabalho** — é a distinção que o cabeçalho de `lib/scene/bench.ts`
+existe para defender.
+
+### A sonda — medição de pixel e de simulação, fora do pacote
+
+`?probe=1`, e ela **não existe na build de produção**: o ramo em `SceneWorld`
+começa com `process.env.NODE_ENV !== "production"`, que o Next substitui por
+literal, e o import inteiro cai. Verificado no build — nenhum chunk menciona
+`__probe`. Enquanto o banco mede **tempo** e por isso precisa rodar em produção,
+a sonda mede **pixel e estado da simulação**, e esses são idênticos nas duas
+builds (mesmos shaders, mesmo three, mesmo teto de DPR). Os 57 kB que sobram do
+teto de 350 são para o rio, não para instrumentação.
+
+A sonda não roda laço: a cena fica parada e cada chamada avança o relógio em
+passos fixos de 1/60 s antes de ler. `window.__probe` expõe `meta()`,
+`settle()`, `step()`, `viewport()`, `readField()`, `readSim()`, `planeMap()`,
+`measure()` e `sheet()` — a última monta a contact sheet num canvas 2D e a POSTa
+em `/shot` no coletor.
+
+**Duas armadilhas de ambiente, e as duas custam uma hora se não estiverem
+escritas.** A primeira: o portão é aberto **por atributo**, não por clique. O
+contador dele é dirigido por `requestAnimationFrame`, que o Chrome congela
+quando a janela está coberta ou a aba não está ativa — e esse é o estado normal
+de uma sessão dirigida por ferramenta. Esperando a fase "ready" como o banco
+faz, a sonda esperaria para sempre. A segunda, e é a que decide se dá para medir
+alguma coisa: **`document.visibilityState` precisa ser `"visible"` para o R3F
+sequer criar o canvas** — o `react-use-measure` depende de `ResizeObserver`, que
+não entrega callback em aba oculta, e sem tamanho o R3F não cria a raiz. O
+sintoma é um `<canvas>` de 300×150 dentro de um container de 1456×857 e nenhuma
+mensagem de erro em lugar nenhum.
+
+**Pelo mesmo motivo o banco não roda numa aba oculta**, e aí não há contorno: ele
+mede tempo de parede quadro a quadro, o que exige quadros de verdade. O banco
+precisa de uma janela em primeiro plano. No celular, tire o Modo de Baixo Consumo (ele trava o rAF em 30 Hz e
 você mediria a bateria) e o Reduzir Movimento (ele troca a cena pelo modo calmo,
 que é outra carga); o relatório traz `displayMs` e `sceneMode` justamente para
 denunciar as duas coisas.
@@ -949,12 +1168,13 @@ Nesta ordem, porque cada uma depende da anterior:
 
 1. Os sete cases em `content/cases/` (e apagar o fixture).
 2. O conteúdo dos beats de baixo em DOM — manifesto, contato, placas de cota.
-3. **O descolamento**: `TypeArticle` completo, SDF fino assado do próprio mesh
-   numa passagem ortográfica, força de separação pelo gradiente, atrator de baixa
-   pressão na esteira. Hoje o bando oclui e é ocluído pelas letras de verdade, e
-   desvia delas por campo distante — mas não há turbulência nas contra-formas nem
-   recolamento. É o frame que o DIRECTION.md §1 chama de "o motivo do site
-   existir", e ele ainda não está na tela.
+3. ~~O descolamento~~ — **feito e medido**, ver "O descolamento, medido". O que
+   sobrou dele são duas coisas nomeadas: **o tempo de GPU** (o banco precisa de
+   uma janela em primeiro plano, que esta sessão não teve — rodar
+   `?bench=1&plan=detach&port=3131` com `npm run collect` no ar, no M5 e no
+   iPhone) e **as letras das pontas**, que o bando nunca toca porque o tubo tem
+   raio 4.6 contra a meia-largura 7.97 do título. A segunda é decisão de
+   composição: largura de tubo ou tamanho de tipo, e as duas saem deste beat.
 4. Os três beats de baixo, e com eles os pontos de controle definitivos da curva
    da câmera de 0.45 em diante (hoje provisórios, em `lib/scene/curve.ts`) e a
    migração da cor da fonte a montante para `--cyan` e `--peach`.
