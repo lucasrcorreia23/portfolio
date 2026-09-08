@@ -26,8 +26,24 @@ const COMPOSITION_AT: Record<BeatId, number> = {
   surface: 0.93,
 };
 
-/** Passos de simulação para o bando assentar numa pose. São dois blits de 64². */
-const SETTLE_STEPS = 150;
+/**
+ * Passos de simulação para o bando assentar numa pose. São dois blits de 128²
+ * cada, sem desenhar.
+ *
+ * **Setecentos, e o número foi medido.** O bando escoa a ~6 u/s por um duto de
+ * 66 unidades, então um corpo leva ~640 quadros para atravessá-lo — e a
+ * estrutura que a composição da Identidade existe para mostrar (o descolamento
+ * na aresta, o buraco na esteira, o recolamento a jusante) só existe depois que
+ * o escoamento cruzou a peça e se reorganizou. Com os 150 anteriores a
+ * composição congelava um transiente: a sonda mediu a razão de compressão
+ * pulando de 1.12 a 1.60 entre rodadas conforme a fase em que o assentamento
+ * parava.
+ *
+ * O DIRECTION.md §5 diz que a composição calma da Identidade é "o quadro do
+ * descolamento, no auge da separação". Isso é uma afirmação sobre o estado do
+ * bando, e 150 passos não a cumpriam.
+ */
+const SETTLE_STEPS = 700;
 
 type ComposedClockProps = {
   /** Escreve o progresso da composição; o laço mestre o aplica sem amortecer. */
@@ -76,9 +92,9 @@ export function ComposedClock({
 
     const compose = (id: BeatId) => {
       composedRef.current = COMPOSITION_AT[id];
-      // O bando assenta rodando a simulação sem desenhar. São 150 pares de
-      // blits numa textura de 64×64 — alguns milissegundos, uma vez por beat —
-      // contra 150 quadros completos se fosse pelo laço de render.
+      // O bando assenta rodando a simulação sem desenhar: pares de blits numa
+      // textura de 128×128, uma vez por beat, contra o mesmo número de quadros
+      // completos se fosse pelo laço de render.
       settleRef.current?.(SETTLE_STEPS);
       elapsed.current += 1;
       advance(elapsed.current);
