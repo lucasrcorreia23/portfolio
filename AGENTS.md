@@ -534,6 +534,13 @@ parar aí — não porque o que falta seja difícil, mas porque as três coisas
 abertas estão medidas, nomeadas e são pequenas. Ficam registradas com número
 para ninguém ter que redescobri-las.
 
+> **A nota 8.5 é provisória, e o portão volta ao crítico depois do Prompt 3.**
+> Com uma pergunta diferente: não "o portão está bom", que já foi respondido
+> sete vezes, mas **"a passagem do portão para a cena funciona"**. É a única
+> parte dele que ainda não existe para ser julgada — hoje a veneziana abre
+> para uma camada vazia. Enquanto a cena não entra, nenhuma rodada nova do
+> portão sozinho tem o que descobrir.
+
 **A lição de método, que vale para o resto do projeto e custou duas rodadas:
 medir o que o código *calcula* não é medir o que ele *entrega*.** O véu de
 legibilidade passou por duas verificações minhas lendo
@@ -545,17 +552,18 @@ saída, não a entrada.
 
 ### O que continua aberto
 
-1. **O clique custa ~110 ms; o PROJECT.md §3.3 fixa 100.** Medido três vezes:
-   clique → `data-gate="opening"` em 97.7 / 110.7 / 118.9 ms. **Praticamente
-   tudo é o construtor do `AudioContext`** — 95.2 / 107.7 / 115.9 ms sozinho,
-   contra 0.0–0.1 ms do `resume()` e 0.1–0.3 ms de um segundo contexto no
-   mesmo documento. É a partida do serviço de áudio, cobrada no único gesto
-   que o site pede. **A correção é de três linhas e está no lugar óbvio:**
-   criar o contexto suspenso como tarefa do `lib/preload/manifest.ts` — que é
-   literalmente a lista do "que o portão espera antes de deixar entrar" — e
-   deixar o handler só com `resume()` e `playPressureThud()`. O gesto do
-   usuário é exigido pelo `resume()`, não pelo construtor. Faça esta primeiro:
-   é a única das três que é violação de um teto numérico do PROJECT.md.
+1. ~~**O clique custa ~110 ms; o PROJECT.md §3.3 fixa 100.**~~ **Corrigido.**
+   Praticamente todo o custo era o construtor do `AudioContext` — 95.2 / 107.7
+   / 115.9 ms sozinho, contra 0.0–0.1 ms do `resume()` —, cobrado no único
+   gesto que o site pede. O gesto é exigido pelo `resume()`, não pelo
+   construtor: o contexto passou a ser criado suspenso como tarefa do preload
+   (`prepareAudio`, em `lib/audio/audio-context.ts`), onde essa espera é o que
+   o portão existe para cobrir, e o handler ficou só com `resume()` e o baque.
+   Medido depois **do evento ao quadro pintado**, que é o ponto de entrega:
+   **40–56 ms**, com o trecho síncrono do handler em **3.3–6.0 ms** contra
+   97.7–118.9 antes. E verificado que não é acaso: instrumentando o construtor
+   de `AudioContext` antes do clique, **zero construções** no caminho do gesto.
+
 2. **O véu não se ancora à coluna de texto no mobile.** A 390×844 a casa da
    leitura é item de flex em `flex-col`, e `align-items: stretch` faz a caixa
    dela **não mudar** na virada do contador (342 → 342 px); quem encolhe é o
@@ -577,6 +585,12 @@ saída, não a entrada.
    cleanup do efeito remove o `transitionend` e o véu nunca reancora.
    Correção: reancorar por quadro enquanto o FLIP roda, em vez de esperar o
    fim. São dois `getBoundingClientRect()` num DOM de seis nós por 600 ms.
+
+> **Os itens 2 e 3 precisam estar corrigidos antes do beat de manifesto**, e a
+> ordem não é arbitrária: o `w-fit` do item 2 **muda a caixa do véu**, e a
+> caixa do véu é justamente o que a varredura de contraste em 600 passos do
+> DIRECTION.md §5 vai medir. Corrigir depois de escrever a varredura invalida
+> a varredura; corrigir antes custa uma linha de CSS.
 
 ### O que já está verificado e não precisa ser refeito
 

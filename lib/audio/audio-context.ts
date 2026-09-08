@@ -4,8 +4,25 @@
  * Navegador nenhum deixa um `AudioContext` tocar antes de um gesto do
  * usuário, e é por isso que o portão existe também como afordância de áudio:
  * o mesmo clique que abre a veneziana é o gesto que destrava o som.
- * `unlockAudio()` **precisa** ser chamado de dentro do handler, de forma
- * síncrona — um `await` antes dele já perde o gesto em alguns navegadores.
+ *
+ * ### Construir e destravar são duas coisas, e só uma delas precisa do gesto
+ *
+ * O gesto é exigido pelo `resume()`, **não** pelo construtor. E os dois custam
+ * ordens de grandeza diferentes: medido no build de produção, `new
+ * AudioContext()` leva 95 a 116 ms — é a partida do serviço de áudio do
+ * sistema —, contra 0.0–0.1 ms do `resume()`. Com o construtor dentro do
+ * handler, o clique inteiro custava ~110 ms e estourava o teto de 100 ms de
+ * latência de ponteiro do PROJECT.md §3.3.
+ *
+ * Então o contexto é criado **no preload** (`lib/preload/manifest.ts`), onde
+ * essa espera é exatamente o que o portão existe para cobrir, e nasce
+ * suspenso — sem gesto, todo navegador o cria assim, e nada toca. No handler
+ * sobra `resume()` e o baque.
+ *
+ * `unlockAudio()` continua tendo que ser chamado de dentro do handler, de
+ * forma síncrona: um `await` antes dele perde o gesto em alguns navegadores.
+ * Ele ainda sabe construir o contexto se o preload não tiver rodado — é o
+ * caminho degradado, não o normal.
  *
  * Não há arquivo de áudio no projeto. O baque é sintetizado: um oscilador
  * grave caindo de tom e um estouro de ruído filtrado, que é o que DIRECTION.md
@@ -21,28 +38,59 @@ const THUD_GAIN = 0.18;
 const AIR_GAIN = 0.1;
 
 /**
- * Cria e destrava o contexto de áudio. Devolve `null` se o navegador não
- * tiver Web Audio ou se a criação falhar — o portão abre do mesmo jeito, em
+ * Constrói o contexto, sem destravar. Devolve `null` se o navegador não tiver
+ * Web Audio ou se a criação falhar — o portão abre do mesmo jeito, em
  * silêncio. Áudio é a única coisa aqui que pode faltar sem quebrar nada.
  */
-export function unlockAudio(): AudioContext | null {
-  if (context !== null) {
-    void context.resume();
-    return context;
-  }
+function ensureContext(): AudioContext | null {
+  if (context !== null) return context;
 
   try {
     context = new AudioContext();
     master = context.createGain();
     master.gain.value = 1;
     master.connect(context.destination);
-    void context.resume();
     return context;
   } catch {
     context = null;
     master = null;
     return null;
   }
+}
+
+/**
+ * Tarefa de preload: paga a partida do serviço de áudio enquanto o contador
+ * sobe, para o clique não pagá-la.
+ *
+ * O construtor é síncrono e bloqueia a thread pelos ~110 ms que custa, então
+ * ele espera dois quadros antes de rodar: sem isso, a trava cairia em cima do
+ * primeiro quadro do portão, que é justamente o que precisa aparecer rápido.
+ * Depois de pintado, um engasgo no campo dormente é barato — na hora do
+ * clique não seria.
+ */
+export function prepareAudio(): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") {
+      resolve();
+      return;
+    }
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        ensureContext();
+        resolve();
+      });
+    });
+  });
+}
+
+/**
+ * Destrava o áudio. Precisa ser chamado de dentro do handler do gesto, e é
+ * barato: o caro já foi pago no preload.
+ */
+export function unlockAudio(): AudioContext | null {
+  const ready = ensureContext();
+  if (ready !== null) void ready.resume();
+  return ready;
 }
 
 /** Para o controle de áudio da HUD, quando ele existir. */

@@ -1,3 +1,4 @@
+import { prepareAudio } from "@/lib/audio/audio-context";
 import { loadScrollDriver } from "@/lib/scroll/load-driver";
 
 /**
@@ -15,7 +16,7 @@ import { loadScrollDriver } from "@/lib/scroll/load-driver";
  * ser carregamento.
  */
 
-export type PreloadTaskId = "fonts" | "scroll";
+export type PreloadTaskId = "fonts" | "scroll" | "audio";
 
 type PreloadTask = {
   id: PreloadTaskId;
@@ -32,6 +33,12 @@ const TASKS: readonly PreloadTask[] = [
   // O driver de scroll: gsap, ScrollTrigger e lenis. É o que faz a descida
   // ser uma descida, e é exatamente o que não pode estar na rota inicial.
   { id: "scroll", weight: 1, start: () => loadScrollDriver() },
+  // A partida do serviço de áudio. Não é o som — é o `new AudioContext()`,
+  // que custa ~110 ms de thread principal. Ele estava dentro do handler do
+  // clique e sozinho estourava o teto de 100 ms de latência de ponteiro do
+  // PROJECT.md §3.3. Aqui a espera é o que o portão existe para cobrir; o
+  // gesto do usuário fica só com o `resume()`, que custa 0.1 ms.
+  { id: "audio", weight: 1, start: () => prepareAudio() },
   // Quando a cena existir ela entra aqui, com peso maior — é o chunk de
   // 350 kB do PROJECT.md §5, e o portão é o momento certo para baixá-lo.
 ];

@@ -268,3 +268,28 @@ Um beat só está pronto quando todas estas forem verdadeiras.
 - O texto está em português e em inglês.
 - O agente crítico deu nota 9 ou mais em duas rodadas seguidas.
 - Nenhum item da lista de marcas de IA (arquivo `PROMPTS.md`, seção Subtração) aparece na tela.
+
+### Toda medição é feita no ponto de entrega, nunca no ponto de cálculo
+
+Ler o valor que o código calculou mede o modelo mental de quem o escreveu, não
+o resultado. As duas coisas coincidem quase sempre — e é exatamente por isso
+que, quando divergem, a verificação passa e o defeito fica.
+
+- **Se a medição é de pixel, leia o pixel composto.** Não o token, não a
+  variável, não a caixa que o layout diz ter: o pixel que saiu, depois de
+  todas as camadas, na tela.
+- **Se a medição é de tempo, meça do evento até o quadro pintado.** Não o
+  tempo do handler, que é o pedaço que você escreveu; o tempo até a pessoa
+  ver, que é o que ela sente.
+
+Isto não é zelo: é a regra que faltava. A caixa do véu de legibilidade do
+portão passou por duas verificações reportando 248 px enquanto entregava 820,
+porque as duas leram a caixa calculada em vez de enganchar o desenho. E o
+clique de entrada passou por sete rodadas dentro do orçamento aparente
+enquanto custava 110 ms contra o teto de 100 desta mesma §3.3 — ninguém tinha
+medido do evento ao quadro.
+
+Vale para tudo que já está descrito nestes documentos, e em especial para a
+varredura de contraste em 600 passos do DIRECTION.md §5: ela amostra a
+**luminância composta** sob cada caixa de texto, no quadro renderizado, e não
+a cor de origem do token nem a densidade que o véu diz ter resolvido.
