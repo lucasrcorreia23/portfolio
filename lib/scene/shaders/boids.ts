@@ -443,8 +443,22 @@ ${detach ? FIELD_FORCE : ""}
   // w guarda a energia: quanto o corpo acabou de ser acelerado. O DIRECTION.md
   // §5 diz que "o brilho segue a aceleração", e é este número que a rampa
   // emissiva lê.
+  //
+  // **Ataque rápido, decaimento lento**, e não a mesma constante nos dois
+  // sentidos. Com o mix simétrico de 0.24 a energia caía com constante de
+  // tempo de quatro quadros — 0.07 s, ou 0.4 unidade de deslocamento. Um corpo
+  // jogado pela turbulência da contra-forma já estava frio antes de chegar à
+  // esteira, e o --coral do DIRECTION.md §5, que existe **só** ali, não tinha
+  // como acender: medido, a energia na esteira tinha p99 de 0.19 contra o 0.35
+  // que o limiar pedia.
+  //
+  // Com 0.03 na descida a constante vira 33 quadros, 0.55 s, ~3.4 unidades —
+  // o corpo esfria ao longo da esteira em vez de dentro dela. Não é licença
+  // poética: é a diferença entre "o brilho segue a aceleração" e "o brilho
+  // pisca na aceleração".
   float energy = clamp(length(next - vel) / (uDt * 9.0 + 1e-5), 0.0, 1.0);
-  energy = mix(velSample.w, energy, 0.24);
+  float cooling = velSample.w;
+  energy = energy > cooling ? mix(cooling, energy, 0.5) : mix(cooling, energy, 0.03);
 
   fragColor = vec4(next, energy);
 }

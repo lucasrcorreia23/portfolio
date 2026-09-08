@@ -636,7 +636,40 @@ export type SimResult = {
   reattachment: { atW: number; shadow: number; freeStream: number; ratio: number }[];
   /** Corpos que cruzam o plano da peça por quadro, por quinto do título. */
   crossingByColumn: number[];
+  /**
+   * A contração do bando ao longo do duto: raio médio e fração dentro da pegada
+   * da tinta, por fatia de `lz`.
+   *
+   * **Existe porque o controle a montante do recolamento é enviesado, e este é
+   * o viés.** O bando se aperta em direção ao eixo conforme escoa — a coesão só
+   * puxa para dentro, a contenção do tubo só empurra para dentro, e os corpos
+   * nascem na borda da elipse: é uma catraca de mão única ao longo de 60
+   * unidades de trajeto. Medido sem descolamento, o raio médio cai 44% de
+   * `lz = −17` para `lz = +11`, e a fração dentro da pegada da tinta sobe de
+   * 306 para 404 por mil só por causa disso.
+   *
+   * Consequência prática: comparar uma laje a jusante com uma laje deslocada a
+   * montante compara **dois pontos diferentes dessa rampa**, e a diferença
+   * cresce com a distância. Por isso o número honesto do recolamento é a razão
+   * sinal sobre controle **na mesma laje** (rodar com `?detach=0` e dividir), e
+   * não a razão contra o fluxo livre a montante.
+   */
+  contraction: { lz: number; meanRadius: number; inkShare: number; bodies: number }[];
+  /**
+   * Fração da população em coral, replicando a fórmula de `body.ts`.
+   *
+   * O teto do DIRECTION.md §2 é sobre **população** ("nunca mais de ~10% da
+   * população em coral ao mesmo tempo"), então ele se mede aqui; a fração de
+   * tela sai do quadro composto e responde ao teto de 15% do PROJECT.md §3.1.
+   */
+  coralShareOfBodies: number;
+  roseShareOfBodies: number;
 };
+
+/** Faixas do perfil de contração, em unidades de mundo ao longo de `lz`. */
+const CONTRACTION_BINS = 20;
+const CONTRACTION_FROM = -18;
+const CONTRACTION_TO = 12;
 
 export function measureSim(
   frameCount: number,
@@ -669,6 +702,12 @@ export function measureSim(
   let freeTotal = 0;
   const slabTotal = [0, 0, 0];
   const slabFreeTotal = [0, 0, 0];
+  const contractionRadius = new Float64Array(CONTRACTION_BINS);
+  const contractionInk = new Float64Array(CONTRACTION_BINS);
+  const contractionTotal = new Float64Array(CONTRACTION_BINS);
+  let coralBodies = 0;
+  let roseBodies = 0;
+  let coloured = 0;
   const counterform: Body[] = [];
   const freeBodies: Body[] = [];
   const correlation = createCorrelation(H);
@@ -750,6 +789,28 @@ export function measureSim(
         }
       }
 
+      // Contração: raio médio e fração na pegada da tinta, por fatia de lz.
+      const slot = Math.floor(
+        ((lz - CONTRACTION_FROM) / (CONTRACTION_TO - CONTRACTION_FROM)) *
+          CONTRACTION_BINS,
+      );
+      if (slot >= 0 && slot < CONTRACTION_BINS) {
+        contractionTotal[slot] = (contractionTotal[slot] ?? 0) + 1;
+        contractionRadius[slot] = (contractionRadius[slot] ?? 0) + Math.hypot(x, y);
+        if (d <= 0) contractionInk[slot] = (contractionInk[slot] ?? 0) + 1;
+      }
+
+      // Coral e rose, com a mesma fórmula de `body.ts`. O teto do DIRECTION.md
+      // §2 é sobre população, então é aqui que ele se verifica.
+      coloured += 1;
+      const density = snapshot.position[at + 3] ?? 0;
+      const energy = snapshot.velocity[at + 3] ?? 0;
+      const downstream = (snapshot.position[at + 2] ?? 0) - specimenZ;
+      const wake =
+        smoothstep(0, 2.2, downstream) * (1 - smoothstep(2.2, 16, downstream));
+      if (wake * smoothstep(0.3, 0.75, energy) > 0.2) coralBodies += 1;
+      if (smoothstep(0.07, 0.13, density) > 0.5) roseBodies += 1;
+
       const nearCounterform = enc > 0.35;
       if (!nearCounterform) continue;
       const body: Body = {
@@ -808,5 +869,24 @@ export function measureSim(
       };
     }),
     crossingByColumn: crossing.map((value) => value / divisor),
+    contraction: Array.from({ length: CONTRACTION_BINS }, (_, slot) => {
+      const n = contractionTotal[slot] ?? 0;
+      return {
+        lz:
+          CONTRACTION_FROM +
+          ((slot + 0.5) / CONTRACTION_BINS) * (CONTRACTION_TO - CONTRACTION_FROM),
+        meanRadius: n > 0 ? (contractionRadius[slot] ?? 0) / n : 0,
+        inkShare: n > 0 ? ((contractionInk[slot] ?? 0) / n) * 1000 : 0,
+        bodies: n / divisor,
+      };
+    }).filter((entry) => entry.bodies > 20),
+    coralShareOfBodies: coloured > 0 ? coralBodies / coloured : 0,
+    roseShareOfBodies: coloured > 0 ? roseBodies / coloured : 0,
   };
+}
+
+/** O `smoothstep` do GLSL, para a sonda poder replicar a rampa de `body.ts`. */
+function smoothstep(edge0: number, edge1: number, x: number): number {
+  const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
 }

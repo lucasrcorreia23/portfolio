@@ -33,6 +33,7 @@ export function ProbeClock({
   const clock = useThree((state) => state.clock);
   const gl = useThree((state) => state.gl);
   const camera = useThree((state) => state.camera);
+  const scene = useThree((state) => state.scene);
 
   useEffect(() => {
     clock.autoStart = false;
@@ -57,6 +58,7 @@ export function ProbeClock({
 
     const uninstall = installProbe({
       gl,
+      scene,
       advance,
       camera,
       progressRef,
@@ -76,7 +78,17 @@ export function ProbeClock({
       if (overlay !== null) overlay.style.display = "";
       uninstall();
     };
-  }, [advance, clock, gl, camera, progressRef, settleRef, flockRef, attackRef]);
+  }, [
+    advance,
+    clock,
+    gl,
+    scene,
+    camera,
+    progressRef,
+    settleRef,
+    flockRef,
+    attackRef,
+  ]);
 
   return null;
 }

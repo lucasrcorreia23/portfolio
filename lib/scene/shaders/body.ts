@@ -114,17 +114,39 @@ void main() {
   // A rampa do DIRECTION.md §5, nesta ordem: teal em cruzeiro, cyan em
   // aceleração, rose em compressão de densidade, coral só na turbulência da
   // esteira.
+  //
+  // ## Os limiares saem da distribuição medida, e antes não saíam
+  //
+  // vDensity é a contagem de vizinhos dentro de 3 unidades **dividida por 24
+  // amostras**, e o bando é rarefeito: um corpo tem em média meia dúzia de
+  // vizinhos entre 16 mil, então o canal vive perto de zero. Medido na cena, em
+  // 16.384 corpos: mediana 0.033, p90 0.073, p99 0.111, **máximo 0.170**.
+  //
+  // Os limiares antigos pediam smoothstep(0.45, 1.0) para o rose e
+  // smoothstep(0.30, 0.90) para o coral — ou seja, começavam **acima do
+  // máximo que o canal consegue produzir**. Duas das quatro cores da rampa do
+  // §5 eram inalcançáveis por construção, e a guarda de coral marcava 0.00% não
+  // porque a cena estava dentro do teto, mas porque a cor não existia. Uma
+  // guarda que só sabe dizer "pouco demais" e "de menos" com o mesmo número não
+  // é guarda.
   vec3 color = uTeal;
   color = mix(color, uCyan, smoothstep(0.18, 0.85, vEnergy));
-  color = mix(color, uRose, smoothstep(0.45, 1.0, vDensity) * 0.75);
+  color = mix(color, uRose, smoothstep(0.07, 0.13, vDensity) * 0.75);
 
-  // Coral exige as três coisas ao mesmo tempo — estar a jusante da peça, estar
-  // comprimido e estar sendo acelerado. É o produto que mantém a população em
-  // coral abaixo dos ~10% que o DIRECTION.md §2 fixa, e por consequência
-  // abaixo dos 15% de tela do PROJECT.md §3.1. Não é um teto arbitrado: é uma
-  // condição que quase nunca se satisfaz.
-  float wake = smoothstep(0.0, 9.0, vWorld.z - uSpecimenZ);
-  float turbulence = wake * smoothstep(0.35, 0.95, vEnergy) * smoothstep(0.3, 0.9, vDensity);
+  // Coral: **a jusante e quente**, e só isso.
+  //
+  // A versão anterior também exigia densidade alta, e isso era uma contradição
+  // interna: a esteira é justamente onde a densidade **cai** — é o buraco que as
+  // letras deixam. Pedir compressão dentro do buraco é pedir as duas coisas ao
+  // mesmo tempo. O DIRECTION.md §5 separa os dois casos de propósito: "rose em
+  // compressão de densidade, coral só na turbulência da esteira".
+  //
+  // A janela da esteira sobe em uma largura de letra e morre em sete. Antes
+  // subia em nove unidades — quatro larguras —, e a essa altura qualquer corpo
+  // já tinha esfriado, mesmo com o decaimento lento.
+  float downstream = vWorld.z - uSpecimenZ;
+  float wake = smoothstep(0.0, 2.2, downstream) * (1.0 - smoothstep(2.2, 16.0, downstream));
+  float turbulence = wake * smoothstep(0.30, 0.75, vEnergy);
   color = mix(color, uCoral, turbulence * 0.85);
 
   // A ponta do corpo é mais quente que a cauda: dá direção sem desenhar nada.

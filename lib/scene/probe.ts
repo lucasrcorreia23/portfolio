@@ -61,6 +61,8 @@ export type FlockRead = {
 
 export type ProbeDeps = {
   gl: WebGLRenderer;
+  /** A cena do R3F, para a sonda achar o mesh do corpo de prova. */
+  scene: { traverse: (visit: (object: object) => void) => void };
   advance: (timestamp: number) => void;
   camera: {
     projectionMatrix: Matrix4;
@@ -139,7 +141,8 @@ export type ProbeReport = {
 };
 
 export function installProbe(deps: ProbeDeps): () => void {
-  const { gl, advance, camera, progressRef, settleRef, flockRef, attackRef } = deps;
+  const { gl, scene, advance, camera, progressRef, settleRef, flockRef, attackRef } =
+    deps;
   const context = gl.getContext();
   let elapsed = 0;
 
@@ -305,6 +308,134 @@ export function installProbe(deps: ProbeDeps): () => void {
       }
     }
     return { dMap, encMap, xMap, yMap };
+  };
+
+  /**
+   * O mesh do corpo de prova, achado pela cena.
+   *
+   * Pelo `textRenderInfo`, que só o `Text` do troika tem — e não por nome ou
+   * ordem, que mudam sem avisar.
+   */
+  const specimen = (): {
+    material: { depthTest: boolean };
+    visible: boolean;
+  } | null => {
+    let found: { material: { depthTest: boolean }; visible: boolean } | null = null;
+    scene.traverse((object) => {
+      if (found !== null) return;
+      if (!("textRenderInfo" in object)) return;
+      const mesh = object as unknown as {
+        material: { depthTest: boolean } | { depthTest: boolean }[];
+        visible: boolean;
+      };
+      const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+      if (material === undefined) return;
+      found = mesh as unknown as {
+        material: { depthTest: boolean };
+        visible: boolean;
+      };
+    });
+    return found;
+  };
+
+  /**
+   * A prova de oclusão, e ela precisa das **duas** metades.
+   *
+   * O tripleto de faixas horizontais que provava a oclusão antes parou de
+   * funcionar quando o descolamento entrou: ele media a queda de corpos na faixa
+   * das letras, e o descolamento comprime corpos exatamente ali. Oclusão a menos
+   * e compressão a mais caem na mesma faixa de tela e se cancelam.
+   *
+   * O instrumento certo alterna o estado da própria peça e compara o **mesmo
+   * quadro**. E o botão certo é o `depthTest`, não o `depthWrite`: os corpos são
+   * opacos e desenham **antes** do glifo, que é transparente. Ou seja, nada no
+   * bando é descartado por profundidade por causa das letras — o que acontece é
+   * o contrário, o glifo é que é recortado onde um corpo está mais perto. Então:
+   *
+   * - `A` normal — o glifo passa no teste de profundidade só onde não há corpo
+   *   na frente; dentro da silhueta aparece **o que está entre a peça e a
+   *   câmera**.
+   * - `B` com `depthTest = false` — o glifo pinta a silhueta inteira, sem ser
+   *   recortado. Se a oclusão funciona nos dois sentidos, aqui não sobra corpo
+   *   nenhum.
+   * - `C` com a peça invisível — a silhueta mostra **todos** os corpos ao longo
+   *   do raio, inclusive os 52 unidades que a peça esconderia.
+   *
+   * `A < C` prova que a peça esconde o que está atrás; `A > B` prova que os
+   * corpos na frente sobrevivem. Um sem o outro não decide nada.
+   *
+   * As três condições são intercaladas quadro a quadro em vez de repetirem o
+   * mesmo timestamp: um segundo `advance()` com o mesmo tempo roda a simulação
+   * com `dt = 0`, e aí `energy = |Δv| / (dt·9 + 1e-5)` estoura para 1 em todo
+   * corpo — o quadro "idêntico" sairia com a rampa emissiva inteira diferente.
+   * Intercalando, cada condição vê a mesma evolução amostrada nos mesmos
+   * intervalos, e a diferença de um sexagésimo de segundo entre elas some na
+   * média.
+   */
+  const occlusion = (frames = 120) => {
+    const mesh = specimen();
+    if (mesh === null) throw new Error("corpo de prova não encontrado na cena");
+    const field = readField();
+    if (field === null) throw new Error("o campo não foi assado");
+
+    const width = gl.domElement.width;
+    const height = gl.domElement.height;
+    const maps = planeMap(width, height, field);
+    const inside: number[] = [];
+    for (let index = 0; index < width * height; index += 1) {
+      if ((maps.dMap[index] ?? 99) <= 0) inside.push(index);
+    }
+
+    const pixels = new Uint8Array(width * height * 4);
+    const hits = [0, 0, 0];
+    const counts = [0, 0, 0];
+    const wasDepthTest = mesh.material.depthTest;
+    const wasVisible = mesh.visible;
+
+    try {
+      for (let frame = 0; frame < frames; frame += 1) {
+        const mode = frame % 3;
+        mesh.material.depthTest = mode !== 1;
+        mesh.visible = mode !== 2;
+        composedInto(pixels);
+        counts[mode] = (counts[mode] ?? 0) + 1;
+        for (const index of inside) {
+          const at = index * 4;
+          const r = SRGB_TO_LINEAR[pixels[at] ?? 0] ?? 0;
+          const g = SRGB_TO_LINEAR[pixels[at + 1] ?? 0] ?? 0;
+          const b = SRGB_TO_LINEAR[pixels[at + 2] ?? 0] ?? 0;
+          if (0.2126 * r + 0.7152 * g + 0.0722 * b > BODY_LUMINANCE) {
+            hits[mode] = (hits[mode] ?? 0) + 1;
+          }
+        }
+      }
+    } finally {
+      mesh.material.depthTest = wasDepthTest;
+      mesh.visible = wasVisible;
+    }
+
+    const perThousand = (mode: number) =>
+      (counts[mode] ?? 0) > 0
+        ? ((hits[mode] ?? 0) / (inside.length * (counts[mode] ?? 1))) * 1000
+        : 0;
+    const normal = perThousand(0);
+    const painted = perThousand(1);
+    const removed = perThousand(2);
+    return {
+      frames,
+      silhouettePixels: inside.length,
+      threshold: BODY_LUMINANCE,
+      /** A: peça normal. Corpos entre a peça e a câmera. */
+      normal,
+      /** B: glifo sem teste de profundidade. Deve ser ~0. */
+      painted,
+      /** C: peça invisível. Todos os corpos ao longo do raio. */
+      removed,
+      /** Quanto a peça esconde do que está atrás. Menor que 1 prova oclusão. */
+      hiddenRatio: removed > 0 ? normal / removed : 0,
+      /** Quanto sobrevive na frente. Muito maior que 1 prova que passam. */
+      infrontRatio: painted > 0 ? normal / painted : Infinity,
+    };
   };
 
   /** Meia-largura da tinta, em caixas altas. */
@@ -571,6 +702,7 @@ export function installProbe(deps: ProbeDeps): () => void {
     planeMap,
     toLocal,
     measure,
+    occlusion,
     sheet,
   };
 

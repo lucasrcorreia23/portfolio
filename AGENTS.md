@@ -490,7 +490,48 @@ vizinhas divergirem (9 acima e 4 abaixo, digamos), a medição está lendo
 distribuição, não oclusão, e a faixa central não decide nada. Ver PROJECT.md §7,
 "Toda medição é feita no ponto de entrega".
 
-##### O tripleto foi refeito depois do descolamento, e ele deixou de funcionar
+##### A oclusão se prova alternando a peça, e ela tem duas metades
+
+`window.__probe.occlusion()` intercala **três condições quadro a quadro** e conta
+corpos por mil pixels dentro da silhueta. Mesmo assentamento, mesma semente,
+mesma máscara; a única coisa que muda é o estado da peça.
+
+**E o botão certo é o `depthTest`, não o `depthWrite`.** Os corpos são opacos e
+desenham **antes** do glifo, que é transparente — então nada no bando é
+descartado por profundidade por causa das letras. O que acontece é o contrário: o
+glifo é recortado onde um corpo está mais perto. Desligar o `depthWrite` da peça
+não muda nada para o bando; desligar o `depthTest` faz o glifo pintar a silhueta
+inteira.
+
+| condição | corpos por mil na silhueta |
+|---|---|
+| **A** — peça normal | **41.05** |
+| **B** — glifo sem `depthTest` (pinta a silhueta inteira) | **1.11** |
+| **C** — peça invisível (todos os corpos ao longo do raio) | **53.36** |
+
+- **A / C = 0.769** → a peça esconde **23.1%** do que apareceria sem ela. É a
+  oclusão do que está atrás.
+- **A / B = 37×** → praticamente tudo que se vê na silhueta some quando o glifo
+  deixa de ser recortado. É a prova de que aqueles corpos estão **na frente** e
+  sobrevivem pelo teste de profundidade.
+
+Um número sem o outro não decide: `A/C < 1` sozinho poderia ser distribuição, e
+`A/B` sozinho não diz nada sobre o que está atrás.
+
+**Por que 23% e não 80%.** A peça está a 14 unidades da câmera e o duto tem 66,
+então ela esconde ~50 das 64 unidades de trajeto. Se a cobertura de pixel fosse
+uniforme com a profundidade, `A/C` daria 0.22. Dá 0.77 porque **os corpos perto
+da lente dominam a área**: um corpo a 2 unidades cobre ordens de grandeza mais
+pixels que um a 30. Esse é o mesmo motivo pelo qual a faixa horizontal deixou de
+funcionar como instrumento — ver abaixo.
+
+**As três condições são intercaladas, não repetidas no mesmo timestamp.** Um
+segundo `advance()` com o mesmo tempo roda a simulação com `dt = 0`, e aí
+`energy = |Δv| / (dt·9 + 1e-5)` estoura para 1 em todo corpo: o quadro
+"idêntico" sairia com a rampa emissiva inteira diferente. Intercalando, cada
+condição vê a mesma evolução amostrada nos mesmos intervalos.
+
+##### O tripleto de faixas foi refeito depois do descolamento, e ele deixou de funcionar
 
 Com a geometria agora registrada em `lib/scene/probe.ts` (τ = 0.070, coluna do
 título, faixa das letras `|y| ≤ 0.5 · H`, vizinhas em `[0.6, 1.1] · H` acima e
@@ -526,10 +567,9 @@ silhueta só aparece o que está entre a peça e a câmera —, e ali o número 
 ao efeito como deve: **56.9 por mil com `?detach=0` contra 28.9 com o
 descolamento ligado**, que é o buraco da esteira aparecendo.
 
-**Fica aberto** um teste de oclusão feito para a pergunta certa — alternar o
-`depthWrite` do corpo de prova e comparar o mesmo quadro — em vez de reaproveitar
-um tripleto de faixas que media outra coisa. É pequeno e não estava no escopo
-deste prompt.
+O teste feito para a pergunta certa está acima, e é ele que vale: alternar o
+estado da peça e comparar o mesmo quadro. O tripleto de faixas fica registrado
+como o instrumento que **deixou** de servir, não como o que serve.
 
 #### O descolamento, medido
 
@@ -587,14 +627,44 @@ idêntico — e a mesma máscara com `?detach=0`.
 | dispersão angular na contra-forma | **0.049** contra 0.004 | 0.004 contra 0.004 |
 | desvio angular médio | **16.3°** contra 4.8° | 4.8° contra 5.0° |
 | **comprimento de correlação da direção** | **0.162 · H** contra 0.630 · H | 0.707 · H contra 0.656 · H |
-| sombra a 1, 2 e 4 larguras de letra | **0.599 → 0.937 → 1.080** | 1.111 → 1.162 → 1.241 |
-| quadro composto: esteira dentro da silhueta | **31.8 por mil** | 57.6 por mil |
-| quadro composto: aresta externa | 36.5 por mil | 57.6 por mil |
+| **sombra a 1, 2 e 4 larguras de letra** | 178.5 · 270.7 · 296.4 por mil | 334.1 · 337.5 · 337.3 |
+| **↳ razão sinal sobre controle, mesma laje** | **0.534 → 0.802 → 0.879** | — |
+| quadro composto: esteira dentro da silhueta | **33.5 por mil** | 56.6 por mil |
+| quadro composto: aresta externa | 39.1 por mil | 58.8 por mil |
 | discordância cima/baixo do perfil | 14.7% | 4.6% |
-| coral, fração dos pixels de corpo | 0.00% | 0.00% |
+| **coral, fração da população** | **1.84%** | 0.00% |
+| rose, fração da população | 4.33% | 5.68% |
+| pixels quentes (rose + coral) na tela | **0.61%** | — |
 
 Sensibilidade ao limiar, em 0.8τ / τ / 1.25τ, monotônica nas duas regiões:
 aresta 41.1 → 36.5 → 31.7 e esteira 34.6 → 31.8 → 28.3.
+
+##### O recolamento se mede contra a mesma laje, não contra o fluxo livre a montante
+
+A linha em negrito acima é o número honesto, e ela substitui a que estava aqui
+antes (0.599 → 0.937 → 1.080). O erro não era de conta, era de **referência**.
+
+O bando **se aperta em direção ao eixo conforme escoa**. Medido com `?detach=0`,
+onde não existe efeito nenhum: o raio médio cai de 3.81 para 3.50 entre
+`lz = −17` e `lz = +11`, e a fração de corpos dentro da pegada da tinta sobe de
+264 para 342 por mil — **+29%, monotônico, sem descolamento**. A contração é de
+só 8% no raio, mas a pegada da tinta é uma faixa fina perto de `y = 0` num tubo
+de 3.31 de meia-altura, então um aperto pequeno atravessa muita gente para
+dentro dela. A causa é uma catraca de mão única: a coesão só puxa para dentro, a
+contenção do tubo só empurra para dentro, e os corpos nascem na borda da elipse.
+
+Comparar uma laje a jusante (`lz = +kW`) com uma laje deslocada a montante
+(`lz = −(3 · H + kW)`) compara **dois pontos diferentes dessa rampa**, e a
+distância entre eles cresce com `k`. Daí o controle "plano" subir sozinho de
+1.111 para 1.241: com `?detach=0` a sombra é **plana** em 334–338 por mil nas
+três lajes, e quem se move é o denominador — 300.6, 290.5, 271.7.
+
+O estimador certo é o mesmo `shadow` das duas rodadas, laje a laje:
+`178.5/334.1`, `270.7/337.5`, `296.4/337.3`. **A esteira fecha até 88% do fluxo
+livre em quatro larguras de letra**, subindo monotonicamente. Não até 108%.
+
+O perfil de contração sai em `sim.contraction` em toda medição, para o viés
+ficar visível na rodada em vez de virar folclore.
 
 **A linha da correlação é a que fecha o argumento, e ela não estava no plano
 original.** Variância angular sozinha não prova turbulência aqui: a força foi
@@ -616,6 +686,51 @@ células diferentes mesmo que elas sejam grandes) e o próprio SDF (dentro de um
 olho de letra o gradiente aponta para o centro, e lados opostos recebem
 empurrões opostos). Fica em 0.85 porque subir mais só uniformiza a força sem
 mudar a medida — e força uniforme demais vira lufada, que é o oposto de vórtice.
+
+##### Duas das quatro cores da rampa eram inalcançáveis, e a guarda não sabia dizer isso
+
+`vDensity` é a contagem de vizinhos dentro de 3 unidades **dividida por 24
+amostras**, e o bando é rarefeito. Medido em 16.384 corpos: mediana 0.033, p90
+0.073, p99 0.111, **máximo 0.170**.
+
+Os limiares eram `smoothstep(0.45, 1.0)` para o `--rose` e `smoothstep(0.30,
+0.90)` para o `--coral`. **Os dois começavam acima do máximo que o canal
+consegue produzir.** Duas das quatro cores do DIRECTION.md §5 não existiam na
+cena, e a guarda de coral marcava 0.00% não porque a cena estava dentro do teto
+de ~10% da §2, mas porque a cor não estava lá. Uma guarda que diz o mesmo número
+para "dentro do teto" e para "não existe" não é guarda — é o modo de falha que o
+PROJECT.md §7 descreve, medir o modelo mental de quem escreveu em vez do
+resultado.
+
+Havia um segundo bloqueio, independente, e ele sobreviveria a qualquer
+recalibragem de densidade: **a energia esfriava antes de chegar à esteira.** O
+canal usava `mix(anterior, novo, 0.24)` nos dois sentidos, uma constante de
+tempo de quatro quadros — 0.07 s, ou 0.4 unidade de deslocamento. A janela de
+esteira do coral subia em nove unidades. Medido na esteira, a energia tinha p99
+de **0.19** contra o 0.35 que o limiar pedia: um corpo jogado pela turbulência já
+estava frio antes de entrar na região onde o coral podia acender.
+
+E havia uma contradição interna: o coral exigia **densidade alta na esteira**,
+que é justamente onde a densidade cai — é o buraco que as letras deixam. O §5
+separa os dois casos de propósito ("rose em compressão de densidade, coral só na
+turbulência da esteira"), e o produto das três condições juntava o que o
+documento separa.
+
+Os três consertos:
+
+- **Energia com ataque rápido e decaimento lento** (0.5 subindo, 0.03 descendo).
+  A constante de descida vira 33 quadros, 0.55 s, ~3.4 unidades: o corpo esfria
+  **ao longo** da esteira em vez de dentro dela. É a diferença entre "o brilho
+  segue a aceleração" e "o brilho pisca na aceleração".
+- **Limiares tirados da distribuição medida**: rose em `smoothstep(0.07, 0.13)`
+  sobre a densidade — o topo ~10% da população.
+- **Coral sem o termo de densidade**, com a janela de esteira subindo em uma
+  largura de letra e morrendo em sete.
+
+Depois: **coral em 1.84% da população** (teto do §2: ~10%), rose em 4.33%, e
+**0.61% da tela** em pixels quentes (teto do PROJECT.md §3.1: 15%). Com
+`?detach=0` o coral volta a 0.00%, que é o controle certo — sem turbulência não
+há esteira turbulenta para acender.
 
 ##### Três armadilhas do método, e é aqui que elas ficam registradas
 
