@@ -69,7 +69,8 @@ uniform float uProgress;
 uniform float uStride;
 uniform vec3  uSpecimen;
 uniform float uSpecimenYaw;
-uniform float uSpawnRadius;
+/** Meia-largura e meia-altura do tubo. A largura abre com o progresso. */
+uniform vec2  uTube;
 uniform float uCameraZ;
 
 const int NEIGHBORS = 24;
@@ -122,8 +123,16 @@ const float SOLID_IN  = 0.02;
 const float SOLID_OUT = 0.05;
 /** Alcance da rampa a montante. Ver o docblock do arquivo. */
 const float APPROACH = 1.5;
-/** Quanto a força lateral decai para fora do envelope. */
-const float SEP_FADE = 0.5;
+/**
+ * Quanto a força lateral decai para fora do envelope.
+ *
+ * Curto: a pilha de corpos expulsos tem que ficar **encostada** na letra, senão
+ * ela se espalha por meia caixa alta e a compressão medida no anel some na
+ * média. Com 0.5 e o tubo aberto o anel media 1.20 vez o fluxo livre; com 0.32
+ * a mesma população se acumula mais perto e o número volta a descrever o que se
+ * vê — duas lâminas raspando a silhueta.
+ */
+const float SEP_FADE = 0.32;
 /** Janela da turbulência: em Z em volta do plano, e em distância da tinta. */
 const float TURB_Z = 0.25;
 const float TURB_D = 0.25;
@@ -157,19 +166,35 @@ const float TURB_GAIN = 26.0;
  * fluxo livre a duas larguras de letra, e a 3.0 ainda ficava em 1.15 — ou seja
  * o escoamento não voltava ao eixo, ele passava do ponto e empilhava.
  * Recolamento é a densidade **subindo até** o fluxo livre, não além dele.
+ *
+ * Depois que o tubo passou a abrir com o progresso, o ganho caiu de novo — de
+ * 2.0 para 1.3. A conta é simples: a seção do tubo quase dobrou, então quase o
+ * dobro de corpos passa pelo anel de captura por segundo, e o mesmo ganho
+ * entrega quase o dobro de fluxo para dentro da sombra. A 2.0 com o tubo aberto
+ * a esteira voltou a passar do ponto (1.12 e 1.19 a duas e quatro larguras).
  */
-const float WAKE_GAIN = 2.0;
+const float WAKE_GAIN = 1.3;
 
 /**
  * Frequência espacial do ruído: uma célula de 1/0.85 = 1.18 unidades, ou seja
  * 0.59 caixas altas.
  *
- * O número vem da medida, não do gosto. Com a célula em 0.29 caixas altas o
- * comprimento de correlação medido dentro das contra-formas deu 0.16 — metade
- * do alvo, porque a escala do vórtice sai da célula do ruído convoluída com a
- * geometria do vazio, que decorrelaciona por conta própria: dentro de um olho
- * de letra o gradiente do SDF aponta para o centro, então corpos em lados
- * opostos recebem empurrões opostos. Dobrar a célula compensa isso.
+ * **Este número quase não importa, e isso foi medido.** A célula foi de 0.29
+ * para 0.59 e depois para 1.0 caixa alta, e o comprimento de correlação da
+ * direção dentro das contra-formas ficou em 0.16 a 0.20 nas três — não é a
+ * célula do ruído que fixa a escala do vórtice.
+ *
+ * O que fixa são duas coisas que o ruído não controla. A primeira é o tempo de
+ * trânsito: um corpo cruza a contra-forma a ~6 u/s em pouco mais de um décimo
+ * de segundo, andando 0.3 caixa alta, então ele amostra células diferentes
+ * mesmo que elas sejam grandes. A segunda é o próprio SDF: dentro de um olho de
+ * letra o gradiente aponta para o centro, e corpos em lados opostos recebem
+ * empurrões opostos.
+ *
+ * Fica em 0.85 porque subir mais só torna a força espacialmente mais uniforme
+ * sem mudar o que se mede — e uniformidade demais é o caminho para o campo
+ * virar uma lufada que balança a contra-forma inteira, que é o oposto de
+ * vórtice.
  */
 const float TURB_SCALE = 0.85;
 const float TURB_DRIFT = 0.9;
@@ -378,11 +403,20 @@ void main() {
   }
 
   // Contenção em **tubo**, não em ponto. Uma mola para o eixo puxa todo mundo
-  // para a mesma reta e o bando colapsa num fio; aqui a força só existe fora do
-  // raio, e dentro dele o bando é livre.
-  float radius = length(pos.xy);
-  if (radius > uSpawnRadius) {
-    force.xy -= normalize(pos.xy) * (radius - uSpawnRadius) * 3.4;
+  // para a mesma reta e o bando colapsa num fio; aqui a força só existe fora da
+  // parede, e dentro dela o bando é livre.
+  //
+  // O tubo é uma **elipse**, e a direção de fora dela é o gradiente da norma
+  // p sobre T — não a radial do círculo, que numa elipse achatada aponta para o
+  // lado errado em tudo que não está nos eixos. A intensidade continua sendo a
+  // distância em unidades de mundo, para a contenção não ficar mais dura quando
+  // o tubo abre.
+  vec2  q = pos.xy / uTube;
+  float r = length(q);
+  if (r > 1.0) {
+    vec2 wallOut = normalize(q / uTube);
+    float outside = (r - 1.0) * length(pos.xy) / max(r, 1e-4);
+    force.xy -= wallOut * outside * 3.4;
   }
 
   // Corrente ambiente, para o tubo não virar um cano.
@@ -448,8 +482,8 @@ void main() {
   // contínuo: nada aparece nem some no meio do quadro.
   if (pos.z > recycleZ()) {
     float a = boidHash(self + floor(uTime * 7.0)) * 6.2831853;
-    float r = sqrt(boidHash(self + 5.0 + floor(uTime * 7.0))) * uSpawnRadius;
-    pos = vec3(cos(a) * r, sin(a) * r * 0.72, spawnZ());
+    float r = sqrt(boidHash(self + 5.0 + floor(uTime * 7.0)));
+    pos = vec3(cos(a) * r * uTube.x, sin(a) * r * uTube.y, spawnZ());
   }
   // E o contrário também: se a câmera passou por eles (um salto de scroll para
   // trás), eles voltam para o começo do tubo em vez de ficarem órfãos atrás.

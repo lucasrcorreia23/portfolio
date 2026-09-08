@@ -13,7 +13,8 @@
  */
 export const SEED_FRAG = /* glsl */ `
 uniform vec2  uTexSize;
-uniform float uSpawnRadius;
+/** Meia-largura e meia-altura do tubo, no instante da semeadura. */
+uniform vec2  uTube;
 uniform float uCameraZ;
 /** 0 = posição, 1 = velocidade. */
 uniform float uMode;
@@ -28,12 +29,12 @@ void main() {
   float index = floor(gl_FragCoord.y) * uTexSize.x + floor(gl_FragCoord.x);
 
   float angle = seedHash(index) * 6.2831853;
-  float radius = sqrt(seedHash(index + 91.0)) * uSpawnRadius;
+  float radius = sqrt(seedHash(index + 91.0));
 
   if (uMode < 0.5) {
     vec3 pos = vec3(
-      cos(angle) * radius,
-      sin(angle) * radius * 0.72,
+      cos(angle) * radius * uTube.x,
+      sin(angle) * radius * uTube.y,
       uCameraZ + 2.0 - seedHash(index + 17.0) * 66.0
     );
     // w = densidade local, que a simulação recalcula no primeiro passo.

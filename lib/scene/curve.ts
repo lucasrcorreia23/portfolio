@@ -1,6 +1,6 @@
 import { CatmullRomCurve3, MathUtils, Vector3 } from "three";
 import { clamp01, easeStrong } from "@/lib/motion";
-import { SPECIMEN_Z } from "./world";
+import { FLOCK_TUBE_NARROW, FLOCK_TUBE_WIDE, SPECIMEN_Z } from "./world";
 
 /**
  * A coreografia da descida: onde a câmera está, para onde ela olha, e com que
@@ -132,6 +132,33 @@ const ATTACK_TO = 0.21;
 export function specimenAttackAngle(progress: number): number {
   const local = clamp01((progress - ATTACK_FROM) / (ATTACK_TO - ATTACK_FROM));
   return ATTACK_MAX + (ATTACK_MIN - ATTACK_MAX) * easeStrong(local);
+}
+
+/**
+ * A meia-largura do tubo do bando, em unidades de mundo.
+ *
+ * Abre de `FLOCK_TUBE_NARROW` para `FLOCK_TUBE_WIDE` entre 0.05 e 0.16 — ou
+ * seja, **termina de abrir antes do quadro do descolamento**, em 0.18, e começa
+ * depois que a Emergência já mostrou o que tinha para mostrar.
+ *
+ * A Emergência precisa do tubo estreito: "uns poucos corpos isolados,
+ * suspensos" num duto de 24 de largura só lê como escala indefinida se os
+ * corpos estiverem concentrados perto do eixo. A Identidade precisa do tubo
+ * largo, e por um motivo medido: com 4.6 fixo, as letras das pontas do título
+ * não recebiam corpo nenhum (ver `FLOCK_TUBE_NARROW` em `world.ts`).
+ *
+ * A meia-altura não entra: ela é constante. Um tubo que abrisse nos dois eixos
+ * viraria preenchimento de câmara, e o bando tem que continuar sendo uma
+ * corrente com bordas visíveis.
+ */
+const TUBE_FROM = 0.05;
+const TUBE_TO = 0.16;
+
+export function flockTubeHalfWidth(progress: number): number {
+  const local = clamp01((progress - TUBE_FROM) / (TUBE_TO - TUBE_FROM));
+  return (
+    FLOCK_TUBE_NARROW + (FLOCK_TUBE_WIDE - FLOCK_TUBE_NARROW) * easeStrong(local)
+  );
 }
 
 /**

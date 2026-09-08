@@ -23,7 +23,11 @@ import { SEED_FRAG } from "@/lib/scene/shaders/seed";
 import type { FlockRead } from "@/lib/scene/probe";
 import { TYPE_ARTICLE } from "@/lib/scene/type-article";
 import { fogUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
-import { FLOCK_SPAWN_RADIUS, SPECIMEN_Z } from "@/lib/scene/world";
+import {
+  FLOCK_TUBE_HEIGHT,
+  FLOCK_TUBE_NARROW,
+  SPECIMEN_Z,
+} from "@/lib/scene/world";
 import { sceneSettings } from "@/lib/scene/settings";
 
 type FlockProps = {
@@ -32,6 +36,8 @@ type FlockProps = {
   attackRef: { readonly current: number };
   /** Z da câmera. A reciclagem do bando é relativa a ela, não ao duto. */
   cameraZRef: { readonly current: number };
+  /** Meia-largura do tubo, que abre com o progresso. A altura é constante. */
+  tubeRef: { readonly current: number };
   /**
    * Preenchido com uma função que roda N passos de simulação **sem desenhar**.
    * É como o modo calmo assenta o bando numa pose: 150 pares de blits numa
@@ -73,6 +79,7 @@ export function Flock({
   progressRef,
   attackRef,
   cameraZRef,
+  tubeRef,
   settleRef,
   readRef,
 }: FlockProps) {
@@ -99,7 +106,7 @@ export function Flock({
       uStride: { value: 1 },
       uSpecimen: { value: new Vector3(0, 0, SPECIMEN_Z) },
       uSpecimenYaw: { value: 0 },
-      uSpawnRadius: { value: FLOCK_SPAWN_RADIUS },
+      uTube: { value: new Vector2(FLOCK_TUBE_NARROW, FLOCK_TUBE_HEIGHT) },
       uCameraZ: { value: 0 },
 
       // O campo de distância assado da peça. Os três primeiros são **os mesmos
@@ -131,7 +138,10 @@ export function Flock({
 
     const seedUniforms = {
       uTexSize: { value: texSize },
-      uSpawnRadius: { value: FLOCK_SPAWN_RADIUS },
+      // O mesmo objeto do passo de simulação: a semeadura acontece no primeiro
+      // quadro, e o tubo já pode ter começado a abrir se alguém entrar na
+      // descida por um link com âncora.
+      uTube: simUniforms.uTube,
       uCameraZ: simUniforms.uCameraZ,
       uMode: { value: 0 },
     };
@@ -244,7 +254,14 @@ export function Flock({
   }, [rig]);
 
   const step = useCallback(
-    (dt: number, progress: number, attack: number, cameraZ: number) => {
+    (
+      dt: number,
+      progress: number,
+      attack: number,
+      cameraZ: number,
+      tubeWidth: number,
+    ) => {
+      rig.simUniforms.uTube.value.x = tubeWidth;
       // A semeadura roda na GPU, uma vez. Uma matriz na CPU seria 4096 × 8
       // floats subindo pelo barramento para dizer o que uma linha de shader
       // deriva de `gl_FragCoord`.
@@ -307,13 +324,19 @@ export function Flock({
     if (settleRef === undefined) return;
     settleRef.current = (steps: number) => {
       for (let i = 0; i < steps; i += 1) {
-        step(1 / 60, progressRef.current, attackRef.current, cameraZRef.current);
+        step(
+          1 / 60,
+          progressRef.current,
+          attackRef.current,
+          cameraZRef.current,
+          tubeRef.current,
+        );
       }
     };
     return () => {
       settleRef.current = null;
     };
-  }, [settleRef, step, progressRef, attackRef, cameraZRef]);
+  }, [settleRef, step, progressRef, attackRef, cameraZRef, tubeRef]);
 
   useEffect(() => {
     if (readRef === undefined) return;
@@ -339,6 +362,7 @@ export function Flock({
       progressRef.current,
       attackRef.current,
       cameraZRef.current,
+      tubeRef.current,
     );
   }, -5);
 

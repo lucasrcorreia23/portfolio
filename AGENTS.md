@@ -582,15 +582,19 @@ idêntico — e a mesma máscara com `?detach=0`.
 
 | medida | descolamento on | `?detach=0` |
 |---|---|---|
-| corpos dentro da pegada da tinta, no plano | **0.167×** o fluxo livre | 1.027× |
-| densidade no anel de 0 a 0.12 · H | **1.361×** | 1.065× |
-| dispersão angular na contra-forma | **0.047** contra 0.004 | 0.004 contra 0.004 |
-| desvio angular médio | **16.0°** contra 4.9° | 4.8° contra 5.0° |
-| **comprimento de correlação da direção** | **0.202 · H** contra 0.687 · H | 0.620 · H contra 0.672 · H |
-| sombra a 1, 2 e 4 larguras de letra | **0.700 → 1.041 → 1.008** | 1.070 → 1.087 → 1.091 |
-| quadro composto: esteira dentro da silhueta | **28.9 por mil** | 56.9 por mil |
-| quadro composto: aresta externa | 32.4 por mil | 55.9 por mil |
+| corpos dentro da pegada da tinta, no plano | **0.154×** o fluxo livre | 1.075× |
+| densidade no anel de 0 a 0.12 · H | **1.224×** | 1.075× |
+| dispersão angular na contra-forma | **0.049** contra 0.004 | 0.004 contra 0.004 |
+| desvio angular médio | **16.3°** contra 4.8° | 4.8° contra 5.0° |
+| **comprimento de correlação da direção** | **0.162 · H** contra 0.630 · H | 0.707 · H contra 0.656 · H |
+| sombra a 1, 2 e 4 larguras de letra | **0.599 → 0.937 → 1.080** | 1.111 → 1.162 → 1.241 |
+| quadro composto: esteira dentro da silhueta | **31.8 por mil** | 57.6 por mil |
+| quadro composto: aresta externa | 36.5 por mil | 57.6 por mil |
+| discordância cima/baixo do perfil | 14.7% | 4.6% |
 | coral, fração dos pixels de corpo | 0.00% | 0.00% |
+
+Sensibilidade ao limiar, em 0.8τ / τ / 1.25τ, monotônica nas duas regiões:
+aresta 41.1 → 36.5 → 31.7 e esteira 34.6 → 31.8 → 28.3.
 
 **A linha da correlação é a que fecha o argumento, e ela não estava no plano
 original.** Variância angular sozinha não prova turbulência aqui: a força foi
@@ -599,10 +603,19 @@ grandeza — um tremor branco passaria. O que separa vórtice de tremor é escal
 a primeira versão da força **era** tremor: ela montava a base ortonormal a
 partir da velocidade de cada corpo, então dois vizinhos recebiam o mesmo ruído
 em direções diferentes, e C(r) partia de 0.26 e zerava em 0.45 · H. Com o ruído
-virando campo vetorial do espaço, o comprimento medido é 0.202 · H contra
-0.687 · H no fluxo livre. E a coluna do `?detach=0` mostra por que isso é a
+virando campo vetorial do espaço, o comprimento medido é 0.162 · H contra
+0.630 · H no fluxo livre. E a coluna do `?detach=0` mostra por que isso é a
 turbulência e não a geometria do vazio: **sem o efeito, a contra-forma mede o
-mesmo que o fluxo livre** (0.620 contra 0.672).
+mesmo que o fluxo livre** (0.707 contra 0.656).
+
+**A escala não é a célula do ruído, e isso também foi medido.** A célula foi de
+0.29 para 0.59 e depois para 1.0 caixa alta, e o comprimento ficou entre 0.16 e
+0.20 nas três. Quem fixa a escala são o tempo de trânsito (um corpo cruza a
+contra-forma em pouco mais de um décimo de segundo, andando 0.3 · H, e amostra
+células diferentes mesmo que elas sejam grandes) e o próprio SDF (dentro de um
+olho de letra o gradiente aponta para o centro, e lados opostos recebem
+empurrões opostos). Fica em 0.85 porque subir mais só uniformiza a força sem
+mudar a medida — e força uniforme demais vira lufada, que é o oposto de vórtice.
 
 ##### Três armadilhas do método, e é aqui que elas ficam registradas
 
@@ -633,16 +646,32 @@ mesmo que o fluxo livre** (0.620 contra 0.672).
    Na descida real a câmera desce, o plano de renascimento se move junto e a
    lâmina se desmancha: é artefato de medir parado, não defeito do bando.
 
-##### As letras das pontas não são tocadas
+##### As letras das pontas, e o tubo que abre
 
-O título tem meia-largura **7.97** unidades e o tubo do bando tem raio **4.6**.
-Corpos que cruzam o plano da peça, por quinto do título, da esquerda para a
-direita: **`[0, 96, 308, 114, 0]`**. O C e o A não recebem um único corpo, em
-nenhum quadro, com ou sem descolamento (`?detach=0` dá `[0, 101, 316, 106, 0]`).
-Não é ruído nem calibragem: é geometria, e o remédio seria largura de tubo ou
-tamanho de tipo — os dois com consequência fora deste beat. **Está aberto e é
-decisão de composição, não de código.** A contact sheet
-(`.screens/03b-descolamento.png`) mostra os doze quadros.
+O título tem meia-largura **7.97** unidades. Com o tubo cilíndrico de raio 4.6
+que a cena tinha, os corpos que cruzavam o plano da peça, por quinto do título,
+eram **`[0, 96, 308, 114, 0]`**: o C e o A não recebiam **um único corpo**, em
+nenhum dos 1300 quadros, com ou sem descolamento. As letras das pontas eram
+cenário — e um corpo de prova que só é atravessado no meio não é um corpo de
+prova, é um pano de fundo com um jato na frente.
+
+O tubo passou a ser uma **elipse que abre com o progresso**: meia-largura de 4.6
+para 8.6 entre 0.05 e 0.16, meia-altura constante em 3.31
+(`flockTubeHalfWidth()` em `curve.ts`, constantes em `world.ts`). A Emergência
+fica intacta — ela precisa do tubo estreito para "não dá pra saber se a câmara
+tem três metros ou trezentos" — e a abertura termina antes de 0.18.
+
+Depois: **`[66, 125, 119, 127, 75]`**. Todos os quintos recebem escoamento, e as
+pontas ficam em 53–60% do meio, que é o que a perspectiva e o afinamento da
+elipse fazem. O `?detach=0` dá `[74, 119, 124, 124, 77]` — praticamente igual,
+que é a prova de que essa distribuição é **geometria do tubo** e não efeito do
+descolamento.
+
+O preço está medido: a área da seção quase dobra (47.8 → 89.4 unidades²), então
+a mesma população de 16.384 corpos fica quase metade tão densa no plano. É uma
+corrente mais fina cobrindo a peça inteira em vez de uma mais densa cobrindo o
+meio dela. A contact sheet (`.screens/03b-descolamento.png`) mostra os doze
+quadros com o tubo aberto.
 
 #### O compositor
 
@@ -1168,13 +1197,13 @@ Nesta ordem, porque cada uma depende da anterior:
 
 1. Os sete cases em `content/cases/` (e apagar o fixture).
 2. O conteúdo dos beats de baixo em DOM — manifesto, contato, placas de cota.
-3. ~~O descolamento~~ — **feito e medido**, ver "O descolamento, medido". O que
-   sobrou dele são duas coisas nomeadas: **o tempo de GPU** (o banco precisa de
-   uma janela em primeiro plano, que esta sessão não teve — rodar
+3. ~~O descolamento~~ — **feito e medido**, ver "O descolamento, medido". Sobrou
+   dele **o tempo de GPU**: o banco mede tempo de parede e por isso precisa de
+   uma janela de navegador em primeiro plano, que esta sessão não teve. Rodar
    `?bench=1&plan=detach&port=3131` com `npm run collect` no ar, no M5 e no
-   iPhone) e **as letras das pontas**, que o bando nunca toca porque o tubo tem
-   raio 4.6 contra a meia-largura 7.97 do título. A segunda é decisão de
-   composição: largura de tubo ou tamanho de tipo, e as duas saem deste beat.
+   iPhone, e escrever os números na tabela de "Desempenho da cena". **O
+   orçamento de pacote já está fechado** (292.5 kB de chunk de cena contra 350),
+   então o que falta é confirmar o quadro, não caber.
 4. Os três beats de baixo, e com eles os pontos de controle definitivos da curva
    da câmera de 0.45 em diante (hoje provisórios, em `lib/scene/curve.ts`) e a
    migração da cor da fonte a montante para `--cyan` e `--peach`.

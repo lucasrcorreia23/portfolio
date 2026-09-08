@@ -8,6 +8,7 @@ import {
   apertureAt,
   cameraPose,
   createCameraPose,
+  flockTubeHalfWidth,
   specimenAttackAngle,
 } from "@/lib/scene/curve";
 import type { FlockRead } from "@/lib/scene/probe";
@@ -102,6 +103,7 @@ export function SceneWorld({
   const apertureRef = useRef(1);
   const focusRef = useRef(20);
   const cameraZRef = useRef(0);
+  const tubeRef = useRef(flockTubeHalfWidth(0));
   const veilBoxes = useRef<VeilBox[]>([]);
   const frame = useRef(0);
   /** Último progresso em que o proxy foi aquecido em lote. Só sob a sonda. */
@@ -147,6 +149,14 @@ export function SceneWorld({
     const attack = specimenAttackAngle(progress);
     attackRef.current =
       instant || probe ? attack : damp(attackRef.current, attack, 5, dt);
+
+    // --- o tubo do bando ----------------------------------------------------
+    // Ele abre em X entre 0.05 e 0.16 para o escoamento cobrir o corpo de prova
+    // inteiro no quadro do descolamento; a meia-altura não muda. Sem
+    // amortecimento por cima: a curva já é suave e o progresso que a alimenta já
+    // chegou amortecido — amortecer de novo só atrasaria a abertura para depois
+    // de 0.18, que é justamente onde ela precisa estar pronta.
+    tubeRef.current = flockTubeHalfWidth(progress);
 
     // --- abertura da DOF ----------------------------------------------------
     // Sob a sonda a abertura também é aplicada sem amortecer, e isso não é
@@ -248,6 +258,7 @@ export function SceneWorld({
         progressRef={progressRef}
         attackRef={attackRef}
         cameraZRef={cameraZRef}
+        tubeRef={tubeRef}
         settleRef={settleRef}
         readRef={flockReadRef}
       />

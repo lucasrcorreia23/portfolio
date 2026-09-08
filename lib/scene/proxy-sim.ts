@@ -1,11 +1,13 @@
 import { Vector3 } from "three";
 import { damp } from "@/lib/motion";
+import { flockTubeHalfWidth } from "./curve";
 import {
   CHAMBER_HALF_HEIGHT,
   CHAMBER_HALF_WIDTH,
   FLOCK_RECYCLE_Z,
-  FLOCK_SPAWN_RADIUS,
   FLOCK_SPAWN_Z,
+  FLOCK_TUBE_HEIGHT,
+  FLOCK_TUBE_NARROW,
 } from "./world";
 
 /**
@@ -80,9 +82,9 @@ export function createProxySim(): ProxySim {
 
   for (let i = 0; i < PARTICLES; i += 1) {
     const a = hash(i) * Math.PI * 2;
-    const r = Math.sqrt(hash(i + 91)) * FLOCK_SPAWN_RADIUS;
-    px[i] = Math.cos(a) * r;
-    py[i] = Math.sin(a) * r * 0.7;
+    const r = Math.sqrt(hash(i + 91));
+    px[i] = Math.cos(a) * r * FLOCK_TUBE_NARROW;
+    py[i] = Math.sin(a) * r * FLOCK_TUBE_HEIGHT;
     // Espalhados pelo duto inteiro no começo, senão o primeiro quadro tem
     // toda a massa num plano só.
     pz[i] = FLOCK_SPAWN_Z + hash(i + 17) * (FLOCK_RECYCLE_Z - FLOCK_SPAWN_Z);
@@ -190,9 +192,12 @@ export function createProxySim(): ProxySim {
       // Reciclagem: quem passou pela lente volta a montante.
       if ((pz[i] as number) > recycleAt) {
         const a = hash(i * 3 + Math.floor(pz[i] as number)) * Math.PI * 2;
-        const r = Math.sqrt(hash(i * 7 + 5)) * FLOCK_SPAWN_RADIUS;
-        px[i] = Math.cos(a) * r;
-        py[i] = Math.sin(a) * r * 0.7;
+        // O proxy renasce no mesmo tubo elíptico que a simulação da GPU: ele
+        // só serve se concordar com ela sobre **onde está a massa**, e uma
+        // nuvem estreita informaria luz e véu de um bando que não existe mais.
+        const r = Math.sqrt(hash(i * 7 + 5));
+        px[i] = Math.cos(a) * r * flockTubeHalfWidth(progress);
+        py[i] = Math.sin(a) * r * FLOCK_TUBE_HEIGHT;
         pz[i] = spawnAt;
       }
       if ((pz[i] as number) < spawnAt - 24) pz[i] = recycleAt - 8;
