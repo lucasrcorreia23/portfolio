@@ -89,50 +89,15 @@
   /* ---------------------------------------------------------------------
    * O portão.
    *
-   * A veneziana é feita de lâminas de --void que encolhem a partir do
-   * próprio centro. O escuro não esmaece para revelar o que está atrás: ele
-   * se abre, e por isso cada lâmina mantém opacidade cheia do começo ao fim.
-   * O `transform` de cada uma é escrito pelo relógio do GateOverlay, e não
-   * por uma transição de CSS, porque a mesma curva precisa dirigir também o
-   * avanço da câmera no canvas — dois relógios divergiriam em 1.45 s.
+   * A veneziana **não está aqui** — ela é desenhada dentro do canvas, em
+   * `components/gate/dormant-field.ts`. Eram nove divs de --void com a
+   * gravação em pseudo-elementos, e a posição estava errada por dois motivos
+   * de uma vez: o grão, que é pós, não encostava nos 79% da tela que as
+   * lâminas opacas cobriam (PROJECT.md §3.1 pede pós no quadro composto), e o
+   * véu de legibilidade ficava numa camada *abaixo* do realce de quina que
+   * ele existe para abafar (DIRECTION.md §5). Uma passada só no canvas
+   * resolve os dois. Se for reintroduzir lâmina em DOM, releia isto antes.
    * ------------------------------------------------------------------- */
-  .gate-slat {
-    position: absolute;
-    left: 0;
-    width: 100%;
-    background-color: var(--void);
-    transform-origin: center;
-    /* Fechada não é opaca: sobra uma fresta por lâmina, e é por ela que o
-       organismo dormente aparece enquanto o site carrega. O número mora em
-       GateOverlay.tsx e chega como custom property — é o mesmo que o relógio
-       multiplica ao abrir. */
-    transform: scaleY(var(--slat-shut, 0.76));
-    will-change: transform;
-  }
-
-  /* A quina da lâmina. "O brilho pega a quina da gravação, não a face"
-     (DIRECTION.md §2): é uma linha de um pixel, nunca um degradê e nunca um
-     box-shadow — a luz deste site não vem de sombra de CSS. Em repouso ela
-     deixa a veneziana fechada visível dentro do preto; no meio da travessia
-     ela acende. É ornamento puro, então pode ter alfa (DIRECTION.md §5). */
-  .gate-slat::before,
-  .gate-slat::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    width: 100%;
-    height: 1px;
-    background-color: var(--cyan);
-    opacity: var(--slat-edge, 0.14);
-  }
-
-  .gate-slat::before {
-    top: 0;
-  }
-
-  .gate-slat::after {
-    bottom: 0;
-  }
 
   /* A leitura passa pela câmera a partir da própria âncora, não do centro
      do quadro. */

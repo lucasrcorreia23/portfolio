@@ -1,13 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { playPressureThud, unlockAudio } from "@/lib/audio/audio-context";
 import { useReducedMotion } from "@/lib/capabilities/use-reduced-motion";
 import { clamp01, damp, DURATION, easeStrong } from "@/lib/motion";
 import { readPalette } from "@/lib/palette";
 import { runPreload } from "@/lib/preload/manifest";
-import { createDormantField, type DormantField } from "./dormant-field";
+import {
+  createDormantField,
+  type DormantField,
+  type SlatState,
+} from "./dormant-field";
 import { ENTER_GLYPH, formatLevel, formatVelocity } from "./readout";
 
 /**
@@ -60,9 +69,52 @@ type GateOverlayProps = {
   readyStatus: string;
 };
 
-/** Quantas lâminas tem a veneziana. Nove dá ~100 px de lâmina a 900 px. */
+/** Quantas lâminas tem a veneziana. */
 const SLATS = 9;
 const CENTER_SLAT = (SLATS - 1) / 2;
+
+/**
+ * O horizonte da veneziana, em fração da altura — bate com o núcleo da névoa,
+ * que é a fonte distante a montante. É para lá que a câmara aponta.
+ */
+const SLAT_HORIZON = 0.42;
+
+/**
+ * Quanto o passo das lâminas comprime em direção ao horizonte. 1 seria sem
+ * perspectiva nenhuma.
+ *
+ * **Esta constante é a correção mais importante do portão, e não é de
+ * textura.** Uma veneziana de frente, com lâminas iguais e frestas iguais, é
+ * uma grade *por construção* — e grade é o que o PROJECT.md §2 veta pelo
+ * nome. Nenhum brilho por quina desfaz isso, porque o olho lê a geometria
+ * antes do brilho e a geometria era invariante: dezoito fios idênticos,
+ * equidistantes, de ponta a ponta.
+ *
+ * Com a divisão de perspectiva o passo deixa de ser constante — as lâminas de
+ * perto ficam grossas e separadas, as de longe finas e juntas — e as mesmas
+ * nove lâminas passam a descrever um espaço em vez de um padrão. A câmara é
+ * comprida e a câmera está dentro dela (DIRECTION.md §1); o quadro só não
+ * dizia isso.
+ */
+const SLAT_PERSPECTIVE = 1.55;
+
+/**
+ * A borda superior da lâmina `index`, em fração da altura, com o passo já
+ * comprimido em direção ao horizonte. `index` vai de 0 a SLATS.
+ *
+ * Vale para as duas pontas: a fresta de cada lâmina é uma fração da altura
+ * dela, então as frestas de perto abrem e as de longe viram fio de cabelo,
+ * sozinhas, sem nenhuma regra a mais.
+ */
+function slatEdge(index: number): number {
+  const u = index / SLATS;
+  const above = u >= SLAT_HORIZON;
+  const span = above ? 1 - SLAT_HORIZON : SLAT_HORIZON;
+  const warped = (Math.abs(u - SLAT_HORIZON) / span) ** SLAT_PERSPECTIVE;
+  return above
+    ? SLAT_HORIZON + warped * span
+    : SLAT_HORIZON - warped * span;
+}
 /** Escalonamento do meio para as bordas, em fração da duração total. */
 const SLAT_STAGGER = 0.05;
 const MAX_STAGGER = CENTER_SLAT * SLAT_STAGGER;
@@ -72,21 +124,37 @@ const MAX_STAGGER = CENTER_SLAT * SLAT_STAGGER;
  *
  * Não é 1, e a diferença é o portão inteiro. Uma veneziana cem por cento
  * fechada é uma tela preta: o organismo dormente ficaria atrás dela e ninguém
- * veria nada vivo enquanto o site carrega. Com 0.76 sobram nove frestas por
- * onde a câmara vaza — e é assim que a estrutura deste projeto aparece, "de
- * relance" (DIRECTION.md §2), nunca sob holofote. Se em algum quadro desse
- * para ler a câmara inteira, a névoa estaria fina demais.
+ * veria nada vivo enquanto o site carrega. Mas a fresta é isso mesmo — uma
+ * fresta, não uma faixa: em 0.76 a área exposta somava um quarto da tela,
+ * repetida em nove faixas parelhas, e o resultado lia como textura de fundo,
+ * não como estrutura "vista de relance" (DIRECTION.md §2).
+ *
+ * Mas fechar não é grátis na outra direção: em 0.92 a fresta caiu para ~8 px
+ * e o organismo praticamente sumiu junto — trocar "textura demais" por
+ * "presença de menos" não é resolver, é mudar de defeito. 0.86 dá ~15 px por
+ * fresta numa viewport de 900, e o que fecha a conta não é este número
+ * sozinho: é ele com a densidade maior de corpos e, principalmente, com a
+ * gravação da quina reagindo a quem passa (ver `sampleSeams`). A vida do
+ * portão não precisa caber inteira na fresta.
  */
-const SLAT_SHUT = 0.76;
+const SLAT_SHUT = 0.86;
 
 /** A leitura sai antes das lâminas: ela passa pela câmera, elas abrem. */
 const READOUT_EXIT = 0.42;
 const READOUT_TRAVEL_VH = 26;
 const READOUT_SWELL = 1.4;
 
-/** Brilho da quina da lâmina, em repouso e no auge da travessia. */
-const EDGE_REST = 0.14;
-const EDGE_PEAK = 0.5;
+/**
+ * Auge do realce que viaja pela quina. Não há valor "de repouso" aqui: em
+ * repouso o realce simplesmente não existe, e o que sobra é a gravação, que
+ * tem alfa próprio e constante no CSS. Uma gravação não pisca — o que pisca
+ * é a luz que passa por ela.
+ */
+const EDGE_PEAK = 0.62;
+/** Taxa com que a quina acende e apaga ao passar um corpo, em 1/s. */
+const EDGE_LAMBDA = 3.4;
+/** Meia-largura do realce que viaja pela quina, em fração da largura. */
+const GLOW_SPREAD = 0.07;
 
 /**
  * Taxa de aproximação do contador, em 1/s, e o alvo virtual que ele persegue
@@ -102,6 +170,17 @@ const READOUT_AIM = 1.03;
 
 const OPEN_MS = DURATION.gate * 1000;
 const CUT_MS = DURATION.cut * 1000;
+
+/**
+ * `useLayoutEffect` no cliente, `useEffect` no servidor.
+ *
+ * O deslocamento da cota é medido entre a mutação do DOM e o quadro seguinte —
+ * é layout, não efeito passivo. Mas o portão renderiza no servidor, e chamar
+ * `useLayoutEffect` lá gera aviso. O React não roda efeito nenhum no servidor,
+ * então a troca não muda comportamento: só cala um aviso que não tem conteúdo.
+ */
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 export function GateOverlay({
   label,
@@ -121,7 +200,15 @@ export function GateOverlay({
   const readoutRef = useRef<HTMLDivElement>(null);
   const velocityRef = useRef<HTMLSpanElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const slatRefs = useRef<(HTMLDivElement | null)[]>([]);
+  /** A casa da leitura e a linha da cota — o véu se ancora na união das duas. */
+  const slotRef = useRef<HTMLDivElement>(null);
+  const levelRef = useRef<HTMLParagraphElement>(null);
+  /**
+   * A reancoragem do véu, publicada pelo efeito do relógio para quem precisa
+   * dela de fora — o deslize da cota termina depois, e é lá que a caixa
+   * definitiva existe.
+   */
+  const anchorVeilRef = useRef<() => void>(() => {});
 
   /** Progresso real do carregamento, 0 a 1. */
   const targetRef = useRef(0);
@@ -203,17 +290,118 @@ export function GateOverlay({
       }
     }
 
+    // A caixa da **coluna de texto**, medida uma vez por layout e não por
+    // quadro: ler `getBoundingClientRect()` a 60 Hz força recálculo de layout
+    // no meio do laço de desenho.
+    //
+    // A união dos dois filhos, e não o contêiner: `.gate-readout` é
+    // `inset-x-0`, então medi-lo dava uma caixa de 1440px de largura para
+    // proteger uma coluna de 240. O DIRECTION.md §5 ancora o véu na coluna.
+    const anchorVeil = () => {
+      const slot = slotRef.current;
+      const level = levelRef.current;
+      if (field === null || slot === null || level === null) return;
+      const a = slot.getBoundingClientRect();
+      const b = level.getBoundingClientRect();
+      field.setVeil(
+        Math.min(a.left, b.left),
+        Math.min(a.top, b.top),
+        Math.max(a.right, b.right),
+        Math.max(a.bottom, b.bottom),
+      );
+    };
+
+    // As lâminas, com a geometria comprimida já resolvida. Mutadas no lugar:
+    // o `render` só lê.
+    const slats: SlatState[] = Array.from({ length: SLATS }, (_, i) => ({
+      top: slatEdge(i),
+      bottom: slatEdge(i + 1),
+      shut: SLAT_SHUT,
+      light: 0,
+      glowX: 0.5,
+      glowSpread: GLOW_SPREAD,
+    }));
+
+    // Buffers da gravação reativa, alocados uma vez e mutados no lugar — o
+    // laço roda a cada quadro e não deve produzir lixo.
+    const seamYs: number[] = new Array<number>(SLATS + 1).fill(0);
+    const seamLight: number[] = new Array<number>(SLATS + 1).fill(0);
+    const seamX: number[] = new Array<number>(SLATS + 1).fill(0.5);
+
+    /** Resolve o realce de cada quina a partir de quem está passando perto. */
+    const lightSeams = (lambda: number, dt: number) => {
+      if (field === null) return;
+      const canvasHeight = canvas === null ? 0 : canvas.clientHeight;
+      for (let i = 0; i <= SLATS; i += 1) {
+        seamYs[i] = slatEdge(i) * canvasHeight;
+      }
+      field.sampleSeams(seamYs, seamLight, seamX);
+
+      for (let i = 0; i < SLATS; i += 1) {
+        const slat = slats[i];
+        if (slat === undefined) continue;
+        // A lâmina tem duas quinas e um realce só: manda a mais acesa, e o
+        // realce viaja para o x de quem a acendeu.
+        const top = seamLight[i] ?? 0;
+        const bottom = seamLight[i + 1] ?? 0;
+        const light = Math.max(top, bottom) * EDGE_PEAK;
+        slat.glowX = (top >= bottom ? seamX[i] : seamX[i + 1]) ?? 0.5;
+        slat.glowSpread = GLOW_SPREAD;
+        // Amortecido, como tudo (PROJECT.md §3.3): a luz de raspão cresce e
+        // some, nunca pisca. `lambda` infinito resolve direto, para o quadro
+        // único do modo calmo não precisar de um laço para assentar.
+        slat.light =
+          lambda === Infinity ? light : damp(slat.light, light, lambda, dt);
+      }
+    };
+
     const onResize = () => {
       field?.resize();
-      if (reducedMotion) field?.render(0, 0);
+      anchorVeil();
+      if (reducedMotion) {
+        lightSeams(Infinity, 0);
+        field?.render(0, 0, slats);
+      }
     };
     window.addEventListener("resize", onResize);
+    anchorVeilRef.current = anchorVeil;
+    anchorVeil();
+
+    // **O véu tem que reagir ao desabamento da leitura.**
+    //
+    // Ancorar uma vez na montagem não basta, e o erro é silencioso: quando o
+    // contador vira a seta, a casa desaba de ~680 px para ~107 px, e um véu
+    // ancorado antes disso continua entregando a caixa antiga — 57% da
+    // largura da tela para proteger uma coluna de 17%. O cálculo estava
+    // certo; faltava o fio de ciclo de vida, e medir o que o código *calcula*
+    // em vez do que ele *entrega* não pega isso.
+    //
+    // Um `ResizeObserver` cobre as três causas de uma vez: a virada de fase, a
+    // troca de fonte (a mono é `display: swap` e pode chegar depois da
+    // hidratação, deixando a única medição com métrica de fallback) e o modo
+    // calmo, onde o quadro é um só e não haveria segunda chance.
+    const observer = new ResizeObserver(() => {
+      anchorVeil();
+      if (reducedMotion) {
+        lightSeams(Infinity, 0);
+        field?.render(0, 0, slats);
+      }
+    });
+    if (slotRef.current !== null) observer.observe(slotRef.current);
 
     // Modo calmo: uma composição fixa, sem laço nenhum (DIRECTION.md §5).
+    //
+    // Fixa não quer dizer morta. A gravação acende do mesmo jeito, resolvida
+    // uma vez em vez de amortecida a cada quadro — se a quina só pegasse luz
+    // no modo normal, a estrutura existiria num modo e não no outro, e o §5 é
+    // explícito: "qualquer coisa que apareça só num dos dois modos é bug, não
+    // adaptação". O que o modo calmo tira é o movimento, não o mundo.
     if (reducedMotion) {
-      field?.render(0, 0);
+      lightSeams(Infinity, 0);
+      field?.render(0, 0, slats);
       return () => {
         window.removeEventListener("resize", onResize);
+        observer.disconnect();
         field?.destroy();
       };
     }
@@ -256,22 +444,33 @@ export function GateOverlay({
         }
 
         for (let i = 0; i < SLATS; i += 1) {
-          const slat = slatRefs.current[i];
-          if (slat === undefined || slat === null) continue;
           const stagger = Math.abs(i - CENTER_SLAT) * SLAT_STAGGER;
           const open = easeStrong(clamp01((t - stagger) / (1 - MAX_STAGGER)));
-          slat.style.transform = `scaleY(${(SLAT_SHUT * (1 - open)).toFixed(4)})`;
-          // A luz pega a quina no meio da travessia, não na face parada.
-          slat.style.setProperty(
-            "--slat-edge",
-            (EDGE_REST + open * (1 - open) * 4 * EDGE_PEAK).toFixed(3),
-          );
+          const slat = slats[i];
+          if (slat === undefined) continue;
+          slat.shut = SLAT_SHUT * (1 - open);
+          // A luz pega a quina no meio da travessia, não na face parada. Aqui
+          // o realce cobre a lâmina inteira, e é o único momento em que isso
+          // é certo: a lâmina está se movendo, e é ela que pega a luz — não
+          // um corpo passando por um ponto dela.
+          slat.light = open * (1 - open) * 4 * EDGE_PEAK;
+          slat.glowX = 0.5;
+          slat.glowSpread = 0.7;
         }
 
         if (t >= 1) setPhase("gone");
+      } else {
+        // Veneziana fechada: a gravação de cada lâmina acende quando um corpo
+        // do organismo raspa por ela, e apaga quando ele passa. Sem isto as
+        // nove quinas ficam num valor fixo, e nove linhas idênticas e imóveis
+        // atravessando a tela leem como grade desenhada — que é justamente o
+        // que o PROJECT.md §2 veta. A estrutura tem que ser vista *de
+        // relance*, e "de relance" é uma coisa que acontece no tempo.
+        for (const slat of slats) slat.shut = SLAT_SHUT;
+        lightSeams(EDGE_LAMBDA, dt);
       }
 
-      field?.render(now - startedAt, dolly);
+      field?.render(now - startedAt, dolly, slats);
     };
 
     raf = requestAnimationFrame(frame);
@@ -279,9 +478,66 @@ export function GateOverlay({
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", onResize);
+      observer.disconnect();
       field?.destroy();
     };
   }, [reducedMotion, setPhase, writeVelocity]);
+
+  /* --- O desabamento da leitura ------------------------------------------
+   * Quando o contador vira a seta, a casa da leitura encolhe ~570 px e a cota
+   * vem junto. Sem isto ela **salta** a distância inteira num quadro, e o
+   * PROJECT.md §3.3 não abre exceção: "nada é linear, toda transformação passa
+   * por amortecimento ou easing de saída forte". É o instante mais olhado do
+   * portão para se ter um corte seco.
+   *
+   * A técnica é FLIP: mede onde a cota estava, deixa o layout novo acontecer,
+   * devolve ela para o lugar antigo com um `transform` e solta a curva. O
+   * layout nunca é disputado — só a pintura. Reservar a largura do número
+   * também tiraria o salto, mas devolveria os 690 px de nada entre a seta e a
+   * cota, e travaria a caixa do véu na largura antiga.
+   */
+  const levelXRef = useRef<number | null>(null);
+
+  useIsomorphicLayoutEffect(() => {
+    const level = levelRef.current;
+    if (level === null) return;
+
+    const next = level.getBoundingClientRect().left;
+    const previous = levelXRef.current;
+    levelXRef.current = next;
+
+    // Primeira medição, ou nada se moveu.
+    if (previous === null || Math.abs(previous - next) < 1) return;
+    // O modo calmo corta; ele não desliza (DIRECTION.md §5).
+    if (reducedMotion === true) {
+      anchorVeilRef.current();
+      return;
+    }
+
+    level.style.transition = "none";
+    level.style.transform = `translateX(${(previous - next).toFixed(1)}px)`;
+
+    // `getBoundingClientRect()` inclui transform, e o véu se ancora nele: com
+    // a cota deslocada, a caixa medida é a antiga. Isso é o certo *durante* o
+    // deslize — o véu acompanha o texto —, mas no fim ele precisa reancorar,
+    // e nada mais dispara isso: o `ResizeObserver` observa a casa da leitura,
+    // que já parou de mudar de tamanho. Sem esta reancoragem o véu fica preso
+    // na largura de carregamento para sempre.
+    const settle = () => {
+      anchorVeilRef.current();
+    };
+    level.addEventListener("transitionend", settle, { once: true });
+
+    const raf = requestAnimationFrame(() => {
+      level.style.transition = `transform var(--dur-aperture) var(--ease-strong)`;
+      level.style.transform = "translateX(0)";
+    });
+
+    return () => {
+      cancelAnimationFrame(raf);
+      level.removeEventListener("transitionend", settle);
+    };
+  }, [phase, reducedMotion]);
 
   /* --- O corte do modo calmo --------------------------------------------- */
   useEffect(() => {
@@ -372,28 +628,12 @@ export function GateOverlay({
         className="absolute inset-0 block h-full w-full"
       />
 
-      {/* A veneziana. Lâminas de --void que abrem a partir do próprio centro:
-          o escuro não esmaece, ele se afasta. */}
-      <div aria-hidden="true" className="absolute inset-0">
-        {Array.from({ length: SLATS }, (_, index) => (
-          <div
-            key={index}
-            ref={(node) => {
-              slatRefs.current[index] = node;
-            }}
-            className="gate-slat"
-            style={
-              {
-                top: `${(index * 100) / SLATS}%`,
-                height: `${100 / SLATS}%`,
-                // O repouso vem daqui e não do CSS: um número só, em TS, e é
-                // o mesmo que o relógio multiplica ao abrir.
-                "--slat-shut": SLAT_SHUT,
-              } as CSSProperties
-            }
-          />
-        ))}
-      </div>
+      {/* A veneziana não está no DOM: ela é desenhada dentro do canvas, junto
+          com a névoa e o organismo. Quando era um empilhamento de nove divs
+          opacos por cima do canvas, o grão — que é pós — não encostava em 79%
+          da tela, e o véu de legibilidade ficava numa camada abaixo do realce
+          de quina que ele existe para abafar. Uma passada só resolve os dois
+          (PROJECT.md §3.1, DIRECTION.md §5). */}
 
       {/* A leitura, na margem — nunca centralizada. */}
       <div
@@ -401,10 +641,13 @@ export function GateOverlay({
         className="gate-readout absolute inset-x-0 bottom-0 px-6 pb-10 md:px-12 md:pb-12"
       >
         <div className="flex flex-col gap-2 md:flex-row md:items-baseline md:gap-10">
-          {/* A largura da casa da leitura é fixa, em `ch` da própria mono:
-              o convite ocupa o lugar do contador sem a cota dar um pulo de
-              meia tela quando um vira o outro. */}
-          <div className="type-mono text-readout text-mist md:min-w-[7.2ch]">
+          {/* A casa da leitura **não** tem largura fixa.
+              Reservar a largura do contador impedia a cota de dar um pulo
+              quando o número virava a seta — mas deixava 690px de nada entre
+              os dois únicos elementos do quadro, e o quadro pronto é o que a
+              pessoa olha e clica. A linha fechar quando a leitura acaba é a
+              troca certa: o instrumento se recolhe, sobra o convite. */}
+          <div ref={slotRef} className="type-mono text-readout text-mist">
             {phase === "loading" ? (
               <p aria-hidden="true">
                 {/* O conteúdo é escrito pelo laço, não pelo React: sessenta
@@ -428,7 +671,11 @@ export function GateOverlay({
             )}
           </div>
 
-          <p aria-hidden="true" className="type-mono text-hud text-mist">
+          <p
+            ref={levelRef}
+            aria-hidden="true"
+            className="type-mono text-hud text-mist"
+          >
             {levelLabel} {formatLevel()}
           </p>
         </div>

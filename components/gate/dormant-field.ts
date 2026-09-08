@@ -29,14 +29,98 @@ import type { Palette } from "@/lib/palette";
  * `GateOverlay`, e é um relógio só para o contador, a veneziana e este campo.
  */
 
+/**
+ * O estado de uma lâmina da veneziana num quadro. Quem tem a geometria e o
+ * amortecimento é o `GateOverlay`; aqui só se desenha.
+ */
+export type SlatState = {
+  /** Borda superior da faixa da lâmina, em fração da altura. */
+  top: number;
+  /** Borda inferior da faixa, em fração da altura. */
+  bottom: number;
+  /** Quanto da própria faixa a lâmina cobre agora: 0.86 fechada, 0 aberta. */
+  shut: number;
+  /** Intensidade do realce na quina, 0 a 1. */
+  light: number;
+  /** Onde o realce está, em fração da largura. */
+  glowX: number;
+  /** Meia-largura do realce, em fração da largura. */
+  glowSpread: number;
+};
+
 export type DormantField = {
   resize: () => void;
   /**
    * @param elapsedMs tempo desde a criação, para a corrente e a respiração.
    * @param dolly 0 no portão fechado, 1 no fim da abertura — é a câmera
    *   saindo de dentro do escuro, e é ele que esvazia o quadro.
+   * @param slats as lâminas da veneziana, desenhadas **dentro** do canvas.
+   *
+   * A ordem das passadas é o que faz o quadro obedecer duas regras que ele
+   * não obedecia quando as lâminas eram DOM por cima do canvas:
+   *
+   *   névoa → corpos → lâminas → véu → grão
+   *
+   * O grão é a última, e é a única posição em que ele é o que o PROJECT.md
+   * §3.1 pede — "pós-processamento", no quadro composto. Com as lâminas em
+   * DOM opaco por cima, o grão não encostava em 79% da tela, e aquilo era um
+   * chapado de um valor só por construção, não por calibragem.
+   *
+   * O véu vem depois das lâminas pelo mesmo motivo: o que mais ameaça a
+   * legibilidade do contador é o realce da quina que cruza a caixa dele, e
+   * uma guarda abaixo do que ela guarda não guarda nada (DIRECTION.md §5).
    */
-  render: (elapsedMs: number, dolly: number) => void;
+  render: (
+    elapsedMs: number,
+    dolly: number,
+    slats: readonly SlatState[],
+  ) => void;
+  /**
+   * Para cada altura dada, quanta luz o corpo mais próximo joga na gravação
+   * (0 a 1) e **onde**, na largura, esse corpo está (0 a 1).
+   *
+   * É o que faz a gravação da veneziana acender quando um corpo raspa por
+   * ela — "uma marca gravada pegando luz de raspão quando um corpo isolado
+   * passa perto dela, e some" (DIRECTION.md §4). Sem isto a quina fica num
+   * valor fixo, e nove linhas idênticas e imóveis atravessando a tela leem
+   * como grade desenhada, não como estrutura.
+   *
+   * A posição importa tanto quanto a intensidade: uma quina de 1440px que
+   * acende inteira, por igual, é um indicador; uma que acende só no trecho
+   * onde a coisa está passando é luz. Sem `outX` o realce não viaja, e uma
+   * grade que pulsa continua sendo uma grade.
+   *
+   * Lê a simulação da CPU, nunca o canvas: é a mesma escolha que o
+   * DIRECTION.md §5 faz para o rig de luz da cena ("nada de `readPixels` no
+   * caminho de render"), e aqui sai de graça porque a simulação já é da CPU.
+   *
+   * `outLight` e `outX` são mutados no lugar, para não alocar por quadro.
+   */
+  sampleSeams: (
+    ys: readonly number[],
+    outLight: number[],
+    outX: number[],
+  ) => void;
+  /**
+   * Ancora o véu de legibilidade na faixa vertical ocupada pela leitura, em
+   * pixels de canvas. `null` desliga.
+   *
+   * DIRECTION.md §5: nenhum pixel sob um texto de leitura pode passar de
+   * L = 0.138, e o que vale é o **pior quadro**, não a média. Sem isto o
+   * portão passava por sorte — um corpo brilhante cruzando atrás do contador
+   * derruba o contraste para ~2.5:1, bem abaixo do mínimo de 4.5:1 do
+   * PROJECT.md §5.
+   *
+   * O mecanismo é o que o DIRECTION.md §5 escolhe: **densidade de névoa
+   * ancorada à caixa do texto**, dentro da cena, com queda suave — não um
+   * scrim preto no DOM, que o mesmo parágrafo veta explicitamente.
+   */
+  setVeil: (
+    left: number,
+    top: number,
+    right: number,
+    bottom: number,
+  ) => void;
   destroy: () => void;
 };
 
@@ -64,15 +148,23 @@ type Body = {
  */
 const BACKING_SCALE = 1;
 
-/** Um corpo a cada ~26 000 px². Numa viewport de 1440×900 dá ~50. */
-const AREA_PER_BODY = 26_000;
+/**
+ * Um corpo a cada ~17 000 px². Numa viewport de 1440×900 dá ~76.
+ *
+ * A densidade é maior do que a de um quadro cheio pediria porque quase nada
+ * do quadro é visto: a veneziana só deixa passar uma fresta por lâmina, e um
+ * corpo só conta se calhar de estar atravessando uma delas. Poucos corpos num
+ * campo quase todo tapado davam cinco ou seis pontos parados na tela — nem
+ * mancha, nem corrente.
+ */
+const AREA_PER_BODY = 17_000;
 const MIN_BODIES = 26;
 const MAX_BODIES = 90;
 
 /** Lado do ladrilho de grão, em pixels. Regenerado a cada quadro. */
 const GRAIN_TILE = 96;
 /** DIRECTION.md §5: intensidade entre 0.03 e 0.06. */
-const GRAIN_ALPHA = 0.042;
+const GRAIN_ALPHA = 0.045;
 
 /** Quase parados: a corrente é lenta e o amortecimento é longo. */
 const DRIFT_SPEED = 22;
@@ -95,6 +187,38 @@ const DOLLY_SWELL = 2.4;
 const DOLLY_FALLOFF = 1.6;
 /** Quando a câmera já saiu do bolsão de névoa, em progresso cru da abertura. */
 const FOG_EXIT_FROM = 0.6;
+
+/**
+ * Piso do alcance vertical, em px, de um corpo sobre a gravação da veneziana.
+ * Some 0.9 do tamanho do corpo, que é a ordem da própria altura dele — o
+ * corpo acende a quina quando raspa nela, não quando está no mesmo bairro
+ * (ver `sampleSeams`).
+ */
+const SEAM_REACH = 10;
+
+/** Abaixo deste produto de energia e proximidade, a quina fica apagada. */
+const SEAM_KNEE = 0.62;
+
+/** Faixa do véu de legibilidade — DIRECTION.md §5 fixa este clamp. */
+const VEIL_MIN = 0.15;
+const VEIL_MAX = 0.85;
+/** Quanto o véu extrapola a caixa do texto, para a queda ser suave. */
+const VEIL_PAD = 2.1;
+
+/**
+ * A gravação da quina: altura da tira, alfa do fio e das marcas, e os dois
+ * períodos primos entre si.
+ *
+ * Os alfas são baixos, mas não invisíveis. A 5% e 4% a gravação existia no
+ * sinal e não no olho — dava de 1 a 2 níveis de 255, abaixo do limiar da
+ * maioria das telas. Quem impede a leitura de grade é a perspectiva das
+ * lâminas, não o apagamento da gravação, então ela pode ser vista.
+ */
+const ENGRAVING_H = 5;
+const ENGRAVING_FIO = 0.085;
+const ENGRAVING_TICK = 0.075;
+const TICK_PERIOD_A = 37;
+const TICK_PERIOD_B = 53;
 
 /** A onda de densidade que atravessa o quadro no clique (DIRECTION.md §4). */
 const WAVE_SPAN = 0.55;
@@ -138,9 +262,45 @@ export function createDormantField(
 ): DormantField {
   const context = canvas.getContext("2d", { alpha: false });
   if (context === null) {
-    return { resize: () => {}, render: () => {}, destroy: () => {} };
+    return {
+      resize: () => {},
+      render: () => {},
+      sampleSeams: (_ys: readonly number[], outLight: number[]) =>
+        outLight.fill(0),
+      setVeil: () => {},
+      destroy: () => {},
+    };
   }
   const ctx = context;
+
+  // O véu: uma faixa de névoa com queda suave nas duas pontas, na cor do
+  // fundo. Mesma técnica do sprite (branco tingido por `source-in`), porque
+  // assim não é preciso interpretar o hexadecimal do token para ter alfa.
+  const veilSprite = document.createElement("canvas");
+  veilSprite.width = 128;
+  veilSprite.height = 128;
+  const veilCtx = veilSprite.getContext("2d");
+  if (veilCtx !== null) {
+    // Queda nos dois eixos, não só no vertical. Ancorado ao contêiner de
+    // largura total, o véu cobria 1440 px para proteger uma coluna de 240 —
+    // 83% da largura velada não protegia nada e apagava a gravação de três
+    // lâminas de graça. O DIRECTION.md §5 é literal: o véu é ancorado à caixa
+    // da **coluna de texto**, não à caixa que a contém.
+    const band = veilCtx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    band.addColorStop(0, "rgba(255,255,255,1)");
+    band.addColorStop(0.42, "rgba(255,255,255,1)");
+    band.addColorStop(1, "rgba(255,255,255,0)");
+    veilCtx.fillStyle = band;
+    veilCtx.fillRect(0, 0, 128, 128);
+    veilCtx.globalCompositeOperation = "source-in";
+    veilCtx.fillStyle = palette.void;
+    veilCtx.fillRect(0, 0, 128, 128);
+  }
+
+  let veilLeft = 0;
+  let veilTop = 0;
+  let veilRight = 0;
+  let veilBottom = 0;
 
   const cruise = makeSprite(palette.teal);
   // --cyan é "luz próxima, aceleração" (DIRECTION.md §5). Só a crista da onda
@@ -157,6 +317,59 @@ export function createDormantField(
   let height = 0;
   let bodies: Body[] = [];
   let lastMs: number | null = null;
+
+  /**
+   * A gravação de uma quina, pré-composta uma vez por layout: o fio com queda
+   * suave mais as marcas de intervalo em dois períodos primos entre si.
+   *
+   * Desenhar isto direto custaria uns 66 `fillRect` por quina e 18 quinas por
+   * quadro; assado numa tira, é um `drawImage` por quina.
+   */
+  let engraving: HTMLCanvasElement | null = null;
+
+  function bakeEngraving(): void {
+    const strip = document.createElement("canvas");
+    strip.width = Math.max(1, width);
+    strip.height = ENGRAVING_H;
+    const g = strip.getContext("2d");
+    if (g === null) {
+      engraving = null;
+      return;
+    }
+
+    // O fio da quina: queda suave para os dois lados, nunca borda dura. Um
+    // traço de 1px atravessando a tela inteira desenha uma linha; um fio com
+    // queda lê como luz raspando um chanfro.
+    const fio = g.createLinearGradient(0, 0, 0, ENGRAVING_H);
+    fio.addColorStop(0, "rgba(255,255,255,0)");
+    fio.addColorStop(0.5, "rgba(255,255,255,1)");
+    fio.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = fio;
+    g.globalAlpha = ENGRAVING_FIO;
+    g.fillRect(0, 0, strip.width, ENGRAVING_H);
+
+    // As marcas de intervalo. Dois períodos que não são múltiplos um do outro
+    // batem em fase a cada ~2000px — ou seja, nunca dentro de uma tela. O olho
+    // lê gravação irregular, que é o que existe em concreto, e não uma régua
+    // impressa (DIRECTION.md §2).
+    g.globalAlpha = ENGRAVING_TICK;
+    g.fillStyle = "#ffffff";
+    for (let x = 0; x < strip.width; x += TICK_PERIOD_A) {
+      g.fillRect(x, 0, 1, ENGRAVING_H);
+    }
+    g.globalAlpha = ENGRAVING_TICK * 0.75;
+    for (let x = 0; x < strip.width; x += TICK_PERIOD_B) {
+      g.fillRect(x, ENGRAVING_H * 0.25, 1, ENGRAVING_H * 0.75);
+    }
+
+    // Tinge tudo de uma vez, sem precisar interpretar o hexadecimal do token.
+    g.globalAlpha = 1;
+    g.globalCompositeOperation = "source-in";
+    g.fillStyle = palette.cyan;
+    g.fillRect(0, 0, strip.width, ENGRAVING_H);
+
+    engraving = strip;
+  }
 
   function seed(): void {
     const wanted = Math.round(
@@ -178,8 +391,20 @@ export function createDormantField(
           // inteiro.
           vx: (Math.random() * 2 - 1) * DRIFT_SPEED,
           vy: (Math.random() * 2 - 1) * DRIFT_SPEED * 0.4,
-          energy: 0.3 + Math.random() * 0.5,
-          size: 16 + Math.random() * 30,
+          // As duas distribuições são elevadas a uma potência, não lineares:
+          // isso empurra a maioria dos corpos para o extremo baixo e deixa só
+          // alguns poucos grandes e brilhantes. Um campo uniforme (tamanho e
+          // brilho sorteados linearmente) lê como uma mancha só quando visto
+          // de relance pelas frestas da veneziana — o que devia ser "corpos
+          // lenticulares à deriva" vira textura. A assimetria é o que separa
+          // um corpo do outro no olho.
+          //
+          // O piso do brilho não é zero, e isso importa: com um piso baixo
+          // demais a assimetria vira invisibilidade, e o portão fica sem nada
+          // vivo dentro dele. A variação separa os corpos; o piso garante que
+          // eles existam.
+          energy: 0.3 + Math.random() ** 1.4 * 0.62,
+          size: 9 + Math.random() ** 1.7 * 50,
           phase: Math.random() * Math.PI * 2,
         },
       );
@@ -193,6 +418,7 @@ export function createDormantField(
     height = Math.max(1, Math.round(rect.height * BACKING_SCALE));
     canvas.width = width;
     canvas.height = height;
+    bakeEngraving();
     seed();
   }
 
@@ -208,10 +434,19 @@ export function createDormantField(
     // e é literalmente o que a transição diz: sair de dentro do escuro.
     const radius = Math.hypot(width, height) * 0.6 * (1 + easeStrong(dolly) * 1.5);
 
+    // A rampa precisa de curso. Comprimida em 36% ela chegava a --void puro
+    // perto do núcleo e o resto do quadro virava um chapado — 83% dos pixels
+    // no mesmo tripleto, medido. Um fundo de um valor só não é névoa
+    // volumétrica, é uma cor de fundo, e o PROJECT.md §3.1 pede o oposto.
+    //
+    // Mas curso demais custa o "preto absoluto" que o DIRECTION.md §4 exige do
+    // portão: em 0.78 o --abyss tomava o quadro e a câmara acendia. Em 0.58 a
+    // rampa existe e o preto continua preto. Quem tira o chapado do resto é o
+    // grão, que agora é grão de verdade — não esta rampa.
     const fog = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
     fog.addColorStop(0, palette.deep);
-    fog.addColorStop(0.07, palette.abyss);
-    fog.addColorStop(0.36, palette.void);
+    fog.addColorStop(0.1, palette.abyss);
+    fog.addColorStop(0.58, palette.void);
     fog.addColorStop(1, palette.void);
 
     ctx.globalCompositeOperation = "source-over";
@@ -233,14 +468,132 @@ export function createDormantField(
     }
   }
 
+  function paintSlats(slats: readonly SlatState[]): void {
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = palette.void;
+
+    // 1. As faces. Retângulos de --void que encolhem a partir do próprio
+    //    centro; o que sobra entre elas é a fresta.
+    for (const slat of slats) {
+      const bandTop = slat.top * height;
+      const bandHeight = (slat.bottom - slat.top) * height;
+      const painted = bandHeight * slat.shut;
+      if (painted <= 0) continue;
+      ctx.fillRect(0, bandTop + (bandHeight - painted) * 0.5, width, painted);
+    }
+
+    // 2. As quinas: a gravação, sempre, e o realce, só onde algo passa.
+    ctx.globalCompositeOperation = "lighter";
+
+    for (const slat of slats) {
+      const bandTop = slat.top * height;
+      const bandHeight = (slat.bottom - slat.top) * height;
+      const painted = bandHeight * slat.shut;
+      if (painted <= 0) continue;
+
+      const edgeTop = bandTop + (bandHeight - painted) * 0.5;
+      const edgeBottom = edgeTop + painted;
+
+      if (engraving !== null) {
+        // **A gravação sai junto com a lâmina.** Sem isto, a tira continua em
+        // alfa cheio enquanto a face encolhe, e a abertura termina com nove
+        // réguas tracejadas de ponta a ponta sobre um campo vazio — a grade de
+        // volta, no último quadro antes do site abrir. Medido: aos 800 ms de
+        // uma abertura de 1450 sobravam 21 px de lâmina em 900 de tela e a
+        // gravação estava mais brilhante que no estado fechado.
+        //
+        // Mais brilhante porque as duas quinas somam: são dois `drawImage` em
+        // `lighter`, e quando a face fica mais fina que a tira eles passam a
+        // coincidir. O mesmo fator resolve as duas coisas — a queda começa
+        // exatamente quando as tiras começam a se sobrepor, e é quadrática
+        // para o resíduo morrer em vez de ficar meio aceso.
+        const fade = clamp01(painted / (ENGRAVING_H * 2));
+        ctx.globalAlpha = fade * fade;
+        ctx.drawImage(engraving, 0, edgeTop - ENGRAVING_H * 0.5);
+        ctx.drawImage(engraving, 0, edgeBottom - ENGRAVING_H * 0.5);
+      }
+
+      if (slat.light <= 0.002) continue;
+
+      // O realce viaja: fica no trecho onde o corpo está, e não acende a
+      // quina inteira por igual. Uma quina de 1440px que acende inteira é um
+      // indicador; uma que acende onde a coisa passa é luz.
+      const halfW = Math.max(slat.glowSpread * width, 1);
+      const halfH = Math.max(ENGRAVING_H * 2.2, 1);
+      const cxGlow = slat.glowX * width;
+      ctx.globalAlpha = Math.min(slat.light, 1);
+      ctx.drawImage(
+        accelerating,
+        cxGlow - halfW,
+        edgeTop - halfH,
+        halfW * 2,
+        halfH * 2,
+      );
+      ctx.drawImage(
+        accelerating,
+        cxGlow - halfW,
+        edgeBottom - halfH,
+        halfW * 2,
+        halfH * 2,
+      );
+    }
+
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  function paintVeil(): void {
+    if (veilBottom <= veilTop || veilRight <= veilLeft) return;
+
+    // Quanto o corpo mais brilhante perto da caixa está ameaçando a leitura.
+    // Sai da simulação, como tudo aqui: o véu sobe *antes* de o corpo chegar,
+    // que é a diferença entre uma guarda e um quadro ilegível já publicado.
+    const midX = (veilLeft + veilRight) * 0.5;
+    const midY = (veilTop + veilBottom) * 0.5;
+    const halfW = (veilRight - veilLeft) * 0.5;
+    const halfH = (veilBottom - veilTop) * 0.5;
+
+    let light = 0;
+    for (const body of bodies) {
+      const reachY = halfH + body.size * 2;
+      const dy = Math.abs(body.y - midY);
+      if (dy >= reachY) continue;
+      const reachX = halfW + body.size * 3;
+      const dx = Math.abs(body.x - midX);
+      if (dx >= reachX) continue;
+      const near = (1 - dy / reachY) * (1 - dx / reachX);
+      const threat = body.energy * near;
+      if (threat > light) light = threat;
+    }
+
+    // Clamp em [0.15, 0.85], exatamente como o DIRECTION.md §5 especifica: o
+    // véu fica baixo quase o tempo todo e só sobe quando precisa, então lê
+    // como um banco de névoa passando, não como uma caixa escura acendendo.
+    const f = Math.min(VEIL_MIN + light * 0.95, VEIL_MAX);
+    const w = (veilRight - veilLeft) * VEIL_PAD;
+    const h = (veilBottom - veilTop) * VEIL_PAD;
+
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = f;
+    ctx.drawImage(veilSprite, midX - w * 0.5, midY - h * 0.5, w, h);
+    ctx.globalAlpha = 1;
+  }
+
   function paintGrain(): void {
     if (grainCtx === null || grainData === null) return;
 
     // Ruído novo a cada quadro. Um PNG repetido é o que o PROJECT.md §3.1
     // proíbe pelo nome — grão parado lê como textura, não como filme.
+    //
+    // A amplitude é a faixa inteira, não uma fração dela: quem dosa é o
+    // GRAIN_ALPHA da composição. Com ruído de 0 a 26 e alfa 0.042 a soma dava
+    // meio nível de 255 e sumia no arredondamento — havia grão no código e
+    // nenhum grão na tela. Faixa cheia × 0.045 dá ~6 níveis de média e ~11 de
+    // pico, que é a intensidade que o DIRECTION.md §5 pede.
     const pixels = grainData.data;
     for (let i = 0; i < pixels.length; i += 4) {
-      const value = Math.random() * 26;
+      const value = Math.random() * 255;
       pixels[i] = value;
       pixels[i + 1] = value;
       pixels[i + 2] = value;
@@ -355,7 +708,11 @@ export function createDormantField(
     ctx.globalCompositeOperation = "source-over";
   }
 
-  function render(elapsedMs: number, dolly: number): void {
+  function render(
+    elapsedMs: number,
+    dolly: number,
+    slats: readonly SlatState[],
+  ): void {
     if (width === 0 || height === 0) resize();
 
     const dt =
@@ -367,7 +724,59 @@ export function createDormantField(
     step(seconds, dt);
     paintFog(dolly);
     paintBodies(seconds, dolly);
+    paintSlats(slats);
+    // O véu depois das lâminas, porque é o realce da quina que ameaça a
+    // leitura; o grão depois do véu, porque grão não conta como fundo para
+    // efeito de contraste (DIRECTION.md §5) e porque pós é a última passada.
+    paintVeil();
     paintGrain();
+  }
+
+  function sampleSeams(
+    ys: readonly number[],
+    outLight: number[],
+    outX: number[],
+  ): void {
+    for (let i = 0; i < ys.length; i += 1) {
+      const y = ys[i];
+      if (y === undefined) continue;
+
+      // **Máximo, não soma.** Somar a contribuição de todos os corpos próximos
+      // satura: com dezenas de corpos num campo de 900px, toda quina tem
+      // sempre alguém por perto, o total estoura 1 em todas elas ao mesmo
+      // tempo e as nove lâminas voltam a ter o mesmo brilho — que é
+      // exatamente a grade imóvel que isto existe para evitar. O texto do
+      // DIRECTION.md §4 é literal: "**um corpo isolado** passa perto dela".
+      // Quem acende a gravação é o corpo mais próximo, não a média do campo.
+      let light = 0;
+      let x = 0.5;
+
+      for (const body of bodies) {
+        // O alcance é a própria extensão vertical do corpo, não um raio
+        // ambiente: se ele não está raspando a quina, não a acende.
+        const reach = SEAM_REACH + body.size * 0.9;
+        const distance = Math.abs(body.y - y);
+        if (distance >= reach) continue;
+        const near = 1 - distance / reach;
+        const contribution = body.energy * near * near;
+        if (contribution <= light) continue;
+        light = contribution;
+        x = width > 0 ? body.x / width : 0.5;
+      }
+
+      // Joelho: abaixo disto a quina não acende de jeito nenhum.
+      //
+      // Sem ele, com um corpo a cada ~12px de altura, *toda* quina sempre tem
+      // alguém por perto e as nove acendem ao mesmo tempo, o tempo todo — o
+      // que devolve exatamente a grade que isto existe para desfazer. Com o
+      // joelho, só a passagem realmente rasante acende, e o quadro fica com
+      // duas ou três quinas vivas de cada vez. É assim que a estrutura
+      // "existe entre os lampejos" (DIRECTION.md §2) em vez de estar toda
+      // ligada de uma vez.
+      const knee = light <= SEAM_KNEE ? 0 : (light - SEAM_KNEE) / (1 - SEAM_KNEE);
+      outLight[i] = knee > 1 ? 1 : knee;
+      outX[i] = x;
+    }
   }
 
   resize();
@@ -375,6 +784,13 @@ export function createDormantField(
   return {
     resize,
     render,
+    sampleSeams,
+    setVeil: (left, top, right, bottom) => {
+      veilLeft = left;
+      veilTop = top;
+      veilRight = right;
+      veilBottom = bottom;
+    },
     destroy: () => {
       bodies = [];
     },

@@ -526,6 +526,71 @@ trava em 1.00, nada mais se move (DIRECTION.md §4). `TERMINAL_HOLD_VH` em
 elemento novo, sem espaçador. Verificado: `scrollHeight − innerHeight` bate
 com `SCROLL_VH × 100vh` de novo.
 
+## O portão: onde ele parou, e por quê
+
+O portão passou por **sete rodadas do agente crítico** (PROJECT.md §7). Notas:
+6 → 6 → 7 → 8 → 8.5 → 8.5 → **8.5**. Não fechou o corte de 9, e a decisão foi
+parar aí — não porque o que falta seja difícil, mas porque as três coisas
+abertas estão medidas, nomeadas e são pequenas. Ficam registradas com número
+para ninguém ter que redescobri-las.
+
+**A lição de método, que vale para o resto do projeto e custou duas rodadas:
+medir o que o código *calcula* não é medir o que ele *entrega*.** O véu de
+legibilidade passou por duas verificações minhas lendo
+`getBoundingClientRect()` — a caixa que o código computa — e as duas passaram.
+Enganchando o `drawImage` e lendo o retângulo realmente desenhado, ele estava
+2,4× maior que o calculado, porque a reancoragem nunca disparava. Quando for
+escrever a varredura de contraste em 600 passos (item 6 abaixo), instrumente a
+saída, não a entrada.
+
+### O que continua aberto
+
+1. **O clique custa ~110 ms; o PROJECT.md §3.3 fixa 100.** Medido três vezes:
+   clique → `data-gate="opening"` em 97.7 / 110.7 / 118.9 ms. **Praticamente
+   tudo é o construtor do `AudioContext`** — 95.2 / 107.7 / 115.9 ms sozinho,
+   contra 0.0–0.1 ms do `resume()` e 0.1–0.3 ms de um segundo contexto no
+   mesmo documento. É a partida do serviço de áudio, cobrada no único gesto
+   que o site pede. **A correção é de três linhas e está no lugar óbvio:**
+   criar o contexto suspenso como tarefa do `lib/preload/manifest.ts` — que é
+   literalmente a lista do "que o portão espera antes de deixar entrar" — e
+   deixar o handler só com `resume()` e `playPressureThud()`. O gesto do
+   usuário é exigido pelo `resume()`, não pelo construtor. Faça esta primeiro:
+   é a única das três que é violação de um teto numérico do PROJECT.md.
+2. **O véu não se ancora à coluna de texto no mobile.** A 390×844 a casa da
+   leitura é item de flex em `flex-col`, e `align-items: stretch` faz a caixa
+   dela **não mudar** na virada do contador (342 → 342 px); quem encolhe é o
+   filho (342 → 29.8). O `ResizeObserver` observa a casa, então nunca dispara,
+   e o véu entregue fica em 718 px numa viewport de 390 — 184% da tela, com
+   luminância plana nos três terços (46.8 / 46.7 / 46.9 ×10⁻⁴), ou seja um
+   scrim de sangria total, que é o que o DIRECTION.md §5 veta pelo nome. No
+   desktop o mesmo código entrega erro de largura 0.0 px, porque ali o layout
+   resolve sozinho. Correção mínima: `w-fit` (ou `self-start`) na casa da
+   leitura e na `<p>` da cota — no-op em `md:flex-row`, e em `flex-col` faz a
+   caixa observada voltar a mudar. **Não invente um segundo caminho de
+   medição para o mobile.**
+3. **O véu salta em vez de acompanhar.** O comentário no código diz que
+   durante o deslize da cota "o véu acompanha o texto". Não acompanha: fica
+   congelado na caixa pré-deslize os 600 ms inteiros e vira de uma vez no
+   `transitionend` — 1723 → 520 px em 17 ms, degrau de +14.6% de luminância
+   sem curva, contra o PROJECT.md §3.3. E se a pessoa clicar *durante* os
+   600 ms — o instante mais provável, porque a seta acabou de aparecer — o
+   cleanup do efeito remove o `transitionend` e o véu nunca reancora.
+   Correção: reancorar por quadro enquanto o FLIP roda, em vez de esperar o
+   fim. São dois `getBoundingClientRect()` num DOM de seis nós por 600 ms.
+
+### O que já está verificado e não precisa ser refeito
+
+Contraste sob a leitura, pior caso em quatro fases: carregamento 7.75:1,
+pronta 12.15:1, deslize 13.12:1, abertura 8.71:1 — piso de 4.5:1 do
+PROJECT.md §5, com folga em 1440×900, 1200, 1024, 800, 768, 390×844 e nos dois
+idiomas. Grão como pós sobre 100% do quadro (tripleto modal 5.5–6.6%, contra
+78.8% quando as lâminas eram DOM). Geometria da veneziana com ponto de fuga:
+passos de 143 → 37 → 147 px, razão 4:1, vértice em 40.2% da altura. Gravação
+saindo junto com a lâmina na abertura (α 1.0 até 884 ms, 0.0002 aos 1384 de
+1450). Modo calmo com paridade real: 3 renders, zero `requestAnimationFrame`,
+mesma quantidade de realce de quina que o modo normal. Rota inicial em 180 kB
+gz.
+
 ## O que falta
 
 Nesta ordem, porque cada uma depende da anterior:

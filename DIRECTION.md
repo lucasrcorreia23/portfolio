@@ -230,10 +230,46 @@ seta é a única coisa que o site pede — a §4 do `PROJECT.md` é uma descida
 vertical, e o gesto é esse.
 
 **A veneziana fechada não é opaca.** Sobra uma fresta por lâmina — cobertura de
-0.76 da faixa —, e é por ela que o organismo dormente aparece enquanto o site
+0.86 da faixa —, e é por ela que o organismo dormente aparece enquanto o site
 carrega. Uma veneziana cem por cento fechada seria uma tela preta com um número
 em cima, e o portão precisa ter alguma coisa viva nele. Ver de relance é a
 regra da §2, não uma concessão.
+
+Esse número tem os dois lados, e os dois já foram furados na prática. Fresta
+larga demais (0.76, um quarto da tela exposta em nove faixas parelhas) faz a
+câmara virar textura de fundo — dá para ler a câmara inteira num quadro, que é
+exatamente o sintoma de névoa fina do §2. Fresta estreita demais (0.92) apaga
+o organismo junto e deixa o portão sem nada vivo dentro. **Não corrija um dos
+dois mexendo só neste número**: a vida do portão não cabe inteira na fresta, e
+quem a sustenta é a gravação reativa descrita a seguir.
+
+**A gravação da veneziana acende quando o organismo passa.** A quina de cada
+lâmina não tem brilho fixo: ela responde a quem está passando perto dela
+naquele quadro, amortecido, crescendo e sumindo — "uma marca gravada pegando
+luz de raspão quando um corpo isolado passa perto dela, e some", que é como a
+§4 já descrevia a primeira aparição da estrutura na Emergência. Isto não é
+enfeite: nove linhas idênticas e **imóveis** atravessando a tela em intervalos
+exatos leem como grade desenhada ou HUD, e grade é vetada pelo `PROJECT.md`
+§2. O que separa estrutura de grade aqui é o tempo — "de relance" é uma coisa
+que acontece, não uma opacidade. Pelo mesmo motivo as marcas de intervalo
+correm em dois períodos primos entre si, que nunca batem em fase dentro de uma
+tela: gravação em concreto não é papel milimetrado.
+
+A leitura sai da simulação da CPU, nunca do canvas renderizado — é a mesma
+escolha que o §5 faz para o rig de luz da cena ("nada de `readPixels` no
+caminho de render"), e aqui sai de graça, porque o campo dormente já é CPU.
+
+**A veneziana é desenhada dentro do canvas, e a ordem das passadas é regra.**
+Névoa → corpos → lâminas → véu → grão. Enquanto as lâminas foram `div`
+opacos empilhados por cima do canvas, duas regras deste documento eram
+inalcançáveis por construção, não por calibragem: o grão é pós e não encostava
+nos 79% da tela que as lâminas cobriam (o §3.1 pede pós no **quadro
+composto**), e o véu de legibilidade ficava numa camada *abaixo* do realce de
+quina que ele existe para abafar — uma guarda debaixo do que ela guarda não
+guarda nada. Medido depois da mudança: o tripleto modal caiu de 78,8% para
+5,6% do quadro, e a pior luminância sob a caixa da leitura, varrendo 300
+quadros, é L = 0.0385 contra o teto de 0.138 do §5 — 9,6:1. **Não reintroduza
+lâmina em DOM.**
 
 **O organismo do portão é dormente, e é um degrau antes da Emergência.** Nem
 bando nem boids: matéria à deriva numa corrente lenta, respirando, com corpos
