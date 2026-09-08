@@ -8,6 +8,7 @@
   "archive": {
     "title": "Archive",
     "empty": "No cases yet.",
-    "outsideRiver": "Archive only"
+    "outsideRiver": "Archive only",
+    "all": "All"
   }
 }

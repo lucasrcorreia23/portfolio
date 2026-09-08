@@ -86,12 +86,27 @@ export default function ScrollDriver() {
 
     lenis.on("scroll", onLenisScroll);
     gsap.ticker.add(tick);
+
+    // A sonda de contraste precisa rolar a página de verdade: as caixas de
+    // texto que ela mede são `sticky`, então a posição delas na tela é função
+    // do scroll, e medir com a página no topo mediria outro enquadramento. Um
+    // `window.scrollTo` seria desfeito pelo Lenis no quadro seguinte, então o
+    // que ela pede é a própria instância.
+    //
+    // Some da build de produção: o `process.env.NODE_ENV` vira literal e o
+    // bloco inteiro cai. Ver `lib/scene/probe-contrast.ts`.
+    if (process.env.NODE_ENV !== "production") {
+      (window as unknown as { __lenis?: Lenis }).__lenis = lenis;
+    }
     // Sem isto o GSAP "engole" quadros longos e o scroll dá um salto ao
     // voltar de uma aba em segundo plano.
     gsap.ticker.lagSmoothing(0);
     ScrollTrigger.refresh();
 
     return () => {
+      if (process.env.NODE_ENV !== "production") {
+        delete (window as unknown as { __lenis?: Lenis }).__lenis;
+      }
       lenis.off("scroll", onLenisScroll);
       gsap.ticker.remove(tick);
       gsap.ticker.lagSmoothing(500, 33);

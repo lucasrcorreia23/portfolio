@@ -13,6 +13,7 @@ import {
   Vector2,
   Vector3,
 } from "three";
+import type { Roost } from "@/lib/scene/curve";
 import { blit, createDataTarget, createPassMaterial } from "@/lib/scene/gpu";
 import { BODY_FRAG, BODY_VERT } from "@/lib/scene/shaders/body";
 import {
@@ -36,8 +37,18 @@ type FlockProps = {
   attackRef: { readonly current: number };
   /** Z da câmera. A reciclagem do bando é relativa a ela, não ao duto. */
   cameraZRef: { readonly current: number };
-  /** Meia-largura do tubo, que abre com o progresso. A altura é constante. */
-  tubeRef: { readonly current: number };
+  /**
+   * Meia-largura e meia-altura do tubo. A largura abre na Identidade, para o
+   * escoamento cobrir a peça inteira; a altura abre só no poleiro de Quem sou,
+   * para a coluna ter altura de coluna.
+   */
+  tubeRef: { readonly current: Vector2 };
+  /**
+   * O poleiro de Quem sou, resolvido pelo laço mestre. É um objeto estável
+   * mutado por quadro — mesma disciplina dos uniforms compartilhados: quem
+   * escreve é um só (`SceneWorld`), quem lê são vários.
+   */
+  roost: Roost;
   /**
    * Preenchido com uma função que roda N passos de simulação **sem desenhar**.
    * É como o modo calmo assenta o bando numa pose: 150 pares de blits numa
@@ -80,6 +91,7 @@ export function Flock({
   attackRef,
   cameraZRef,
   tubeRef,
+  roost,
   settleRef,
   readRef,
 }: FlockProps) {
@@ -108,6 +120,9 @@ export function Flock({
       uSpecimenYaw: { value: 0 },
       uTube: { value: new Vector2(FLOCK_TUBE_NARROW, FLOCK_TUBE_HEIGHT) },
       uCameraZ: { value: 0 },
+      uRoost: { value: new Vector3(0, 0, SPECIMEN_Z) },
+      uRoostAmount: { value: 0 },
+      uRoostDrift: { value: 0 },
 
       // O campo de distância assado da peça. Os três primeiros são **os mesmos
       // objetos** que o `Specimen` escreve depois do assado (ver
@@ -259,9 +274,13 @@ export function Flock({
       progress: number,
       attack: number,
       cameraZ: number,
-      tubeWidth: number,
+      tube: Vector2,
+      roost: Roost,
     ) => {
-      rig.simUniforms.uTube.value.x = tubeWidth;
+      rig.simUniforms.uTube.value.copy(tube);
+      rig.simUniforms.uRoost.value.copy(roost.center);
+      rig.simUniforms.uRoostAmount.value = roost.amount;
+      rig.simUniforms.uRoostDrift.value = roost.drift;
       // A semeadura roda na GPU, uma vez. Uma matriz na CPU seria 4096 × 8
       // floats subindo pelo barramento para dizer o que uma linha de shader
       // deriva de `gl_FragCoord`.
@@ -330,13 +349,14 @@ export function Flock({
           attackRef.current,
           cameraZRef.current,
           tubeRef.current,
+          roost,
         );
       }
     };
     return () => {
       settleRef.current = null;
     };
-  }, [settleRef, step, progressRef, attackRef, cameraZRef, tubeRef]);
+  }, [settleRef, step, progressRef, attackRef, cameraZRef, tubeRef, roost]);
 
   useEffect(() => {
     if (readRef === undefined) return;
@@ -363,6 +383,7 @@ export function Flock({
       attackRef.current,
       cameraZRef.current,
       tubeRef.current,
+      roost,
     );
   }, -5);
 

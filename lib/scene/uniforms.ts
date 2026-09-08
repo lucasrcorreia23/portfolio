@@ -1,6 +1,6 @@
 import { Color, Vector2, Vector4, type Texture } from "three";
 import { readPalette, type Palette } from "@/lib/palette";
-import { MAX_VEIL_BOXES } from "./veil";
+import { MAX_VEIL_BOXES, VEIL_CEILING } from "./veil";
 import { CHAMBER_FAR, SPECIMEN_Z } from "./world";
 
 /**
@@ -68,7 +68,11 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
     sourceStrength: { value: 0 },
     sourceZ: { value: CHAMBER_FAR },
 
-    /** O véu de legibilidade, resolvido por quadro em `lib/scene/veil.ts`. */
+    /**
+     * As caixas de texto que o véu de legibilidade protege, em UV de tela, e a
+     * força de cada uma (1 = existe). Quem as lê do DOM é `lib/scene/veil.ts`;
+     * quem as usa é o compositor, por pixel.
+     */
     veilBox: {
       value: Array.from({ length: MAX_VEIL_BOXES }, () => new Vector4()),
     },
@@ -121,8 +125,22 @@ export function fogUniforms(shared: SharedUniforms) {
     uFogDensity: shared.fogDensity,
     uTime: shared.time,
     uResolution: shared.resolution,
+  };
+}
+
+/**
+ * O véu, que agora é do **compositor** e não dos materiais.
+ *
+ * Ele é resolvido por pixel depois do bloom e do tonemap — ver o docblock de
+ * `COMPOSITE_FRAG` em `shaders/post.ts` e o de `lib/scene/veil.ts`, que contam
+ * por que ele saiu do chunk de névoa.
+ */
+export function veilUniforms(shared: SharedUniforms) {
+  return {
     uVeilBox: shared.veilBox,
     uVeilF: shared.veilF,
+    uVeilCeiling: { value: VEIL_CEILING },
+    uVoid: shared.void,
   };
 }
 

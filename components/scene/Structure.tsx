@@ -108,10 +108,16 @@ function buildStructure(): BufferGeometry {
 
   // Alturas assimétricas: duas réguas na mesma altura nas duas paredes leriam
   // como grade, que o PROJECT.md §2 veta.
+  // A parede de estibordo tem duas porque é ela que a câmera raspa em Quem sou
+  // (ver os pontos de controle de 0.34 a 0.45 em `lib/scene/curve.ts`), e uma
+  // régua sozinha a três unidades da lente lê como um risco, não como uma
+  // parede cotada. As quatro alturas são todas diferentes: duas na mesma altura
+  // nas duas paredes leriam como grade, que o PROJECT.md §2 veta.
   const rules: readonly { y: number; side: number; seed: number }[] = [
     { y: -3.2, side: -1, seed: 0.13 },
     { y: 2.4, side: -1, seed: 0.57 },
     { y: -1.6, side: 1, seed: 0.79 },
+    { y: 3.1, side: 1, seed: 0.23 },
   ];
 
   for (const rule of rules) {

@@ -204,11 +204,48 @@ void main() {
 
 /**
  * O composite: mistura o nítido com o borrado pelo CoC, soma o bloom, aplica a
- * aberração crômática nas bordas, o grão animado e o tonemap.
+ * aberração crômática nas bordas, o tonemap, **o véu de legibilidade** e o grão
+ * animado.
  *
  * **Vinheta: nenhuma.** Nem leve. O pedido é explícito e a câmara já escurece
  * nas bordas por névoa e por queda de luz — uma vinheta por cima disso seria a
  * segunda vez que a mesma coisa é dita.
+ *
+ * ## O véu de legibilidade mudou de mecanismo, e a medição é o motivo
+ *
+ * O DIRECTION.md §5 desenhou o véu como um termo aditivo de densidade no shader
+ * de névoa, com **um `f` por caixa por quadro**, resolvido a partir da
+ * simulação proxy: "o proxy roda adiantado, então o véu sobe antes do cacho
+ * chegar". Isso foi implementado e **medido no pixel entregue**, varrendo o
+ * beat de Quem sou a 0.6 vh/s: o pior contraste sob a coluna de manifesto deu
+ * **1.21:1**, com L = 0.65 sob o texto e o `f` parado no piso de 0.15.
+ *
+ * O erro não é de calibragem, é de instrumento. O `f` por caixa é resolvido de
+ * uma estimativa de "quanta luz há perto desta caixa", e a estimativa vem de 64
+ * macro-partículas cuja energia é massa × velocidade. No poleiro a velocidade
+ * cai de propósito, então a estimativa **desce** exatamente enquanto o bando se
+ * junta e fica mais brilhante. E mesmo com uma estimativa perfeita, um `f`
+ * único por caixa é um teto médio para uma caixa onde o que falha é **um pixel
+ * atrás de uma haste de letra**.
+ *
+ * O que está aqui resolve a mesma equação do §5 — `L_saída = (1−f)·L_cena +
+ * f·L_névoa` — em dois lugares diferentes:
+ *
+ * - **por pixel**, e não por caixa: cada fragmento sabe a própria luminância, e
+ *   `f` sai dela. Onde a cena já está escura, `f` é zero e o véu não existe —
+ *   que é literalmente o "véu baixo quase o tempo todo" do documento, agora sem
+ *   piso artificial. Onde um corpo passa atrás do texto, `f` sobe só naquele
+ *   corpo.
+ * - **depois do bloom e do tonemap**, e não antes. Depois do bloom porque o
+ *   bloom é o que espalha a luz de um corpo que está **fora** da caixa para
+ *   dentro dela — veiling antes dele deixava justamente esse vazamento passar.
+ *   Depois do tonemap porque é ali que a cor vira a luminância relativa que a
+ *   conta de contraste usa; o teto deixa de precisar de conversão e passa a ser
+ *   o próprio número medido (PROJECT.md §7, medir no ponto de entrega).
+ *
+ * O que **não** mudou: o véu continua dentro do canvas, continua ancorado à
+ * caixa do texto projetada, e continua com queda suave e larga para ler como
+ * banco de névoa. O DOM não ganhou `background` nem `text-shadow`.
  */
 export const COMPOSITE_FRAG = /* glsl */ `
 uniform sampler2D uScene;
@@ -221,6 +258,13 @@ uniform float uGrain;
 uniform float uGrainSeed;
 uniform float uExposure;
 uniform float uDofEnabled;
+
+// O véu. xy/zw são os cantos da caixa em UV de tela (origem embaixo à
+// esquerda); uVeilF é a força dela, 0 quando a caixa não existe.
+uniform vec4  uVeilBox[3];
+uniform float uVeilF[3];
+uniform float uVeilCeiling;
+uniform vec3  uVoid;
 
 ${DEPTH_GLSL}
 ${HASH_GLSL}
@@ -242,6 +286,49 @@ vec3 sampleFocused(vec2 uv, float blend) {
   vec3 sharp = texture(uScene, uv).rgb;
   if (blend <= 0.002) return sharp;
   return mix(sharp, texture(uBlurred, uv).rgb, blend);
+}
+
+/**
+ * O envelope do véu: 1 dentro da caixa, caindo a 0 em 0.16 de UV.
+ *
+ * A queda é larga de propósito — uma borda dura leria como uma caixa escura
+ * acendendo, e o que ela precisa parecer é um banco de névoa passando. Ela é
+ * medida em UV, então é mais larga em pixels na horizontal que na vertical;
+ * isso é o que se quer, porque as caixas de texto também são.
+ */
+float veilEnvelope(vec2 uv) {
+  float total = 0.0;
+  for (int i = 0; i < 3; i++) {
+    float on = uVeilF[i];
+    if (on <= 0.0) continue;
+    vec2 d = max(uVeilBox[i].xy - uv, uv - uVeilBox[i].zw);
+    float dist = length(max(d, vec2(0.0)));
+    total = max(total, on * (1.0 - smoothstep(0.0, 0.16, dist)));
+  }
+  return total;
+}
+
+/**
+ * O véu, resolvido no pixel: mistura em direção à cor da névoa só o quanto for
+ * preciso para trazer **este** fragmento ao teto, e nada onde ele já está
+ * abaixo dele.
+ *
+ * f = (L − teto) / (L − L_névoa) é a equação do DIRECTION.md §5 isolada
+ * para f. O teto interpola de 1.0 (sem véu) até uVeilCeiling conforme o
+ * envelope, então um corpo que atravessa a borda escurece progressivamente em
+ * vez de bater num degrau.
+ */
+vec3 applyVeil(vec3 color, vec2 uv) {
+  float envelope = veilEnvelope(uv);
+  if (envelope <= 0.0) return color;
+
+  float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
+  float ceiling = mix(1.0, uVeilCeiling, envelope);
+  if (luma <= ceiling) return color;
+
+  float fogLuma = dot(uVoid, vec3(0.2126, 0.7152, 0.0722));
+  float f = clamp((luma - ceiling) / max(luma - fogLuma, 1e-4), 0.0, 1.0);
+  return mix(color, uVoid, f);
 }
 
 void main() {
@@ -266,6 +353,12 @@ void main() {
   // Tonemap exponencial: preserva o pé da curva, que é onde esta cena vive, e
   // segura os cachos quentes sem lavar a cor deles.
   color = vec3(1.0) - exp(-color * uExposure);
+
+  // O véu, **depois** do tonemap: aqui a cor já é a luminância relativa que a
+  // conta de contraste do DIRECTION.md §5 usa, e o teto é o próprio número que
+  // a medição lê no pixel entregue. Antes do tonemap ele resolveria para uma
+  // luminância que a linha seguinte muda.
+  color = applyVeil(color, uv);
 
   // Grão de filme, animado por quadro. uGrainSeed muda todo quadro, então não
   // existe padrão estático — o PROJECT.md §3.1 veta PNG de ruído repetido pelo

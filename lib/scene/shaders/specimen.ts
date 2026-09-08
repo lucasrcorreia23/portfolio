@@ -88,7 +88,6 @@ void main() {
   base += uSourceColor * upstreamLight(vWorld) * 0.35;
 
   base = applyFog(base, vViewDepth, vWorld);
-  base = applyVeil(base, gl_FragCoord.xy);
 
   // Alfa 1.0: quem o multiplica pela borda macia do glifo é o troika, no
   // trecho que ele injeta depois desta linha.

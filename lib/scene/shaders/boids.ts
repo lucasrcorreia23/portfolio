@@ -59,6 +59,35 @@
  * força.
  */
 
+import {
+  ROOST_CAPTURE,
+  ROOST_HOLD,
+  ROOST_PULL,
+  ROOST_RADIUS,
+  ROOST_SPIN,
+  ROOST_Z_IN,
+  ROOST_Z_OUT,
+} from "../world";
+
+/**
+ * As constantes do poleiro vêm de `world.ts`, e não de literais no GLSL.
+ *
+ * Três simulações precisam concordar sobre a mesma coluna — este shader, o
+ * proxy da CPU e a leitura de densidade da HUD. Um número digitado em três
+ * lugares é a forma mais fácil de a luz acabar apontando para onde o bando não
+ * está. Interpolar é seguro porque são constantes de módulo, resolvidas uma vez
+ * na montagem do shader.
+ */
+const ROOST_CONSTANTS = /* glsl */ `
+const float ROOST_RADIUS  = ${ROOST_RADIUS.toFixed(3)};
+const float ROOST_CAPTURE = ${ROOST_CAPTURE.toFixed(3)};
+const float ROOST_Z_IN    = ${ROOST_Z_IN.toFixed(3)};
+const float ROOST_Z_OUT   = ${ROOST_Z_OUT.toFixed(3)};
+const float ROOST_PULL    = ${ROOST_PULL.toFixed(3)};
+const float ROOST_SPIN    = ${ROOST_SPIN.toFixed(3)};
+const float ROOST_HOLD    = ${ROOST_HOLD.toFixed(3)};
+`;
+
 const COMMON = /* glsl */ `
 uniform sampler2D uPos;
 uniform sampler2D uVel;
@@ -72,6 +101,15 @@ uniform float uSpecimenYaw;
 /** Meia-largura e meia-altura do tubo. A largura abre com o progresso. */
 uniform vec2  uTube;
 uniform float uCameraZ;
+/**
+ * O poleiro de Quem sou: xz é o eixo da coluna (y não entra — a coluna é
+ * vertical), uRoostAmount é quanto ele está ligado e uRoostDrift é a
+ * velocidade em Z do próprio eixo, que é o que os corpos capturados passam a
+ * acompanhar. Ver roostCenter e roostAmount em lib/scene/curve.ts.
+ */
+uniform vec3  uRoost;
+uniform float uRoostAmount;
+uniform float uRoostDrift;
 
 const int NEIGHBORS = 24;
 
@@ -346,6 +384,7 @@ const FIELD_FORCE = /* glsl */ `
 export function boidsVelocityFrag(detach: boolean): string {
   return /* glsl */ `
 ${COMMON}
+${ROOST_CONSTANTS}
 ${detach ? FIELD_CHUNK : ""}
 
 out vec4 fragColor;
@@ -411,12 +450,21 @@ void main() {
   // lado errado em tudo que não está nos eixos. A intensidade continua sendo a
   // distância em unidades de mundo, para a contenção não ficar mais dura quando
   // o tubo abre.
+  //
+  // **E ela cede para o poleiro.** Em Quem sou a coluna fica encostada na
+  // parede graduada, ou seja **fora** do tubo (ver ROOST_X_MAX em world.ts):
+  // uma contenção que continuasse valendo ali puxaria os corpos de volta para o
+  // eixo do duto e a coluna nunca se formaria contra a parede. O tubo é uma
+  // regra de escoamento, e no poleiro não há escoamento — há um bando parado.
+  float roostGate = 1.0 - smoothstep(ROOST_Z_IN, ROOST_Z_OUT, abs(pos.z - uRoost.z));
+  float roost = uRoostAmount * roostGate;
+
   vec2  q = pos.xy / uTube;
   float r = length(q);
   if (r > 1.0) {
     vec2 wallOut = normalize(q / uTube);
     float outside = (r - 1.0) * length(pos.xy) / max(r, 1e-4);
-    force.xy -= wallOut * outside * 3.4;
+    force.xy -= wallOut * outside * (3.4 * (1.0 - 0.85 * roost));
   }
 
   // Corrente ambiente, para o tubo não virar um cano.
@@ -432,7 +480,54 @@ void main() {
     cos(pos.z * 0.47 - pos.x * 0.8 - uTime * 0.4)
   ) * (0.3 + 0.5 * forming);
 
-  force.z += (drive - vel.z) * 1.7;
+  // --- o poleiro colunar de Quem sou --------------------------------------
+  //
+  // DIRECTION.md §4: "O bando se organiza: assenta num poleiro colunar de
+  // rotação lenta, densidade estável... velocidade dos corpos caindo para
+  // planeio longo."
+  //
+  // Três termos e uma janela. O radial captura, o tangencial gira, e o axial
+  // troca o alvo de velocidade: quem entra deixa de escoar pelo duto e passa a
+  // acompanhar o eixo da coluna, que é ancorado à câmera. Quando a pessoa para
+  // de rolar, o eixo para, e o bando para com ele — é daí que sai a "densidade
+  // estável", sem congelar nada.
+  //
+  // **A janela em Z é o que impede o duto inteiro de congelar.** Segurando
+  // todos os corpos, o bando pararia de chegar e o quadro viraria uma nuvem
+  // parada com uma coluna dentro; com a janela, ele continua vindo de montante,
+  // freia ao encontrar o poleiro e assenta. Frear é aceleração, e aceleração é
+  // brilho (vEnergy): os corpos acendem ao entrar, que é o que faz a
+  // organização ser vista acontecendo em vez de já ter acontecido.
+  vec2  toAxis = uRoost.xz - pos.xz;
+  float axisR  = length(toAxis) + 1e-4;
+  vec2  inward = toAxis / axisR;
+  // Fora do alcance da captura o corpo continua escoando pelo duto: o poleiro
+  // recolhe quem passa perto, não o bando inteiro de uma vez.
+  float band  = 1.0 - smoothstep(ROOST_CAPTURE, ROOST_CAPTURE * 1.6, axisR);
+
+  // Puxa para o **raio**, não para o centro: quem está fora vem, quem está
+  // dentro é empurrado de volta. Com 16 mil corpos, um poço no eixo equilibra
+  // com a separação só depois de virar uma bola de cinco unidades de raio —
+  // medido, e na tela isso é um borrão redondo, não uma coluna. Numa casca a
+  // mesma população se distribui por uma superfície, o limbo fica mais denso
+  // que o miolo, e é esse limbo que se lê como cilindro girando.
+  float toShell = clamp((axisR - ROOST_RADIUS) / ROOST_RADIUS, -1.0, 1.0);
+  force.xz += inward * (ROOST_PULL * toShell * band) * roost;
+
+  // A tangencial cresce com o raio, e não é enfeite de fórmula: com módulo
+  // constante a velocidade angular seria maior no miolo do que na borda, a
+  // coluna se desfiaria em espiral e o que se leria seria um redemoinho. Com
+  // a proporcional a r e o arrasto que já existe, v também — rotação de corpo
+  // rígido, que é o que "rotação lenta" quer dizer. Uma volta a cada ~10 s na
+  // borda.
+  force.xz += vec2(-inward.y, inward.x)
+            * (ROOST_SPIN * min(axisR / ROOST_RADIUS, 1.0) * band) * roost;
+
+  // Planeio longo: o alvo de velocidade axial se aproxima do arrasto do eixo,
+  // sem chegar nele — ver ROOST_HOLD em world.ts. Um poleiro que segurasse tudo
+  // acumularia a população inteira; este desacelera e deixa passar.
+  float vzTarget = mix(drive, uRoostDrift, ROOST_HOLD * roost * band);
+  force.z += (vzTarget - vel.z) * 1.7;
 ${detach ? FIELD_FORCE : ""}
   vec3 next = vel + force * uDt;
   next *= 0.985;

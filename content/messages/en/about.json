@@ -1,3 +1,8 @@
 {
-  "label": "Who I am"
+  "label": "Who I am",
+  "manifesto": {
+    "one": "I design product and I write the front-end of what I design. That isn't range: the interface decision and the cost of building it are one conversation, and splitting them across two chairs invents a third problem.",
+    "two": "The work I want has a hard domain — clinical records, energy contracts, sales training. There the screen is the smallest part: what decides is the rule, the state, and the case nobody drew.",
+    "three": "And I measure what I ship. Contrast is the worst frame, not the average; a budget is a number that has already failed something of mine. This site is the piece and the instrument in one place."
+  }
 }

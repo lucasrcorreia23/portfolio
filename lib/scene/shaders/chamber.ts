@@ -62,7 +62,6 @@ void main() {
   color += uSourceColor * upstreamLight(vWorld) * 0.5;
 
   color = applyFog(color, vViewDepth, vWorld);
-  color = applyVeil(color, gl_FragCoord.xy);
 
   fragColor = vec4(color, 1.0);
 }
@@ -97,7 +96,6 @@ void main() {
 
   vec3 color = uSourceColor * radial * radial * broken * (0.05 + uSourceStrength);
   color = applyFog(color, vViewDepth, vWorld);
-  color = applyVeil(color, gl_FragCoord.xy);
 
   fragColor = vec4(color, 1.0);
 }

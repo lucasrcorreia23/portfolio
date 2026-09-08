@@ -1,20 +1,27 @@
 {
   "label": "Panel",
+  "open": "Open panel",
+  "close": "Close panel",
   "contact": "Contact",
-  "work": "Work",
-  "audio": "Audio",
+  "email": "Email",
+  "profiles": {
+    "linkedin": "LinkedIn",
+    "github": "GitHub",
+    "x": "X"
+  },
+  "audio": {
+    "label": "Audio",
+    "on": "ON",
+    "off": "MUTED"
+  },
+  "filters": "Filters",
   "language": "Language",
   "progress": "Progress",
   "lexicon": {
     "station": "EST.",
     "level": "COTA",
     "density": "DENS.",
-    "velocity": "V"
-  },
-  "scene": {
-    "pending": "READING",
-    "driven": "DRIVEN",
-    "composed": "COMPOSED",
-    "poster": "POSTER"
+    "velocity": "V",
+    "depth": "Z"
   }
 }

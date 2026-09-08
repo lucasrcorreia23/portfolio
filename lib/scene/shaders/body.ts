@@ -166,7 +166,6 @@ void main() {
 
   vec3 lit = color * energy;
   lit = applyFog(lit, vViewDepth, vWorld);
-  lit = applyVeil(lit, gl_FragCoord.xy);
 
   fragColor = vec4(lit, 1.0);
 }

@@ -45,7 +45,7 @@ export default async function CasePage({
   const { frontmatter, Content } = await loadCase(slug);
 
   return (
-    <main className="px-6 py-32 md:pl-32">
+    <main className="px-6 py-32 md:pl-56">
       <p className="type-mono text-hud">
         {frontmatter.client} · {frontmatter.year}
       </p>

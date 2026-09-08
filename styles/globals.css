@@ -200,6 +200,42 @@
     clip-path: inset(0 0 calc((1 - var(--line-reveal)) * 100%) 0);
   }
 
+  /* Quem sou: uma lâmina de medida desce pela coluna e o texto fica gravado
+     atrás dela.
+
+     O recorte é do bloco inteiro, não de cada linha, e a lâmina fica **fora**
+     dele: dentro, um fio de um pixel exatamente na fronteira do recorte seria
+     recortado junto e nunca apareceria. A marca de intervalo na ponta esquerda
+     é o que separa isto de uma cortina — é um cursor de régua, e a régua é o
+     vocabulário do beat (DIRECTION.md §2).
+
+     A lâmina é ornamento puro e por isso pode ter alpha; o texto atrás dela
+     não tem nenhum, e é essa a regra do DIRECTION.md §5. Ela some ao chegar ao
+     fim porque o que interessa então é o texto, não o instrumento. */
+  .beat-about-page {
+    clip-path: inset(0 0 calc((1 - var(--reveal)) * 100%) 0);
+  }
+
+  .beat-about-blade {
+    position: absolute;
+    top: calc(var(--reveal) * 100%);
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background-color: var(--cyan);
+    opacity: calc(0.5 * (1 - var(--reveal)));
+  }
+
+  .beat-about-blade::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 1px;
+    height: 0.75rem;
+    background-color: var(--cyan);
+  }
+
   /* ---------------------------------------------------------------------
    * O corpo de prova.
    *

@@ -74,7 +74,6 @@ void main() {
   vec3 color = mix(uMist, uCyan, clamp(glint, 0.0, 1.0)) * (uStructureBase + glint * 1.9);
 
   color = applyFog(color, vViewDepth, vWorld);
-  color = applyVeil(color, gl_FragCoord.xy);
 
   // O alfa também cai com a névoa: uma linha longe não deve furar o banco de
   // névoa que a esconde.

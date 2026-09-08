@@ -2,6 +2,7 @@ import { readdir } from "node:fs/promises";
 import path from "node:path";
 import type { ComponentType } from "react";
 import type { MDXProps } from "mdx/types";
+import { DISCIPLINES, type Discipline } from "./disciplines";
 import type { PaletteToken } from "./palette";
 
 /**
@@ -36,9 +37,13 @@ export type AccentToken = (typeof ACCENT_TOKENS)[number];
 /**
  * Os filtros do rio são por disciplina, não por categoria — DIRECTION.md §4.
  * Cada case aparece em mais de uma, e nenhum filtro devolve menos de dois.
+ *
+ * A lista vive em `lib/disciplines.ts`, que não importa `node:fs`: o controle
+ * de filtro da HUD é de cliente e precisa dos mesmos três nomes. Aqui só é
+ * reexportada, para quem valida frontmatter continuar importando de um lugar
+ * só.
  */
-export const DISCIPLINES = ["produto", "sistema", "marca"] as const;
-export type Discipline = (typeof DISCIPLINES)[number];
+export { DISCIPLINES, type Discipline };
 
 export type CaseMedia = {
   src: string;

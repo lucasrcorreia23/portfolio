@@ -1,20 +1,27 @@
 {
   "label": "Painel",
+  "open": "Abrir painel",
+  "close": "Fechar painel",
   "contact": "Contato",
-  "work": "Trabalho",
-  "audio": "Áudio",
+  "email": "E-mail",
+  "profiles": {
+    "linkedin": "LinkedIn",
+    "github": "GitHub",
+    "x": "X"
+  },
+  "audio": {
+    "label": "Áudio",
+    "on": "ON",
+    "off": "MUDO"
+  },
+  "filters": "Filtros",
   "language": "Idioma",
   "progress": "Progresso",
   "lexicon": {
     "station": "EST.",
     "level": "COTA",
     "density": "DENS.",
-    "velocity": "V"
-  },
-  "scene": {
-    "pending": "LENDO",
-    "driven": "DIRIGIDA",
-    "composed": "COMPOSTA",
-    "poster": "POSTER"
+    "velocity": "V",
+    "depth": "Z"
   }
 }

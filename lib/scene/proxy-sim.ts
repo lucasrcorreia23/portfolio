@@ -1,6 +1,10 @@
 import { Vector3 } from "three";
 import { damp } from "@/lib/motion";
-import { flockTubeHalfWidth } from "./curve";
+import {
+  flockTubeHalfHeight,
+  flockTubeHalfWidth,
+  type Roost,
+} from "./curve";
 import {
   CHAMBER_HALF_HEIGHT,
   CHAMBER_HALF_WIDTH,
@@ -8,6 +12,13 @@ import {
   FLOCK_SPAWN_Z,
   FLOCK_TUBE_HEIGHT,
   FLOCK_TUBE_NARROW,
+  ROOST_CAPTURE,
+  ROOST_HOLD,
+  ROOST_PULL,
+  ROOST_RADIUS,
+  ROOST_SPIN,
+  ROOST_Z_IN,
+  ROOST_Z_OUT,
 } from "./world";
 
 /**
@@ -38,6 +49,16 @@ const MAX_STEPS = 3;
 const NEIGHBOR_RADIUS = 7;
 const SEPARATION_RADIUS = 2.4;
 
+/**
+ * O arrasto da simulação da GPU, por segundo.
+ *
+ * `0.985` por quadro de 1/60 s é `0.985^60 = 0.40` por segundo, ou seja
+ * `k = 0.92/s`. Ele aparece aqui porque a captura do poleiro é imposta em
+ * **velocidade terminal da GPU** (`força / k`), e não copiando a aceleração —
+ * ver o bloco do poleiro em `step`.
+ */
+const GPU_DRAG_RATE = 0.92;
+
 export type ProxyCluster = {
   /** Centroide amortecido, em coordenadas de mundo. */
   position: Vector3;
@@ -58,18 +79,41 @@ export type ProxySim = {
    * uma nuvem que ficasse para trás enquanto o bando acompanha a descida faria
    * a luz e o véu apontarem para um lugar vazio.
    */
-  update: (dt: number, progress: number, cameraZ: number) => void;
+  update: (
+    dt: number,
+    progress: number,
+    cameraZ: number,
+    roost: Roost,
+  ) => void;
   /**
    * Densidade normalizada do bando num ponto de mundo, 0 a 1. Alimenta o rim
    * de fresnel do corpo de prova: as letras clareiam **porque o bando está
    * perto**, que é como a luz nasce de dentro da cena.
    */
   densityAt: (point: Vector3) => number;
+  /**
+   * Fração das macro-partículas dentro da coluna do poleiro, 0 a 1 — a leitura
+   * de `DENS.` da HUD (DIRECTION.md §4: "a densidade do bando é medida contra
+   * ela, com a leitura correndo na HUD").
+   *
+   * **É contagem, não energia.** `densityAt` devolve massa × velocidade, que é
+   * o que a luz precisa saber; no poleiro a velocidade cai de propósito
+   * ("planeio longo"), então usá-la como leitura de densidade mostraria o bando
+   * ficando *menos* denso justamente enquanto ele se organiza. Aqui a pergunta é
+   * quantos corpos estão dentro da coluna, e a resposta é um censo.
+   */
+  columnShare: (center: Vector3, radius: number) => number;
 };
 
 function hash(i: number): number {
   const x = Math.sin(i * 127.1 + 311.7) * 43758.5453;
   return x - Math.floor(x);
+}
+
+/** O mesmo `smoothstep` do GLSL, para as duas simulações usarem a mesma curva. */
+function smoothstep(edge0: number, edge1: number, x: number): number {
+  const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
 }
 
 export function createProxySim(): ProxySim {
@@ -118,7 +162,7 @@ export function createProxySim(): ProxySim {
   let accumulator = 0;
   let seeded = false;
 
-  const step = (progress: number, cameraZ: number) => {
+  const step = (progress: number, cameraZ: number, roost: Roost) => {
     const recycleAt = cameraZ + 2;
     const spawnAt = cameraZ - 64;
     const dt = STEP_MS / 1000;
@@ -174,12 +218,78 @@ export function createProxySim(): ProxySim {
         az = (az * inv - (vz[i] as number)) * 0.5;
       }
 
+      // O poleiro — **em velocidade, não em força**, e a diferença é o beat.
+      //
+      // O proxy não precisa bater corpo a corpo com a GPU; precisa concordar
+      // sobre **onde está a massa**. Em Quem sou a massa está numa coluna, e um
+      // proxy que continuasse escoando enquanto o bando assenta apontaria a luz
+      // e o véu para o duto vazio justamente no beat de leitura.
+      //
+      // Copiar a aceleração do shader não faz isso, e o motivo é aritmético: as
+      // duas simulações usam o mesmo fator de arrasto por passo (0.985) com
+      // passos diferentes, 1/60 s lá e 1/15 s aqui. Isso é `k = 0.92/s` contra
+      // `k = 0.23/s` — mesma velocidade terminal, **quatro vezes** a constante
+      // de tempo. Num beat de 3.6 s a GPU chega à coluna e o proxy fica no meio
+      // do caminho: medido, os centroides pararam em `x ≈ 2–5` com a coluna em
+      // 8.6, e a HUD leu `DENS. 0.00` num quadro cheio de bando.
+      //
+      // Então a captura entra como alvo de velocidade, do mesmo jeito que o
+      // termo axial sempre entrou — imune ao arrasto. A velocidade que se impõe
+      // é a terminal da GPU, `força / k`, para as duas nuvens andarem juntas.
+      const roostGate =
+        1 -
+        smoothstep(
+          ROOST_Z_IN,
+          ROOST_Z_OUT,
+          Math.abs((pz[i] as number) - roost.center.z),
+        );
+      const grip = roost.amount * roostGate;
+      let rx = 0;
+      let rz = 0;
+      let band = 0;
+      if (grip > 0) {
+        const dxAxis = roost.center.x - (px[i] as number);
+        const dzAxis = roost.center.z - (pz[i] as number);
+        const axisR = Math.hypot(dxAxis, dzAxis) + 1e-4;
+        band = 1 - smoothstep(ROOST_CAPTURE, ROOST_CAPTURE * 1.6, axisR);
+        const toShell = Math.max(
+          -1,
+          Math.min(1, (axisR - ROOST_RADIUS) / ROOST_RADIUS),
+        );
+        const inward = (ROOST_PULL / GPU_DRAG_RATE) * toShell * band * grip;
+        const spin =
+          (ROOST_SPIN / GPU_DRAG_RATE) *
+          Math.min(axisR / ROOST_RADIUS, 1) *
+          band *
+          grip;
+        // Alvo de velocidade no plano da coluna, e a aproximação com a mesma
+        // taxa do termo axial.
+        rx =
+          ((dxAxis / axisR) * inward -
+            (dzAxis / axisR) * spin -
+            (vx[i] as number) * grip * band) *
+          1.6;
+        rz =
+          ((dzAxis / axisR) * inward + (dxAxis / axisR) * spin) * 1.6;
+      }
+
       // Escoamento pelo eixo, mais um puxão de volta para o eixo: o duto
       // segura o bando laminar sem que ele encoste nas paredes.
-      const pull = -0.35;
-      const nvx = (vx[i] as number) + (cx + ax + sx * 1.4 + (px[i] as number) * pull) * dt;
+      //
+      // **A mola do eixo cede para o poleiro.** Ela não existe na simulação da
+      // GPU (lá o que segura é a contenção do tubo, que só age *fora* da
+      // elipse), então uma mola que continuasse puxando para x = 0 deixaria a
+      // nuvem do proxy a meio caminho da coluna — e o proxy existe justamente
+      // para concordar sobre onde está a massa. Com a luz e o véu lendo dele,
+      // discordar aqui é apontar o holofote para o lugar errado.
+      const pull = -0.35 * (1 - grip * band);
+      const axialTarget = drive + (roost.drift - drive) * ROOST_HOLD * grip * band;
+      const nvx =
+        (vx[i] as number) + (cx + ax + sx * 1.4 + (px[i] as number) * pull + rx) * dt;
       const nvy = (vy[i] as number) + (cy + ay + sy * 1.4 + (py[i] as number) * pull) * dt;
-      const nvz = (vz[i] as number) + (cz + az + sz * 1.4 + (drive - (vz[i] as number)) * 1.6) * dt;
+      const nvz =
+        (vz[i] as number) +
+        (cz + az + sz * 1.4 + rz + (axialTarget - (vz[i] as number)) * 1.6) * dt;
 
       vx[i] = nvx * 0.985;
       vy[i] = nvy * 0.985;
@@ -197,7 +307,7 @@ export function createProxySim(): ProxySim {
         // nuvem estreita informaria luz e véu de um bando que não existe mais.
         const r = Math.sqrt(hash(i * 7 + 5));
         px[i] = Math.cos(a) * r * flockTubeHalfWidth(progress);
-        py[i] = Math.sin(a) * r * FLOCK_TUBE_HEIGHT;
+        py[i] = Math.sin(a) * r * flockTubeHalfHeight(progress);
         pz[i] = spawnAt;
       }
       if ((pz[i] as number) < spawnAt - 24) pz[i] = recycleAt - 8;
@@ -266,11 +376,11 @@ export function createProxySim(): ProxySim {
   return {
     clusters,
 
-    update(dt, progress, cameraZ) {
+    update(dt, progress, cameraZ, roost) {
       accumulator += dt * 1000;
       let steps = 0;
       while (accumulator >= STEP_MS && steps < MAX_STEPS) {
-        step(progress, cameraZ);
+        step(progress, cameraZ, roost);
         accumulator -= STEP_MS;
         steps += 1;
       }
@@ -299,6 +409,21 @@ export function createProxySim(): ProxySim {
         total += cluster.energy * falloff * falloff;
       }
       return Math.min(1, total);
+    },
+
+    columnShare(center, radius) {
+      // O cilindro é vertical e infinito em Y, como a força que o cria: um
+      // corpo alto na coluna está dentro dela. O raio é o da captura mais uma
+      // margem, porque a separação empurra a pilha um pouco para fora do raio
+      // nominal — medir só o raio nominal contaria menos gente do que se vê.
+      const limit = (radius * 1.6) ** 2;
+      let inside = 0;
+      for (let i = 0; i < PARTICLES; i += 1) {
+        const dx = (px[i] as number) - center.x;
+        const dz = (pz[i] as number) - center.z;
+        if (dx * dx + dz * dz <= limit) inside += 1;
+      }
+      return inside / PARTICLES;
     },
   };
 }

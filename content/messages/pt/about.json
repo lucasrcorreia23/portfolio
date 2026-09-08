@@ -1,3 +1,8 @@
 {
-  "label": "Quem sou"
+  "label": "Quem sou",
+  "manifesto": {
+    "one": "Desenho produto e escrevo o front-end do que desenho. Não é versatilidade: a decisão de interface e o custo de construí-la são a mesma conversa, e separá-las em duas cadeiras inventa um terceiro problema.",
+    "two": "O trabalho que me interessa tem domínio difícil — prontuário clínico, contratação de energia, treino de vendas. Ali a tela é a menor parte: o que decide é a regra, o estado e o caso que ninguém desenhou.",
+    "three": "E eu meço o que entrego. Contraste é o pior quadro, não a média; orçamento é um número que já reprovou alguma coisa minha. Este site é a peça e o instrumento no mesmo lugar."
+  }
 }

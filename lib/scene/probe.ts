@@ -1,5 +1,6 @@
 import { Matrix4, Vector3, type WebGLRenderTarget, type WebGLRenderer } from "three";
 import { SEPARATION_PROGRESS } from "@/components/beats/beats";
+import { installContrast } from "./probe-contrast";
 import {
   measureComposed,
   measureSim,
@@ -73,6 +74,33 @@ export type ProbeDeps = {
   settleRef: { current: ((steps: number) => void) | null };
   flockRef: { current: FlockRead | null };
   attackRef: { readonly current: number };
+  /**
+   * Os uniforms do véu, como o shader os recebeu. É o **lado da entrada** da
+   * conferência de `veilFootprint`: a caixa que o código diz estar entregando,
+   * para ser comparada com a pegada que os pixels mostram.
+   */
+  veil: {
+    box: readonly { x: number; y: number; z: number; w: number }[];
+    f: readonly number[];
+  };
+  /** O poleiro resolvido neste quadro, para a medição saber onde ele está. */
+  roost: {
+    center: { x: number; y: number; z: number };
+    amount: number;
+    drift: number;
+  };
+  /**
+   * A nuvem do proxy. Ela é quem informa a luz e o véu, então quando a medição
+   * de pixel e a leitura da HUD discordam, é aqui que se olha primeiro — as
+   * duas simulações rodam com passos diferentes e já divergiram uma vez.
+   */
+  proxy: {
+    clusters: readonly {
+      position: { x: number; y: number; z: number };
+      energy: number;
+    }[];
+    columnShare: (center: Vector3, radius: number) => number;
+  };
 };
 
 /** Altura de caixa alta, a unidade de todas as distâncias daqui. */
@@ -141,8 +169,19 @@ export type ProbeReport = {
 };
 
 export function installProbe(deps: ProbeDeps): () => void {
-  const { gl, scene, advance, camera, progressRef, settleRef, flockRef, attackRef } =
-    deps;
+  const {
+    gl,
+    scene,
+    advance,
+    camera,
+    progressRef,
+    settleRef,
+    flockRef,
+    attackRef,
+    veil,
+    roost,
+    proxy,
+  } = deps;
   const context = gl.getContext();
   let elapsed = 0;
 
@@ -151,6 +190,23 @@ export function installProbe(deps: ProbeDeps): () => void {
       elapsed += dt;
       advance(elapsed);
     }
+  };
+
+  /**
+   * Redesenha **sem avançar o relógio**.
+   *
+   * O R3F calcula o delta como `timestamp − clock.elapsedTime`, então repetir o
+   * timestamp entrega `dt = 0`: a simulação não integra nada e o quadro sai
+   * idêntico ao anterior em posição, velocidade e densidade. É o que permite
+   * comparar duas condições de **render** — com véu e sem véu — sem que o bando
+   * ande entre elas.
+   *
+   * O que muda num quadro de `dt = 0` é a energia (`|Δv| / (dt·9 + 1e-5)`
+   * satura), e ela satura igual nos dois lados da comparação. Por isso `hold`
+   * serve para medir geometria de pixel e **não** serve para medir cor.
+   */
+  const hold = (frames = 1) => {
+    for (let i = 0; i < frames; i += 1) advance(elapsed);
   };
 
   /**
@@ -168,11 +224,15 @@ export function installProbe(deps: ProbeDeps): () => void {
    */
   const viewport = async (width = 1440, height = 900) => {
     const host = gl.domElement.parentElement;
-    if (host === null) return { width: gl.domElement.width, height: gl.domElement.height };
+    if (host === null)
+      return { width: gl.domElement.width, height: gl.domElement.height };
     host.style.width = `${width}px`;
     host.style.height = `${height}px`;
     for (let i = 0; i < 60; i += 1) {
-      if (gl.domElement.width === Math.round(width * Math.min(window.devicePixelRatio, 1.5))) {
+      if (
+        gl.domElement.width ===
+        Math.round(width * Math.min(window.devicePixelRatio, 1.5))
+      ) {
         break;
       }
       await new Promise((done) => setTimeout(done, 100));
@@ -238,7 +298,8 @@ export function installProbe(deps: ProbeDeps): () => void {
     if (held === null) return null;
     const positionTarget = held.position();
     const velocityTarget = held.velocity();
-    if (positionTarget === undefined || velocityTarget === undefined) return null;
+    if (positionTarget === undefined || velocityTarget === undefined)
+      return null;
     const size = held.size;
     const position = new Float32Array(size * size * 4);
     const velocity = new Float32Array(size * size * 4);
@@ -296,7 +357,11 @@ export function installProbe(deps: ProbeDeps): () => void {
         if (Math.abs(denominator) < 1e-9) continue;
         const t = toPlane / denominator;
         if (t <= 0) continue;
-        const local = toLocal(origin.x + dx * t, origin.y + dy * t, origin.z + dz * t);
+        const local = toLocal(
+          origin.x + dx * t,
+          origin.y + dy * t,
+          origin.z + dz * t,
+        );
         const index = row + px;
         xMap[index] = local.x / H;
         yMap[index] = local.y / H;
@@ -320,7 +385,8 @@ export function installProbe(deps: ProbeDeps): () => void {
     material: { depthTest: boolean };
     visible: boolean;
   } | null => {
-    let found: { material: { depthTest: boolean }; visible: boolean } | null = null;
+    let found: { material: { depthTest: boolean }; visible: boolean } | null =
+      null;
     scene.traverse((object) => {
       if (found !== null) return;
       if (!("textRenderInfo" in object)) return;
@@ -328,7 +394,9 @@ export function installProbe(deps: ProbeDeps): () => void {
         material: { depthTest: boolean } | { depthTest: boolean }[];
         visible: boolean;
       };
-      const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+      const material = Array.isArray(mesh.material)
+        ? mesh.material[0]
+        : mesh.material;
       if (material === undefined) return;
       found = mesh as unknown as {
         material: { depthTest: boolean };
@@ -438,6 +506,85 @@ export function installProbe(deps: ProbeDeps): () => void {
     };
   };
 
+  /**
+   * Um ponto do mundo em coordenadas de tela, 0 a 1, origem no topo à esquerda.
+   *
+   * É a ponte entre as duas linguagens da composição: o poleiro é uma posição
+   * de mundo, e a pergunta do beat ("o texto de um lado, o organismo do outro")
+   * é de tela. Sem isto, verificar o enquadramento seria olhar um screenshot e
+   * apontar com o dedo.
+   */
+  const project = (x: number, y: number, z: number) => {
+    const point = new Vector3(x, y, z)
+      .applyMatrix4(camera.matrixWorldInverse)
+      .applyMatrix4(camera.projectionMatrix);
+    return { x: point.x * 0.5 + 0.5, y: 0.5 - point.y * 0.5, z: point.z };
+  };
+
+  /**
+   * Onde a massa do bando cai **na tela**, em colunas.
+   *
+   * A pergunta de composição do beat é de tela, não de mundo: "o texto de um
+   * lado, o organismo do outro". Saber que a coluna está em `x = 6.26` do mundo
+   * não responde nada — o que responde é a fração da área projetada que cai em
+   * cada faixa vertical do quadro.
+   *
+   * O peso é `(guarda de lente)² / d²`, que é a área projetada de um corpo:
+   * `1/d²` porque um corpo de tamanho fixo encolhe com o quadrado da
+   * distância, e a guarda porque o vertex shader encolhe os corpos nos últimos
+   * três metros (`lensGuard` em `shaders/body.ts`) — "o bando passa pela
+   * câmera, não por cima dela". Sem a guarda, dois ou três corpos colados na
+   * lente carregam metade do histograma e a leitura vira ruído; sem o `1/d²`,
+   * um corpo a trinta unidades conta igual a um a duas, e é exatamente essa
+   * diferença que faz o poleiro sumir atrás do tráfego da lente.
+   */
+  const bodyColumns = (bins = 10) => {
+    const held = readSim();
+    if (held === null) throw new Error("simulação não disponível");
+    const matrix = new Matrix4().multiplyMatrices(
+      camera.projectionMatrix,
+      camera.matrixWorldInverse,
+    );
+    const point = new Vector3();
+    const columns = new Float64Array(bins);
+    let total = 0;
+    let offscreen = 0;
+
+    for (let i = 0; i < held.count; i += 1) {
+      const at = i * 4;
+      point.set(
+        held.position[at] ?? 0,
+        held.position[at + 1] ?? 0,
+        held.position[at + 2] ?? 0,
+      );
+      const distance = point.distanceTo(camera.position);
+      const t = Math.min(1, Math.max(0, distance / 3));
+      const guard = t * t * (3 - 2 * t);
+      const weight = (guard * guard) / Math.max(distance * distance, 1e-3);
+      point.applyMatrix4(matrix);
+      total += weight;
+      if (
+        point.z > 1 ||
+        point.x < -1 ||
+        point.x > 1 ||
+        point.y < -1 ||
+        point.y > 1
+      ) {
+        offscreen += weight;
+        continue;
+      }
+      const bin = Math.min(bins - 1, Math.floor((point.x * 0.5 + 0.5) * bins));
+      columns[bin] = (columns[bin] ?? 0) + weight;
+    }
+
+    return {
+      bins,
+      /** Fração da área projetada em cada décimo da largura da tela. */
+      share: Array.from(columns, (value) => (total > 0 ? value / total : 0)),
+      offscreenShare: total > 0 ? offscreen / total : 0,
+    };
+  };
+
   /** Meia-largura da tinta, em caixas altas. */
   const inkHalfWidthH = () => {
     const held = currentTypeField();
@@ -461,6 +608,19 @@ export function installProbe(deps: ProbeDeps): () => void {
     dpr: window.devicePixelRatio,
     viewport: [window.innerWidth, window.innerHeight],
     camera: [camera.position.x, camera.position.y, camera.position.z],
+    roost: {
+      center: [roost.center.x, roost.center.y, roost.center.z],
+      amount: roost.amount,
+      drift: roost.drift,
+    },
+    proxy: {
+      clusters: proxy.clusters.map((cluster) => [
+        Number(cluster.position.x.toFixed(2)),
+        Number(cluster.position.y.toFixed(2)),
+        Number(cluster.position.z.toFixed(2)),
+        Number(cluster.energy.toFixed(3)),
+      ]),
+    },
     threshold: BODY_LUMINANCE,
     ring: RING,
     freeBand: FREE_BAND,
@@ -624,7 +784,8 @@ export function installProbe(deps: ProbeDeps): () => void {
 
     const sheetCanvas = document.createElement("canvas");
     sheetCanvas.width = columns * tileWidth + (columns + 1) * gap;
-    sheetCanvas.height = header + rows * (tileHeight + label) + (rows + 1) * gap;
+    sheetCanvas.height =
+      header + rows * (tileHeight + label) + (rows + 1) * gap;
     const paper = sheetCanvas.getContext("2d");
     if (paper === null) throw new Error("sem contexto 2D");
 
@@ -658,7 +819,10 @@ export function installProbe(deps: ProbeDeps): () => void {
       // `readPixels` entrega de baixo para cima; o canvas 2D espera o contrário.
       for (let y = 0; y < height; y += 1) {
         const source = (height - 1 - y) * width * 4;
-        image.data.set(pixels.subarray(source, source + width * 4), y * width * 4);
+        image.data.set(
+          pixels.subarray(source, source + width * 4),
+          y * width * 4,
+        );
       }
       tilePaper.putImageData(image, 0, 0);
 
@@ -692,17 +856,42 @@ export function installProbe(deps: ProbeDeps): () => void {
     };
   };
 
+  const { contrast, descend, veilFootprint, warmth, readTextRects } =
+    installContrast({
+      canvas: gl.domElement,
+      gl: context,
+      bindDefault: () => {
+        gl.setRenderTarget(null);
+      },
+      step,
+      hold,
+      settle: (progress, steps) => {
+        settle(progress, steps);
+      },
+      progressRef,
+      veil,
+      toLinear: SRGB_TO_LINEAR,
+    });
+
   const api = {
     meta,
     step,
+    hold,
     settle,
     viewport,
     readField,
     readSim,
     planeMap,
     toLocal,
+    project,
+    bodyColumns,
     measure,
     occlusion,
+    contrast,
+    descend,
+    veilFootprint,
+    warmth,
+    readTextRects,
     sheet,
   };
 

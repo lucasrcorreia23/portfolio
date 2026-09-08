@@ -8,6 +8,7 @@
   "archive": {
     "title": "Acervo",
     "empty": "Nenhum case ainda.",
-    "outsideRiver": "Só no acervo"
+    "outsideRiver": "Só no acervo",
+    "all": "Tudo"
   }
 }

@@ -32,6 +32,16 @@
 
 let context: AudioContext | null = null;
 let master: GainNode | null = null;
+/**
+ * A preferência vive **aqui**, e não no componente da HUD.
+ *
+ * O controle de áudio existe antes do áudio: no portão ainda não há
+ * `AudioContext` nenhum (ele nasce no preload, suspenso, e só destrava no
+ * clique). Se a preferência morasse no estado do componente, mudo antes de
+ * entrar viraria som ao entrar — e o baque de pressão tocaria justamente para
+ * quem tinha pedido silêncio.
+ */
+let muted = false;
 
 /** Pico do baque. Baixo de propósito: é uma pressão, não um susto. */
 const THUD_GAIN = 0.18;
@@ -48,7 +58,7 @@ function ensureContext(): AudioContext | null {
   try {
     context = new AudioContext();
     master = context.createGain();
-    master.gain.value = 1;
+    master.gain.value = muted ? 0 : 1;
     master.connect(context.destination);
     return context;
   } catch {
@@ -125,14 +135,27 @@ export function unlockAudio(): AudioContext | null {
   return ready;
 }
 
-/** Para o controle de áudio da HUD, quando ele existir. */
 export function getAudioContext(): AudioContext | null {
   return context;
 }
 
-export function setAudioMuted(muted: boolean): void {
+/** O que o controle de áudio da HUD desenha. */
+export function isAudioMuted(): boolean {
+  return muted;
+}
+
+/**
+ * O controle de áudio da HUD.
+ *
+ * Guarda a preferência mesmo sem contexto — ver `muted` acima — e, quando há
+ * contexto, corta com `setTargetAtTime` e não com uma atribuição direta: um
+ * degrau no ganho é um clique audível, e o PROJECT.md §3.3 não abre exceção
+ * para o áudio.
+ */
+export function setAudioMuted(next: boolean): void {
+  muted = next;
   if (master === null || context === null) return;
-  master.gain.setTargetAtTime(muted ? 0 : 1, context.currentTime, 0.02);
+  master.gain.setTargetAtTime(next ? 0 : 1, context.currentTime, 0.02);
 }
 
 /**

@@ -2,21 +2,25 @@
 
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Vector3 } from "three";
+import { Vector2, Vector3 } from "three";
 import { clamp01, damp } from "@/lib/motion";
 import {
   apertureAt,
   cameraPose,
   createCameraPose,
+  createRoost,
+  flockTubeHalfHeight,
   flockTubeHalfWidth,
+  resolveRoost,
   specimenAttackAngle,
 } from "@/lib/scene/curve";
 import type { FlockRead } from "@/lib/scene/probe";
 import { createProxySim } from "@/lib/scene/proxy-sim";
+import { clearReadout, publishReadout } from "@/lib/scene/readout-store";
 import { createSharedUniforms } from "@/lib/scene/uniforms";
 import { sceneSettings } from "@/lib/scene/settings";
-import { readVeilBoxes, solveVeil, type VeilBox } from "@/lib/scene/veil";
-import { SPECIMEN_Z } from "@/lib/scene/world";
+import { readVeilBoxes, writeVeilBoxes, type VeilBox } from "@/lib/scene/veil";
+import { ROOST_RADIUS, SPECIMEN_Z } from "@/lib/scene/world";
 import { useScrollProgress } from "@/lib/scroll/use-scroll-progress";
 import { BenchClock } from "./BenchClock";
 import { Chamber } from "./Chamber";
@@ -74,6 +78,7 @@ export function SceneWorld({
   const shared = useMemo(() => createSharedUniforms(), []);
   const proxy = useMemo(() => createProxySim(), []);
   const pose = useMemo(() => createCameraPose(), []);
+  const roost = useMemo(() => createRoost(), []);
 
   const composedRef = useRef(0);
   const benchRef = useRef(0);
@@ -103,7 +108,9 @@ export function SceneWorld({
   const apertureRef = useRef(1);
   const focusRef = useRef(20);
   const cameraZRef = useRef(0);
-  const tubeRef = useRef(flockTubeHalfWidth(0));
+  const tubeRef = useRef(
+    new Vector2(flockTubeHalfWidth(0), flockTubeHalfHeight(0)),
+  );
   const veilBoxes = useRef<VeilBox[]>([]);
   const frame = useRef(0);
   /** Último progresso em que o proxy foi aquecido em lote. Só sob a sonda. */
@@ -143,6 +150,12 @@ export function SceneWorld({
     focusRef.current = pose.position.distanceTo(pose.target);
     cameraZRef.current = pose.position.z;
 
+    // --- o poleiro de Quem sou ----------------------------------------------
+    // Resolvido a partir da pose desta linha, não da anterior: o eixo é
+    // ancorado à câmera, e um quadro de atraso apareceria como a coluna
+    // arrastando atrás do enquadramento justamente quando ela é o assunto.
+    resolveRoost(progress, pose, state.viewport.aspect, dt, roost);
+
     // --- corpo de prova -----------------------------------------------------
     // O ângulo de ataque é amortecido por cima do progresso já amortecido: é a
     // haste girando, e uma haste tem inércia.
@@ -152,11 +165,15 @@ export function SceneWorld({
 
     // --- o tubo do bando ----------------------------------------------------
     // Ele abre em X entre 0.05 e 0.16 para o escoamento cobrir o corpo de prova
-    // inteiro no quadro do descolamento; a meia-altura não muda. Sem
-    // amortecimento por cima: a curva já é suave e o progresso que a alimenta já
-    // chegou amortecido — amortecer de novo só atrasaria a abertura para depois
-    // de 0.18, que é justamente onde ela precisa estar pronta.
-    tubeRef.current = flockTubeHalfWidth(progress);
+    // inteiro no quadro do descolamento, e em Y só durante o poleiro de Quem
+    // sou, para a coluna ter altura de coluna. Sem amortecimento por cima: as
+    // duas curvas já são suaves e o progresso que as alimenta já chegou
+    // amortecido — amortecer de novo atrasaria a abertura em X para depois de
+    // 0.18, que é justamente onde ela precisa estar pronta.
+    tubeRef.current.set(
+      flockTubeHalfWidth(progress),
+      flockTubeHalfHeight(progress),
+    );
 
     // --- abertura da DOF ----------------------------------------------------
     // Sob a sonda a abertura também é aplicada sem amortecer, e isso não é
@@ -174,10 +191,12 @@ export function SceneWorld({
     // novo** e depois volta ao passo normal, para a luz continuar seguindo a
     // massa ao longo da varredura em vez de ficar recomeçando.
     if (instant || (probe && warmed.current !== progress)) {
-      for (let i = 0; i < 90; i += 1) proxy.update(1 / 30, progress, pose.position.z);
+      for (let i = 0; i < 90; i += 1) {
+        proxy.update(1 / 30, progress, pose.position.z, roost);
+      }
       warmed.current = progress;
     } else {
-      proxy.update(dt, progress, pose.position.z);
+      proxy.update(dt, progress, pose.position.z, roost);
     }
 
     const clusters = shared.clusters.value;
@@ -222,14 +241,25 @@ export function SceneWorld({
     if (frame.current % VEIL_REFRESH_FRAMES === 0) {
       veilBoxes.current = readVeilBoxes();
     }
-    solveVeil(
+    writeVeilBoxes(
       veilBoxes.current,
-      proxy.clusters,
-      camera,
       shared.veilBox.value,
       shared.veilF.value,
     );
+
+    // --- a leitura da HUD ---------------------------------------------------
+    // A cena é a única que sabe onde a câmera está e quanta massa há no
+    // poleiro; a HUD é DOM e não sabe nada disso. O fio entre as duas é o
+    // `readout-store`, que é lido pela rota inicial e por isso não importa
+    // nada. A densidade sai do **proxy**, como a luz e o véu — nenhuma leitura
+    // volta da GPU (DIRECTION.md §5).
+    publishReadout({
+      depth: pose.position.z,
+      density: proxy.columnShare(roost.center, ROOST_RADIUS),
+    });
   }, -10);
+
+  useEffect(() => clearReadout, []);
 
   return (
     <>
@@ -239,6 +269,9 @@ export function SceneWorld({
           settleRef={settleRef}
           flockRef={flockReadRef}
           attackRef={attackRef}
+          shared={shared}
+          roost={roost}
+          proxy={proxy}
         />
       ) : bench ? (
         <BenchClock progressRef={benchRef} />
@@ -259,6 +292,7 @@ export function SceneWorld({
         attackRef={attackRef}
         cameraZRef={cameraZRef}
         tubeRef={tubeRef}
+        roost={roost}
         settleRef={settleRef}
         readRef={flockReadRef}
       />

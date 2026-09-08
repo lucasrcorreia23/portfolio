@@ -23,7 +23,7 @@ import {
   DOF_FRAG,
 } from "@/lib/scene/shaders/post";
 import { sceneSettings } from "@/lib/scene/settings";
-import type { SharedUniforms } from "@/lib/scene/uniforms";
+import { veilUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
 
 /** Níveis da cadeia de bloom, a partir de meia resolução. */
 const BLOOM_LEVELS = 5;
@@ -155,6 +155,9 @@ export function Composer({ shared, apertureRef, focusRef }: ComposerProps) {
         uGrainSeed: { value: 0 },
         uExposure: { value: 1.15 },
         uDofEnabled: { value: settings.dof ? 1 : 0 },
+        // O véu de legibilidade mora aqui, e não nos materiais: é a única
+        // passada em que o bloom já pousou. Ver `shaders/post.ts`.
+        ...veilUniforms(shared),
         ...depthUniforms,
       },
       GLSL3,

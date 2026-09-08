@@ -96,7 +96,92 @@ export const FLOCK_TUBE_NARROW = 4.6;
 export const FLOCK_TUBE_WIDE = 8.6;
 
 /**
- * Meia-altura, constante. É o 0.72 que o anel de nascimento sempre teve, agora
+ * Meia-altura de cruzeiro. É o 0.72 que o anel de nascimento sempre teve, agora
  * escrito como medida em vez de como fator.
  */
 export const FLOCK_TUBE_HEIGHT = FLOCK_TUBE_NARROW * 0.72;
+
+/**
+ * Meia-altura durante o poleiro de Quem sou — e só ali.
+ *
+ * O tubo abre em X na Identidade e **não** abria em Y, porque um tubo que
+ * crescesse nos dois eixos viraria preenchimento de câmara e o bando deixaria
+ * de ler como corrente. Em Quem sou a exigência é outra: o DIRECTION.md §4 pede
+ * um **poleiro colunar**, e coluna é uma coisa mais alta que larga. Com a
+ * meia-altura de cruzeiro (3.31) e o raio do poleiro (1.7), a pilha media 6.6
+ * de altura por ~5 de largura — quadrada, ou seja um aglomerado, não uma coluna.
+ *
+ * 6.0 contra um duto de 7 de meia-altura deixa a coluna com 12 de altura por ~4
+ * de largura (3:1) e ainda uma unidade de folga até o teto, para ela não
+ * encostar na parede e virar parte do cenário. Ela abre e fecha junto com o
+ * poleiro (`roostAmount`), então fora deste beat o tubo é o de sempre.
+ */
+export const FLOCK_TUBE_TALL = 6;
+
+/* ---------------------------------------------------------------------------
+ * O poleiro de Quem sou
+ *
+ * Estes seis números são lidos por **três** simulações que precisam concordar:
+ * o shader dos boids (`shaders/boids.ts`), o proxy da CPU (`proxy-sim.ts`) e a
+ * leitura de densidade que vai para a HUD (`SceneWorld`). Uma cópia em cada um
+ * é a garantia de que um dia dois deles descrevam colunas diferentes — e o
+ * sintoma seria a luz apontando para um lugar onde o bando não está.
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Raio da coluna, em unidades de mundo — e ela é uma **casca**, não um poço.
+ *
+ * A primeira versão puxava para o eixo, e o resultado medido foi um caroço: com
+ * 16.384 corpos, a pressão de separação equilibra o puxão só depois de a pilha
+ * virar uma bola de ~5 de raio, que na tela é um borrão redondo de 30% da
+ * largura. Não é coluna, e a densidade dentro dela acende `--rose` na tela
+ * inteira — o oposto de "rose é evento".
+ *
+ * Puxando para um **raio**, e não para o centro, os corpos se organizam numa
+ * casca cilíndrica: a mesma população se espalha por uma superfície em vez de
+ * encher um volume, o limbo fica mais denso que o miolo (é o que dá a leitura de
+ * cilindro) e a rotação lenta passa a ser visível, porque o que gira tem borda.
+ */
+export const ROOST_RADIUS = 2.6;
+/** Alcance da captura: fora daqui o corpo continua escoando pelo duto. */
+export const ROOST_CAPTURE = 8;
+/** Janela em Z: captura cheia até `IN`, nenhuma além de `OUT`. */
+export const ROOST_Z_IN = 9;
+export const ROOST_Z_OUT = 24;
+/**
+ * Aceleração radial de captura, e a tangencial que faz a rotação lenta.
+ *
+ * **Seis, e a primeira tentativa foi 2.5.** O número não é de gosto, é de
+ * relógio: com o arrasto que os corpos já têm, 2.5 dá uma velocidade de captura
+ * terminal de ~2.8 u/s, e um corpo na borda do tubo está a dez unidades do eixo
+ * da coluna — três segundos e meio para chegar. O beat inteiro dura 3.6 s a
+ * 1 vh/s. Medido na descida real (`__probe.descend`), o poleiro simplesmente
+ * **não existia**: o que se via em 0.36 era o bando da Identidade ainda
+ * escoando, agora atravessado na frente da coluna de texto.
+ *
+ * A 6.0 a captura terminal fica em ~6.7 u/s e as mesmas dez unidades levam 1.5 s
+ * — o poleiro está formado antes do meio do beat, que é onde a leitura começa.
+ */
+export const ROOST_PULL = 6;
+export const ROOST_SPIN = 1;
+/**
+ * Quanto do escoamento axial o poleiro segura, 0 a 1.
+ *
+ * **Não é 1, e isso é o beat.** Segurando tudo, o poleiro acumula o bando
+ * inteiro — todo corpo que entra na janela fica, e em poucos segundos a coluna
+ * é a população toda. Com 0.65 os corpos desaceleram para um terço da
+ * velocidade de cruzeiro, giram algumas voltas e seguem: a coluna tem
+ * população de regime, alimentada por quem chega e esvaziada por quem sai. É o
+ * "planeio longo" do DIRECTION.md §4, e é o que mantém a densidade estável em
+ * vez de crescente.
+ */
+export const ROOST_HOLD = 0.92;
+/**
+ * Até onde o eixo da coluna pode ir para o lado, em X.
+ *
+ * O poleiro fica **contra a parede graduada**, então ele sai do tubo do bando
+ * (meia-largura 8.6) de propósito — a contenção do tubo cede enquanto ele age.
+ * O que não pode é a coluna atravessar o concreto: 8.8 mais o raio de 2.6
+ * deixam 0.6 unidade entre a casca e a parede em 12.
+ */
+export const ROOST_X_MAX = 8.8;

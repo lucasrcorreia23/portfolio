@@ -15,12 +15,13 @@
  * quebrando a rampa. O PROJECT.md §3.1 veta gradiente linear de duas paradas
  * em qualquer lugar do site.
  *
- * **O véu vive aqui, e não no DOM.** O DIRECTION.md §5 é explícito: o
- * mecanismo de legibilidade é um termo aditivo de densidade ancorado à caixa
- * do texto projetada na cena, não um scrim por cima do canvas. O DOM nunca
- * ganha `background`, `scrim` nem `text-shadow` para compensar — se ganhasse,
- * a guarda ficaria numa camada acima da névoa e o grão de pós não encostaria
- * nela, que foi exatamente o defeito que tirou as lâminas do portão do DOM.
+ * **O véu não mora mais aqui.** Ele morou: era um termo aditivo de densidade
+ * neste chunk, com um `f` por caixa resolvido por quadro a partir do proxy.
+ * Medido, ele não entregava — e o conserto o mudou de lugar, para depois do
+ * bloom, dentro do composite (`shaders/post.ts`). O motivo está lá; o que
+ * importa aqui é que nenhum material chama `applyVeil` mais, e que ele
+ * continua **dentro do canvas**: o DOM nunca ganha `background`, `scrim` nem
+ * `text-shadow` para compensar.
  */
 export const FOG_UNIFORMS_GLSL = /* glsl */ `
 uniform vec3  uVoid;
@@ -29,10 +30,6 @@ uniform vec3  uDeep;
 uniform float uFogDensity;
 uniform float uTime;
 uniform vec2  uResolution;
-// xy = canto mínimo, zw = canto máximo, em UV de tela (0..1, origem embaixo).
-uniform vec4  uVeilBox[2];
-// A densidade resolvida por quadro para cada caixa, já clampada em [0.15,0.85].
-uniform float uVeilF[2];
 `;
 
 export const FOG_GLSL = /* glsl */ `
@@ -93,30 +90,5 @@ vec3 applyFog(vec3 color, float viewDepth, vec3 worldPos) {
   float depth01 = clamp(viewDepth / 88.0, 0.0, 1.0);
 
   return mix(color, fogRamp(depth01), clamp(amount, 0.0, 1.0));
-}
-
-/** Distância até a caixa, em UV de tela. Zero dentro dela. */
-float veilDistance(vec4 box, vec2 uv) {
-  vec2 d = max(box.xy - uv, uv - box.zw);
-  return length(max(d, vec2(0.0)));
-}
-
-float veilAmount(vec2 uv) {
-  float total = 0.0;
-  for (int i = 0; i < 2; i++) {
-    float f = uVeilF[i];
-    if (f <= 0.0) continue;
-    // Queda suave, e larga: uma borda dura leria como caixa escura acendendo,
-    // e o que ela precisa parecer é um banco de névoa passando.
-    float fall = 1.0 - smoothstep(0.0, 0.16, veilDistance(uVeilBox[i], uv));
-    total = max(total, f * fall);
-  }
-  return total;
-}
-
-/* O termo aditivo. Um mix em direção à cor da névoa, em luz linear — que é a
-   conta que o DIRECTION.md §5 resolve para achar f. */
-vec3 applyVeil(vec3 color, vec2 fragCoord) {
-  return mix(color, uVoid, veilAmount(fragCoord / uResolution));
 }
 `;
