@@ -153,9 +153,10 @@ Três consequências, e todas valem em qualquer modo de renderização:
 
 ```
 Next.js 16, App Router, TypeScript estrito
-React Three Fiber 9 + drei 10 + @react-three/postprocessing 3
+React Three Fiber 9 + drei 10  (só o core/Text, por importação profunda)
 three
 troika-three-text  (tipografia display dentro da cena, para oclusão real)
+compositor próprio  (lib/scene/shaders/post.ts — ver "Pós-produção" abaixo)
 GSAP com ScrollTrigger
 Lenis
 Tailwind v4, tokens em CSS custom properties
@@ -167,6 +168,31 @@ Deploy Vercel
 **Next 16** é a estável atual e é o que o `@react-three/fiber` 9 suporta. A
 única trava de versão a respeitar: o R3F 9 declara peer `react >=19 <19.3`, então
 **o React fica abaixo de 19.3** até o R3F alargar essa faixa.
+
+### Pós-produção: compositor próprio, não biblioteca
+
+**O `@react-three/postprocessing` saiu da stack.** Esta seção listava a
+biblioteca e, no mesmo parágrafo, fixava o teto de 350 kB comprimidos para o
+chunk da cena. Os dois não cabem juntos, e onde a §5 briga consigo mesma ganha o
+lado que tem número.
+
+Verificado no `node_modules`, não estimado: o pacote exporta **um barril só**
+(`"exports": "./dist/index.js"`, sem caminho de importação profunda) e esse
+arquivo importa `n8ao` no topo. O `n8ao` não declara `sideEffects`, então o
+bundler não pode descartá-lo com segurança — são ~50 kB comprimidos de SSAO que
+esta cena nunca usa, mais ~110 kB do `postprocessing` inteiro. Cerca de 160 kB
+para ter bloom, profundidade de campo, grão e aberração cromática. O compositor
+escrito à mão entrega os quatro em ~200 linhas de GLSL
+(`lib/scene/shaders/post.ts` + `components/scene/Composer.tsx`), e com ele o
+chunk da cena fechou em **284 kB comprimidos** contra o teto de 350.
+
+**A consequência é permanente: nenhum efeito de biblioteca entra depois sem
+reabrir esta conta.** Os 66 kB entre 284 e 350 são a folga de tudo que a cena
+ainda vai ganhar — o SDF do descolamento, os corpos de prova do rio, a transição
+para o case. Um `import` de biblioteca de efeito gasta essa folga inteira de uma
+vez e ainda estoura o teto. Aqui, efeito novo é passada nova no compositor. Quem
+propuser o contrário mede antes: o custo comprimido real do pacote, quanto sobra
+do teto depois dele, e o que deixa de caber por causa disso.
 
 **Repositório limpo.** O template HTML comprado que ocupava este repositório foi
 descartado, não migrado: nenhuma das rotas dele (`nestle`, `prime8-project`,
@@ -202,9 +228,10 @@ Todo o resto do texto, ou seja, tudo que precisa ser lido, indexado e selecionad
     precisa baixar e executar para o primeiro quadro útil. Nada aqui é
     isento: se está no caminho crítico, conta.
   - **Cena inteira num chunk dinâmico, com teto próprio de 350 kB
-    comprimido.** `three`, R3F, drei, postprocessing, troika e os shaders
-    vivem aí dentro, e o chunk só começa a carregar depois do primeiro
-    quadro útil.
+    comprimido.** `three`, R3F, o `Text` do drei, troika, o compositor e os
+    shaders vivem aí dentro, e o chunk só começa a carregar depois do
+    primeiro quadro útil. É este teto que tirou o `@react-three/postprocessing`
+    da stack — ver "Pós-produção" acima.
 - A cena 3D carrega depois do primeiro frame útil, nunca antes.
 
 ### Acessibilidade
@@ -281,6 +308,15 @@ que, quando divergem, a verificação passa e o defeito fica.
 - **Se a medição é de tempo, meça do evento até o quadro pintado.** Não o
   tempo do handler, que é o pedaço que você escreveu; o tempo até a pessoa
   ver, que é o que ela sente.
+- **Se a medição isola um efeito, ela precisa de um controle que descarte a
+  explicação alternativa.** Um número sozinho nunca separa "o efeito
+  aconteceu" de "a cena mudou de outro jeito". O critério de aceite da
+  oclusão é o exemplo canônico e está no AGENTS.md: a queda de corpos
+  visíveis dentro da faixa das letras só prova oclusão porque **as duas
+  faixas vizinhas concordam entre si**. São elas que descartam variação de
+  densidade do bando — um bando mais rarefeito na altura do título produziria
+  a mesma queda no meio sem ocluir nada. A faixa central sozinha não prova
+  coisa nenhuma, e uma verificação que reporte só ela não é verificação.
 
 Isto não é zelo: é a regra que faltava. A caixa do véu de legibilidade do
 portão passou por duas verificações reportando 248 px enquanto entregava 820,

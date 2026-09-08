@@ -1,45 +1,50 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { BeatSection } from "@/components/beats/BeatSection";
 import { BEATS } from "@/components/beats/beats";
+import { EmergenceBeat } from "@/components/beats/EmergenceBeat";
+import { IdentityBeat } from "@/components/beats/IdentityBeat";
 import { Gate } from "@/components/gate/Gate";
-import { DisplayLine } from "@/components/type/DisplayLine";
+import { SceneGate } from "@/components/scene/SceneGate";
 import { requireLocale } from "@/lib/i18n/locale";
 
-/**
- * A home é a descida completa — PROJECT.md §4.
- *
- * O portão é o beat "pré": ele mora aqui e não no layout, porque quem chega
- * direto num case por link não tem cena para carregar nem descida para
- * destravar.
- *
- * Os cinco beats seguintes são, por enquanto, só a estrutura de altura: as
- * alturas em viewport que o DIRECTION.md §4 prescreve, cada seção anunciando
- * seu intervalo de progresso. Nenhum deles tem conteúdo ainda.
- *
- * A única exceção é o corpo de prova no beat de Identidade: ele existe aqui
- * para a escala de display ser verificável. Quando o `troika-three-text`
- * entrar, o mesh vira a instância visível e este `h1` continua no DOM —
- * é ele que é lido, indexado e selecionado (PROJECT.md §5).
- */
 export default async function HomePage({ params }: PageProps<"/[locale]">) {
   const { locale } = await params;
   setRequestLocale(requireLocale(locale));
 
   const t = await getTranslations();
 
+  // As três linhas do posicionamento, na ordem de leitura. São as mesmas três
+  // disciplinas que filtram o rio mais adiante — a arquitetura do site dita
+  // uma vez e reaproveitada.
+  const position = [
+    t("identity.position.product"),
+    t("identity.position.engineering"),
+    t("identity.position.brand"),
+  ];
+
   return (
     <>
       <Gate />
-      {/* `tabIndex` para o portão ter para onde devolver o foco quando a
-          veneziana termina de abrir. Sem isso o teclado recomeçaria do topo
-          do documento, que é a HUD — não a descida recém-aberta. */}
+      {/* A cena vive na home, com o portão: é aqui que existe descida. O
+          `specimen` desce como prop porque nenhum componente de cliente deste
+          projeto importa o next-intl. */}
+      <SceneGate specimen={t("identity.specimen")} />
       <main id="descent" tabIndex={-1} className="md:pl-24">
         {BEATS.map((beat) => (
           <BeatSection key={beat.id} beat={beat} label={t(`${beat.id}.label`)}>
+            {beat.id === "emergence" ? (
+              <EmergenceBeat
+                beat={beat}
+                name={t("emergence.name")}
+                stationLabel={t("hud.lexicon.station")}
+              />
+            ) : null}
             {beat.id === "identity" ? (
-              <DisplayLine as="h1" step="display-1" className="mt-6">
-                {t("identity.specimen")}
-              </DisplayLine>
+              <IdentityBeat
+                beat={beat}
+                specimen={t("identity.specimen")}
+                position={position}
+              />
             ) : null}
           </BeatSection>
         ))}

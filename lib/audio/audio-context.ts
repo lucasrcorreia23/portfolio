@@ -67,6 +67,22 @@ function ensureContext(): AudioContext | null {
  * primeiro quadro do portão, que é justamente o que precisa aparecer rápido.
  * Depois de pintado, um engasgo no campo dormente é barato — na hora do
  * clique não seria.
+ *
+ * ### O adiamento é uma otimização, e não pode ser a condição de saída
+ *
+ * Esta função já dependeu **só** dos dois `requestAnimationFrame` para
+ * resolver, e isso travava o portão inteiro em dois casos reais:
+ *
+ * - **Aba em segundo plano.** `requestAnimationFrame` não dispara num
+ *   documento oculto. Quem abre o site numa aba de fundo — o que é como
+ *   metade dos links são abertos — ficava esperando o teto do manifesto.
+ * - **Thread principal travada.** Em desenvolvimento, uma compilação do
+ *   Turbopack segura a thread por dezenas de segundos e os quadros somem
+ *   junto. Foi assim que o defeito apareceu.
+ *
+ * Então o temporizador não é um "por via das dúvidas": ele é o caminho de
+ * saída garantido, e o rAF é o atalho para o caso bom. Um dispara em aba
+ * oculta, o outro não; quem chegar primeiro resolve.
  */
 export function prepareAudio(): Promise<void> {
   return new Promise((resolve) => {
@@ -74,12 +90,28 @@ export function prepareAudio(): Promise<void> {
       resolve();
       return;
     }
+
+    let settled = false;
+    let timer = 0;
+
+    const run = () => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      ensureContext();
+      resolve();
+    };
+
+    // O caminho bom: depois de dois quadros pintados.
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        ensureContext();
-        resolve();
-      });
+      requestAnimationFrame(run);
     });
+
+    // O caminho garantido. 400 ms é folgado para dois quadros a 60 Hz e curto
+    // o bastante para não aparecer no contador; numa aba oculta o navegador
+    // estrangula isto para ~1 s, o que continua sendo um número e não um
+    // "nunca".
+    timer = window.setTimeout(run, 400);
   });
 }
 

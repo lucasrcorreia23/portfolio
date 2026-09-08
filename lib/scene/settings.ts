@@ -1,0 +1,174 @@
+/**
+ * Os poucos números da cena que precisam ser trocáveis sem recompilar.
+ *
+ * **Isto não é um painel de debug.** O DIRECTION.md §3 termina a seção da
+ * profundidade de campo com uma regra de corte — "se não fechar o orçamento de
+ * fps, a DOF cai antes de qualquer outra coisa" —, e uma regra de corte só é
+ * acionável se der para medir os dois lados. Com a DOF compilada dentro da
+ * cena, medir o custo dela exige editar código, e aí quem mede compara duas
+ * builds diferentes em vez de dois quadros do mesmo site.
+ *
+ * Por isso o resolvedor lê a URL: `?dof=off` produz a rodada B da medição, e a
+ * comparação A/B acontece no mesmo binário, no mesmo navegador, no mesmo
+ * minuto. Vale hoje, quando a DOF é a única coisa nova na cena e o custo dela
+ * está isolado, e vale daqui a três prompts, quando não estiver mais.
+ *
+ * `DPR_CAP` é do PROJECT.md §5 e não é ajustável: é orçamento, não gosto.
+ */
+
+/**
+ * PROJECT.md §5: "DPR do canvas limitado a 1.5."
+ *
+ * **É este número que faz o celular fechar o orçamento**, e agora com medição:
+ * a GPU do iPhone é 4.2× mais lenta por pixel que a do M5 e desenha 4.4× menos
+ * pixels, porque o teto de 1.5 sobre uma viewport de 390×699 dá 0.61 Mpx contra
+ * 2.71 do desktop. Os dois lados quase se cancelam — 4.62 ms contra 4.87. Num
+ * DPR 3 nativo seriam 2.44 Mpx e a cena estouraria o quadro sozinha.
+ */
+export const DPR_CAP = 1.5;
+
+/**
+ * Corpos no bando. O DIRECTION.md §5 pede de 4k a 16k.
+ *
+ * **16.384, e o número veio da medição, não do gosto.** A escala começou no piso
+ * de 4.096 e subiu porque o tempo de GPU não mudou: 4.34 ms a 4.096 contra
+ * 4.36 ms a 16.384 num M5 a 2160×1254 — dentro do ruído. A cena é limitada por
+ * preenchimento nas passadas de tela cheia (a névoa com ruído 3D cobre o quadro
+ * inteiro, e o alvo é multiamostrado), não pelos corpos.
+ *
+ * **No iPhone isso deixa de ser verdade, e é a única medida que se comporta
+ * diferente nos dois aparelhos.** Os mesmos dois pontos, num iOS 18.7 a
+ * 585×1048: 4.20 ms a 4.096 contra 4.62 a 16.384. São 0.42 ms — o mesmo que a
+ * DOF inteira. A contagem fica em 16.384 porque o celular fecha o orçamento com
+ * folga assim mesmo (28% do quadro a 60 Hz), mas se algum dia faltar quadro lá,
+ * `?flock=4096` é alavanca de verdade e não placebo.
+ *
+ * Os números anteriores desta nota (13.91 contra 13.93) vinham do cronômetro de
+ * query, que media a espera pelo vsync junto com o trabalho. Ver AGENTS.md,
+ * "Desempenho da cena, medido".
+ *
+ * A textura da simulação é quadrada: 16.384 = 128².
+ */
+export const FLOCK_TEXTURE_SIZE = 128;
+export const FLOCK_COUNT = FLOCK_TEXTURE_SIZE * FLOCK_TEXTURE_SIZE;
+
+/** Faixa do DIRECTION.md §5: de 4k a 16k corpos, ou seja lado 64 a 128. */
+const MIN_TEXTURE_SIZE = 64;
+const MAX_TEXTURE_SIZE = 128;
+
+export type SceneSettings = {
+  /** Profundidade de campo. Primeiro item da lista de corte do DIRECTION.md §3. */
+  dof: boolean;
+  /**
+   * Lado da textura da simulação; a contagem de corpos é o quadrado dele.
+   *
+   * Ajustável pelo mesmo motivo da DOF: a faixa de 4k a 16k do DIRECTION.md §5
+   * é uma decisão que só se fecha com fps na mão, e comparar duas contagens em
+   * duas builds diferentes não é comparar contagens.
+   */
+  flockTextureSize: number;
+  /**
+   * `?bench=1`: o relógio da cena vira o banco de prova (`BenchClock`).
+   *
+   * Existe porque a medição que faltava é num **celular**, e ali não há
+   * DevTools para injetar uma varredura por fora: o harness precisa morar na
+   * própria página.
+   *
+   * **Ele é importado estaticamente, e isso foi medido, não suposto.** A
+   * primeira versão trazia o banco por `import()`, no desenho de
+   * `load-scene.ts`, para quem não está medindo não baixar nada dele. Com a
+   * mesma build e o mesmo script de medição: chunk da cena em **285.0 kB gz**
+   * sem o banco, **288.1 kB** com ele estático, **289.3 kB** com ele dinâmico
+   * — mais o chunk separado de 3.6 kB. Partir o chunk custou 4.3 kB de cola de
+   * bundler para economizar 3.1, ou seja, cobrou de todo mundo para não cobrar
+   * de ninguém. O `import()` só paga quando o que sai é grande; 3 kB não é.
+   *
+   * Os outros parâmetros do banco (`?timer=`, `?chain=`, `?run=`, `?step=`)
+   * são lidos pelo próprio módulo do banco, em `lib/scene/bench.ts`. Aqui fica
+   * só o booleano, que é o que a cena precisa saber para escolher o relógio.
+   */
+  bench: boolean;
+  /**
+   * `?detach=0`: o descolamento sai do shader dos boids — **compilado fora, não
+   * zerado**.
+   *
+   * É o mesmo desenho da DOF, e pelo mesmo motivo: multiplicar a força por zero
+   * mediria o custo de multiplicar por zero. Aqui isso rende duas coisas de uma
+   * vez. A primeira é o A/B de desempenho que o prompt pede ("com e sem o
+   * descolamento isolado"). A segunda é mais valiosa: `?detach=0` é o **melhor
+   * controle possível** dos critérios de aceite — mesma silhueta, mesmas
+   * alturas, mesma semente, mesmo número de corpos, e nenhuma interação com a
+   * peça. É ele que descarta "o bando já era mais denso ali".
+   */
+  detach: boolean;
+  /**
+   * `?probe=1`: a sonda de medição — **só em desenvolvimento**.
+   *
+   * Ao contrário do banco, que é medição de tempo e por isso precisa rodar na
+   * build de produção, a sonda mede **pixel e estado da simulação**, e esses
+   * são idênticos nas duas builds (mesmos shaders, mesmo three, mesmo teto de
+   * DPR). Então ela não precisa viajar no chunk da cena — e os 66 kB entre os
+   * 284 medidos e o teto de 350 estão reservados pelo PROJECT.md §5 para o
+   * campo de distância, os corpos de prova do rio e a transição para o case,
+   * não para instrumentação.
+   *
+   * Quem apaga é o `process.env.NODE_ENV` no ponto de uso em `SceneWorld`, que
+   * o Next substitui por literal: o ramo vira morto e o import da sonda cai.
+   * A paridade dev/prod de um quadro é verificada antes de confiar nos números.
+   */
+  probe: boolean;
+};
+
+const DEFAULTS: SceneSettings = {
+  dof: true,
+  flockTextureSize: FLOCK_TEXTURE_SIZE,
+  bench: false,
+  detach: true,
+  probe: false,
+};
+
+let resolved: SceneSettings | null = null;
+
+function readFlag(params: URLSearchParams, key: string, fallback: boolean): boolean {
+  const raw = params.get(key);
+  if (raw === null) return fallback;
+  return raw !== "0" && raw !== "off" && raw !== "false";
+}
+
+/** `?flock=N` recebe a **contagem**; o lado da textura sai da raiz dela. */
+function readTextureSize(params: URLSearchParams, fallback: number): number {
+  const raw = params.get("flock");
+  if (raw === null) return fallback;
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  const side = Math.round(Math.sqrt(parsed));
+  // Fora da faixa do DIRECTION.md §5 não é uma medição, é outra cena.
+  if (side < MIN_TEXTURE_SIZE || side > MAX_TEXTURE_SIZE) return fallback;
+  return side;
+}
+
+/**
+ * Resolve uma vez e memoiza. Uma vez porque trocar a contagem do bando ou a
+ * DOF no meio da descida invalidaria a medição que o parâmetro existe para
+ * permitir — e porque a cena monta uma vez.
+ */
+export function sceneSettings(): SceneSettings {
+  if (resolved !== null) return resolved;
+
+  if (typeof window === "undefined") {
+    resolved = DEFAULTS;
+    return resolved;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  resolved = {
+    dof: readFlag(params, "dof", DEFAULTS.dof),
+    flockTextureSize: readTextureSize(params, DEFAULTS.flockTextureSize),
+    bench: readFlag(params, "bench", DEFAULTS.bench),
+    detach: readFlag(params, "detach", DEFAULTS.detach),
+    probe:
+      process.env.NODE_ENV !== "production" &&
+      readFlag(params, "probe", DEFAULTS.probe),
+  };
+  return resolved;
+}

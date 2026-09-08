@@ -33,11 +33,22 @@
     }
   }
 
-  /* Antes do clique de entrada a descida não rola. O atributo é escrito no
-     parse pelo script inline do portão (ver components/gate/Gate.tsx), então
-     a trava vale desde o primeiro paint e não depende da hidratação. Ela sai
-     no clique, junto com o áudio e a veneziana — não no fim da transição. */
-  html[data-gate="closed"] {
+  /* Antes do clique de entrada a descida não rola.
+   *
+   * A âncora é a **fase do próprio overlay**, que vem no HTML do servidor —
+   * não um atributo escrito por script no `<html>`. Assim a trava vale desde o
+   * primeiro paint, sem depender da hidratação, e sem a divergência que o
+   * script causava: o servidor não tinha como escrever `data-gate` no `<html>`,
+   * porque o layout é compartilhado com `/work/[slug]`, onde não há portão —
+   * e travar o scroll de uma rota de case seria um bug pior que o que se
+   * estava consertando.
+   *
+   * A trava sai no clique, junto com o áudio e a veneziana, porque a fase vira
+   * `opening` ali — não no fim da transição. `data-gate` continua sendo
+   * escrito no `<html>` pelo overlay (depois da hidratação, sem divergência)
+   * para CSS e testes que precisem do estado; ele só não é mais quem tranca. */
+  html:has([data-gate-overlay][data-gate-phase="loading"]),
+  html:has([data-gate-overlay][data-gate-phase="ready"]) {
     overflow: hidden;
     overscroll-behavior: none;
   }
@@ -130,6 +141,89 @@
     .gate-enter {
       transition: none;
     }
+  }
+
+  /* ---------------------------------------------------------------------
+   * Entradas dos beats.
+   *
+   * `--reveal` é escrito por quadro em `components/beats/BeatReveal.tsx`, já
+   * com a curva `easeStrong` aplicada. Aqui mora a entrada *específica* de
+   * cada beat, que é o que o PROJECT.md §3.3 exige quando veta o `fade-up` de
+   * 20 px: cada seção entra do seu jeito.
+   *
+   * **Nenhuma delas esmaece.** As duas são varreduras de recorte, e a razão é
+   * de contraste, não de gosto: uma opacidade em rampa mostra o texto inteiro
+   * com contraste reduzido durante a entrada, e o piso de 4.5:1 do PROJECT.md
+   * §5 vale em todo quadro, não só no repouso. Um recorte mostra menos texto,
+   * mas cada pixel visível já está em `--mist` cheio.
+   *
+   * O padrão é 1, não 0: sem JavaScript, com o chunk de scroll fora do ar ou
+   * antes do primeiro efeito, o texto está lá e inteiro. Um padrão em 0
+   * deixaria o conteúdo preso atrás de um recurso opcional, que é exatamente
+   * o que o `<noscript>` do portão existe para não fazer.
+   * ------------------------------------------------------------------- */
+  .beat-reveal {
+    --reveal: 1;
+  }
+
+  /* Emergência: a leitura assenta. O tracking se fecha e a luz varre a
+     gravação da esquerda para a direita — um corpo passando de raspão por uma
+     marca, que é como o DIRECTION.md §4 descreve a primeira aparição da
+     estrutura. O tracking de repouso vem do próprio passo da escala, para não
+     existir um segundo número dizendo a mesma coisa. */
+  .beat-emergence-name,
+  .beat-emergence-station {
+    clip-path: inset(0 calc((1 - var(--reveal)) * 100%) 0 0);
+  }
+
+  .beat-emergence-name {
+    letter-spacing: calc(
+      var(--text-hud--letter-spacing) + (1 - var(--reveal)) * 0.4em
+    );
+  }
+
+  .beat-emergence-station {
+    letter-spacing: calc(
+      var(--text-hud-sm--letter-spacing) + (1 - var(--reveal)) * 0.4em
+    );
+  }
+
+  /* Identidade: cada linha é varrida de cima para baixo, como cota sendo
+     gravada, e as três são escalonadas. `--line` chega inline com o índice.
+     Nada translada — a coluna já está no lugar dela desde o começo. */
+  .beat-identity-line {
+    --line-reveal: clamp(
+      0,
+      calc((var(--reveal) - var(--line) * 0.16) / 0.52),
+      1
+    );
+    clip-path: inset(0 0 calc((1 - var(--line-reveal)) * 100%) 0);
+  }
+
+  /* ---------------------------------------------------------------------
+   * O corpo de prova.
+   *
+   * O título display é geometria dentro da cena (`troika-three-text`), porque
+   * é a única implementação em que o bando oclui e é ocluído pelas letras de
+   * verdade — PROJECT.md §5 nomeia a alternativa, `div` com `z-index`, como o
+   * jeito errado. Mas o texto precisa continuar legível, indexável e
+   * selecionável, então o `h1` fica no DOM e só sai da vista quando existe
+   * cena desenhando-o.
+   *
+   * Sem WebGL (`poster`) e antes de as capacidades resolverem (`pending`) o
+   * atributo não casa e o `h1` é o título visível — que é o degradado que o
+   * PROJECT.md §5 pede: "o conteúdo continua inteiro".
+   * ------------------------------------------------------------------- */
+  html[data-scene-mode="driven"] .beat-specimen,
+  html[data-scene-mode="composed"] .beat-specimen {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    clip-path: inset(50%);
   }
 
   /* Altura dos beats. Os números vêm de components/beats/beats.ts e chegam

@@ -6,6 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import { useReducedMotion } from "@/lib/capabilities/use-reduced-motion";
 import { LENIS_LERP } from "@/lib/motion";
+import { publishFrame } from "./frame-bus";
 import { publishScroll, resetScroll } from "./scroll-store";
 
 /**
@@ -73,9 +74,14 @@ export default function ScrollDriver() {
       ScrollTrigger.update();
     };
 
-    const tick = (time: number) => {
+    const tick = (time: number, deltaMs: number) => {
       // O ticker do GSAP conta em segundos; o Lenis quer milissegundos.
       lenis.raf(time * 1000);
+      // O quadro é publicado **depois** do Lenis, porque o `lenis.raf` é quem
+      // dispara o `onLenisScroll` e portanto o `publishScroll`. Nesta ordem a
+      // cena avança já com o progresso deste quadro; invertida, ela desenharia
+      // sempre um quadro atrás. Ver `lib/scroll/frame-bus.ts`.
+      publishFrame(deltaMs);
     };
 
     lenis.on("scroll", onLenisScroll);

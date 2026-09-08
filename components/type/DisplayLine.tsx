@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import type { CSSProperties, ElementType } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 
 /**
  * Uma linha de display que se resolve para a largura da viewport.
@@ -53,9 +53,20 @@ export function DisplayLine({
   as = "span",
   className = "",
 }: DisplayLineProps) {
-  const Tag = as as ElementType;
-  const ref = useRef<HTMLElement>(null);
+  const ref = useRef<HTMLElement | null>(null);
   const [advance, setAdvance] = useState<number | null>(null);
+
+  /**
+   * Ref de callback, e não o objeto direto.
+   *
+   * Um `RefObject<HTMLElement>` não é atribuível ao `ref` de um `<h1>`, que
+   * quer `Ref<HTMLHeadingElement>`. Uma função `(node: HTMLElement | null)`
+   * é — parâmetros de função são contravariantes —, então a mesma ref serve
+   * às quatro tags sem um `as` em nenhuma delas.
+   */
+  const attach = useCallback((node: HTMLElement | null) => {
+    ref.current = node;
+  }, []);
 
   useEffect(() => {
     const element = ref.current;
@@ -110,9 +121,22 @@ export function DisplayLine({
     ...(advance === null ? {} : { "--display-advance": advance.toFixed(4) }),
   } as CSSProperties;
 
+  // `const Tag = as`, e **não** um `ElementType`.
+  //
+  // O React Three Fiber aumenta `JSX.IntrinsicElements` com as ~200 primitivas
+  // do three. Uma tag dinâmica tipada como `ElementType` passa a ser o union
+  // de todos os elementos possíveis, e o TypeScript intersecta as props de
+  // todos eles — o que colapsa para `never` e reprova qualquer prop.
+  //
+  // Mantendo o union estreito das quatro tags, a interseção é bem-comportada:
+  // `className` e `style` são idênticos nas quatro, e a ref de callback
+  // satisfaz `Ref<HTMLHeadingElement>`, `Ref<HTMLParagraphElement>` e
+  // `Ref<HTMLSpanElement>` de uma vez.
+  const Tag = as;
+
   return (
     <Tag
-      ref={ref}
+      ref={attach}
       className={`type-display ${STEP_CLASS[step]} ${className}`.trim()}
       style={style}
     >

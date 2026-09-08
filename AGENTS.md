@@ -71,11 +71,19 @@ dois divergirem, o `PROJECT.md` ganha. Este arquivo é só o mapa do código.
 
 ## Estado atual
 
-**Fundação montada, mais o portão. Sem conteúdo de beat e sem 3D.** O que
-existe é o esqueleto — rotas, idiomas, tokens, escala tipográfica, driver de
-scroll, hooks de capacidade, pipeline de MDX — e, em cima dele, o **preloader
-e o portão de entrada**, que já são um beat de verdade e não andaime.
-Nenhum dos cinco beats da descida tem conteúdo; a cena é uma camada vazia.
+**Fundação, portão, e a cena com os dois primeiros beats.** Sobre o esqueleto —
+rotas, idiomas, tokens, escala tipográfica, driver de scroll, hooks de
+capacidade, pipeline de MDX — existem o **preloader e o portão de entrada** e,
+agora, a **cena contínua de R3F** com Emergência e Identidade (progresso 0.00 a
+0.28): câmara, névoa em três paradas, bando de 16.384 corpos em FBO ping-pong,
+estrutura gravada, e o corpo de prova em `troika-three-text` com oclusão real.
+
+Os três beats de baixo — Quem sou, Trabalho, Superfície — continuam sem
+conteúdo, e os pontos de controle da câmera de 0.45 em diante são provisórios
+(ver `lib/scene/curve.ts`). O **descolamento** — turbulência nas contra-formas e
+recolamento na esteira — **não** está feito: o que existe é oclusão verdadeira e
+um desvio de campo distante. Ele depende do SDF assado do próprio mesh e é o
+prompt seguinte.
 
 O template HTML comprado que ocupava este repositório foi **descartado, não
 migrado** (PROJECT.md §5). Nada dele sobreviveu: nem SCSS, nem jQuery, nem
@@ -92,20 +100,41 @@ do projeto que deixou de existir — ignore.**
 Next.js 16 (App Router, Turbopack)   React 19.2   TypeScript 6 estrito
 Tailwind v4 (tokens em CSS custom properties)
 Lenis + GSAP/ScrollTrigger
+three 0.185 + @react-three/fiber 9 + @react-three/drei 10 (só core/Text)
+troika-three-text
 next-intl (pt/en)
 MDX via @next/mdx, cases em content/cases/*.mdx
 Deploy Vercel
 ```
 
-Ainda **não** instalados, e listados no PROJECT.md §5 para quando a cena entrar:
-`three`, `@react-three/fiber` 9, `@react-three/drei` 10,
-`@react-three/postprocessing` 3, `troika-three-text`.
+**O `@react-three/postprocessing` não está na stack; a pós-produção é um
+compositor próprio.** Isso já **não** é um desvio: o PROJECT.md §5 foi corrigido
+e passou a registrar a saída da biblioteca, o motivo e a consequência — ver
+"Pós-produção: compositor próprio, não biblioteca". Os dois documentos dizem a
+mesma coisa, e o que segue aqui é o detalhe verificado no código.
+
+Verificado no `node_modules`, não estimado: o pacote exporta um barril só
+(`"exports": "./dist/index.js"`, sem importação profunda) e esse arquivo importa
+`n8ao` no topo. O `n8ao` não declara `sideEffects`, então o bundler não pode
+descartá-lo com segurança — são ~50 kB comprimidos de SSAO que esta cena nunca
+usa, mais ~110 kB do `postprocessing` inteiro. O compositor próprio
+(`lib/scene/shaders/post.ts` + `components/scene/Composer.tsx`) entrega bloom,
+grão, aberração e DOF em ~200 linhas, e o chunk da cena fechou em **284 kB gz**.
+
+**Nenhum efeito de biblioteca entra depois sem reabrir essa conta** (PROJECT.md
+§5). Os 66 kB de folga entre 284 e 350 são o espaço do que a cena ainda vai
+ganhar — o SDF do descolamento, os corpos de prova do rio, a transição para o
+case. Efeito novo aqui é passada nova no compositor.
+
+Do `drei` entra **só** `@react-three/drei/core/Text`, por importação profunda.
+O barril arrasta `three-stdlib`, `camera-controls` e `@mediapipe/tasks-vision`.
 
 Travas de versão, todas com motivo:
 
 | Pacote | Trava | Por quê |
 |---|---|---|
 | `react` / `react-dom` | `~19.2.8` | o R3F 9 declara peer `react >=19 <19.3`. O `~` impede o salto para 19.3 num `npm update` inocente. |
+| `three` | `~0.185.1` | as 0.x menores do three são quebra-tudo; o `~` prende na 0.185.x, que é a faixa em que R3F 9 e o `@types/three` instalado foram verificados. |
 | `typescript` | `^6` | `typescript-eslint@8` declara peer `<7`. TS 7 quebra o lint. |
 | `eslint` | `^9` | o `eslint-plugin-react` embutido no `eslint-config-next@16` ainda chama `context.getFilename()`, removido no ESLint 10. |
 
@@ -140,7 +169,9 @@ components/beats/      as cinco seções da descida
 components/type/       DisplayLine — a linha de display que se auto-dimensiona
 content/cases/         os cases, em .mdx
 content/messages/      dicionários, um arquivo por beat, por idioma
-lib/                   audio/, capabilities/, i18n/, preload/, scroll/ e soltos
+lib/                   audio/, capabilities/, i18n/, preload/, scene/, scroll/
+lib/scene/shaders/     o GLSL, em módulos .ts
+public/fonts/          o Archivo Expanded que o troika consome (ver §Corpo de prova)
 styles/                globals.css + tokens.css
 ```
 
@@ -178,20 +209,26 @@ biblioteca**. Duas caixas, cada uma com seu teto:
 | Caixa | Teto | O que entra |
 |---|---|---|
 | **Rota inicial** | 200 kB gz | tudo no caminho crítico até o primeiro quadro útil. Nada é isento. |
-| **Chunk da cena** | 350 kB gz | `three`, R3F, drei, postprocessing, troika, shaders — num import dinâmico que só começa a baixar **depois** do primeiro quadro útil. |
+| **Chunk da cena** | 350 kB gz | `three`, R3F, o `Text` do drei, troika, o compositor e os shaders — num import dinâmico que só começa a baixar **depois** do primeiro quadro útil. |
 
 Não existe mais "sem contar a three": a three não é isenta, ela mora na segunda
 caixa. Um pacote que apareça na primeira caixa por engano — um `import`
 estático que escapou para o `SceneGate`, por exemplo — não é 350 kB de cena, é
 350 kB de rota inicial estourada.
 
-Estado medido, com o portão montado e a cena ainda vazia:
+Estado medido, com o portão e a cena dos dois primeiros beats:
 
-| Rota | gz | contra |
+| Rota / chunk | gz | contra |
 |---|---|---|
-| `/` e `/pt` — a descida, com portão e preloader | **178.8 kB** | 200 kB ✅ |
-| `/work/[slug]` — case, sem portão | 174.3 kB | 200 kB ✅ |
-| chunk do driver de scroll (gsap + ScrollTrigger + lenis) | 49.0 kB | fora da rota inicial |
+| `/` e `/pt` — a descida, com portão e preloader | **181.0 kB** | 200 kB ✅ |
+| `/work/[slug]` — case, sem portão e sem cena | 174.1 kB | 200 kB ✅ |
+| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders | **284.0 kB** | 350 kB ✅ |
+| chunk do driver de scroll (gsap + ScrollTrigger + lenis) | 48.4 kB | fora da rota inicial |
+
+Os dois chunks dinâmicos são separados **por conteúdo**, não por momento: o
+preloader pede a cena antes do clique, então dividir por "o que chegou depois de
+entrar" mede zero. A medição procura `WebGLRenderer`/`troika` num, `lenis`/
+`ScrollTrigger` no outro.
 
 Histórico da medição, porque as duas linhas explicam a arquitetura:
 
@@ -231,13 +268,26 @@ encolhia a cada rebuild. Três precauções:
 ```bash
 # 1. matar pela porta, não pelo nome do processo
 P=$(lsof -nP -tiTCP:3100 -sTCP:LISTEN); [ -n "$P" ] && kill -9 $P
-# 2. build limpa, e confirmar que o servidor subiu ("Ready in ...")
-rm -rf .next && npm run build && npm run start -- -p 3100
+# 2. build limpa — SEM apagar .next/dev, ver abaixo — e confirmar o "Ready in"
+find .next -mindepth 1 -maxdepth 1 ! -name dev -exec rm -rf {} +
+npm run build && npm run start -- -p 3100
 # 3. somar só as tags <script src>, e FALHAR se um chunk não existir no disco
 ```
 
 Um chunk citado no HTML e ausente no disco não vale zero — vale "a medição está
 errada". Se o número cair de repente, desconfie da medição antes de comemorar.
+
+**Nunca `rm -rf .next` com um `next dev` no ar.** Na 16 o servidor de
+desenvolvimento vive em `.next/dev`; apagar a pasta inteira o derruba com
+*"The directory at .next/dev was deleted... Restarting the server to recover"*, e
+as recompilações seguintes levam dezenas de segundos — que depois aparecem como
+sintoma em qualquer coisa que dependa de tempo, inclusive no próprio manifesto
+do preload. O `find` acima limpa a build de produção e preserva o dev.
+
+**E confirme contra qual servidor você está medindo.** Um `npm run dev -- -p
+3101` sai com *"Another next dev server is already running"* se já houver um, e
+a porta simplesmente não abre; medir contra ela devolve "não completou" para
+tudo. Cheque o `lsof` da porta antes de acreditar num número ruim.
 
 Consequências práticas:
 
@@ -250,13 +300,13 @@ Consequências práticas:
   ele, uma visita futura a `/` volta a negociar por `Accept-Language`.
 - Antes de adicionar qualquer dependência de cliente, meça: rode o build,
   some o gzip dos `<script>` da home e compare com a tabela acima.
-- Quando a cena entrar, ela é carregada por import dinâmico com `ssr: false`,
-  a partir do `SceneGate` e só depois do primeiro quadro útil. Meça as duas
-  caixas separadamente: os `<script>` do HTML inicial contra 200 kB, e o
-  chunk da cena contra 350 kB.
-- **A cena entra como mais uma tarefa do manifesto do preloader**
-  (`lib/preload/manifest.ts`), com peso maior que as outras — é o chunk de
-  350 kB, e o portão é exatamente o momento de baixá-lo. Não invente um
+- A cena é carregada por `import()` a partir de `lib/scene/load-scene.ts`, que é
+  cópia estrutural de `load-driver.ts` — promessa memoizada, desmemoizada no
+  erro. **Nenhum arquivo importa `components/scene/Scene` estaticamente**, e um
+  que o fizesse não custaria 284 kB de chunk de cena, custaria 284 kB de rota
+  inicial estourada.
+- **A cena é mais uma tarefa do manifesto do preloader**
+  (`lib/preload/manifest.ts`), com peso 4 contra 1 das outras. Não invente um
   segundo mecanismo de carregamento; há um, e o contador já sabe medi-lo.
 
 ### A variável única
@@ -304,6 +354,135 @@ A regra é sobre **combinar** as duas capacidades, não sobre tocar em uma:
 `ScrollDriver` e `GateOverlay` consultam `useReducedMotion` sozinho, porque
 nenhum dos dois depende de WebGL. Quem precisa das duas juntas usa
 `useSceneMode`.
+
+### A cena
+
+```
+lib/scene/load-scene.ts    promessa memoizada — espelho de load-driver.ts
+lib/scene/world.ts         as medidas da câmara; uma unidade ≈ um metro
+lib/scene/curve.ts         a coreografia: câmera, ângulo de ataque, abertura
+lib/scene/proxy-sim.ts     64 macro-partículas a 15 Hz — luz, estrutura, véu
+lib/scene/veil.ts          resolve o f do véu por quadro
+lib/scene/gpu.ts           o triângulo de tela cheia e o blit
+lib/scene/type-article.ts  o dono do corpo de prova
+lib/scene/settings.ts      dof, contagem do bando e ?bench, lidos da URL
+lib/scene/bench.ts         o banco de prova: escada de K, estatística, coletor
+components/scene/          Scene → SceneWorld → {Chamber, Structure, Flock,
+                           Specimen, Composer,
+                           SceneClock | ComposedClock | BenchClock}
+```
+
+**Um laço mestre.** `SceneWorld` tem o único `useFrame` que lê o progresso e o
+transforma em outra coisa — câmera, ângulo da peça, abertura, névoa, proxy, véu.
+Prioridade −10; o bando roda em −5, o compositor em 1. Espalhar essa leitura por
+cinco componentes daria cinco interpretações do mesmo número.
+
+**Um relógio, e é o do scroll.** `frameloop="never"`: quem avança a cena é o
+ticker do GSAP, publicado pelo `ScrollDriver` em `lib/scroll/frame-bus.ts` — o
+mesmo desenho do `scroll-store`, para o tempo. A cena **não importa o gsap**:
+publicando de dentro do `tick` que já existe, a ordem "progresso publicado →
+cena avançada" vira estrutural em vez de acidental, e o gsap não tem chance de
+entrar na caixa de 350 kB.
+
+Duas armadilhas do R3F que já custaram caro e estão resolvidas em `SceneClock`:
+
+- **`clock.autoStart = false` é obrigatório.** No modo `never` o R3F calcula o
+  delta como `timestamp − clock.elapsedTime`, mas chama `clock.getDelta()`
+  **antes** disso — e `getDelta()` com `autoStart` ligado soma o tempo de parede
+  em `elapsedTime`. O delta colapsa para ~0 a partir do segundo quadro, e todo
+  `damp` da cena congela sem erro nenhum no console.
+- **O tempo começa em zero.** O primeiro argumento do ticker do GSAP é o
+  *uptime* dele; passá-lo direto daria um primeiro delta do tamanho de quanto
+  tempo a aba está aberta.
+
+Se o chunk do scroll nunca chegar, ninguém publica quadro e a cena seria um
+retângulo preto para sempre — daí o cão de guarda de 500 ms no `SceneClock`. É o
+único segundo `requestAnimationFrame` do projeto, e só liga quando o primeiro
+não existe.
+
+#### O bando
+
+FBO ping-pong, RGBA32F, `NearestFilter` **explícito nos dois filtros** — o padrão
+de `minFilter` é linear, filtrar float exige `OES_texture_float_linear`, e o
+three não lança quando falta: ele avisa e amarra `LINEAR` assim mesmo, o que
+corromperia a simulação em silêncio.
+
+Vizinhança por **passo rotativo**: 24 amostras com passo que gira por quadro, em
+vez de O(N²) ou hash espacial. O raio de vizinhança é curto (3 unidades) de
+propósito — a amostra sorteia do bando inteiro, e com raio largo a coesão vira
+atração contra a média global. Isso não é murmuração, é gravidade: o bando
+colapsa num aglomerado. Separação domina, coesão é fraca, alinhamento entra com
+o bando formado.
+
+A reciclagem é **relativa à câmera**, não ao duto, senão o bando fica para trás
+conforme a descida avança. O proxy da CPU recicla igual, pelo mesmo motivo.
+
+`<mesh>` com `InstancedBufferGeometry`, e não `<instancedMesh>`: este último
+carrega um `instanceMatrix` de 16 floats por corpo que a CPU teria que preencher
+e que o material nunca leria. `frustumCulled = false` e uma esfera envolvente
+enorme não são opcionais — a CPU não sabe onde os corpos estão.
+
+#### O corpo de prova
+
+`@react-three/drei/core/Text` (importação profunda), não o troika direto: o
+`troika-three-text` não publica tipos utilizáveis sob este `tsconfig`.
+
+Duas restrições do troika que decidiram o arquivo de fonte, as duas verificadas
+na fonte da biblioteca:
+
+1. **`.woff2` não é suportado** — o parser lança ao ver a assinatura `wOF2`.
+2. **Eixos de fonte variável não são aplicados** — `fontWeight` só escolhe
+   fallback. O eixo `wdth: 125` que o `.type-display` usa no DOM não chegaria.
+
+Por isso `public/fonts/ArchivoExpanded-ExtraBold.ttf`, uma instância estática do
+mesmo tipo (OFL-1.1, do repositório upstream, branch `master`). O DOM continua
+com o Archivo variável do `next/font`; `lib/fonts.ts` não muda. Mesmo desenho,
+segundo formato — a regra de "nenhuma terceira família" do PROJECT.md §3.2
+continua inteira.
+
+O material é GLSL 1.00 **obrigatoriamente**: o troika injeta código que escreve
+`gl_FragColor`. Com `glslVersion: GLSL3` o three deixa de emitir o
+`#define gl_FragColor pc_fragColor` e o texto injetado referencia um símbolo que
+não existe.
+
+#### Como a oclusão funciona, e o que a quebra
+
+Os **corpos são opacos** (`transparent: false`, `depthWrite`, `depthTest`). É o
+ponto que decide o beat inteiro. `AdditiveBlending` num corpo emissivo é a
+armadilha: o three só honra blend com `transparent: true`, e material
+transparente sai da lista opaca e passa a ser ordenado **por objeto** — um
+`InstancedBufferGeometry` tem um centroide só, então ou o bando todo fica na
+frente das letras ou todo atrás. Nenhum ajuste de `renderOrder` conserta: a
+divisão opaco/transparente acontece antes de qualquer ordenação.
+
+O glifo fica `transparent: true` com `depthWrite: true`, de propósito: a borda
+macia do SDF é o que dá antisserrilhado a um título de 84% da tela. A oclusão não
+depende disso — depende de os corpos serem opacos e desenharem antes.
+
+O brilho vem de HDR linear num alvo de meio-float, com o bloom pegando o que
+passa de 1.0. Medido no quadro composto de 0.18: **3.88 corpos visíveis por mil
+pixels dentro da faixa das letras contra 6.84 acima e 6.72 abaixo** — maior que
+zero prova corpos na frente, e um terço a menos prova os de trás ocluídos.
+
+**O critério de aceite tem três números, e o do meio sozinho não vale.** A queda
+na faixa das letras só significa oclusão porque as **duas faixas vizinhas
+concordam entre si**: 6.84 contra 6.72 é 1.8% de diferença, e é essa concordância
+que descarta a explicação alternativa — um bando mais rarefeito na altura do
+título produziria exatamente a mesma queda no meio, sem ocluir nada. Se as
+vizinhas divergirem (9 acima e 4 abaixo, digamos), a medição está lendo
+distribuição, não oclusão, e a faixa central não decide nada. Refazer a
+verificação depois do descolamento é reportar as três, sempre, e na ordem certa:
+primeiro as de fora concordando, depois a do meio caindo. Ver PROJECT.md §7,
+"Toda medição é feita no ponto de entrega".
+
+#### O compositor
+
+Cena → DOF → bloom → composite, tudo sobre `WebGLRenderTarget`. Ele desliga o
+render automático do R3F ao se inscrever com prioridade 1.
+
+O alvo da cena é multiamostrado **e** tem `DepthTexture`: o three inclui
+`DEPTH_BUFFER_BIT` no blit de resolução, então dá para ter antisserrilhado
+geométrico e círculo de confusão por pixel ao mesmo tempo.
 
 ### O portão de entrada
 
@@ -470,9 +649,42 @@ dos oito segundos.
 
 ## Armadilhas conhecidas
 
+- **Nunca uma crase dentro de um literal de GLSL.** O shader mora num template
+  literal, e uma crase de markdown num comentário do GLSL **fecha o literal**. O
+  erro sai como `TS1005: ',' expected` apontando para o meio de um shader, e em
+  dev o `import()` dinâmico do módulo passa a **lançar de forma síncrona** — o
+  que já derrubou o manifesto do preload inteiro. Custou três rodadas; escreva
+  `uFlockAhead`, não `` `uFlockAhead` ``.
+- **`body` não pode ter `background`.** Quem pinta o fundo é o `html`. A ordem de
+  pintura do CSS põe as camadas de z-index negativo **antes** do fundo dos
+  descendentes em fluxo, então um `bg-void` no `body` pinta por cima do canvas da
+  cena, que é `-z-10`. Fica invisível enquanto a camada é uma div da mesma cor, e
+  esconde a cena inteira no instante em que ela vira a câmara.
+- **Billboard orientado pela velocidade degenera nesta cena.** O bando voa na
+  direção da câmera, então `cross(forward, paraCâmera)` colapsa e o plano da
+  lasca passa a conter a direção do olhar: área projetada zero, 16 mil instâncias
+  desenhadas e nenhum fragmento. É a mesma armadilha dos 90° que o DIRECTION.md
+  §5 descreve para o corpo de prova. O corpo é **lenticular** — volume, oito
+  triângulos —, e a base ortonormal sai só da velocidade.
+- **Uma promessa não pode ter `requestAnimationFrame` como única saída.** rAF não
+  dispara em aba oculta e passa fome quando a thread principal está travada. O
+  `prepareAudio` dependia disso e travava o portão. Use rAF como atalho e um
+  `setTimeout` como caminho garantido.
+- **Ruído de valor mostra a rede dele em superfícies alinhadas aos eixos.** As
+  paredes do duto são planos em X e Z, e a rede de inteiros do `sceneNoise`
+  aparecia como um moiré retangular no fundo da câmara — uma grade, que o
+  PROJECT.md §2 veta. A rede é girada para fora dos eixos do mundo dentro da
+  própria função.
 - **Tailwind v4 varre o código-fonte procurando nomes de classe inteiros.**
   `` className={`text-${step}`} `` não gera utility nenhuma. Escreva o nome por
   extenso (ver `STEP_CLASS` em `DisplayLine.tsx`).
+- **`ElementType` vira `never` com o R3F instalado.** Ele aumenta
+  `JSX.IntrinsicElements` com ~200 primitivas do three, e uma tag dinâmica tipada
+  como `ElementType` faz o TypeScript intersectar as props de todas elas. Mantenha
+  o union estreito (ver `DisplayLine.tsx`).
+- **`react-hooks/immutability` está desligado só em `components/scene/`.** O
+  modelo do R3F é mutar objetos devolvidos por hooks sessenta vezes por segundo;
+  a regra descreve outra coisa. Fora dessa pasta ela continua valendo.
 - **React 19 removeu o namespace global `JSX`.** Use `React.JSX.Element` ou
   `import type { JSX } from "react"`.
 - **`exactOptionalPropertyTypes` está ligado.** `{ prop: undefined }` não é o
@@ -605,21 +817,156 @@ saindo junto com a lâmina na abertura (α 1.0 até 884 ms, 0.0002 aos 1384 de
 mesma quantidade de realce de quina que o modo normal. Rota inicial em 180 kB
 gz.
 
+## Desempenho da cena, medido
+
+Varredura sintética de 0.00 a 0.28, passo de relógio fixo em 1/60 s, DPR travado
+em 1.5. O harness é `?bench=1` (`components/scene/BenchClock.tsx` +
+`lib/scene/bench.ts`); leia o cabeçalho daquele módulo antes de mexer em
+qualquer número desta seção.
+
+**Como repetir isto num aparelho.** Suba a build de produção na rede local
+(`npx next start -H 0.0.0.0 -p 3100`) e abra `http://<ip-da-máquina>:3100/?bench=1`
+no aparelho. Ele entra no portão sozinho, roda as quatro configurações do plano
+— dof on/off cruzado com 16.384 e 4.096 corpos — e recarrega entre elas; um
+painel no canto mostra o progresso e, no fim, os números. `?chain=0` mede uma
+configuração só, e `?dof=`/`?flock=` escolhem qual. O relatório é postado em
+`http://<mesmo-ip>:3131/report`; se não houver nada escutando ali, o painel diz
+"COLETOR MUDO" e os números ficam na tela para serem lidos à mão. **Nada disso
+existe sem `?bench=1`** — o banco custa 3.1 kB gz no chunk da cena e não roda
+sozinho. No celular, tire o Modo de Baixo Consumo (ele trava o rAF em 30 Hz e
+você mediria a bateria) e o Reduzir Movimento (ele troca a cena pelo modo calmo,
+que é outra carga); o relatório traz `displayMs` e `sceneMode` justamente para
+denunciar as duas coisas.
+
+| aparelho | buffer | dof | bando | **GPU/quadro** | p95 | quadro em K=1 |
+|---|---|---|---|---|---|---|
+| **M5** (ANGLE/Metal) | 2160×1254 · 2.71 Mpx | on | 16.384 | **4.87 ms** | 6.26 | 16.7 ms · 59.9 fps |
+| M5 † | 2160×1170 · 2.53 Mpx | on | 16.384 | 4.36 | 13.54 | 16.7 · 59.9 |
+| M5 † | 2160×1254 | off | 16.384 | 3.91 | 10.43 | 16.7 · 59.9 |
+| M5 † | 2160×1254 | on | 4.096 | 4.34 | 13.54 | 16.7 · 59.9 |
+| M5 †‡ | 2160×1254 | off | 4.096 | 3.67 | — | 16.7 · 59.9 |
+| **iPhone** (iOS 18.7, 60 Hz) | 585×1048 · 0.61 Mpx | on | 16.384 | **4.62 ms** | 4.81 | 18.0 ms · 55.6 fps |
+| iPhone | 585×1048 | off | 16.384 | 4.20 | 4.56 | 17.0 · 58.8 |
+| iPhone | 585×1048 | on | 4.096 | 4.20 | 4.25 | 17.0 · 58.8 |
+| iPhone | 585×1048 | off | 4.096 | 3.77 | 3.94 | 17.0 · 58.8 |
+
+† **As quatro linhas do M5 vieram de duas corridas**, com alturas de janela um
+pouco diferentes (2.53 e 2.71 Mpx), e o normalizado por pixel entre elas varia
+~4%. Elas servem para a comparação entre aparelhos e **não** para montar um 2×2
+do desktop; as diferenças de DOF e de bando no M5 estão dentro dessa dispersão.
+As quatro do iPhone, essas sim, são um quadrado limpo — mesmo buffer, mesma
+sessão. ‡ o ponto mais fundo limpo desta linha foi K=8, não K=16: a aba ficou
+oculta durante o K=16 e a média de 1020 ms denunciou.
+
+**O iPhone fecha, e fecha com folga.** 4.62 ms num quadro de 17.0 ms são 28% do
+orçamento a 60 Hz e 14% do piso de 30 fps do PROJECT.md §5. Nenhuma configuração
+mediu abaixo de 55 fps, e o pior quadro das três foi 23 ms. A cena **não** precisa
+ser estruturalmente diferente no celular — isso estava em dúvida e deixou de
+estar.
+
+O porquê é aritmética de preenchimento, e ela quase se cancela: a GPU do telefone
+é **4.2× mais lenta por pixel** (7.53 contra 1.80 ms por Mpx) e desenha **4.4×
+menos pixels**, porque o DPR travado em 1.5 sobre uma viewport de 390×699 dá
+0.61 Mpx contra 2.71 do desktop. O teto de DPR do PROJECT.md §5 não é higiene:
+é ele que faz a conta fechar.
+
+### O 2×2 do iPhone, e o que ele diz sobre a regra de corte
+
+As quatro células do celular saíram do mesmo aparelho, com o mesmo buffer e zero
+paradas, então dá para lê-las como um quadrado:
+
+| GPU/quadro | 16.384 corpos | 4.096 corpos | **Δ bando** |
+|---|---|---|---|
+| **dof on** | 4.62 ms | 4.20 ms | 0.42 |
+| **dof off** | 4.20 ms | 3.77 ms | 0.43 |
+| **Δ dof** | 0.42 | 0.43 | |
+
+**As duas economias somam e não se sobrepõem** — 4.62 − 3.77 = 0.85 = 0.42 +
+0.43, com as diagonais batendo em 0.01 ms. Isso dá o número que importa para
+qualquer decisão futura de corte: **3.77 ms são irredutíveis** e 0.85 ms é tudo
+que existe de manopla. Cortar a DOF *e* três quartos do bando compra 18% do
+quadro.
+
+Consequências, e a primeira contraria o que estava escrito:
+
+- **A DOF custa 0.42–0.45 ms, não 1.72.** Ela continua sendo o primeiro item da
+  lista de corte do DIRECTION.md §3, mas agora se sabe que cortá-la devolve
+  pouco — ~9% do quadro. A regra continua certa por outro motivo: ela é o corte
+  mais barato em imagem, não o mais rendoso em tempo.
+- **A contagem do bando não é grátis no celular, e é no desktop.** No M5, 4.096
+  e 16.384 corpos ficam dentro do ruído — é por isso que a contagem foi ao teto
+  de 16k do DIRECTION.md §5. No iPhone os mesmos dois pontos diferem 0.42 ms, o
+  mesmo que a DOF inteira. É a única medida aqui que se comporta diferente nos
+  dois aparelhos.
+- **Nenhuma das duas salva um aparelho que não fecha.** Se algum dia faltar
+  quadro, as manoplas dão 0.85 ms e o resto está no preenchimento. A alavanca de
+  verdade é resolução — e ela já está travada em DPR 1.5.
+
+### O método, e o número que ele derrubou
+
+**O 13.77 ms que esta seção trazia não existia.** Ele vinha de
+`EXT_disjoint_timer_query_webgl2`, e a query envolve o blit final para o
+framebuffer padrão: a espera pelo *drawable* acontece **dentro** dela. Medindo
+assim, um quadro de 16.70 ms de parede reporta 16.41 ms de "GPU" — o cronômetro
+estava cronometrando o vsync. Pela mesma razão, a DOF a 1.72 ms e o par
+13.91/13.93 do bando são leituras do mesmo instrumento e não valem.
+
+O que mede é **renderizar o mesmo quadro K vezes e olhar a vazão**: tudo que
+acontece uma vez por quadro — vsync, drawable, composição da página — vira
+coeficiente linear e sai da conta. As passadas extras usam o mesmo timestamp,
+então o R3F entrega delta 0 e nada na cena se move; o que se paga K vezes é o
+desenho.
+
+E o que **reprova** a query é um teto físico, não uma preferência: em 60 quadros
+de 77.86 ms com K=16, a GPU não pode ter feito 16 × 9.95 ms de trabalho por
+quadro. A parede tem esse teto; a query não. Em três configurações independentes
+a query pediu 2.00×, 2.06× e 2.10× mais do que a parede permite.
+
+Quatro armadilhas que custaram rodadas e estão resolvidas no harness:
+
+- **A mediana do tempo de quadro mente sobre trabalho.** Com K=16 no M5 ela é
+  16.70 ms — a mesma de K=1 —, porque o navegador continua chamando o rAF no
+  vsync enquanto a fila da GPU cresce, e a conta chega de vez em quando num quadro
+  de 216 ms. Quem mede trabalho é a média.
+- **Aba oculta não mede nada.** Janela do Chrome coberta pelo terminal derruba o
+  rAF, e a escada vira ficção sem parecer errada. O banco pausa em
+  `document.hidden` e descarta quadros acima de 400 ms, contando as paradas no
+  relatório. As três corridas do iPhone tiveram **zero**.
+- **O período da tela é medido, não suposto.** Quarenta quadros vazios no começo:
+  17.00 ms no iPhone (58.8 Hz), 16.70 no M5. Sem isso não dá para saber se um
+  quadro de 16.7 ms é a GPU ou o monitor — e num ProMotion seria 8.3.
+- **A cerca (`fenceSync` + `clientWaitSync`) não funciona** num laço que não
+  devolve a thread: o Chrome só atualiza o objeto de sincronização entre voltas do
+  laço de eventos, então a sondagem bate no teto de espera todo quadro.
+
+**O que continua não verificado:** comportamento térmico. Cada configuração roda
+22–25 s e o telefone foi medido frio. Para uma descida de oito segundos isso é o
+regime certo, mas ninguém mediu a cena aberta por dez minutos.
+
 ## O que falta
 
 Nesta ordem, porque cada uma depende da anterior:
 
 1. Os sete cases em `content/cases/` (e apagar o fixture).
-2. O conteúdo dos beats em DOM — manifesto, contato, placas de cota.
-3. A cena: `three` + R3F, a câmara, a névoa, o bando. Ela entra como mais uma
-   tarefa do manifesto do preloader, e aí o portão passa a esperar por ela —
-   que é o que o PROJECT.md §4 sempre quis dizer com "nada carrega além do
-   necessário para o primeiro frame".
-4. `TypeArticle` e o `troika-three-text` — o corpo de prova dentro da cena.
-   Atenção: o troika precisa de um **arquivo** de fonte, e o `next/font` não
-   expõe uma URL estável. Vai ser preciso servir o `.woff2` do Archivo por
-   `public/` também, e garantir que é o mesmo arquivo das duas vias.
-5. O descolamento: SDF fino assado do próprio mesh, força de separação pelo
-   gradiente.
-6. Os testes de portão: varredura de contraste em 600 passos (DIRECTION.md §5)
-   e a rolagem sintética a 0.6 vh/s até o quadro de separação (DIRECTION.md §4).
+2. O conteúdo dos beats de baixo em DOM — manifesto, contato, placas de cota.
+3. **O descolamento**: `TypeArticle` completo, SDF fino assado do próprio mesh
+   numa passagem ortográfica, força de separação pelo gradiente, atrator de baixa
+   pressão na esteira. Hoje o bando oclui e é ocluído pelas letras de verdade, e
+   desvia delas por campo distante — mas não há turbulência nas contra-formas nem
+   recolamento. É o frame que o DIRECTION.md §1 chama de "o motivo do site
+   existir", e ele ainda não está na tela.
+4. Os três beats de baixo, e com eles os pontos de controle definitivos da curva
+   da câmera de 0.45 em diante (hoje provisórios, em `lib/scene/curve.ts`) e a
+   migração da cor da fonte a montante para `--cyan` e `--peach`.
+5. Os posters do modo `poster`. O DIRECTION.md §5 manda renderizá-los "destas
+   mesmas composições", e só duas das cinco existem — gerar duas agora garantiria
+   regerar as cinco depois.
+6. Os testes de portão: varredura de contraste em 600 passos (DIRECTION.md §5) e
+   a rolagem sintética a 0.6 vh/s até o quadro de separação (DIRECTION.md §4). O
+   mecanismo do véu já existe (`lib/scene/veil.ts`) e resolve `f` por quadro; o
+   que falta é a varredura que o prova.
+
+O item que era o sétimo — verificar a cena num iPhone contra o piso de 30 fps —
+**está feito**: 4.62 ms de GPU por quadro, 55.6 fps, ver "Desempenho da cena,
+medido". O que sobrou dele é térmico, e é uma pergunta menor: ninguém mediu a
+cena aberta por dez minutos.

@@ -1,4 +1,5 @@
 import { prepareAudio } from "@/lib/audio/audio-context";
+import { loadScene } from "@/lib/scene/load-scene";
 import { loadScrollDriver } from "@/lib/scroll/load-driver";
 
 /**
@@ -14,9 +15,18 @@ import { loadScrollDriver } from "@/lib/scroll/load-driver";
  * concluída. Quem transforma degrau em subida é o amortecimento do contador
  * (ver `components/gate/GateOverlay.tsx`) — nunca um temporizador fingindo
  * ser carregamento.
+ *
+ * ## Nenhuma tarefa pode trancar o portão
+ *
+ * Um portão que não abre é pior que uma cena incompleta. Havia um teto global
+ * de 6 s e ele não bastava: ele conta a partir do início, então uma tarefa que
+ * demora 5.9 s deixava o portão aberto num quadro e a seguinte sem margem
+ * nenhuma — e, pior, um teto só não diz **qual** tarefa travou. Agora cada
+ * tarefa tem prazo próprio, e o que estourar é creditado e registrado pelo
+ * nome. O teto global continua como último recurso.
  */
 
-export type PreloadTaskId = "fonts" | "scroll" | "audio";
+export type PreloadTaskId = "fonts" | "scroll" | "audio" | "scene";
 
 type PreloadTask = {
   id: PreloadTaskId;
@@ -39,19 +49,51 @@ const TASKS: readonly PreloadTask[] = [
   // PROJECT.md §3.3. Aqui a espera é o que o portão existe para cobrir; o
   // gesto do usuário fica só com o `resume()`, que custa 0.1 ms.
   { id: "audio", weight: 1, start: () => prepareAudio() },
-  // Quando a cena existir ela entra aqui, com peso maior — é o chunk de
-  // 350 kB do PROJECT.md §5, e o portão é o momento certo para baixá-lo.
+  // A cena: three, R3F, troika e os shaders. É o chunk de 350 kB do
+  // PROJECT.md §5, e o portão é o momento certo para baixá-lo — enquanto a
+  // veneziana está fechada e a espera é o que ele existe para cobrir. Peso 4
+  // contra 1 das outras porque o peso é proporcional ao que a tarefa custa em
+  // rede, e este chunk custa uma ordem de grandeza a mais.
+  { id: "scene", weight: 4, start: () => loadScene() },
 ];
 
 const TOTAL_WEIGHT = TASKS.reduce((total, task) => total + task.weight, 0);
 
 /**
- * Teto duro. Se uma tarefa nunca resolver — um CDN de fonte fora do ar, um
- * chunk que não chega — o portão abre assim mesmo. Um portão que não abre é
- * pior que uma fonte que chegou tarde: seria um site inteiro trancado atrás
- * de um recurso opcional.
+ * Prazo por tarefa. Menor que o teto global, para que uma tarefa lenta seja
+ * creditada e **nomeada** antes de o teto disparar sem explicação.
+ */
+const TASK_TIMEOUT_MS = 5000;
+
+/**
+ * Teto duro. Se algo escapar dos prazos individuais — uma tarefa que trava a
+ * thread, um `start()` que lança antes de virar promessa — o portão abre assim
+ * mesmo. Um portão que não abre seria um site inteiro trancado atrás de um
+ * recurso opcional.
  */
 const CEILING_MS = 6000;
+
+export type PreloadOutcome = "pronto" | "erro" | "tempo-esgotado";
+
+export type PreloadEntry = {
+  id: PreloadTaskId;
+  outcome: PreloadOutcome;
+  /** Do início do preload até o desfecho desta tarefa, em ms. */
+  ms: number;
+};
+
+let report: PreloadEntry[] = [];
+
+/**
+ * O que aconteceu com cada tarefa da última corrida, em ordem de conclusão.
+ *
+ * Existe para responder "qual delas não resolveu?" sem instrumentar de novo —
+ * a pergunta que o contador do portão, por construção, não consegue responder:
+ * ele mostra quanto chegou, nunca o que falta.
+ */
+export function preloadReport(): readonly PreloadEntry[] {
+  return report;
+}
 
 /**
  * Dispara todas as tarefas em paralelo e informa o progresso normalizado a
@@ -63,24 +105,58 @@ const CEILING_MS = 6000;
 export function runPreload(onProgress: (progress: number) => void): () => void {
   let cancelled = false;
   let done = 0;
+  const started = performance.now();
+  const timers: number[] = [];
+  report = [];
 
-  const settle = (weight: number) => {
+  const settle = (task: PreloadTask, outcome: PreloadOutcome) => {
     if (cancelled) return;
-    done += weight;
+    if (report.some((entry) => entry.id === task.id)) return;
+
+    report.push({
+      id: task.id,
+      outcome,
+      ms: Math.round(performance.now() - started),
+    });
+
+    // Só o caminho ruim fala. Uma tarefa que estourou o prazo em produção é um
+    // defeito de campo que alguém precisa conseguir ver; o caminho feliz não
+    // tem por que ocupar o console de ninguém.
+    if (outcome !== "pronto") {
+      console.warn(
+        `[preload] "${task.id}" ${outcome} em ${Math.round(performance.now() - started)} ms — o portão abre assim mesmo.`,
+      );
+    }
+
+    done += task.weight;
     onProgress(Math.min(done / TOTAL_WEIGHT, 1));
   };
 
   onProgress(0);
 
   for (const task of TASKS) {
-    const credit = () => {
-      settle(task.weight);
+    const timer = window.setTimeout(() => {
+      settle(task, "tempo-esgotado");
+    }, TASK_TIMEOUT_MS);
+    timers.push(timer);
+
+    const finish = (outcome: PreloadOutcome) => () => {
+      window.clearTimeout(timer);
+      settle(task, outcome);
     };
-    task.start().then(credit, credit);
+
+    // `start()` dentro do try: uma exceção síncrona aqui abortaria o laço e
+    // deixaria as tarefas seguintes sem sequer começar — e o portão sem teto.
+    try {
+      task.start().then(finish("pronto"), finish("erro"));
+    } catch {
+      finish("erro")();
+    }
   }
 
   const ceiling = window.setTimeout(() => {
     if (cancelled) return;
+    for (const task of TASKS) settle(task, "tempo-esgotado");
     done = TOTAL_WEIGHT;
     onProgress(1);
   }, CEILING_MS);
@@ -88,5 +164,6 @@ export function runPreload(onProgress: (progress: number) => void): () => void {
   return () => {
     cancelled = true;
     window.clearTimeout(ceiling);
+    for (const timer of timers) window.clearTimeout(timer);
   };
 }

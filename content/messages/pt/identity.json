@@ -1,4 +1,9 @@
 {
   "label": "Identidade",
-  "specimen": "Correia"
+  "specimen": "Correia",
+  "position": {
+    "product": "Design de produto",
+    "engineering": "Engenharia de front-end",
+    "brand": "Sistema de marca"
+  }
 }

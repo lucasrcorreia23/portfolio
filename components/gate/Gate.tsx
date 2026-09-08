@@ -15,18 +15,29 @@ import { GateOverlay } from "./GateOverlay";
  */
 
 /**
- * Trava a descida no parse, antes do primeiro paint.
+ * A trava da descida **não está mais aqui**, e a mudança tem uma razão só.
  *
- * A alternativa seria travar na hidratação, e aí existe uma janela — curta no
- * desktop, longa num celular ruim — em que a página rola por trás de um
- * portão opaco. Pior: o navegador restaura a posição de scroll de um reload,
- * e o site abriria no meio da descida com o portão por cima.
+ * Este script escrevia `data-gate="closed"` no `<html>` durante o parse, antes
+ * da hidratação — e portanto num atributo que a marcação do servidor não tinha.
+ * O React comparava os dois e acusava divergência de hidratação em toda visita.
+ *
+ * A trava continua valendo desde o primeiro paint, e agora sem script nenhum:
+ * ela é uma regra de CSS ancorada no `data-gate-phase` do próprio overlay
+ * (`styles/globals.css`), que **vem no HTML do servidor**. Servidor e cliente
+ * concordam porque estão olhando o mesmo elemento, e a trava sai sozinha quando
+ * a fase muda no clique.
+ *
+ * O que sobra de imperativo tem que ser imperativo: `scrollRestoration` e o
+ * `scrollTo` não são atributos renderizados, não entram na comparação de
+ * hidratação, e precisam rodar antes do primeiro paint — senão o navegador
+ * restaura a posição de um reload e o site abre no meio da descida com o portão
+ * por cima.
  *
  * Sem JavaScript nada disso roda, e aí o `<noscript>` abaixo tira o portão do
  * caminho: todo o conteúdo textual já está no DOM (PROJECT.md §5), então o
  * site sem JS é o site sem cena, não um site trancado.
  */
-const LOCK_SCRIPT = `try{document.documentElement.setAttribute("data-gate","closed");if("scrollRestoration" in history){history.scrollRestoration="manual"}window.scrollTo(0,0)}catch(e){}`;
+const LOCK_SCRIPT = `try{if("scrollRestoration" in history){history.scrollRestoration="manual"}window.scrollTo(0,0)}catch(e){}`;
 
 const NOSCRIPT_STYLE = `<style>[data-gate-overlay]{display:none}</style>`;
 

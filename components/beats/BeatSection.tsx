@@ -16,6 +16,11 @@ type BeatSectionProps = {
  * A altura vem de custom properties para o breakpoint mobile poder trocar o
  * número sem o componente saber de media query (ver `styles/globals.css`).
  *
+ * O conteúdo começa no topo, não centralizado: os beats prendem o próprio
+ * conteúdo num painel `sticky` de uma altura de viewport, e centralizar a
+ * pilha empurraria esse painel para meio beat abaixo antes de ele grudar —
+ * metade da seção rolaria com o texto fora da tela.
+ *
  * A Superfície soma o viewport parado do fim da descida (`beatHoldVh`) à
  * própria altura — a mesma seção, sem elemento novo e sem espaçador vazio.
  * `beat.vh`/`beat.mobileVh` continuam representando só a parte rolável: é o
@@ -36,7 +41,7 @@ export function BeatSection({ beat, label, children }: BeatSectionProps) {
           "--beat-vh-mobile": beat.mobileVh + hold,
         } as CSSProperties
       }
-      className="relative flex flex-col justify-center px-6 py-24 md:px-12"
+      className="relative flex flex-col justify-start px-6 py-24 md:px-12"
     >
       {/* Rótulo, não título: é uma etiqueta de estação em mono. Deixá-lo
           como <p> nomeando a seção via aria-labelledby mantém a ordem de
