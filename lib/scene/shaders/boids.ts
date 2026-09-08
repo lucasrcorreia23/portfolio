@@ -135,7 +135,16 @@ const float TURB_D = 0.25;
  * uma troca de corpo por breakpoint sozinha.
  */
 const float WAKE_RISE = 1.111;
-const float WAKE_FALL = 6.667;
+/**
+ * O atrator alcança onze larguras de letra, e não seis.
+ *
+ * Com seis, a sombra enchia a uma e duas larguras e **voltava a esvaziar** na
+ * quarta (0.90 do fluxo livre): os corpos recebiam o puxão cedo, cruzavam o
+ * eixo por inércia e saíam do outro lado sem nada para segurá-los. Recolamento
+ * não é um empurrão, é uma convergência — precisa continuar agindo enquanto o
+ * escoamento se reorganiza.
+ */
+const float WAKE_FALL = 12.0;
 /** O atrator é um **anel** logo fora da sombra, não um poço no eixo dela. */
 const float PULL_IN  = 0.06;
 const float PULL_OUT = 0.45;
@@ -143,9 +152,26 @@ const float PULL_OUT = 0.45;
 const float SEP_GAIN  = 11.0;
 const float CORE_GAIN = 34.0;
 const float TURB_GAIN = 26.0;
-const float WAKE_GAIN = 5.0;
+/**
+ * O atrator da esteira. Medido: a 5.0 a sombra das letras chegava a 1.28 vez o
+ * fluxo livre a duas larguras de letra, e a 3.0 ainda ficava em 1.15 — ou seja
+ * o escoamento não voltava ao eixo, ele passava do ponto e empilhava.
+ * Recolamento é a densidade **subindo até** o fluxo livre, não além dele.
+ */
+const float WAKE_GAIN = 2.0;
 
-const float TURB_SCALE = 1.7;
+/**
+ * Frequência espacial do ruído: uma célula de 1/0.85 = 1.18 unidades, ou seja
+ * 0.59 caixas altas.
+ *
+ * O número vem da medida, não do gosto. Com a célula em 0.29 caixas altas o
+ * comprimento de correlação medido dentro das contra-formas deu 0.16 — metade
+ * do alvo, porque a escala do vórtice sai da célula do ruído convoluída com a
+ * geometria do vazio, que decorrelaciona por conta própria: dentro de um olho
+ * de letra o gradiente do SDF aponta para o centro, então corpos em lados
+ * opostos recebem empurrões opostos. Dobrar a célula compensa isso.
+ */
+const float TURB_SCALE = 0.85;
 const float TURB_DRIFT = 0.9;
 
 float solidBand(float z) {
@@ -242,18 +268,37 @@ const FIELD_FORCE = /* glsl */ `
   ) * within;
 
   // 2. turbulência nas contra-formas
+  //
+  // **O campo é do mundo, e a projeção é que o torna perpendicular.** A versão
+  // anterior montava uma base ortonormal a partir da velocidade **de cada
+  // corpo** e sorteava dois ruídos nela. Parecia a mesma coisa e não era: dois
+  // corpos vizinhos com velocidades ligeiramente diferentes têm bases
+  // diferentes, então o mesmo valor de ruído virava força em direções
+  // diferentes. O resultado tinha muita variância angular e nenhuma estrutura —
+  // tremor, não vórtice.
+  //
+  // Isso não foi deduzido, foi medido: o comprimento de correlação espacial da
+  // direção dentro das contra-formas saiu **abaixo de 1/e já na primeira
+  // faixa** (C = 0.26 a 0.05 · H, contra 0.77 no fluxo livre), ou seja corpos a
+  // um décimo de unidade um do outro mal concordavam. Vórtice tem escala; aquilo
+  // não tinha nenhuma. A variância angular passava com folga assim mesmo — ela
+  // mede exatamente a grandeza que a força foi desenhada para produzir, e por
+  // isso sozinha não prova nada aqui.
+  //
+  // Agora o ruído é um campo vetorial do espaço: vizinhos amostram quase o
+  // mesmo valor. Tirar a componente ao longo da velocidade mantém a força
+  // girando o corpo em vez de acelerá-lo, que é o que preserva a vazão pela
+  // contra-forma.
   float zturb = 1.0 - smoothstep(0.0, TURB_Z * uTypeH, abs(lz));
   float turb  = enc * zturb * (1.0 - smoothstep(0.0, TURB_D * uTypeH, max(dist, 0.0)));
-  vec3  along = normalize(vel + vec3(0.0, 1e-4, 1e-4));
-  vec3  ref   = abs(along.y) > 0.98 ? vec3(1.0, 0.0, 0.0) : vec3(0.0, 1.0, 0.0);
-  vec3  side  = normalize(cross(ref, along));
-  vec3  lift  = cross(along, side);
   vec3  swirl = pos * TURB_SCALE + uTime * TURB_DRIFT;
-  // Perpendicular à velocidade de propósito: o critério de aceite é variância
-  // **angular**, então a força gira o corpo em vez de acelerá-lo, e a vazão
-  // pela contra-forma não muda.
-  force += (side * eddy(swirl) + lift * eddy(swirl + vec3(31.4, 17.9, 5.6)))
-         * (TURB_GAIN * turb * within);
+  vec3  gust  = vec3(
+    eddy(swirl),
+    eddy(swirl + vec3(31.4, 17.9, 5.6)),
+    eddy(swirl + vec3(-11.2, 43.7, 27.3))
+  );
+  vec3  along = normalize(vel + vec3(0.0, 1e-4, 1e-4));
+  force += (gust - along * dot(gust, along)) * (TURB_GAIN * turb * within);
 
   // 3. recolamento
   float zwake = smoothstep(0.0, WAKE_RISE * uTypeH, lz)

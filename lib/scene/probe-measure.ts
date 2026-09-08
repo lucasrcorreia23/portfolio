@@ -163,9 +163,9 @@ export function measureComposed(
     yMap: Float32Array;
   },
   context: MeasureContext,
-  threshold: number,
+  thresholds: readonly number[],
   toLinear: Float32Array,
-): ComposedResult {
+): ComposedResult[] {
   const { ring: RING, inkHalfWidthH } = context;
 
   const outerIndex: number[] = [];
@@ -215,50 +215,65 @@ export function measureComposed(
     }
   }
 
-  const result: ComposedResult = {
-    frames: frameCount,
-    threshold,
-    ringOuter: bucket(outerIndex.length * frameCount),
-    ringInner: bucket(innerIndex.length * frameCount),
-    silhouette: bucket(silIndex.length * frameCount),
-    profileAbove: new Array<number>(PROFILE_BINS).fill(0),
-    profileBelow: new Array<number>(PROFILE_BINS).fill(0),
-    profileBins: Array.from(
-      { length: PROFILE_BINS },
-      (_, i) => ((i + 0.5) / PROFILE_BINS) * PROFILE_TOP,
-    ),
-    profileSpread: 0,
-    columns: Array.from({ length: COLUMNS }, () => ({
-      ringOuter: bucket(0),
-      silhouette: bucket(0),
-    })),
-    coralShareOfBodyPixels: 0,
-    bodyShareOfFrame: 0,
-  };
-  for (let column = 0; column < COLUMNS; column += 1) {
-    const slot = result.columns[column];
-    if (slot === undefined) continue;
-    slot.ringOuter.pixels =
-      outerColumn.filter((c) => c === column).length * frameCount;
-    slot.silhouette.pixels =
-      silColumn.filter((c) => c === column).length * frameCount;
-  }
+  /**
+   * Um resultado por limiar, **sobre exatamente os mesmos quadros**.
+   *
+   * A primeira versão rodava a varredura três vezes, uma por limiar. Cada
+   * passada avançava a simulação, então as três viam quadros diferentes — e a
+   * diferença entre elas media a fase da lâmina viajante do bando, não a
+   * sensibilidade ao limiar. Deu para ver pelo absurdo: o limiar **mais alto**
+   * devolveu mais corpos que o do meio, o que é impossível para uma contagem
+   * monotônica. Agora a luminância de cada pixel é calculada uma vez e testada
+   * contra os três.
+   */
+  const results: ComposedResult[] = thresholds.map((threshold) => {
+    const result: ComposedResult = {
+      frames: frameCount,
+      threshold,
+      ringOuter: bucket(outerIndex.length * frameCount),
+      ringInner: bucket(innerIndex.length * frameCount),
+      silhouette: bucket(silIndex.length * frameCount),
+      profileAbove: new Array<number>(PROFILE_BINS).fill(0),
+      profileBelow: new Array<number>(PROFILE_BINS).fill(0),
+      profileBins: Array.from(
+        { length: PROFILE_BINS },
+        (_, i) => ((i + 0.5) / PROFILE_BINS) * PROFILE_TOP,
+      ),
+      profileSpread: 0,
+      columns: Array.from({ length: COLUMNS }, () => ({
+        ringOuter: bucket(0),
+        silhouette: bucket(0),
+      })),
+      coralShareOfBodyPixels: 0,
+      bodyShareOfFrame: 0,
+    };
+    for (let column = 0; column < COLUMNS; column += 1) {
+      const slot = result.columns[column];
+      if (slot === undefined) continue;
+      slot.ringOuter.pixels =
+        outerColumn.filter((c) => c === column).length * frameCount;
+      slot.silhouette.pixels =
+        silColumn.filter((c) => c === column).length * frameCount;
+    }
+    return result;
+  });
 
-  const profileHitAbove = new Float64Array(PROFILE_BINS);
-  const profileHitBelow = new Float64Array(PROFILE_BINS);
+  const levels = thresholds.length;
+  const profileHitAbove = new Float64Array(PROFILE_BINS * levels);
+  const profileHitBelow = new Float64Array(PROFILE_BINS * levels);
   const profileTotalAbove = new Float64Array(PROFILE_BINS);
   const profileTotalBelow = new Float64Array(PROFILE_BINS);
 
-  let bodyPixels = 0;
-  let coralPixels = 0;
+  const bodyPixels = new Float64Array(levels);
+  const coralPixels = new Float64Array(levels);
   let scannedPixels = 0;
 
-  const isBody = (pixels: Uint8Array, index: number) => {
+  const luminance = (pixels: Uint8Array, index: number) => {
     const at = index * 4;
     const r = toLinear[pixels[at] ?? 0] ?? 0;
     const g = toLinear[pixels[at + 1] ?? 0] ?? 0;
     const b = toLinear[pixels[at + 2] ?? 0] ?? 0;
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b > threshold;
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   };
 
   for (let frame = 0; frame < frameCount; frame += 1) {
@@ -266,20 +281,40 @@ export function measureComposed(
 
     for (let i = 0; i < outerIndex.length; i += 1) {
       const index = outerIndex[i];
-      if (index === undefined || !isBody(pixels, index)) continue;
-      result.ringOuter.body += 1;
-      const slot = result.columns[outerColumn[i] ?? 0];
-      if (slot !== undefined) slot.ringOuter.body += 1;
+      if (index === undefined) continue;
+      const L = luminance(pixels, index);
+      const column = outerColumn[i] ?? 0;
+      for (let t = 0; t < levels; t += 1) {
+        if (L <= (thresholds[t] ?? 0)) continue;
+        const result = results[t];
+        if (result === undefined) continue;
+        result.ringOuter.body += 1;
+        const slot = result.columns[column];
+        if (slot !== undefined) slot.ringOuter.body += 1;
+      }
     }
     for (const index of innerIndex) {
-      if (isBody(pixels, index)) result.ringInner.body += 1;
+      const L = luminance(pixels, index);
+      for (let t = 0; t < levels; t += 1) {
+        if (L > (thresholds[t] ?? 0)) {
+          const result = results[t];
+          if (result !== undefined) result.ringInner.body += 1;
+        }
+      }
     }
     for (let i = 0; i < silIndex.length; i += 1) {
       const index = silIndex[i];
-      if (index === undefined || !isBody(pixels, index)) continue;
-      result.silhouette.body += 1;
-      const slot = result.columns[silColumn[i] ?? 0];
-      if (slot !== undefined) slot.silhouette.body += 1;
+      if (index === undefined) continue;
+      const L = luminance(pixels, index);
+      const column = silColumn[i] ?? 0;
+      for (let t = 0; t < levels; t += 1) {
+        if (L <= (thresholds[t] ?? 0)) continue;
+        const result = results[t];
+        if (result === undefined) continue;
+        result.silhouette.body += 1;
+        const slot = result.columns[column];
+        if (slot !== undefined) slot.silhouette.body += 1;
+      }
     }
     for (let i = 0; i < profileIndex.length; i += 1) {
       const index = profileIndex[i];
@@ -287,9 +322,14 @@ export function measureComposed(
       const above = profileSide[i] === 1;
       if (above) profileTotalAbove[bin] = (profileTotalAbove[bin] ?? 0) + 1;
       else profileTotalBelow[bin] = (profileTotalBelow[bin] ?? 0) + 1;
-      if (index === undefined || !isBody(pixels, index)) continue;
-      if (above) profileHitAbove[bin] = (profileHitAbove[bin] ?? 0) + 1;
-      else profileHitBelow[bin] = (profileHitBelow[bin] ?? 0) + 1;
+      if (index === undefined) continue;
+      const L = luminance(pixels, index);
+      for (let t = 0; t < levels; t += 1) {
+        if (L <= (thresholds[t] ?? 0)) continue;
+        const at = bin * levels + t;
+        if (above) profileHitAbove[at] = (profileHitAbove[at] ?? 0) + 1;
+        else profileHitBelow[at] = (profileHitBelow[at] ?? 0) + 1;
+      }
     }
 
     // A guarda de coral é sobre o quadro inteiro (o teto do PROJECT.md §3.1 é
@@ -298,15 +338,22 @@ export function measureComposed(
     if (frame % 4 === 0) {
       for (let index = 0; index < width * height; index += 1) {
         scannedPixels += 1;
-        if (!isBody(pixels, index)) continue;
-        bodyPixels += 1;
+        const L = luminance(pixels, index);
+        if (L <= (thresholds[levels - 1] ?? 0) && L <= (thresholds[0] ?? 0)) {
+          continue;
+        }
         const at = index * 4;
         const r = toLinear[pixels[at] ?? 0] ?? 0;
         const g = toLinear[pixels[at + 1] ?? 0] ?? 0;
         const b = toLinear[pixels[at + 2] ?? 0] ?? 0;
         // Coral contra rosa: os dois têm vermelho acima do verde; o que os
         // separa é o azul (coral 0.07 em linear, rosa 0.39).
-        if (b < 0.25 * r && r > 2 * g) coralPixels += 1;
+        const coral = b < 0.25 * r && r > 2 * g;
+        for (let t = 0; t < levels; t += 1) {
+          if (L <= (thresholds[t] ?? 0)) continue;
+          bodyPixels[t] = (bodyPixels[t] ?? 0) + 1;
+          if (coral) coralPixels[t] = (coralPixels[t] ?? 0) + 1;
+        }
       }
     }
   }
@@ -314,37 +361,43 @@ export function measureComposed(
   const finish = (target: Bucket) => {
     target.perThousand = target.pixels > 0 ? (target.body / target.pixels) * 1000 : 0;
   };
-  finish(result.ringOuter);
-  finish(result.ringInner);
-  finish(result.silhouette);
-  for (const slot of result.columns) {
-    finish(slot.ringOuter);
-    finish(slot.silhouette);
-  }
-
-  let spread = 0;
-  let spreadCount = 0;
-  for (let bin = 0; bin < PROFILE_BINS; bin += 1) {
-    const above =
-      (profileTotalAbove[bin] ?? 0) > 0
-        ? ((profileHitAbove[bin] ?? 0) / (profileTotalAbove[bin] ?? 1)) * 1000
-        : 0;
-    const below =
-      (profileTotalBelow[bin] ?? 0) > 0
-        ? ((profileHitBelow[bin] ?? 0) / (profileTotalBelow[bin] ?? 1)) * 1000
-        : 0;
-    result.profileAbove[bin] = above;
-    result.profileBelow[bin] = below;
-    const mean = (above + below) / 2;
-    if (mean > 1) {
-      spread += (Math.abs(above - below) / mean) * 100;
-      spreadCount += 1;
+  for (const result of results) {
+    finish(result.ringOuter);
+    finish(result.ringInner);
+    finish(result.silhouette);
+    for (const slot of result.columns) {
+      finish(slot.ringOuter);
+      finish(slot.silhouette);
     }
   }
-  result.profileSpread = spreadCount > 0 ? spread / spreadCount : 0;
-  result.coralShareOfBodyPixels = bodyPixels > 0 ? coralPixels / bodyPixels : 0;
-  result.bodyShareOfFrame = scannedPixels > 0 ? bodyPixels / scannedPixels : 0;
-  return result;
+
+  for (let t = 0; t < levels; t += 1) {
+    const result = results[t];
+    if (result === undefined) continue;
+    let spread = 0;
+    let spreadCount = 0;
+    for (let bin = 0; bin < PROFILE_BINS; bin += 1) {
+      const at = bin * levels + t;
+      const totalAbove = profileTotalAbove[bin] ?? 0;
+      const totalBelow = profileTotalBelow[bin] ?? 0;
+      const above =
+        totalAbove > 0 ? ((profileHitAbove[at] ?? 0) / totalAbove) * 1000 : 0;
+      const below =
+        totalBelow > 0 ? ((profileHitBelow[at] ?? 0) / totalBelow) * 1000 : 0;
+      result.profileAbove[bin] = above;
+      result.profileBelow[bin] = below;
+      const mean = (above + below) / 2;
+      if (mean > 1) {
+        spread += (Math.abs(above - below) / mean) * 100;
+        spreadCount += 1;
+      }
+    }
+    result.profileSpread = spreadCount > 0 ? spread / spreadCount : 0;
+    const bodies = bodyPixels[t] ?? 0;
+    result.coralShareOfBodyPixels = bodies > 0 ? (coralPixels[t] ?? 0) / bodies : 0;
+    result.bodyShareOfFrame = scannedPixels > 0 ? bodies / scannedPixels : 0;
+  }
+  return results;
 }
 
 /* --- estado da simulação -------------------------------------------------- */
@@ -416,7 +469,19 @@ export type Correlation = {
   pairs: number;
   /** `C(r)` por faixa de separação, em caixas altas. */
   curve: { rH: number; c: number; pairs: number }[];
-  /** Onde `C(r)` cruza `1/e`, em caixas altas. `null` se nunca cruza. */
+  /** `C` na primeira faixa útil — a referência de que a meia-altura parte. */
+  c0: number;
+  /**
+   * Meia-altura de `C(r)`, em caixas altas: onde a correlação cai à metade do
+   * valor da primeira faixa.
+   *
+   * **Não é o cruzamento de `1/e`**, e a diferença não é estilística. `1/e`
+   * pressupõe que a correlação comece perto de 1, o que vale para escoamento
+   * ordenado (fluxo livre sai em 0.77) e não vale dentro de uma contra-forma,
+   * onde ela já parte de 0.3 — ali o critério de `1/e` devolve "nunca cruza" e
+   * some com a escala em vez de medi-la. A meia-altura mede a escala nos dois
+   * regimes, e `c0` sai junto para o leitor ver de onde ela partiu.
+   */
   lengthH: number | null;
 };
 
@@ -521,31 +586,47 @@ function createCorrelation(H: number) {
         pairs: n,
       });
     }
-    // O cruzamento de 1/e, interpolado entre as faixas que o cercam. Faixas com
-    // menos de 30 pares são ruído e não decidem nada.
-    const threshold = 1 / Math.E;
+    // Meia-altura a partir da primeira faixa útil, interpolada entre as duas
+    // faixas que a cercam. Faixas com menos de 30 pares são ruído e não decidem.
+    const useful = curve.filter((point) => point.pairs >= 30);
+    const c0 = useful[0]?.c ?? 0;
+    const half = c0 / 2;
     let lengthH: number | null = null;
     let previous: { rH: number; c: number } | null = null;
-    for (const point of curve) {
-      if (point.pairs < 30) continue;
-      if (previous !== null && previous.c >= threshold && point.c < threshold) {
+    for (const point of useful) {
+      if (previous !== null && previous.c >= half && point.c < half) {
         const drop = previous.c - point.c;
-        const t = drop > 0 ? (previous.c - threshold) / drop : 0;
+        const t = drop > 0 ? (previous.c - half) / drop : 0;
         lengthH = previous.rH + t * (point.rH - previous.rH);
         break;
       }
       previous = point;
     }
-    return { frames, pairs, curve, lengthH };
+    return { frames, pairs, curve, c0, lengthH };
   };
 
   return { add, finish };
 }
 
+/** Faixas do perfil radial: de −0.2 a 1.0 caixas altas de distância à tinta. */
+const EDGE_BINS = 24;
+const EDGE_FROM = -0.2;
+const EDGE_TO = 1.0;
+
 export type SimResult = {
   frames: number;
   bodies: number;
   compression: { region: number; freeStream: number; ratio: number };
+  /**
+   * Densidade contra distância à silhueta, na fatia do plano, com a mesma
+   * fatia deslocada para o fluxo livre ao lado.
+   *
+   * Existe porque **onde** a compressão acontece é um resultado, não uma
+   * suposição: uma casca escolhida no chute pode cair do lado errado da pilha e
+   * medir o buraco que a pilha deixou. O perfil mostra a pilha inteira e diz
+   * onde a casca deve ficar.
+   */
+  edgeProfile: { dH: number; region: number; freeStream: number }[];
   turbulence: {
     counterform: Dispersion;
     freeStream: Dispersion;
@@ -571,6 +652,23 @@ export function measureSim(
 
   let compressionRegion = 0;
   let compressionFree = 0;
+  const edgeRegion = new Float64Array(EDGE_BINS);
+  const edgeFree = new Float64Array(EDGE_BINS);
+  /**
+   * População de cada laje, para tudo aqui ser medido como **fração da laje** e
+   * não como contagem.
+   *
+   * É o que tira a lâmina viajante da conta. Com o progresso travado o bando se
+   * organiza numa lâmina que atravessa o duto em ~640 quadros; uma contagem
+   * numa laje fina depende de quando a lâmina passou por ela, e a razão entre
+   * duas lajes em Z diferentes compara duas fases diferentes. A fração dentro
+   * da própria laje não tem esse problema: numerador e denominador veem a
+   * lâmina no mesmo instante, e ela se cancela.
+   */
+  let planeTotal = 0;
+  let freeTotal = 0;
+  const slabTotal = [0, 0, 0];
+  const slabFreeTotal = [0, 0, 0];
   const counterform: Body[] = [];
   const freeBodies: Body[] = [];
   const correlation = createCorrelation(H);
@@ -607,19 +705,34 @@ export function measureSim(
 
       // compressão: casca fina logo a montante da silhueta, e a mesma casca
       // deslocada para o fluxo livre.
+      const atPlane = lz > -0.5 * H && lz <= 0;
+      const atFree = lz > -0.5 * H - upstream && lz <= -upstream;
+      if (atPlane) planeTotal += 1;
+      if (atFree) freeTotal += 1;
       if (d > 0 && d <= RING) {
-        if (lz > -0.5 * H && lz <= 0) compressionRegion += 1;
-        if (lz > -0.5 * H - upstream && lz <= -upstream) compressionFree += 1;
+        if (atPlane) compressionRegion += 1;
+        if (atFree) compressionFree += 1;
+      }
+      if (atPlane || atFree) {
+        const slot = Math.floor(((d - EDGE_FROM) / (EDGE_TO - EDGE_FROM)) * EDGE_BINS);
+        if (slot >= 0 && slot < EDGE_BINS) {
+          if (atPlane) edgeRegion[slot] = (edgeRegion[slot] ?? 0) + 1;
+          else edgeFree[slot] = (edgeFree[slot] ?? 0) + 1;
+        }
       }
 
       // recolamento: sombra da tinta, em três lajes a jusante e três a montante.
-      if (d <= 0) {
-        for (let k = 0; k < distances.length; k += 1) {
-          const away = (distances[k] ?? 1) * W;
-          if (Math.abs(lz - away) <= 0.25 * W) shadow[k] = (shadow[k] ?? 0) + 1;
-          if (Math.abs(lz + upstream + away) <= 0.25 * W) {
-            shadowFree[k] = (shadowFree[k] ?? 0) + 1;
-          }
+      for (let k = 0; k < distances.length; k += 1) {
+        const away = (distances[k] ?? 1) * W;
+        const inSlab = Math.abs(lz - away) <= 0.25 * W;
+        const inFreeSlab = Math.abs(lz + upstream + away) <= 0.25 * W;
+        if (inSlab) {
+          slabTotal[k] = (slabTotal[k] ?? 0) + 1;
+          if (d <= 0) shadow[k] = (shadow[k] ?? 0) + 1;
+        }
+        if (inFreeSlab) {
+          slabFreeTotal[k] = (slabFreeTotal[k] ?? 0) + 1;
+          if (d <= 0) shadowFree[k] = (shadowFree[k] ?? 0) + 1;
         }
       }
 
@@ -664,10 +777,18 @@ export function measureSim(
     frames,
     bodies,
     compression: {
-      region: compressionRegion / divisor,
-      freeStream: compressionFree / divisor,
-      ratio: compressionFree > 0 ? compressionRegion / compressionFree : 0,
+      region: planeTotal > 0 ? (compressionRegion / planeTotal) * 1000 : 0,
+      freeStream: freeTotal > 0 ? (compressionFree / freeTotal) * 1000 : 0,
+      ratio:
+        compressionFree > 0 && planeTotal > 0
+          ? (compressionRegion / planeTotal) / (compressionFree / freeTotal)
+          : 0,
     },
+    edgeProfile: Array.from({ length: EDGE_BINS }, (_, slot) => ({
+      dH: EDGE_FROM + ((slot + 0.5) / EDGE_BINS) * (EDGE_TO - EDGE_FROM),
+      region: planeTotal > 0 ? ((edgeRegion[slot] ?? 0) / planeTotal) * 1000 : 0,
+      freeStream: freeTotal > 0 ? ((edgeFree[slot] ?? 0) / freeTotal) * 1000 : 0,
+    })),
     turbulence: {
       counterform: dispersionOf(counterform),
       freeStream: dispersionOf(freeBodies),
@@ -675,8 +796,10 @@ export function measureSim(
       freeCorrelation: freeCorrelation.finish(),
     },
     reattachment: distances.map((away, k) => {
-      const inShadow = (shadow[k] ?? 0) / divisor;
-      const free = (shadowFree[k] ?? 0) / divisor;
+      const total = slabTotal[k] ?? 0;
+      const freeSlab = slabFreeTotal[k] ?? 0;
+      const inShadow = total > 0 ? ((shadow[k] ?? 0) / total) * 1000 : 0;
+      const free = freeSlab > 0 ? ((shadowFree[k] ?? 0) / freeSlab) * 1000 : 0;
       return {
         atW: away,
         shadow: inShadow,

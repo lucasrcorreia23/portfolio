@@ -150,6 +150,34 @@ export function installProbe(deps: ProbeDeps): () => void {
     }
   };
 
+  /**
+   * Fixa o quadro de medição em pixels, independente da janela.
+   *
+   * Sem isto a medição herda o tamanho da janela do navegador, e a janela de uma
+   * sessão dirigida por ferramenta é o que o sistema operacional quiser — aqui
+   * ela abriu em 2560×907, uma razão de 2.8:1 em que o título ocupa 49% da
+   * largura em vez dos 84% para os quais `SPECIMEN_SIZE` foi resolvido. Medir
+   * ali mediria outro enquadramento.
+   *
+   * O tamanho é imposto no elemento que o R3F **mede** (o pai do canvas), e não
+   * no canvas: assim quem reconfigura a razão da câmera e os alvos do compositor
+   * é o próprio R3F, pelo caminho normal, e nada fica fora de sincronia.
+   */
+  const viewport = async (width = 1440, height = 900) => {
+    const host = gl.domElement.parentElement;
+    if (host === null) return { width: gl.domElement.width, height: gl.domElement.height };
+    host.style.width = `${width}px`;
+    host.style.height = `${height}px`;
+    for (let i = 0; i < 60; i += 1) {
+      if (gl.domElement.width === Math.round(width * Math.min(window.devicePixelRatio, 1.5))) {
+        break;
+      }
+      await new Promise((done) => setTimeout(done, 100));
+    }
+    step(2);
+    return { width: gl.domElement.width, height: gl.domElement.height };
+  };
+
   const settle = (progress = SEPARATION_PROGRESS, steps = 150) => {
     progressRef.current = progress;
     settleRef.current?.(steps);
@@ -326,18 +354,42 @@ export function installProbe(deps: ProbeDeps): () => void {
       progress?: number;
       settleSteps?: number;
       composedFrames?: number;
+      composedStride?: number;
       simFrames?: number;
       threshold?: number;
     } = {},
   ): ProbeReport => {
     const {
       progress = SEPARATION_PROGRESS,
-      settleSteps = 150,
-      composedFrames = 24,
-      simFrames = 240,
+      // Um trânsito inteiro para assentar, outro para medir. Ver abaixo.
+      settleSteps = 700,
+      composedFrames = 40,
+      composedStride = 17,
+      simFrames = 700,
       threshold = BODY_LUMINANCE,
     } = options;
 
+    /**
+     * ## Por que os números são tão grandes
+     *
+     * Com o progresso **travado**, a câmera não anda — e aí a reciclagem do
+     * bando revela uma coisa que a descida real esconde: todo corpo que passa
+     * pela lente renasce em `uCameraZ − 64`, que é **um plano**, não uma
+     * distribuição. Com a câmera parada, esse plano é sempre o mesmo, e a
+     * população se organiza numa lâmina viajante — medido: um terço do bando
+     * (5.7 mil de 16.4 mil corpos) num único bin de quatro unidades, com bins
+     * vizinhos vazios.
+     *
+     * A lâmina cruza o duto inteiro (66 unidades a ~6 u/s) em cerca de **660
+     * quadros**. Medir menos que isso é medir a fase da lâmina, não a cena: foi
+     * o que fez a mesma configuração devolver razão de compressão 1.60 numa
+     * rodada e 1.12 na seguinte, e controles de fluxo livre com zero corpos.
+     *
+     * Então: um trânsito para assentar e um trânsito para medir. No site real
+     * a câmera desce enquanto isso acontece, o plano de renascimento se move
+     * junto e a lâmina se desmancha — este é um artefato de medir com o
+     * progresso travado, não um defeito do bando.
+     */
     settle(progress, settleSteps);
     const field = readField();
     if (field === null) throw new Error("o campo não foi assado");
@@ -348,21 +400,23 @@ export function installProbe(deps: ProbeDeps): () => void {
     const context = measureContext();
 
     const pixels = new Uint8Array(width * height * 4);
-    const run = (tau: number) =>
+    // Os quadros são espaçados de `composedStride`, não consecutivos: quarenta
+    // quadros seguidos são 0.67 s de cena e veem a lâmina numa posição só.
+    // Espaçados de 17, os mesmos quarenta cobrem os 680 quadros do trânsito.
+    const [composed, composedLowThreshold, composedHighThreshold] =
       measureComposed(
         composedFrames,
-        () => composedInto(pixels),
+        () => {
+          if (composedStride > 1) step(composedStride - 1);
+          return composedInto(pixels);
+        },
         width,
         height,
         maps,
         context,
-        tau,
+        [threshold, threshold * 0.8, threshold * 1.25],
         SRGB_TO_LINEAR,
       );
-
-    const composed = run(threshold);
-    const composedLowThreshold = run(threshold * 0.8);
-    const composedHighThreshold = run(threshold * 1.25);
 
     const sim = measureSim(
       simFrames,
@@ -374,8 +428,22 @@ export function installProbe(deps: ProbeDeps): () => void {
       context,
     );
 
+    if (
+      composed === undefined ||
+      composedLowThreshold === undefined ||
+      composedHighThreshold === undefined
+    ) {
+      throw new Error("varredura de limiar vazia");
+    }
+
     return {
-      meta: { ...meta(), settleSteps, composedFrames, simFrames },
+      meta: {
+        ...meta(),
+        settleSteps,
+        composedFrames,
+        composedStride,
+        simFrames,
+      },
       composed,
       composedLowThreshold,
       composedHighThreshold,
@@ -497,6 +565,7 @@ export function installProbe(deps: ProbeDeps): () => void {
     meta,
     step,
     settle,
+    viewport,
     readField,
     readSim,
     planeMap,
@@ -508,6 +577,11 @@ export function installProbe(deps: ProbeDeps): () => void {
   const host = window as unknown as { __probe?: typeof api };
   host.__probe = api;
   return () => {
-    delete host.__probe;
+    // Só desinstala se ainda for **esta** instalação. Em desenvolvimento o
+    // efeito monta e desmonta várias vezes (StrictMode, Fast Refresh), e as
+    // ordens se cruzam: uma limpeza tardia apagava a sonda que uma montagem
+    // mais nova tinha acabado de publicar, e a página ficava com o
+    // `[probe] pronto` no console e nada em `window.__probe`.
+    if (host.__probe === api) delete host.__probe;
   };
 }
