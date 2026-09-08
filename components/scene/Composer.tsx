@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
   AdditiveBlending,
@@ -9,6 +9,7 @@ import {
   GLSL3,
   HalfFloatType,
   LinearFilter,
+  NearestFilter,
   UnsignedIntType,
   Vector2,
   WebGLRenderTarget,
@@ -21,12 +22,37 @@ import {
   BLOOM_UP_FRAG,
   COMPOSITE_FRAG,
   DOF_FRAG,
+  VEIL_REDUCE_FRAG,
+  VEIL_SEED_FRAG,
+  VEIL_SOLVE_FRAG,
 } from "@/lib/scene/shaders/post";
 import { sceneSettings } from "@/lib/scene/settings";
 import { veilUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
+import { MAX_VEIL_BOXES, VEIL_CEILING } from "@/lib/scene/veil";
 
 /** Níveis da cadeia de bloom, a partir de meia resolução. */
 const BLOOM_LEVELS = 5;
+
+/** Níveis da redução do véu: 4× por nível, de 1/4 a 1/64 do quadro. */
+const VEIL_LEVELS = 3;
+
+/**
+ * Força do bloom e exposição do tonemap.
+ *
+ * Elas viraram constantes de módulo porque **duas passadas precisam concordar
+ * sobre elas**: o composite, que compõe o quadro, e a semente do véu, que
+ * reconstrói a mesma luminância para resolver o `f`. Dois números iguais
+ * digitados em dois lugares é a forma mais fácil de o véu passar a resolver
+ * para um quadro que não é o que vai para a tela.
+ */
+const BLOOM_STRENGTH = 0.55;
+const EXPOSURE = 1.15;
+
+/** L de `--void`, a cor para a qual o véu mistura. Lida do próprio uniform. */
+function fogLuminance(shared: SharedUniforms): number {
+  const c = shared.void.value;
+  return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+}
 
 type ComposerProps = {
   shared: SharedUniforms;
@@ -55,6 +81,8 @@ type ComposerProps = {
 export function Composer({ shared, apertureRef, focusRef }: ComposerProps) {
   const { size, viewport, camera } = useThree();
   const settings = sceneSettings();
+  /** Qual dos dois alvos de três texels tem a resolução do quadro anterior. */
+  const veilSwap = useRef(0);
 
   const rig = useMemo(() => {
     const makeColorTarget = (samples: number) => {
@@ -133,6 +161,71 @@ export function Composer({ shared, apertureRef, focusRef }: ComposerProps) {
     up.blending = AdditiveBlending;
     up.transparent = true;
 
+    /**
+     * O campo do véu: a luminância entregue, reduzida por máximo.
+     *
+     * Três níveis de 4×4 levam o quadro a 1/64 — a 1440×900 isso são 23×15
+     * texels, cada um carregando o **maior** dos 4096 pixels que ele resume.
+     * O critério do DIRECTION.md §5 é "nenhum pixel sob a caixa passa do teto",
+     * então a redução tem que ser por máximo; uma média diria que uma coluna
+     * atravessada por um corpo está escura na média, que é verdade e é inútil.
+     */
+    const veilField = Array.from({ length: VEIL_LEVELS }, () =>
+      makeColorTarget(0),
+    );
+    // **`NearestFilter` nos dois, e não é higiene.** Com filtro linear cada
+    // amostra do campo é uma média de quatro texels vizinhos, e a média de
+    // máximos não é o máximo: a redução passa a subestimar exatamente o pixel
+    // brilhante que ela existe para encontrar. Medido, o véu resolvia para
+    // L = 0.16–0.20 sob o texto com o teto em 0.125. É a mesma armadilha que o
+    // FBO do bando já documenta, aqui num alvo de um canal só.
+    for (const target of veilField) {
+      target.texture.minFilter = NearestFilter;
+      target.texture.magFilter = NearestFilter;
+    }
+    // Dois alvos de três texels, em ping-pong: a resolução deste quadro precisa
+    // ler a do anterior para amortecer a descida. Um alvo só seria ler e
+    // escrever a mesma textura na mesma passada, que é indefinido.
+    const veilSolve = [makeColorTarget(0), makeColorTarget(0)] as const;
+    for (const target of veilSolve) {
+      target.setSize(MAX_VEIL_BOXES, 1);
+      target.texture.minFilter = NearestFilter;
+      target.texture.magFilter = NearestFilter;
+    }
+
+    const veilSeed = createPassMaterial(
+      VEIL_SEED_FRAG,
+      {
+        uSource: { value: scene.texture },
+        uBloom: { value: bloom[0]?.texture ?? null },
+        uTexel: { value: new Vector2() },
+        uBloomStrength: { value: BLOOM_STRENGTH },
+        uExposure: { value: EXPOSURE },
+      },
+      GLSL3,
+    );
+
+    const veilReduce = createPassMaterial(
+      VEIL_REDUCE_FRAG,
+      { uSource: { value: null }, uTexel: { value: new Vector2() } },
+      GLSL3,
+    );
+
+    const veilSolver = createPassMaterial(
+      VEIL_SOLVE_FRAG,
+      {
+        uField: { value: veilField[VEIL_LEVELS - 1]?.texture ?? null },
+        uPrevious: { value: veilSolve[0].texture },
+        uVeilBox: shared.veilBox,
+        uVeilF: shared.veilF,
+        uCeiling: { value: VEIL_CEILING },
+        uFogLuma: { value: fogLuminance(shared) },
+        // Descida em ~16 quadros (0.27 s). Ver o docblock do véu em post.ts.
+        uFall: { value: 0.06 },
+      },
+      GLSL3,
+    );
+
     const composite = createPassMaterial(
       COMPOSITE_FRAG,
       {
@@ -140,7 +233,7 @@ export function Composer({ shared, apertureRef, focusRef }: ComposerProps) {
         uBlurred: { value: dofB.texture },
         uBloom: { value: bloom[0]?.texture ?? null },
         uResolution: shared.resolution,
-        uBloomStrength: { value: 0.55 },
+        uBloomStrength: { value: BLOOM_STRENGTH },
         // Sutil, e só nas bordas — e "sutil" aqui é um número, não um
         // adjetivo. O deslocamento cresce com o quadrado do raio, e na quina
         // do quadro `centered.x * r2` vale 0.25; para os ~2.5 px que uma lente
@@ -153,7 +246,7 @@ export function Composer({ shared, apertureRef, focusRef }: ComposerProps) {
         uAberration: { value: 0.007 },
         uGrain: { value: 0.045 },
         uGrainSeed: { value: 0 },
-        uExposure: { value: 1.15 },
+        uExposure: { value: EXPOSURE },
         uDofEnabled: { value: settings.dof ? 1 : 0 },
         // O véu de legibilidade mora aqui, e não nos materiais: é a única
         // passada em que o bloom já pousou. Ver `shaders/post.ts`.
@@ -168,10 +261,15 @@ export function Composer({ shared, apertureRef, focusRef }: ComposerProps) {
       dofA,
       dofB,
       bloom,
+      veilField,
+      veilSolve,
       dof,
       threshold,
       down,
       up,
+      veilSeed,
+      veilReduce,
+      veilSolver,
       composite,
       depthUniforms,
     };
@@ -185,11 +283,16 @@ export function Composer({ shared, apertureRef, focusRef }: ComposerProps) {
       held.dofA.dispose();
       held.dofB.dispose();
       for (const target of held.bloom) target.dispose();
+      for (const target of held.veilField) target.dispose();
+      for (const target of held.veilSolve) target.dispose();
       for (const material of [
         held.dof,
         held.threshold,
         held.down,
         held.up,
+        held.veilSeed,
+        held.veilReduce,
+        held.veilSolver,
         held.composite,
       ]) {
         material.dispose();
@@ -207,6 +310,14 @@ export function Composer({ shared, apertureRef, focusRef }: ComposerProps) {
     rig.dofB.setSize(Math.max(1, width >> 1), Math.max(1, height >> 1));
     rig.bloom.forEach((target, level) => {
       const shift = level + 1;
+      target.setSize(
+        Math.max(1, width >> shift),
+        Math.max(1, height >> shift),
+      );
+    });
+    // O campo do véu cai de quatro em quatro: 1/4, 1/16, 1/64.
+    rig.veilField.forEach((target, level) => {
+      const shift = (level + 1) * 2;
       target.setSize(
         Math.max(1, width >> shift),
         Math.max(1, height >> shift),
@@ -277,6 +388,46 @@ export function Composer({ shared, apertureRef, focusRef }: ComposerProps) {
       setUniform(rig.up, "uSource", source.texture);
       setVec2(rig.up, "uTexel", TEXEL.set(1 / source.width, 1 / source.height));
       blit(renderer, rig.up, target);
+    }
+
+    // --- o véu de legibilidade ----------------------------------------------
+    // Depois do bloom de propósito: o que ele mede é a luminância que vai para
+    // a tela, e o bloom é justamente o que espalha a luz de um corpo que está
+    // **fora** da caixa para dentro dela. Ver o bloco do véu em post.ts.
+    const seedTarget = rig.veilField[0];
+    if (seedTarget !== undefined && first !== undefined) {
+      setUniform(rig.veilSeed, "uSource", rig.scene.texture);
+      setUniform(rig.veilSeed, "uBloom", first.texture);
+      setVec2(
+        rig.veilSeed,
+        "uTexel",
+        TEXEL.set(1 / rig.scene.width, 1 / rig.scene.height),
+      );
+      blit(renderer, rig.veilSeed, seedTarget);
+    }
+
+    for (let level = 1; level < rig.veilField.length; level += 1) {
+      const source = rig.veilField[level - 1];
+      const target = rig.veilField[level];
+      if (source === undefined || target === undefined) continue;
+      setUniform(rig.veilReduce, "uSource", source.texture);
+      setVec2(
+        rig.veilReduce,
+        "uTexel",
+        TEXEL.set(1 / source.width, 1 / source.height),
+      );
+      blit(renderer, rig.veilReduce, target);
+    }
+
+    const field = rig.veilField[rig.veilField.length - 1];
+    const read = rig.veilSolve[veilSwap.current];
+    const write = rig.veilSolve[veilSwap.current ^ 1];
+    if (field !== undefined && read !== undefined && write !== undefined) {
+      setUniform(rig.veilSolver, "uField", field.texture);
+      setUniform(rig.veilSolver, "uPrevious", read.texture);
+      blit(renderer, rig.veilSolver, write);
+      veilSwap.current ^= 1;
+      setUniform(rig.composite, "uVeilSolved", write.texture);
     }
 
     // --- composite ----------------------------------------------------------

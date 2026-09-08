@@ -90,11 +90,15 @@ function formatDepth(depth: number): string {
 /**
  * `DENS. 0.62`, duas casas.
  *
- * **Faixa medida da entrada** (PROJECT.md §7), varrendo o progresso de 0.28 a
- * 0.45 com a sonda, 340 amostras: mínimo 0.32, mediana 0.71, máximo 1.00. A
- * grandeza é a densidade do proxy no poleiro, normalizada, e satura em 1.00
- * quando o bando assenta — que é o que "densidade estável" quer dizer no
- * DIRECTION.md §4. Duas casas porque a terceira só mostraria o `damp`.
+ * **Faixa medida da entrada** (PROJECT.md §7): descendo de 0.28 a 0.45 na taxa
+ * do visitante lento (0.6 vh/s), 357 amostras, a fração da nuvem do proxy
+ * dentro da coluna do poleiro vale **0.00 no mínimo, 0.45 no p10, 0.70 na
+ * mediana, 0.75 no p90 e 1.00 no máximo**. O zero é a entrada do beat, antes de
+ * o poleiro capturar alguém; o platô em 0.70–0.75 é a coluna formada, que é o
+ * "densidade estável" do DIRECTION.md §4 aparecendo como número.
+ *
+ * Duas casas porque a terceira só mostraria o ruído do censo — a nuvem tem 64
+ * macro-partículas, então o passo mínimo é 0.016.
  */
 function formatDensity(density: number): string {
   return density.toFixed(2);

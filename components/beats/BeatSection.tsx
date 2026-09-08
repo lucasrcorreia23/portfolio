@@ -46,9 +46,14 @@ export function BeatSection({ beat, label, children }: BeatSectionProps) {
       {/* Rótulo, não título: é uma etiqueta de estação em mono. Deixá-lo
           como <p> nomeando a seção via aria-labelledby mantém a ordem de
           cabeçalhos limpa para o h1 que vive dentro do beat de Identidade. */}
+      {/* `data-veil` porque isto é texto sobre a cena como qualquer outro: o
+          rótulo de estação carrega informação e a luz por trás dele muda a cada
+          quadro. `w-fit` para a caixa ancorada ser a do texto e não a da
+          seção inteira — ver `EmergenceBeat.tsx`. */}
       <p
         id={`${beat.id}-label`}
-        className="type-mono text-hud text-mist"
+        data-veil
+        className="type-mono text-hud text-mist w-fit"
         data-range={`${beat.from.toFixed(2)}–${beat.to.toFixed(2)}`}
       >
         {label}

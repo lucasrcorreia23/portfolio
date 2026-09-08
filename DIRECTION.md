@@ -436,8 +436,14 @@ macro-partículas rodando as mesmas forças em baixa resolução, a 15 Hz,
 interpoladas com `damp` entre atualizações. As 3 a 5 luzes seguem os
 aglomerados dessa nuvem grosseira. O proxy não precisa bater com a simulação da
 GPU corpo a corpo; precisa concordar sobre **onde está a massa**, e isso ele
-faz. Nada de `readPixels` no caminho de render, nunca. O mesmo proxy dirige o
-véu de legibilidade, então luz e contraste enxergam o mesmo mundo.
+faz. Nada de `readPixels` no caminho de render, nunca.
+
+**O proxy dirige a luz e a estrutura, e não dirige mais o véu.** Ele dirigiu, e
+a medição mostrou por que não podia: a energia dele é massa × velocidade, e num
+beat em que a velocidade cai de propósito ele conclui que a cena escureceu
+justamente quando ela clareia. Para "onde está a massa" isso não importa —
+para "quanta luz há atrás desta linha de texto" importa tudo. Ver "Legibilidade
+sobre luz variável".
 - **Uma fonte distante a montante**, quase zero no começo, subindo para o máximo
   só entre 0.85 e 1.00. É a luz para a qual você está andando. A cor viaja
   `--teal` → `--cyan` → `--peach` ao longo da descida.
@@ -464,29 +470,57 @@ passar de L = 0.138.** Com a câmara vazia sobra folga enorme — `--void` dá
 emissivo no auge vale L ≈ 0.619, ou seja **1.26:1**. Um cacho brilhante
 cruzando atrás da coluna destrói a leitura por dois segundos.
 
-**Mecanismo escolhido: véu ancorado à coluna de texto, feito de névoa.** Não é
-um scrim preto por cima do canvas. É um termo aditivo de densidade no shader de
-névoa, ancorado à caixa da coluna de texto projetada na cena, com queda suave e
-o mesmo grão do resto. Névoa é `mix` em direção à cor da névoa em luz linear:
+**Mecanismo: véu ancorado à coluna de texto, feito de névoa.** Não é um scrim
+preto por cima do canvas. É um `mix` em direção à cor da névoa, em luz linear,
+ancorado à caixa da coluna de texto e com queda suave:
 
 ```
-L_saída = (1 − f) · L_cena + f · L_névoa
+L_saída = (1 − f) · L_cena + f · L_névoa      →      f = (L_cena − alvo) / (L_cena − L_névoa)
 ```
 
 Como `L_névoa` é uma constante conhecida (~0.003), dá para **resolver `f` para o
-alvo**, por frame, em vez de escolher um valor bonito e torcer. No pior caso
-(`L_cena` = 0.62) o alvo exige `f ≈ 0.78`. O véu fica baixo quase o tempo todo e
-só sobe quando precisa — lê-se como um banco de névoa passando, não como uma
-caixa escura acendendo.
+alvo** em vez de escolher um valor bonito e torcer.
 
-- `f` é resolvido por frame e clampado em [0.15, 0.85].
-- É dirigido pela **simulação proxy na CPU** descrita em "Rig de luz", não por
-  leitura do FBO nem do frame renderizado. O proxy roda adiantado, então o véu
-  sobe *antes* do cacho chegar. Ler o frame renderizado atrasaria um quadro, e
-  um quadro ilegível já é uma falha. Na dúvida o proxy erra para cima: véu a
-  mais é feio, véu a menos é inacessível.
+**E `L_cena` é medido, não estimado.** O compositor reduz o próprio quadro — cena
+mais bloom, já tonemapado — por **máximo**, em três passadas de 4×4, até 1/64 da
+resolução; uma quarta passada varre a região de cada caixa nesse campo e resolve
+o `f` dali. Máximo, e não média, porque o critério é "nenhum pixel sob a caixa
+passa do teto". Tudo na GPU: nada volta para a CPU, e a proibição de `readPixels`
+no caminho de render continua de pé.
+
+- **O véu entra depois do bloom e depois do tonemap.** Depois do bloom porque é
+  o bloom que espalha a luz de um corpo que está *fora* da caixa para dentro
+  dela; depois do tonemap porque é ali que a cor vira a luminância relativa que
+  a conta de contraste usa — o teto deixa de precisar de conversão e passa a
+  ser o próprio número que a medição lê no pixel.
+- **`f` não tem piso nem teto.** Onde a cena já está abaixo do alvo ele é zero e
+  o véu não existe; onde um cacho passa ele vai até onde precisar. O véu fica
+  baixo quase o tempo todo porque a cena está escura quase o tempo todo, e não
+  porque um clamp o segura.
+- **Ele sobe no quadro e desce devagar** (~0.27 s), num ping-pong de dois alvos
+  de poucos texels. Um quadro sem véu já é um quadro ilegível; um quadro com véu
+  a mais é só um quadro com névoa.
 - O véu vive na cena, atrás do texto. O DOM nunca ganha `background`, `scrim`
   nem `text-shadow` para compensar.
+
+**Por que este mecanismo substituiu o anterior.** A primeira versão resolvia `f`
+uma vez por caixa por quadro a partir da **simulação proxy da CPU** — o mesmo
+proxy do rig de luz —, com a justificativa de que ele roda adiantado e faria o
+véu subir antes do cacho chegar. Implementado e medido no pixel entregue,
+varrendo o beat de Quem sou a 0.6 vh/s: **1.21:1 no pior quadro**, com L = 0.65
+sob a coluna de manifesto e o `f` parado no piso de 0.15.
+
+A causa não é calibragem. A energia de um aglomerado do proxy é massa ×
+velocidade, e no poleiro de Quem sou a velocidade **cai de propósito**: o
+estimador desce exatamente enquanto o bando se junta atrás do texto e fica mais
+brilhante. Era um modelo da cena decidindo pela cena — o erro que o PROJECT.md §7
+proíbe para instrumentos, cometido aqui pelo próprio mecanismo. Consertar o proxy
+não resolveria: proxy consertado continua sendo palpite.
+
+Com a luminância medida do quadro, a mesma varredura devolve **4.62:1 no pior
+quadro** (en, 1440×900) e uma mediana de 5.21 — o véu pousa no teto e fica lá,
+que é como se reconhece um mecanismo exato. As faixas medidas por caixa estão no
+AGENTS.md.
 
 **O teto de 0.138 só vale para `--mist` em opacidade cheia.** Isso colide com a
 mono "de opacidade reduzida" do `PROJECT.md` §3.2: a 60% sobre `--void` a mono
@@ -514,13 +548,28 @@ um retângulo de ausência em volta da coluna de texto — e a proibição desta
 corpos não controla a luminância: a névoa espalha luz de cachos que estão longe,
 atrás, fora da região. Exclusão não é garantia, é esperança.
 
-**Como isso é testado.** Não se olha um frame bonito. Varre-se o progresso
-normalizado de 0 a 1 em pelo menos 600 passos, renderizando fora de tela; em
-cada passo, para cada caixa de texto de leitura, amostra-se a **luminância
-máxima** sob a caixa. O resultado do teste é o `argmin` de contraste sobre todos
-os passos e todas as caixas, com o valor de progresso que o causou. Portão:
-mínimo ≥ 4.5. A varredura roda nos dois idiomas (pt e en mudam as caixas) e em
-três larguras de viewport. O grão não conta como fundo.
+**Como isso é testado.** Não se olha um frame bonito. **Desce-se**, na taxa de
+rolagem do visitante lento (0.6 vh/s), medindo **cada quadro**; em cada quadro,
+para cada **linha** de texto desenhada — as caixas saem de `Range.getClientRects`
+dos nós de texto, não da caixa do elemento —, amostra-se a **luminância máxima**
+sob a linha, lida do quadro composto. O resultado do teste é o `argmin` de
+contraste sobre todos os quadros e todas as linhas, com o progresso que o causou,
+mais a **faixa medida** da luminância atrás de cada caixa. Portão: mínimo ≥ 4.5.
+A varredura roda nos dois idiomas (pt e en mudam as caixas) e em três larguras de
+viewport.
+
+Duas coisas mudaram aqui depois de a primeira versão ser escrita, e as duas por
+medição:
+
+- **Descida, não varredura de poses.** Travar o progresso e rodar alguns quadros
+  em cada passo mede uma cena que não existe: com o progresso parado, o poleiro
+  de Quem sou acumula corpos que na descida real já teriam passado. Um quadro de
+  medição tem que ser um quadro de site.
+- **O grão conta.** O documento dizia que ele não contava como fundo, e isso
+  vale para a *intenção* — grão não é iluminação. Mas ele é somado depois do véu
+  e o pixel entregue o inclui: medido, ele soma até 0.013 de luminância, e é por
+  isso que o teto do véu é 0.017 abaixo do alvo em vez de igual a ele. Descontá-
+  lo na hora de medir seria medir o quadro que não foi entregue.
 
 ### Névoa (não é fumaça)
 

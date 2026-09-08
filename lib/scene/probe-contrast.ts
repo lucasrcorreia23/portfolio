@@ -40,12 +40,7 @@ export const MIST_LUMINANCE = 0.796;
 /** O piso do PROJECT.md §5. */
 export const CONTRAST_FLOOR = 4.5;
 
-/**
- * Raio da queda do véu em UV de tela, igual ao `smoothstep(0.0, 0.16, …)` de
- * `veilAmount` em `lib/scene/shaders/fog.ts`. A pegada entregue é a caixa mais
- * isto, e é contra essa soma que a medida é comparada.
- */
-const VEIL_FALLOFF = 0.16;
+import { VEIL_FALLOFF } from "./veil";
 
 /** Diferença mínima, em nível de 8 bits, para um pixel contar como mudado. */
 const FOOTPRINT_EPSILON = 2;
@@ -118,11 +113,30 @@ export type ContrastWorst = {
   box: string;
 };
 
+export type BoxRange = {
+  box: string;
+  /** Pior contraste da caixa e o progresso em que ele acontece. */
+  worstRatio: number;
+  atProgress: number;
+  /**
+   * A **faixa medida** da luminância atrás desta caixa, ao longo da varredura.
+   *
+   * É o que o PROJECT.md §7 exige ao lado de qualquer limiar: o teto do véu
+   * (`VEIL_CEILING`) só quer dizer alguma coisa comparado com a faixa que a
+   * entrada de fato produz. `max` é a luminância que gerou o pior contraste.
+   */
+  min: number;
+  p50: number;
+  p95: number;
+  max: number;
+  samples: number;
+};
+
 export type ContrastReport = {
   /** O pior quadro de todos: é este o resultado do teste. */
   worst: ContrastWorst;
-  /** O pior de cada caixa, ordenado do pior para o melhor. */
-  perBox: ContrastWorst[];
+  /** O pior de cada caixa, com a faixa medida atrás dela. Pior primeiro. */
+  perBox: BoxRange[];
   /**
    * Percentis do **pior contraste de cada quadro**, do pior para o melhor.
    *
@@ -611,8 +625,9 @@ export function installContrast(deps: ContrastDeps) {
     const scrollTo = takeScroll();
 
     const buffer = new Uint8Array(bufferWidth() * bufferHeight() * 4);
-    const perBox = new Map<string, ContrastWorst>();
+    const perBox = new Map<string, number[]>();
     const perFrame: number[] = [];
+    const worstOfBox = new Map<string, ContrastWorst>();
     let worst: ContrastWorst = {
       ratio: Infinity,
       luminance: 0,
@@ -637,9 +652,13 @@ export function installContrast(deps: ContrastDeps) {
           const ratio = ratioOf(luminance);
           samples += 1;
 
-          const current = perBox.get(rect.id);
-          if (current === undefined || ratio < current.ratio) {
-            perBox.set(rect.id, { ratio, luminance, progress, box: rect.id });
+          // A faixa inteira, não só o pior: é ela que valida o teto do véu.
+          const seen = perBox.get(rect.id);
+          if (seen === undefined) perBox.set(rect.id, [luminance]);
+          else seen.push(luminance);
+          const previous = worstOfBox.get(rect.id);
+          if (previous === undefined || ratio < previous.ratio) {
+            worstOfBox.set(rect.id, { ratio, luminance, progress, box: rect.id });
           }
           if (ratio < worst.ratio) {
             worst = { ratio, luminance, progress, box: rect.id };
@@ -669,7 +688,24 @@ export function installContrast(deps: ContrastDeps) {
         p50: quantile(0.5),
         p95: quantile(0.95),
       },
-      perBox: Array.from(perBox.values()).sort((a, b) => a.ratio - b.ratio),
+      perBox: Array.from(perBox.entries())
+        .map(([box, values]) => {
+          values.sort((a, b) => a - b);
+          const at = (q: number) =>
+            values[Math.min(values.length - 1, Math.floor(q * values.length))] ?? 0;
+          const worstHere = worstOfBox.get(box);
+          return {
+            box,
+            worstRatio: worstHere?.ratio ?? 0,
+            atProgress: worstHere?.progress ?? 0,
+            min: values[0] ?? 0,
+            p50: at(0.5),
+            p95: at(0.95),
+            max: values[values.length - 1] ?? 0,
+            samples: values.length,
+          };
+        })
+        .sort((a, b) => a.worstRatio - b.worstRatio),
       floor: CONTRAST_FLOOR,
       passes: worst.ratio >= CONTRAST_FLOOR,
       from,

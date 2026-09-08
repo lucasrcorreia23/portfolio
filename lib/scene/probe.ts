@@ -13,7 +13,7 @@ import {
 import { sceneSettings } from "./settings";
 import { TYPE_ARTICLE, TYPE_FIELD } from "./type-article";
 import { currentTypeField, typeFieldBakeCount } from "./type-field";
-import { SPECIMEN_SIZE, SPECIMEN_Z } from "./world";
+import { ROOST_RADIUS, SPECIMEN_SIZE, SPECIMEN_Z } from "./world";
 
 /**
  * A sonda de medição — **só em desenvolvimento**.
@@ -85,7 +85,7 @@ export type ProbeDeps = {
   };
   /** O poleiro resolvido neste quadro, para a medição saber onde ele está. */
   roost: {
-    center: { x: number; y: number; z: number };
+    center: Vector3;
     amount: number;
     drift: number;
   };
@@ -613,6 +613,9 @@ export function installProbe(deps: ProbeDeps): () => void {
       amount: roost.amount,
       drift: roost.drift,
     },
+    // A leitura que vai para a HUD, para a faixa dela poder ser varrida como
+    // qualquer outra entrada de limiar (PROJECT.md §7).
+    density: proxy.columnShare(roost.center, ROOST_RADIUS),
     proxy: {
       clusters: proxy.clusters.map((cluster) => [
         Number(cluster.position.x.toFixed(2)),

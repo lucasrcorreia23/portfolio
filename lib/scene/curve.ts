@@ -330,13 +330,27 @@ export function createRoost(): Roost {
 /**
  * Teto e piso do arrasto do eixo.
  *
- * O piso existe por causa do salto: um `scrollTo` ou uma barra arrastada movem
- * a câmera dezenas de unidades num quadro, e a diferença finita devolveria uma
- * velocidade que nenhum corpo alcança — o poleiro cuspiria o bando para trás.
- * −9 é o mesmo teto de velocidade que o shader já impõe aos corpos.
+ * −9 é o mesmo teto de velocidade que o shader já impõe aos corpos: nenhum
+ * corpo acompanha um eixo mais rápido que ele mesmo.
  */
 const DRIFT_MIN = -9;
 const DRIFT_MAX = 1;
+
+/**
+ * Acima deste passo por quadro, o eixo não **andou**: ele reapareceu.
+ *
+ * Um corte do modo calmo, um `scrollTo`, uma barra arrastada ou um
+ * assentamento da sonda movem a câmera dezenas de unidades de uma vez, e a
+ * diferença finita devolveria uma velocidade que nenhum corpo alcança — o
+ * poleiro cuspiria o bando para trás e esvaziaria a câmara. Foi o que
+ * aconteceu na primeira medição com progresso travado: quadro vazio, sem erro
+ * nenhum no console.
+ *
+ * 1.5 unidade por quadro são 45 u/s a 1/30 s, e a rolagem mais rápida que este
+ * site aceita — o polegar a 3 vh/s no mobile — move a câmera 0.62 por quadro.
+ * O corte fica de um lado do número e todo escoamento real do outro.
+ */
+const CUT_STEP = 1.5;
 
 /**
  * Resolve o poleiro deste quadro: eixo, intensidade e arrasto.
@@ -357,7 +371,8 @@ export function resolveRoost(
   roostCenter(pose, aspect, out.center);
   out.amount = roostAmount(progress);
 
-  const raw = dt > 0 ? (out.center.z - previousZ) / dt : 0;
+  const step = out.center.z - previousZ;
+  const raw = dt > 0 && Math.abs(step) < CUT_STEP ? step / dt : 0;
   const bounded = raw < DRIFT_MIN ? DRIFT_MIN : raw > DRIFT_MAX ? DRIFT_MAX : raw;
   out.drift = damp(out.drift, bounded, 6, Math.max(dt, 1e-4));
   return out;

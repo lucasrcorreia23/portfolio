@@ -71,13 +71,13 @@ dois divergirem, o `PROJECT.md` ganha. Este arquivo é só o mapa do código.
 
 ## Estado atual
 
-**Fundação, portão, e a cena com os dois primeiros beats — com o descolamento.**
-Sobre o esqueleto — rotas, idiomas, tokens, escala tipográfica, driver de
-scroll, hooks de capacidade, pipeline de MDX — existem o **preloader e o portão
-de entrada** e a **cena contínua de R3F** com Emergência e Identidade (progresso
-0.00 a 0.28): câmara, névoa em três paradas, bando de 16.384 corpos em FBO
-ping-pong, estrutura gravada, e o corpo de prova em `troika-three-text` com
-oclusão real.
+**Fundação, portão, e a cena com os três primeiros beats — com o descolamento e
+o poleiro.** Sobre o esqueleto — rotas, idiomas, tokens, escala tipográfica,
+driver de scroll, hooks de capacidade, pipeline de MDX — existem o **preloader e
+o portão de entrada**, a **cena contínua de R3F** de 0.00 a 0.45 e a **HUD
+lateral fixa**: câmara, névoa em três paradas, bando de 16.384 corpos em FBO
+ping-pong, estrutura gravada, corpo de prova em `troika-three-text` com oclusão
+real, e o poleiro colunar de Quem sou.
 
 **O descolamento está feito e medido** (ver "O descolamento, medido"): campo de
 distância assado do próprio mesh do troika, aresta de ataque pelo gradiente,
@@ -86,9 +86,16 @@ campo distante — a caixa de cantos macios contra `SPECIMEN_HALF_*` — foi
 removido; `world.ts` guarda essas duas constantes agora só para as cotas
 gravadas da `Structure`.
 
-Os três beats de baixo — Quem sou, Trabalho, Superfície — continuam sem
-conteúdo, e os pontos de controle da câmera de 0.45 em diante são provisórios
-(ver `lib/scene/curve.ts`).
+**Quem sou está feito e medido** (ver "Quem sou, medido" e "O véu de
+legibilidade"): manifesto em coluna na margem esquerda com a lâmina de medida
+descendo por ela, poleiro colunar do bando contra a parede de estibordo, HUD
+permanente com contato, acervo, filtros, régua, áudio e idioma — e o véu de
+legibilidade **refeito**, porque a varredura de contraste reprovou o mecanismo
+antigo com 1.21:1.
+
+Os dois beats de baixo — Trabalho e Superfície — continuam sem conteúdo, e os
+pontos de controle da câmera de 0.65 em diante são provisórios (ver
+`lib/scene/curve.ts`).
 
 O template HTML comprado que ocupava este repositório foi **descartado, não
 migrado** (PROJECT.md §5). Nada dele sobreviveu: nem SCSS, nem jQuery, nem
@@ -171,6 +178,8 @@ app/[locale]/          rotas; o layout raiz é app/[locale]/layout.tsx
 components/gate/       o preloader e o portão de entrada (o beat "pré")
 components/scene/      a cena 3D e o portão que escolhe qual versão roda
 components/hud/        a HUD lateral fixa (substitui o rodapé; não há rodapé)
+                       Hud (servidor) → HudPanel (colapso no mobile) → régua,
+                       leitura por beat, filtros do rio, áudio, idioma, acervo
 components/beats/      as cinco seções da descida
 components/type/       DisplayLine — a linha de display que se auto-dimensiona
 content/cases/         os cases, em .mdx
@@ -222,22 +231,31 @@ caixa. Um pacote que apareça na primeira caixa por engano — um `import`
 estático que escapou para o `SceneGate`, por exemplo — não é 350 kB de cena, é
 350 kB de rota inicial estourada.
 
-Estado medido, com o portão e a cena dos dois primeiros beats:
+Estado medido, com o portão, a HUD e a cena dos três primeiros beats:
 
 | Rota / chunk | gz | contra |
 |---|---|---|
-| `/` e `/pt` — a descida, com portão e preloader | **181.1 kB** | 200 kB ✅ |
-| `/work/[slug]` — case, sem portão e sem cena | 174.1 kB | 200 kB ✅ |
-| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, **campo de distância e descolamento** | **294.1 kB** | 350 kB ✅ |
-| chunk do driver de scroll (gsap + ScrollTrigger + lenis) | 47.8 kB | fora da rota inicial |
+| `/` e `/pt` — a descida, com portão, preloader e HUD | **182.8 kB** | 200 kB ✅ |
+| `/work` e `/work/[slug]` — acervo e case, sem portão e sem cena | 176.0 kB | 200 kB ✅ |
+| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, campo de distância, descolamento, **poleiro e véu medido** | **298.6 kB** | 350 kB ✅ |
+| chunk do driver de scroll (gsap + ScrollTrigger + lenis) | 48.1 kB | fora da rota inicial |
 
 O descolamento inteiro — o assado do campo (`type-field.ts` + `shaders/field.ts`)
 e as três forças no shader dos boids — custou **10.1 kB gz**, de 284.0 para 294.1.
-Sobram 55.9 kB do teto para o rio e a transição para o case.
+Quem sou custou **4.5 kB**, de 294.1 para 298.6: o poleiro no shader dos boids e
+no proxy, e as três passadas novas do véu no compositor. Sobram 51.4 kB do teto
+para o rio e a transição para o case.
+
+A HUD inteira — contato, acervo, filtros com estado, régua com as cotas dos
+beats, leitura por beat, controle de áudio, colapso no mobile — custou **1.7 kB**
+na rota inicial, de 181.1 para 182.8. Nenhuma dependência nova: o que entrou
+foram componentes de cliente e dois stores de trinta linhas.
 
 **A sonda de medição não aparece nesta conta porque não existe em produção.**
-Verificado no build: nenhum chunk de `.next/static/chunks` menciona `__probe`,
-`installProbe` ou `probe-measure`. Ver "A sonda" abaixo.
+Verificado neste build: nenhum chunk de `.next/static/chunks` menciona `__probe`,
+`installProbe`, `readTextRects` nem `veilFootprint` — e nenhum menciona
+`__lenis`, o atalho de desenvolvimento que a varredura de contraste usa para
+rolar a página. Ver "A sonda" abaixo.
 
 Os dois chunks dinâmicos são separados **por conteúdo**, não por momento: o
 preloader pede a cena antes do clique, então dividir por "o que chegou depois de
@@ -376,10 +394,12 @@ lib/scene/load-scene.ts    promessa memoizada — espelho de load-driver.ts
 lib/scene/world.ts         as medidas da câmara; uma unidade ≈ um metro
 lib/scene/type-field.ts    o assado do campo de distância, do próprio mesh
 lib/scene/probe.ts         a sonda de medição (`?probe=1`, só em dev)
+lib/scene/probe-contrast.ts a varredura de contraste e a conferência do véu
 lib/scene/probe-measure.ts as quatro medidas de aceite e seus controles
 lib/scene/curve.ts         a coreografia: câmera, ângulo de ataque, abertura
 lib/scene/proxy-sim.ts     64 macro-partículas a 15 Hz — luz, estrutura, véu
-lib/scene/veil.ts          resolve o f do véu por quadro
+lib/scene/veil.ts          lê do DOM as caixas de texto que o véu protege
+lib/scene/readout-store.ts o fio da cena para a HUD (DENS., Z) — sem three
 lib/scene/gpu.ts           o triângulo de tela cheia e o blit
 lib/scene/type-article.ts  o dono do corpo de prova
 lib/scene/settings.ts      dof, contagem do bando e ?bench, lidos da URL
@@ -792,10 +812,179 @@ corrente mais fina cobrindo a peça inteira em vez de uma mais densa cobrindo o
 meio dela. A contact sheet (`.screens/03b-descolamento.png`) mostra os doze
 quadros com o tubo aberto.
 
+#### Quem sou, medido
+
+O beat de 0.28 a 0.45. A composição é uma divisão: **manifesto na margem
+esquerda, poleiro do bando à direita, parede graduada correndo entre os dois**.
+A câmera deriva para a parede de estibordo e fecha em 3.2 unidades dela em 0.45,
+contra 12 no eixo do duto — é o "a estrutura chega mais perto da câmera do que em
+qualquer outro momento" do DIRECTION.md §4.
+
+**O poleiro é uma casca cilíndrica, não um poço**, e os dois números que
+decidiram isso saíram de medição:
+
+- **Puxar para o eixo produz um caroço.** Com 16.384 corpos, a pressão de
+  separação equilibra o puxão só depois de a pilha virar uma bola de ~5 de raio
+  — na tela, um borrão redondo de 30% da largura, com `--rose` no meio inteiro.
+  Puxando para um **raio** (`ROOST_RADIUS`, em `world.ts`), a mesma população se
+  distribui numa superfície, o limbo fica mais denso que o miolo, e é esse limbo
+  que se lê como cilindro girando.
+- **A captura a 2.5 não formava o poleiro dentro do beat.** Com o arrasto que os
+  corpos têm, 2.5 dá velocidade terminal de 2.8 u/s, e um corpo na borda do tubo
+  está a dez unidades do eixo: 3.5 s, num beat que dura 3.6. Medido com
+  `__probe.descend()` — que desce na taxa de rolagem real em vez de assentar num
+  progresso travado —, o que se via em 0.36 era o bando da Identidade ainda
+  escoando **atravessado na frente da coluna de texto**. A 6.0 o poleiro está
+  formado antes do meio do beat.
+
+O tubo do bando **abre em altura** só aqui (`FLOCK_TUBE_TALL`), de 3.31 para 6.0:
+com a meia-altura de cruzeiro a pilha media 6.6 de altura por ~5 de largura, o
+que é um aglomerado, não uma coluna.
+
+**A leitura `DENS.` da HUD sai do proxy, e é um censo, não energia.** A energia
+de um aglomerado é massa × velocidade, e no poleiro a velocidade cai de
+propósito — usá-la como leitura de densidade mostraria o bando ficando *menos*
+denso enquanto ele se organiza. `columnShare` conta quantas macro-partículas
+estão dentro da coluna. Faixa medida, descendo de 0.28 a 0.45 a 0.6 vh/s, 357
+amostras: **mínimo 0.00, p10 0.45, mediana 0.70, p90 0.75, máximo 1.00**. O zero
+é a entrada do beat; o platô em 0.70–0.75 é a coluna formada.
+
+**Duas armadilhas de simulação que custaram tempo e estão resolvidas.**
+
+1. **O proxy e a GPU usam o mesmo arrasto por passo com passos diferentes** —
+   0.985 a 1/60 s lá, a 1/15 s aqui. Isso é `k = 0.92/s` contra `k = 0.23/s`:
+   mesma velocidade terminal, **quatro vezes** a constante de tempo. Copiando a
+   aceleração do shader, os centroides do proxy pararam em `x ≈ 2–5` com a
+   coluna em 8.6, e a HUD leu `DENS. 0.00` num quadro cheio de bando. A captura
+   entra no proxy como **alvo de velocidade** (`força / k`), que é imune ao
+   arrasto.
+2. **A contenção do tubo cede para o poleiro.** A coluna fica encostada na
+   parede, ou seja fora do tubo; uma contenção que continuasse valendo ali
+   puxaria os corpos de volta para o eixo do duto e a coluna nunca se formaria
+   contra a parede.
+
+**Calor.** O poleiro é compressão, e compressão é `--rose` (DIRECTION.md §5).
+Medido, a fração de pixels quentes na tela ao longo do beat é `0.0 · 5.5 · 2.8 ·
+2.4 · 2.2 · 2.8 · 6.9 · 11.5 · 4.5` por cento, de 0.30 a 0.46 — **pico de 11.5%
+contra o teto de 15% do PROJECT.md §3.1**, e uma segunda rodada mediu 13.5% no
+mesmo ponto. É a margem mais apertada da cena inteira, e ela cai justo em 0.44,
+onde o poleiro está mais denso pouco antes de soltar. Quem mexer na densidade do
+poleiro mede isto de novo.
+
+#### O véu de legibilidade, e por que o mecanismo mudou
+
+O DIRECTION.md §5 desenhou o véu como um termo de densidade ancorado à caixa do
+texto, com **um `f` por caixa por quadro resolvido a partir do proxy da CPU**.
+Implementado assim e medido no pixel entregue — `__probe.contrast()`, descendo o
+beat a 0.6 vh/s —, o pior contraste sob a coluna de manifesto deu **1.21:1**, com
+L = 0.65 sob o texto e o `f` parado no piso de 0.15.
+
+**A causa não é calibragem.** A energia do proxy é massa × velocidade, e no
+poleiro a velocidade cai: o estimador desce exatamente enquanto o bando se junta
+atrás do texto e fica mais brilhante. Era um modelo da cena decidindo pela cena —
+o erro que o PROJECT.md §7 proíbe para instrumentos, cometido pelo mecanismo.
+
+O véu agora lê **a própria cena**: o compositor reduz o quadro (cena + bloom, já
+tonemapado) por **máximo**, em três passadas de 4×4, até 1/64; uma quarta varre a
+região de cada caixa nesse campo e resolve `f = (L − teto) / (L − L_névoa)`. Tudo
+na GPU, sem readback. Ver `lib/scene/shaders/post.ts`.
+
+Quatro detalhes que são a diferença entre passar e não passar:
+
+- **`NearestFilter` no campo reduzido.** Com filtro linear, cada amostra é a
+  média de quatro texels, e **média de máximos não é máximo**: o véu resolvia
+  para L = 0.16–0.20 com o teto em 0.125. É a mesma armadilha do FBO do bando.
+- **O véu entra depois do bloom e depois do tonemap.** O bloom é o que espalha a
+  luz de um corpo que está *fora* da caixa para dentro dela; e depois do tonemap
+  a cor já é a luminância relativa que a conta de contraste usa, então o teto
+  deixa de precisar de conversão.
+- **As caixas são relidas por quadro.** A cada quatro quadros, uma coluna que
+  entrava na tela ficava até 67 ms sem véu, e a varredura acusou: 0.97:1 nos
+  primeiros quadros. O custo é 0.68 ms no pior caso para cinco caixas, e é
+  sobretudo trabalho antecipado — o layout já está sujo porque o `BeatReveal`
+  escreve uma custom property por quadro.
+- **A queda do envelope caiu de 0.16 para 0.07 de UV.** A queda larga foi
+  desenhada para o mecanismo antigo, em que ela escondia a borda de um retângulo
+  que escurecia por igual; com o `f` medido, quem escurece são os corpos. E 0.16
+  fazia o envelope da coluna de manifesto chegar a 82% da largura e **apagar o
+  poleiro**, que é o assunto do beat.
+
+O teto é `VEIL_CEILING` (`lib/scene/veil.ts`): 0.017 abaixo do alvo de 0.138 do
+DIRECTION.md §5, porque o grão é somado depois do véu e mede-se o pixel com grão
+e tudo. Com o teto em 0.125 a varredura pousou em **exatamente 0.138**, ou seja
+4.50 em cima da linha; a margem existe porque a linha não é lugar de pousar.
+
+##### A varredura, e a faixa medida atrás de cada caixa
+
+`__probe.contrast({ from: 0.26, to: 0.47, rate: 0.6 })`. Ela **desce** na taxa do
+visitante lento do DIRECTION.md §4 e mede **cada quadro** — 442 quadros, ~10.7
+mil leituras de retângulo —, lendo a luminância máxima sob **cada linha de
+texto** (as caixas saem de `Range.getClientRects`, não da caixa do elemento).
+
+Resultado, `en` a 1440×900, com a faixa medida da luminância atrás de cada caixa:
+
+| caixa | pior razão | em | L mín | L mediana | L máx |
+|---|---|---|---|---|---|
+| about "And I measure what I…" | **4.62** | 0.310 | 0.007 | 0.092 | 0.133 |
+| about "The work I want has…" | **4.62** | 0.294 | 0.008 | 0.093 | 0.133 |
+| about "I design product and…" | 4.63 | 0.296 | 0.006 | 0.072 | 0.133 |
+| hud `ARCHIVE` | 4.67 | 0.340 | 0.006 | 0.009 | 0.131 |
+| hud `CONTACT` | 4.72 | 0.329 | 0.006 | 0.010 | 0.129 |
+| hud `PROGRESS` | 4.74 | 0.436 | 0.006 | 0.010 | 0.128 |
+| hud (nome do beat) | 4.75 | 0.263 | 0.006 | 0.010 | 0.128 |
+| hud `EST. NNNN` | 4.78 | 0.276 | 0.006 | 0.009 | 0.127 |
+| hud `AUDIO ON` | 4.80 | 0.324 | 0.006 | 0.009 | 0.126 |
+| about (rótulo "Who I am") | 4.80 | 0.262 | 0.007 | 0.046 | 0.126 |
+| hud `EMAIL` · `IN` · `GH` · `X` · `en` · `pt` | 4.81–4.91 | 0.29–0.35 | 0.006 | 0.009–0.012 | 0.122–0.126 |
+| identity (três linhas de posicionamento) | 5.08–5.20 | 0.27 | 0.007 | 0.067–0.096 | 0.113–0.117 |
+| work (rótulo) | 5.12 | 0.427 | 0.008 | 0.014 | 0.115 |
+
+**O pior quadro é 4.62:1**, e a distribuição por quadro é p5 4.70, p25 4.84,
+mediana 5.21, p95 12.72. Três rodadas do mesmo script devolveram 4.60, 4.62 e
+4.63: o bando não é determinístico entre rodadas — o ruído ambiente anda com o
+relógio —, e o que é estável não é o pior número, é **o teto onde ele pousa**. A leitura importante é a coluna de L máximo: todas as
+caixas param entre 0.113 e 0.133, ou seja **o véu pousa no teto e fica lá** —
+é assim que se reconhece um mecanismo exato. A coluna de L mínimo (0.006) é a
+mesma cena sem corpo nenhum atrás do texto: a faixa que a entrada percorre é de
+duas ordens de grandeza, e é ela que valida o teto.
+
+Nas outras condições exigidas pelo DIRECTION.md §5:
+
+| condição | pior razão | mediana por quadro |
+|---|---|---|
+| `en`, 1440×900 | **4.62** | 5.21 |
+| `pt`, 1440×900 | **4.65** | 5.38 |
+| `pt`, 1024×900 | **4.59** | 5.06 |
+| `pt`, 500×844 (layout mobile, HUD colapsada) | **4.62** | 4.89 |
+
+**A caixa do véu é conferida antes de qualquer número de contraste**, com
+`__probe.veilFootprint()`: o mesmo estado de simulação é renderizado com e sem
+véu (dois `advance()` no mesmo timestamp, `dt = 0`, nada se move) e a pegada é o
+conjunto de pixels que mudaram. Medido: a caixa reivindicada é `[214, 242, 952,
+658]` px, a união das linhas de texto realmente desenhadas é `[224, 256, 914,
+643]` — ou seja a caixa contém os glifos com ≥10 px de folga em todos os lados —,
+e **96.4% da mudança de pixel cai dentro da pegada prevista**. O resto é o halo
+do bloom, que espalha a diferença com amplitude baixa até ~98 px além dela.
+
+##### Duas armadilhas do método
+
+1. **A sonda tranca o scroll, e o Lenis nasce com limite zero.** O portão trava a
+   descida com `overflow: hidden` até o clique, e a sonda entra sem clicar: o
+   Lenis calcula limite zero e todo `scrollTo` vai para o topo e fica lá. O
+   sintoma não é um erro — a varredura roda inteira, mede quadros de verdade, e
+   o pior contraste sai de uma caixa do beat errado, com a HUD marcando
+   `EST. 0000`. Destravar e **mandar o Lenis remedir**, nessa ordem.
+2. **O React não redesenha dentro de um laço síncrono.** A varredura roda tudo
+   numa tarefa só, então o *conteúdo* da HUD fica congelado no que ele era
+   quando a varredura começou — o rótulo de beat pode dizer "Emergence" no meio
+   de Quem sou. A **posição** das caixas está certa (ela sai de layout, que é
+   síncrono), então a medição de luminância vale; o que não vale é ler o nome do
+   beat no identificador da caixa.
+
 #### O compositor
 
-Cena → DOF → bloom → composite, tudo sobre `WebGLRenderTarget`. Ele desliga o
-render automático do R3F ao se inscrever com prioridade 1.
+Cena → DOF → **campo do véu** → composite, tudo sobre `WebGLRenderTarget`. Ele
+desliga o render automático do R3F ao se inscrever com prioridade 1.
 
 O alvo da cena é multiamostrado **e** tem `DepthTexture`: o three inclui
 `DEPTH_BUFFER_BIT` no blit de resolução, então dá para ter antisserrilhado
@@ -962,6 +1151,46 @@ existe número de espaçamento; não invente um. Um rio que cresce a cada case
 seria uma punição por ter trabalhado, e esticá-lo quebraria os totais e a regra
 dos oito segundos.
 
+**Cada beat tem uma entrada própria, e nenhuma esmaece nem translada** — o
+PROJECT.md §3.3 veta o `fade-up` de 20 px pelo nome, e o piso de contraste vale
+durante a entrada, não só no repouso. Uma opacidade em rampa mostraria o texto
+inteiro com contraste reduzido; um recorte mostra menos texto, com cada pixel já
+em `--mist` cheio. Emergência aperta o tracking e varre da esquerda; Identidade
+varre cada linha de cima para baixo, escalonada; **Quem sou é uma lâmina de
+medida que desce pela coluna** — recorte do bloco inteiro, com um fio de um pixel
+e uma marca de intervalo na ponta correndo na fronteira do recorte. A lâmina é
+ornamento e por isso pode ter alpha; o texto atrás dela não tem nenhum.
+
+### A HUD
+
+`components/hud/` — a navegação permanente do PROJECT.md §4. **O site não tem
+rodapé.** `Hud` é Server Component e resolve as strings; `HudPanel` é a casca de
+cliente que colapsa a coluna num acionador no topo do mobile.
+
+**Ela reage ao beat, e cada estado tem motivo:**
+
+| beat | o que muda |
+|---|---|
+| Emergência · Identidade | leitura de profundidade, `Z −38` |
+| **Quem sou** | a leitura vira `DENS. 0.62` — é o único beat em que a estrutura chega perto o bastante para medir o bando contra ela (DIRECTION.md §4) |
+| Trabalho · Superfície | entram os filtros por disciplina; antes do rio não há o que promover |
+
+A régua de progresso tem **as cotas nas fronteiras dos beats**, lidas de
+`BEATS` — não uma graduação regular a cada dez por cento, que seria papel
+milimetrado. Mexer na tabela de beats move as cotas sozinho.
+
+Três coisas que parecem detalhe e não são:
+
+- **A leitura da cena não existe sem cena.** `readout-store.ts` publica
+  `live: false` no poster, antes do chunk e depois dele; a HUD esconde a linha
+  em vez de mostrar `0.00`, que seria um instrumento inventado.
+- **A preferência de áudio mora no módulo de áudio**, não no componente: o
+  controle existe antes do `AudioContext`, e "mudo antes de entrar" tem que
+  continuar mudo no clique de entrada.
+- **O filtro do rio já faz efeito hoje.** Ele vai como `?d=` para a entrada de
+  acervo, e `/work` filtra a lista. O rio ainda não existe; um controle que só
+  publicasse estado seria um botão morto na tela.
+
 ---
 
 ## Armadilhas conhecidas
@@ -987,6 +1216,13 @@ dos oito segundos.
   dispara em aba oculta e passa fome quando a thread principal está travada. O
   `prepareAudio` dependia disso e travava o portão. Use rAF como atalho e um
   `setTimeout` como caminho garantido.
+- **Filtro linear numa redução por máximo devolve média, não máximo.** O campo
+  do véu é reduzido em três passadas de 4×4 guardando o maior valor de cada
+  bloco; com `LinearFilter` cada amostra vira a média de quatro texels vizinhos,
+  e o máximo que a redução existe para achar some. O sintoma foi o véu resolver
+  para L = 0.16–0.20 com o teto em 0.125. É a mesma armadilha que o FBO do bando
+  já documenta — `NearestFilter` **nos dois** filtros, sempre que a textura
+  guarda dado e não imagem.
 - **Ruído de valor mostra a rede dele em superfícies alinhadas aos eixos.** As
   paredes do duto são planos em X e Z, e a rede de inteiros do `sceneNoise`
   aparecia como um moiré retangular no fundo da câmara — uma grade, que o
@@ -1315,31 +1551,35 @@ regime certo, mas ninguém mediu a cena aberta por dez minutos.
 Nesta ordem, porque cada uma depende da anterior:
 
 1. Os sete cases em `content/cases/` (e apagar o fixture).
-2. O conteúdo dos beats de baixo em DOM — manifesto, contato, placas de cota.
+2. O conteúdo dos beats de baixo em DOM — contato e placas de cota. **O
+   manifesto já existe** (`components/beats/AboutBeat.tsx`).
 3. ~~O descolamento~~ — **feito e medido**, ver "O descolamento, medido". Sobrou
    dele **o tempo de GPU**: o banco mede tempo de parede e por isso precisa de
    uma janela de navegador em primeiro plano, que esta sessão não teve. Rodar
    `?bench=1&plan=detach&port=3131` com `npm run collect` no ar, no M5 e no
    iPhone, e escrever os números na tabela de "Desempenho da cena". **O
-   orçamento de pacote já está fechado** (294.1 kB de chunk de cena contra 350),
-   então o que falta é confirmar o quadro, não caber.
-4. Os três beats de baixo, e com eles os pontos de controle definitivos da curva
-   da câmera de 0.45 em diante (hoje provisórios, em `lib/scene/curve.ts`) e a
+   orçamento de pacote já está fechado** (298.6 kB de chunk de cena contra 350),
+   então o que falta é confirmar o quadro, não caber. Junto com ele vai o custo
+   do poleiro e das três passadas do véu, que também não foi medido em tempo de
+   GPU — o banco precisa de uma janela em primeiro plano, e esta sessão não teve.
+4. Os dois beats de baixo, e com eles os pontos de controle definitivos da curva
+   da câmera de 0.65 em diante (hoje provisórios, em `lib/scene/curve.ts`) e a
    migração da cor da fonte a montante para `--cyan` e `--peach`.
 
-   **E, por regra nova do PROJECT.md §7, a faixa medida de toda entrada que
-   dispara um portão visual sai junto.** O primeiro da fila é o `L_cena` do véu:
-   o `f` é clampado em `[0.15, 0.85]` e dimensionado para um pior caso de 0.62,
-   e ninguém mediu que faixa o proxy entrega. Se ele nunca chega lá, o teto é
-   decoração; se passa, o clamp corta a solução no quadro que ela existe para
-   cobrir. Isso vem **antes** da varredura de contraste do item 6, não depois.
+   **E, por regra do PROJECT.md §7, a faixa medida de toda entrada que dispara
+   um portão visual sai junto.** O `L_cena` do véu já está feito, e o resultado
+   foi trocar o mecanismo — ver "O véu de legibilidade": o `f` não é mais
+   estimado nem clampado, ele é resolvido da luminância medida do próprio
+   quadro, e a faixa está registrada por caixa.
 5. Os posters do modo `poster`. O DIRECTION.md §5 manda renderizá-los "destas
    mesmas composições", e só duas das cinco existem — gerar duas agora garantiria
    regerar as cinco depois.
-6. Os testes de portão: varredura de contraste em 600 passos (DIRECTION.md §5) e
-   a rolagem sintética a 0.6 vh/s até o quadro de separação (DIRECTION.md §4). O
-   mecanismo do véu já existe (`lib/scene/veil.ts`) e resolve `f` por quadro; o
-   que falta é a varredura que o prova.
+6. A rolagem sintética a 0.6 vh/s até o quadro de separação (DIRECTION.md §4),
+   cronometrada — o outro teste de portão. **A varredura de contraste está
+   feita** e mora em `__probe.contrast()`: ela desce na mesma taxa de 0.6 vh/s,
+   mede cada quadro e cada linha de texto, e passou em quatro condições (ver "O
+   véu de legibilidade"). O que falta dela é rodá-la nos beats de baixo quando
+   eles existirem.
 
 O item que era o sétimo — verificar a cena num iPhone contra o piso de 30 fps —
 **está feito**: 4.62 ms de GPU por quadro, 55.6 fps, ver "Desempenho da cena,

@@ -1,6 +1,6 @@
 import { Color, Vector2, Vector4, type Texture } from "three";
 import { readPalette, type Palette } from "@/lib/palette";
-import { MAX_VEIL_BOXES, VEIL_CEILING } from "./veil";
+import { MAX_VEIL_BOXES } from "./veil";
 import { CHAMBER_FAR, SPECIMEN_Z } from "./world";
 
 /**
@@ -139,7 +139,10 @@ export function veilUniforms(shared: SharedUniforms) {
   return {
     uVeilBox: shared.veilBox,
     uVeilF: shared.veilF,
-    uVeilCeiling: { value: VEIL_CEILING },
+    // Um texel por caixa, com o `f` resolvido do campo reduzido. Quem o
+    // preenche é a passada de resolução, por quadro; aqui ele só precisa
+    // existir para o material declarar o sampler.
+    uVeilSolved: { value: null as Texture | null },
     uVoid: shared.void,
   };
 }
