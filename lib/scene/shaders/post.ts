@@ -24,7 +24,7 @@
  * Ordem das passadas: cena → DOF → bloom → composite.
  */
 
-import { VEIL_FALLOFF } from "../veil";
+import { MAX_VEIL_BOXES, VEIL_FALLOFF } from "../veil";
 
 const HASH_GLSL = /* glsl */ `
 float postHash(vec2 p) {
@@ -313,8 +313,8 @@ void main() {
 export const VEIL_SOLVE_FRAG = /* glsl */ `
 uniform sampler2D uField;
 uniform sampler2D uPrevious;
-uniform vec4  uVeilBox[4];
-uniform float uVeilF[4];
+uniform vec4  uVeilBox[${MAX_VEIL_BOXES}];
+uniform float uVeilF[${MAX_VEIL_BOXES}];
 uniform float uCeiling;
 uniform float uFogLuma;
 uniform float uFall;
@@ -378,8 +378,8 @@ uniform float uDofEnabled;
 // O véu. xy/zw são os cantos da caixa em UV de tela (origem embaixo à
 // esquerda); uVeilF é a força dela, 0 quando a caixa não existe; uVeilSolved
 // tem um texel por caixa, com o f resolvido do campo reduzido no canal verde.
-uniform vec4      uVeilBox[4];
-uniform float     uVeilF[4];
+uniform vec4      uVeilBox[${MAX_VEIL_BOXES}];
+uniform float     uVeilF[${MAX_VEIL_BOXES}];
 uniform sampler2D uVeilSolved;
 uniform vec3      uVoid;
 
@@ -415,7 +415,7 @@ vec3 sampleFocused(vec2 uv, float blend) {
  */
 float veilAmount(vec2 uv) {
   float total = 0.0;
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < ${MAX_VEIL_BOXES}; i++) {
     if (uVeilF[i] <= 0.0) continue;
     float f = texelFetch(uVeilSolved, ivec2(i, 0), 0).g;
     if (f <= 0.0) continue;

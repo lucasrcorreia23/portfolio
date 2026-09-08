@@ -95,14 +95,52 @@ export const VEIL_CEILING =
 /**
  * Quantas caixas o véu cobre ao mesmo tempo.
  *
- * Quatro, e a conta é de slots: a HUD ocupa um fixo — ela está na tela o tempo
- * todo, e o DIRECTION.md §5 a chama de "a caixa mais exposta do site" —, cada
- * beat quer dois (o rótulo de estação e o conteúdo), e na virada de um painel
- * `sticky` para o próximo há dois beats na tela ao mesmo tempo. Quando há mais
- * candidatas que slots, ganham as de **maior área visível**: é a mancha de
- * texto maior que mais precisa do véu e a que mais se nota sem ele.
+ * **Era 4, contado por slot: a HUD ocupa um fixo, cada beat quer dois (rótulo
+ * e conteúdo), e na virada de um painel `sticky` para o próximo há dois beats
+ * na tela — e o rio acrescentaria mais três, um por botão de filtro.** Essa
+ * conta pressupõe que a HUD é **uma** caixa entre outras, e que os filtros são
+ * caixas à parte — nenhuma das duas é verdade: `HudPanel.tsx` marca o painel
+ * inteiro (contato, acervo, filtros, régua, áudio, idioma) como um
+ * `data-veil` **só**, e os três botões de filtro moram dentro dele, não em
+ * `data-veil` próprios. **Verificado ao vivo** com
+ * `document.querySelectorAll('[data-veil]')` em progressos 0.35, 0.42, 0.44,
+ * 0.60 e 0.77: em nenhum ponto existem mais de **três** caixas com área
+ * visível ao mesmo tempo — a HUD, o conteúdo do beat atual, e o rótulo do
+ * próximo entrando pela margem de 15%. O teto antigo de 4 nunca foi o gargalo:
+ * sempre sobrava um slot, com ou sem o rio.
+ *
+ * **A causa que a versão anterior deste comentário apontava — "o rio
+ * acrescenta três botões de filtro que competem pelos mesmos quatro slots" —
+ * está falseada pela medição acima**, não só recalibrada: não existe
+ * competição de slot para falsear, porque os filtros nunca tiveram slot
+ * próprio. Subiu para 8 mesmo assim, por dois motivos que não dependem desse
+ * diagnóstico: cobre com margem qualquer HUD futura que separe elementos em
+ * `data-veil` individuais, e o custo é quase de graça (ver abaixo). **O que
+ * isto não faz — e que ainda não foi confirmado ao vivo nesta sessão — é
+ * mexer no pior contraste medido com capa de card atrás do texto (5.16:1, no
+ * botão `Product`, ver MEASUREMENTS.md, "A legibilidade, com capa de card
+ * atrás do texto"): dado que a caixa da HUD nunca disputou slot, a suspeita é
+ * que 5.16:1 nunca dependeu de `MAX_VEIL_BOXES`, e a causa real esteja na
+ * grade de 24×16 do resolvedor (`VEIL_SOLVE_FRAG`, em `shaders/post.ts`)
+ * subamostrando um pico estreito de brilho dentro de uma caixa alta e
+ * estreita como a coluna inteira da HUD — mas isso é hipótese, não medição.
+ * Reconfirmar com `__probe.contrast({from: 0.45, to: 0.85})` antes de calibrar
+ * o véu contra o rio de verdade.
+ *
+ * **O custo de 4 para 8**: o resolvedor (`VEIL_SOLVE_FRAG`) roda um fragmento
+ * por caixa, cada um varrendo a mesma grade de 24×16 texels — dobrar o número
+ * de caixas dobra o número de fragmentos (4→8), não o trabalho por fragmento.
+ * O alvo é 8×1 texels em vez de 4×1: o triângulo de tela cheia que desenha
+ * nele continua cobrindo os mesmos oito ou quatro pixels de saída, então o
+ * custo extra são quatro invocações a mais de um shader que já roda em
+ * microssegundos. Medido no chunk da cena: 302.7 → 302.9 kB gz, +0.2 kB — o
+ * array a mais em `uniforms.ts` são 4 `Vector4` e 4 `float`, bytes, não kB.
+ * Custo de quadro não medido (o banco de GPU precisa de uma janela em
+ * primeiro plano; ver "Desempenho da cena, medido"), mas as passadas de tela
+ * cheia deste compositor já dominam o orçamento, e quatro fragmentos extras
+ * de um shader de microssegundos não é onde esse orçamento se perde.
  */
-export const MAX_VEIL_BOXES = 4;
+export const MAX_VEIL_BOXES = 8;
 
 /**
  * Raio da queda do véu para fora da caixa, em UV de tela.
