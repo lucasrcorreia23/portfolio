@@ -689,6 +689,10 @@ mudar a medida — e força uniforme demais vira lufada, que é o oposto de vór
 
 ##### Duas das quatro cores da rampa eram inalcançáveis, e a guarda não sabia dizer isso
 
+> Este é o caso que gerou a regra do **PROJECT.md §7, "Todo limiar é validado
+> contra a faixa medida da entrada"**. O que está abaixo é a evidência; a regra
+> é que vale para o resto do projeto.
+
 `vDensity` é a contagem de vizinhos dentro de 3 unidades **dividida por 24
 amostras**, e o bando é rarefeito. Medido em 16.384 corpos: mediana 0.033, p90
 0.073, p99 0.111, **máximo 0.170**.
@@ -1322,6 +1326,13 @@ Nesta ordem, porque cada uma depende da anterior:
 4. Os três beats de baixo, e com eles os pontos de controle definitivos da curva
    da câmera de 0.45 em diante (hoje provisórios, em `lib/scene/curve.ts`) e a
    migração da cor da fonte a montante para `--cyan` e `--peach`.
+
+   **E, por regra nova do PROJECT.md §7, a faixa medida de toda entrada que
+   dispara um portão visual sai junto.** O primeiro da fila é o `L_cena` do véu:
+   o `f` é clampado em `[0.15, 0.85]` e dimensionado para um pior caso de 0.62,
+   e ninguém mediu que faixa o proxy entrega. Se ele nunca chega lá, o teto é
+   decoração; se passa, o clamp corta a solução no quadro que ela existe para
+   cobrir. Isso vem **antes** da varredura de contraste do item 6, não depois.
 5. Os posters do modo `poster`. O DIRECTION.md §5 manda renderizá-los "destas
    mesmas composições", e só duas das cinco existem — gerar duas agora garantiria
    regerar as cinco depois.

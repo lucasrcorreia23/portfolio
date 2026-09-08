@@ -129,6 +129,11 @@ void main() {
   // porque a cena estava dentro do teto, mas porque a cor não existia. Uma
   // guarda que só sabe dizer "pouco demais" e "de menos" com o mesmo número não
   // é guarda.
+  // vEnergy, medido em 140 mil amostras depois do decaimento assimétrico:
+  // mediana 0.139, p75 0.180, p90 0.243, p99 0.728, máximo 1.000. A rampa do
+  // cyan começa em 0.18 — um quarto da população entra nela — e satura em 0.85,
+  // que só o topo de ~1% alcança. Cauda longa de calor leve, poucos corpos
+  // francamente cyan: é o "cyan em aceleração" do §5 e não um bando cyan.
   vec3 color = uTeal;
   color = mix(color, uCyan, smoothstep(0.18, 0.85, vEnergy));
   color = mix(color, uRose, smoothstep(0.07, 0.13, vDensity) * 0.75);
@@ -144,6 +149,12 @@ void main() {
   // A janela da esteira sobe em uma largura de letra e morre em sete. Antes
   // subia em nove unidades — quatro larguras —, e a essa altura qualquer corpo
   // já tinha esfriado, mesmo com o decaimento lento.
+  //
+  // vEnergy **dentro desta janela**, medido: mediana 0.194, p75 0.281, p90
+  // 0.429, p99 0.722, máximo 0.971. O limiar de 0.30 pega 21.9% dos corpos da
+  // esteira e a saturação em 0.75 é alcançada por 0.74% deles. Os dois números
+  // caem dentro da faixa com folga dos dois lados — que é o que o PROJECT.md §7
+  // passou a exigir de todo limiar depois deste arquivo.
   float downstream = vWorld.z - uSpecimenZ;
   float wake = smoothstep(0.0, 2.2, downstream) * (1.0 - smoothstep(2.2, 16.0, downstream));
   float turbulence = wake * smoothstep(0.30, 0.75, vEnergy);

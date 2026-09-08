@@ -295,6 +295,9 @@ Um beat só está pronto quando todas estas forem verdadeiras.
 - O texto está em português e em inglês.
 - O agente crítico deu nota 9 ou mais em duas rodadas seguidas.
 - Nenhum item da lista de marcas de IA (arquivo `PROMPTS.md`, seção Subtração) aparece na tela.
+- Todo limiar que decide se algo aparece tem a **faixa medida da entrada**
+  registrada ao lado, e toda guarda de teto sabe distinguir "dentro do teto" de
+  "não existe" — ver abaixo.
 
 ### Toda medição é feita no ponto de entrega, nunca no ponto de cálculo
 
@@ -329,3 +332,52 @@ Vale para tudo que já está descrito nestes documentos, e em especial para a
 varredura de contraste em 600 passos do DIRECTION.md §5: ela amostra a
 **luminância composta** sob cada caixa de texto, no quadro renderizado, e não
 a cor de origem do token nem a densidade que o véu diz ter resolvido.
+
+### Todo limiar é validado contra a faixa medida da entrada
+
+Um limiar decide se alguma coisa aparece. O intervalo dele tem que ser comparado
+com **a faixa que a entrada realmente produz na cena**, medida, e não com a
+faixa que pareceu razoável na hora de escrever. As duas quase sempre coincidem —
+e é exatamente por isso que, quando não coincidem, o efeito simplesmente não
+existe e ninguém percebe: uma cor que nunca acende parece uma cor usada com
+parcimônia.
+
+O caso que gerou esta regra. A rampa emissiva do bando pedia densidade acima de
+**0.30** para o `--coral` e acima de **0.45** para o `--rose`, num canal cujo
+máximo medido em 16.384 corpos é **0.170** (mediana 0.033, p99 0.111). Duas das
+quatro cores do DIRECTION.md §5 eram **matematicamente inalcançáveis**, e nada
+na tela denunciava. Quem descobriu foi uma guarda de teto medindo zero — e ela
+descobriu por acidente, porque tinha sido escrita para pegar o excesso.
+
+Em prática são duas obrigações, e nenhuma delas é trabalho novo de medição: é a
+mesma medição, escrita onde alguém vai ler.
+
+**A faixa medida sai ao lado do limiar, no código.** Não numa mensagem de
+commit, não num relatório de revisão: no comentário que acompanha a constante,
+com o `n` da amostra e os percentis. Um limiar sem a faixa da entrada ao lado é
+um número sem unidade.
+
+**A guarda precisa distinguir "dentro do teto" de "não existe".** Uma guarda que
+reporta 0.00% nos dois casos não é guarda. Todo teto tem piso: se o efeito é
+obrigatório em algum quadro — e o `--coral` é, o DIRECTION.md §5 dá a ele um
+lugar único no site inteiro —, a verificação falha tanto por passar do teto
+quanto por nunca aparecer, e os dois lados são reportados.
+
+Isto vale para qualquer limiar entre uma entrada e um pixel, e vale já no
+**Prompt 4**:
+
+- **O véu de legibilidade.** O `f` é resolvido por quadro e clampado em
+  `[0.15, 0.85]`, com o DIRECTION.md §5 dimensionando o pior caso em
+  `L_cena = 0.62`, a luminância de um aglomerado de `--cyan` no auge. **Ninguém
+  mediu qual faixa de `L_cena` a simulação proxy de fato entrega.** Se ela nunca
+  chega perto de 0.62, o teto de 0.85 é decoração e o véu está resolvendo um
+  problema que não tem; se passa de 0.62, o clamp está cortando a solução no
+  exato quadro que a regra existe para cobrir. Medir a faixa vem **antes** da
+  varredura de contraste em 600 passos, não depois.
+- **A reatividade da HUD ao beat.** Todo limiar que decida quando a régua, a
+  cota ou o realce mudam de estado sai com a faixa medida da grandeza que os
+  dispara — e com a verificação de que cada estado é alcançado em algum ponto da
+  descida.
+- **Qualquer outro portão visual**: as revelações de texto por progresso, a
+  abertura da DOF por beat, o realce de quina da estrutura quando o bando passa,
+  os filtros do rio.
