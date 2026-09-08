@@ -15,14 +15,21 @@ import { getScrollProgress, subscribeToScroll } from "@/lib/scroll/scroll-store"
  * "cada composição é uma pose diferente do bando, não a mesma congelada cinco
  * vezes" (DIRECTION.md §5).
  *
- * Os três beats que ainda não existem apontam para o meio do intervalo deles,
- * como marcador. Eles não têm conteúdo para compor ainda.
+ * O beat que ainda não existe aponta para o meio do intervalo dele, como
+ * marcador. Ele não tem conteúdo para compor ainda.
+ *
+ * **O rio compõe em 0.50, e não no meio do beat.** O §5 pede "os cards do rio,
+ * de face, cada um com sua esteira parada" — ou seja o corredor inteiro num
+ * quadro. Em 0.65 a câmera já passou por três cards e está a uma unidade do
+ * quarto: a composição seria um card em close com o corredor pela metade. Em
+ * 0.50 a câmera está em `z = −47.5` e as sete peças estão à frente dela, da
+ * distância de leitura até o fundo do corredor.
  */
 const COMPOSITION_AT: Record<BeatId, number> = {
   emergence: 0.055,
   identity: SEPARATION_PROGRESS,
   about: 0.365,
-  work: 0.65,
+  work: 0.5,
   surface: 0.93,
 };
 

@@ -289,7 +289,22 @@ export function fitSlope(
 
 /* --- parâmetros e encadeamento -------------------------------------------- */
 
-export type BenchConfig = { dof: boolean; flock: number; detach: boolean };
+export type BenchConfig = {
+  dof: boolean;
+  flock: number;
+  detach: boolean;
+  cards: boolean;
+  veil: boolean;
+  /**
+   * Substitui a faixa de `benchSweep(plan)` só para esta célula.
+   *
+   * Existe para o plano `debts` poder chainar três dívidas de medição — cada
+   * uma relevante num trecho diferente da descida — num só carregamento. Sem
+   * isto, a faixa seria do plano inteiro, e a única forma de medir três coisas
+   * em três lugares seria três planos, três visitas.
+   */
+  sweep?: readonly [number, number];
+};
 
 /**
  * **A linha 0 de todo plano precisa ser igual aos `DEFAULTS` de
@@ -304,10 +319,10 @@ export type BenchConfig = { dof: boolean; flock: number; detach: boolean };
  * bando do DIRECTION.md §5. É a medição de regressão da cena inteira.
  */
 export const BENCH_PLAN: readonly BenchConfig[] = [
-  { dof: true, flock: 16384, detach: true },
-  { dof: false, flock: 16384, detach: true },
-  { dof: true, flock: 4096, detach: true },
-  { dof: false, flock: 4096, detach: true },
+  { dof: true, flock: 16384, detach: true, cards: true, veil: true },
+  { dof: false, flock: 16384, detach: true, cards: true, veil: true },
+  { dof: true, flock: 4096, detach: true, cards: true, veil: true },
+  { dof: false, flock: 4096, detach: true, cards: true, veil: true },
 ];
 
 /**
@@ -323,14 +338,88 @@ export const BENCH_PLAN: readonly BenchConfig[] = [
  * buffer, que é o que fez o quadrado do iPhone fechar limpo.
  */
 export const DETACH_PLAN: readonly BenchConfig[] = [
-  { dof: true, flock: 16384, detach: true },
-  { dof: true, flock: 16384, detach: false },
+  { dof: true, flock: 16384, detach: true, cards: true, veil: true },
+  { dof: true, flock: 16384, detach: false, cards: true, veil: true },
 ];
 
-export type BenchPlanId = "grid" | "detach";
+/**
+ * O plano do rio: os cards ligados contra desligados, com o resto no padrão.
+ *
+ * `?cards=0` tira as sete malhas **e** o laço de esteiras do shader dos boids,
+ * então a diferença entre as duas células é o custo do beat inteiro — o
+ * preenchimento das capas mais o SDF analítico por corpo por card. É o "com e
+ * sem os cards isolados" que o beat pede.
+ */
+export const CARDS_PLAN: readonly BenchConfig[] = [
+  { dof: true, flock: 16384, detach: true, cards: true, veil: true },
+  { dof: true, flock: 16384, detach: true, cards: false, veil: true },
+];
+
+/**
+ * As três dívidas de medição num carregamento só — a que faltava depois do
+ * rio: descolamento e cards já tinham plano próprio, mas nenhum dos dois
+ * mediu o custo do véu, e nenhum rodou ainda num aparelho que não seja o M5
+ * desta sessão.
+ *
+ * **Seis células, cada par na faixa em que o efeito importa** — não a faixa
+ * do plano inteiro, que aqui seria uma faixa só para três perguntas diferentes.
+ * O descolamento só desenha algo entre 0.00 e 0.28; o rio só existe entre 0.45
+ * e 0.85; o véu satura mais perto de Quem sou (0.28–0.45), onde o poleiro
+ * brilha atrás do manifesto. Por isso cada par carrega o próprio `sweep`, e o
+ * default do plano nunca é lido.
+ *
+ * A pessoa que abrir isto só precisa fazer uma coisa: apontar o navegador para
+ * a URL, no aparelho, com a janela em primeiro plano. Os seis passos se
+ * encadeiam sozinhos (`chain`), ~22–25 s cada, pouco mais de dois minutos ao
+ * todo — e o coletor (`npm run collect`) grava os seis relatórios num arquivo
+ * só, pela mesma `run` que nasce no primeiro passo.
+ */
+export const DEBTS_PLAN: readonly BenchConfig[] = [
+  { dof: true, flock: 16384, detach: true, cards: true, veil: true, sweep: [0, 0.28] },
+  { dof: true, flock: 16384, detach: false, cards: true, veil: true, sweep: [0, 0.28] },
+  { dof: true, flock: 16384, detach: true, cards: true, veil: true, sweep: [0.45, 0.85] },
+  { dof: true, flock: 16384, detach: true, cards: false, veil: true, sweep: [0.45, 0.85] },
+  { dof: true, flock: 16384, detach: true, cards: true, veil: true, sweep: [0.28, 0.45] },
+  { dof: true, flock: 16384, detach: true, cards: true, veil: false, sweep: [0.28, 0.45] },
+];
+
+export type BenchPlanId = "grid" | "detach" | "cards" | "debts";
 
 export function benchPlan(id: BenchPlanId): readonly BenchConfig[] {
-  return id === "detach" ? DETACH_PLAN : BENCH_PLAN;
+  if (id === "detach") return DETACH_PLAN;
+  if (id === "cards") return CARDS_PLAN;
+  if (id === "debts") return DEBTS_PLAN;
+  return BENCH_PLAN;
+}
+
+/**
+ * A faixa de progresso que a rampa determinista do banco varre, por plano.
+ *
+ * **O custo de uma configuração depende do beat**, e para o rio isso deixa de
+ * ser um detalhe: entre 0.00 e 0.28 os cards estão a cinquenta unidades da
+ * câmera, atrás de uma névoa que come 97% deles, e as capas não desenham
+ * praticamente fragmento nenhum. Medir o rio ali mediria um `for` a mais no
+ * shader dos boids e nada do preenchimento — a metade cara.
+ *
+ * A faixa é do **plano** e não da configuração de propósito: `params.plan` já
+ * viaja na URL desde o passo 0 (é ele que escolhe o plano), então as duas
+ * células do `cards` varrem a mesma faixa sem precisar de um parâmetro novo
+ * que o primeiro passo não teria como carregar. Ver a nota sobre a linha 0.
+ *
+ * **É o piso, não o teto.** Uma célula com `sweep` próprio (o plano `debts`,
+ * que precisa de três faixas diferentes na mesma corrida) sobrepõe este
+ * valor — ver `stepSweep` abaixo, que é quem de fato decide.
+ */
+export function benchSweep(id: BenchPlanId): readonly [number, number] {
+  return id === "cards" ? [0.45, 0.85] : [0, 0.28];
+}
+
+/** A faixa desta célula: a dela própria, se tiver, senão a do plano. */
+export function stepSweep(
+  plan: BenchPlanId,
+  config: BenchConfig,
+): readonly [number, number] {
+  return config.sweep ?? benchSweep(plan);
 }
 
 export type BenchParams = {
@@ -362,7 +451,14 @@ export function readBenchParams(): BenchParams {
     // O identificador nasce no primeiro passo e viaja pela URL nos outros:
     // é ele que junta as configurações numa rodada só no coletor.
     run: run === null || run === "" ? Date.now().toString(36) : run,
-    plan: params.get("plan") === "detach" ? "detach" : "grid",
+    plan:
+      params.get("plan") === "detach"
+        ? "detach"
+        : params.get("plan") === "cards"
+          ? "cards"
+          : params.get("plan") === "debts"
+            ? "debts"
+            : "grid",
     port: Number.isFinite(port) && port > 0 ? port : 3131,
   };
 }
@@ -384,6 +480,8 @@ export function nextStepUrl(params: BenchParams): string | null {
   url.searchParams.set("dof", config.dof ? "on" : "off");
   url.searchParams.set("flock", String(config.flock));
   url.searchParams.set("detach", config.detach ? "on" : "off");
+  url.searchParams.set("cards", config.cards ? "on" : "off");
+  url.searchParams.set("veil", config.veil ? "on" : "off");
   url.searchParams.set("port", String(params.port));
   if (params.timer !== "auto") url.searchParams.set("timer", params.timer);
   return url.toString();

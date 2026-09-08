@@ -102,6 +102,65 @@ export type SceneSettings = {
    */
   detach: boolean;
   /**
+   * `?cards=0`: o rio sai da cena — as malhas dos cards **e** as esteiras deles
+   * no shader dos boids, compilados fora.
+   *
+   * Mesmo desenho de `detach`, e as mesmas duas serventias. A primeira é o A/B
+   * de desempenho que o beat exige ("com e sem os cards isolados"). A segunda é
+   * a que vale mais: com `?cards=0` a corrente continua existindo em
+   * `lib/scene/cards.ts` — a sonda ainda sabe exatamente onde cada card
+   * estaria — mas nada dela toca o escoamento. É o controle da medida de
+   * esteira: mesma laje, mesma sombra de tinta, mesma semente, sem o efeito.
+   *
+   * Os dois são independentes de propósito: `?detach=0&cards=1` mede o rio sem
+   * o corpo de prova interferir a montante, que é como se descobre se as duas
+   * peças estão brigando pelo mesmo escoamento.
+   */
+  cards: boolean;
+  /**
+   * `?river=N`: quantos cards a corrente monta, sobrepondo a capacidade
+   * derivada do aparelho (`riverCapacity`, em `lib/scene/cards.ts`).
+   *
+   * Existe porque a capacidade é **derivada da largura da janela**, e uma
+   * medição que dependa da janela do sistema operacional não é repetível — a
+   * mesma razão pela qual `__probe.viewport()` existe. Com ele dá para medir a
+   * corrente do mobile num desktop, que é a única forma de conferir o
+   * espaçamento de quatro cards sem um telefone na mão.
+   */
+  river: number | null;
+  /**
+   * `?span=N`: o comprimento do corredor em unidades de mundo.
+   *
+   * **É o controle da medida de separação em profundidade, e não um ajuste.**
+   * O critério de aceite diz que os cards têm que ler como camadas distintas e
+   * não como uma parede; o instrumento mede a largura projetada de cada card no
+   * quadro composto e compara vizinhos. Um número sozinho não distingue "há
+   * profundidade" de "o instrumento sempre diz isso" (PROJECT.md §7), então
+   * `?span=3` colapsa a corrente inteira em três unidades de Z — uma parede,
+   * literalmente — e a mesma varredura tem que devolver razões de ~1.00.
+   */
+  span: number | null;
+  /**
+   * `?veil=0`: as três passadas de redução do véu de legibilidade saem do
+   * quadro — **em tempo de execução, não compiladas fora**.
+   *
+   * É a dívida que faltava no trio de A/B do compositor (DOF, descolamento,
+   * rio): o véu ganhou três passadas de tela cheia (`VEIL_SEED_FRAG`,
+   * `VEIL_REDUCE_FRAG` × 2, `VEIL_SOLVE_FRAG`) quando o mecanismo mudou de
+   * "estimado pelo proxy" para "medido do quadro" (DIRECTION.md §5), e o custo
+   * delas nunca foi separado do resto do composite — só o pacote foi medido
+   * (4.5 kB gz, junto com o poleiro).
+   *
+   * **Aqui o desligamento é por `if`, não por variante de shader.** As outras
+   * três chaves compilam um shader sem o bloco, porque o bloco vive dentro de
+   * um único material grande. O véu é o oposto: cada passada já é um material
+   * próprio e uma chamada de `blit()` separada no laço do compositor, então
+   * "não existir" é simplesmente não chamar as três — sem custo de compilação
+   * extra e sem exigir uma segunda variante de `COMPOSITE_FRAG`. O resultado
+   * visual sem ele não importa aqui: é null de medição, não de site.
+   */
+  veil: boolean;
+  /**
    * `?probe=1`: a sonda de medição — **só em desenvolvimento**.
    *
    * Ao contrário do banco, que é medição de tempo e por isso precisa rodar na
@@ -124,6 +183,10 @@ const DEFAULTS: SceneSettings = {
   flockTextureSize: FLOCK_TEXTURE_SIZE,
   bench: false,
   detach: true,
+  cards: true,
+  river: null,
+  span: null,
+  veil: true,
   probe: false,
 };
 
@@ -133,6 +196,14 @@ function readFlag(params: URLSearchParams, key: string, fallback: boolean): bool
   const raw = params.get(key);
   if (raw === null) return fallback;
   return raw !== "0" && raw !== "off" && raw !== "false";
+}
+
+/** Um número positivo da URL, ou `null` — quem tem o padrão é quem consome. */
+function readNumber(params: URLSearchParams, key: string): number | null {
+  const raw = params.get(key);
+  if (raw === null) return null;
+  const parsed = Number.parseFloat(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
 /** `?flock=N` recebe a **contagem**; o lado da textura sai da raiz dela. */
@@ -166,6 +237,10 @@ export function sceneSettings(): SceneSettings {
     flockTextureSize: readTextureSize(params, DEFAULTS.flockTextureSize),
     bench: readFlag(params, "bench", DEFAULTS.bench),
     detach: readFlag(params, "detach", DEFAULTS.detach),
+    cards: readFlag(params, "cards", DEFAULTS.cards),
+    river: readNumber(params, "river"),
+    span: readNumber(params, "span"),
+    veil: readFlag(params, "veil", DEFAULTS.veil),
     probe:
       process.env.NODE_ENV !== "production" &&
       readFlag(params, "probe", DEFAULTS.probe),

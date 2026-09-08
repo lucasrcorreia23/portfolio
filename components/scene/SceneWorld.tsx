@@ -7,11 +7,15 @@ import { clamp01, damp } from "@/lib/motion";
 import {
   apertureAt,
   cameraPose,
+  cardAmount,
   createCameraPose,
   createRoost,
   flockTubeHalfHeight,
   flockTubeHalfWidth,
+  focusRangeAt,
+  fogDensityAt,
   resolveRoost,
+  sourceStrengthAt,
   specimenAttackAngle,
 } from "@/lib/scene/curve";
 import type { FlockRead } from "@/lib/scene/probe";
@@ -23,6 +27,7 @@ import { readVeilBoxes, writeVeilBoxes, type VeilBox } from "@/lib/scene/veil";
 import { ROOST_RADIUS, SPECIMEN_Z } from "@/lib/scene/world";
 import { useScrollProgress } from "@/lib/scroll/use-scroll-progress";
 import { BenchClock } from "./BenchClock";
+import { Cards } from "./Cards";
 import { Chamber } from "./Chamber";
 import { ComposedClock } from "./ComposedClock";
 import { Composer } from "./Composer";
@@ -104,6 +109,7 @@ export function SceneWorld({
   const attackRef = useRef(specimenAttackAngle(0));
   const apertureRef = useRef(1);
   const focusRef = useRef(20);
+  const focusRangeRef = useRef(focusRangeAt(0));
   const cameraZRef = useRef(0);
   const tubeRef = useRef(
     new Vector2(flockTubeHalfWidth(0), flockTubeHalfHeight(0)),
@@ -179,6 +185,18 @@ export function SceneWorld({
     const aperture = apertureAt(progress);
     apertureRef.current =
       instant || probe ? aperture : damp(apertureRef.current, aperture, 8, dt);
+    // A profundidade do plano nítido acompanha o beat: larga fora do rio, curta
+    // dentro dele, onde separar cards vizinhos em profundidade é o trabalho que
+    // o DIRECTION.md §3 dá à abertura. Sem amortecer por cima — a curva já é
+    // suave e o progresso que a alimenta já chegou amortecido.
+    focusRangeRef.current = focusRangeAt(progress);
+
+    // --- as esteiras do rio -------------------------------------------------
+    // Elas entram com o beat, e não o tempo todo: o corredor está montado
+    // trinta a cinquenta unidades a montante do corpo de prova, e agindo desde
+    // 0.00 ele entortava o escoamento que chega no quadro do descolamento. Ver
+    // `cardAmount` em `curve.ts` para os números.
+    shared.cardAmount.value = cardAmount(progress);
 
     // --- o proxy, e os três consumidores dele -------------------------------
     // No modo calmo ele roda em lote: os aglomerados precisam chegar à pose
@@ -218,8 +236,8 @@ export function SceneWorld({
     // desse trecho der para ler a câmara inteira, este número está baixo demais.
     shared.forming.value = clamp01(progress / 0.16);
 
-    const fog = 0.098 - 0.042 * clamp01(progress / 0.22);
-    const source = 0.05 + 0.1 * clamp01(progress / 0.28);
+    const fog = fogDensityAt(progress);
+    const source = sourceStrengthAt(progress);
     shared.fogDensity.value =
       instant || probe ? fog : damp(shared.fogDensity.value, fog, 3, dt);
     shared.sourceStrength.value =
@@ -270,6 +288,7 @@ export function SceneWorld({
           flockRef={flockReadRef}
           attackRef={attackRef}
           shared={shared}
+          pose={pose}
           roost={roost}
           proxy={proxy}
         />
@@ -286,6 +305,10 @@ export function SceneWorld({
       )}
       <Chamber shared={shared} />
       <Structure shared={shared} />
+      {/* O rio. `?cards=0` tira as malhas **e** as esteiras do shader dos
+          boids — é o A/B de desempenho e, ao mesmo tempo, o controle da medida
+          de esteira (ver `lib/scene/settings.ts`). */}
+      {settings.cards ? <Cards shared={shared} /> : null}
       <Flock
         shared={shared}
         progressRef={progressRef}
@@ -299,7 +322,12 @@ export function SceneWorld({
       <Suspense fallback={null}>
         <Specimen shared={shared} text={specimen} attackRef={attackRef} />
       </Suspense>
-      <Composer shared={shared} apertureRef={apertureRef} focusRef={focusRef} />
+      <Composer
+        shared={shared}
+        apertureRef={apertureRef}
+        focusRef={focusRef}
+        focusRangeRef={focusRangeRef}
+      />
     </>
   );
 }

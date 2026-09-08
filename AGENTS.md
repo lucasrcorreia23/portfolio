@@ -71,13 +71,14 @@ dois divergirem, o `PROJECT.md` ganha. Este arquivo é só o mapa do código.
 
 ## Estado atual
 
-**Fundação, portão, e a cena com os três primeiros beats — com o descolamento e
-o poleiro.** Sobre o esqueleto — rotas, idiomas, tokens, escala tipográfica,
-driver de scroll, hooks de capacidade, pipeline de MDX — existem o **preloader e
-o portão de entrada**, a **cena contínua de R3F** de 0.00 a 0.45 e a **HUD
-lateral fixa**: câmara, névoa em três paradas, bando de 16.384 corpos em FBO
-ping-pong, estrutura gravada, corpo de prova em `troika-three-text` com oclusão
-real, e o poleiro colunar de Quem sou.
+**Fundação, portão, e a cena com os quatro primeiros beats — com o descolamento,
+o poleiro e o corredor do rio.** Sobre o esqueleto — rotas, idiomas, tokens,
+escala tipográfica, driver de scroll, hooks de capacidade, pipeline de MDX —
+existem o **preloader e o portão de entrada**, a **cena contínua de R3F** de 0.00
+a 0.85 e a **HUD lateral fixa**: câmara, névoa em três paradas, bando de 16.384
+corpos em FBO ping-pong, estrutura gravada, corpo de prova em
+`troika-three-text` com oclusão real, o poleiro colunar de Quem sou e a corrente
+de sete cards do beat de Trabalho.
 
 **O descolamento está feito e medido** (ver "O descolamento, medido"): campo de
 distância assado do próprio mesh do troika, aresta de ataque pelo gradiente,
@@ -93,9 +94,18 @@ permanente com contato, acervo, filtros, régua, áudio e idioma — e o véu de
 legibilidade **refeito**, porque a varredura de contraste reprovou o mecanismo
 antigo com 1.21:1.
 
-Os dois beats de baixo — Trabalho e Superfície — continuam sem conteúdo, e os
-pontos de controle da câmera de 0.65 em diante são provisórios (ver
-`lib/scene/curve.ts`).
+**O corredor do rio está feito e medido** (ver "O rio, medido"): sete cards
+montados em cinco estações ao longo de 27 unidades, planos na cena com
+perspectiva real, capa de teste procedural, cota gravada, e **esteira própria por
+card** — a mesma física do descolamento com o campo de distância resolvido
+analiticamente no shader, sem assado. A curva da câmera de 0.45 a 0.85 deixou de
+ser provisória.
+
+**Não entraram nesta rodada, e é deliberado:** conteúdo real nos cards (as capas
+são procedurais e a placa de cota não carrega número), os filtros do rio
+mexendo na composição, e a transição do card para `/work/[slug]`. A Superfície
+continua sem conteúdo e os pontos de controle da câmera **de 0.85 em diante**
+seguem provisórios (ver `lib/scene/curve.ts`).
 
 O template HTML comprado que ocupava este repositório foi **descartado, não
 migrado** (PROJECT.md §5). Nada dele sobreviveu: nem SCSS, nem jQuery, nem
@@ -231,20 +241,30 @@ caixa. Um pacote que apareça na primeira caixa por engano — um `import`
 estático que escapou para o `SceneGate`, por exemplo — não é 350 kB de cena, é
 350 kB de rota inicial estourada.
 
-Estado medido, com o portão, a HUD e a cena dos três primeiros beats:
+Estado medido, com o portão, a HUD e a cena dos quatro primeiros beats:
 
 | Rota / chunk | gz | contra |
 |---|---|---|
-| `/` e `/pt` — a descida, com portão, preloader e HUD | **182.8 kB** | 200 kB ✅ |
-| `/work` e `/work/[slug]` — acervo e case, sem portão e sem cena | 176.0 kB | 200 kB ✅ |
-| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, campo de distância, descolamento, **poleiro e véu medido** | **298.6 kB** | 350 kB ✅ |
-| chunk do driver de scroll (gsap + ScrollTrigger + lenis) | 48.1 kB | fora da rota inicial |
+| `/` e `/pt` — a descida, com portão, preloader e HUD | **182.4 kB** | 200 kB ✅ |
+| `/work` e `/work/[slug]` — acervo e case, sem portão e sem cena | 175.6 kB | 200 kB ✅ |
+| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, campo de distância, descolamento, poleiro, véu medido e **o corredor do rio** | **302.7 kB** | 350 kB ✅ |
+| chunk do driver de scroll (gsap + ScrollTrigger + lenis) | 47.9 kB | fora da rota inicial |
 
 O descolamento inteiro — o assado do campo (`type-field.ts` + `shaders/field.ts`)
 e as três forças no shader dos boids — custou **10.1 kB gz**, de 284.0 para 294.1.
 Quem sou custou **4.5 kB**, de 294.1 para 298.6: o poleiro no shader dos boids e
-no proxy, e as três passadas novas do véu no compositor. Sobram 51.4 kB do teto
-para o rio e a transição para o case.
+no proxy, e as três passadas novas do véu no compositor.
+
+**O rio custou 4.1 kB**, de 298.6 para 302.7: a corrente (`cards.ts`), o material
+dos cards com a capa procedural e a cota gravada (`shaders/cards.ts` +
+`Cards.tsx`), e o SDF analítico com as três forças no shader dos boids. É o beat
+mais barato dos três em pacote, e o motivo é o SDF: um retângulo de cantos
+arredondados são cinco linhas de GLSL, enquanto o glifo precisou de um assado com
+jump flood. **Sobram 47.3 kB do teto** para a Superfície e a transição para o
+case.
+
+A rota inicial **não mudou**: 182.8 → 182.4 kB, dentro da variação de hash de
+build. O rio inteiro vive no chunk dinâmico, como tem que ser.
 
 A HUD inteira — contato, acervo, filtros com estado, régua com as cotas dos
 beats, leitura por beat, controle de áudio, colapso no mobile — custou **1.7 kB**
@@ -253,9 +273,15 @@ foram componentes de cliente e dois stores de trinta linhas.
 
 **A sonda de medição não aparece nesta conta porque não existe em produção.**
 Verificado neste build: nenhum chunk de `.next/static/chunks` menciona `__probe`,
-`installProbe`, `readTextRects` nem `veilFootprint` — e nenhum menciona
-`__lenis`, o atalho de desenvolvimento que a varredura de contraste usa para
-rolar a página. Ver "A sonda" abaixo.
+`installProbe`, `installCorridor`, `cardWake`, `readTextRects` nem
+`veilFootprint` — e nenhum menciona `__lenis`, o atalho de desenvolvimento que a
+varredura de contraste usa para rolar a página. Ver "A sonda" abaixo.
+
+**Uma única afordância de medição viaja em produção, e ela é declarada:**
+`uCardMask`, no vertex shader dos cards. Ela esconde instâncias **do quadro** sem
+tirá-las do escoamento, e custa uma divisão e um `mod` em vinte e oito vértices.
+O que ela compra está em "O rio, medido": sem ela, a pegada entregue de um card
+mede peça **mais** esteira, porque tirar o card do escoamento muda o bando.
 
 Os dois chunks dinâmicos são separados **por conteúdo**, não por momento: o
 preloader pede a cena antes do clique, então dividir por "o que chegou depois de
@@ -392,21 +418,24 @@ nenhum dos dois depende de WebGL. Quem precisa das duas juntas usa
 ```
 lib/scene/load-scene.ts    promessa memoizada — espelho de load-driver.ts
 lib/scene/world.ts         as medidas da câmara; uma unidade ≈ um metro
+lib/scene/cards.ts         a corrente do rio: corpo, estações, espaçamento
 lib/scene/type-field.ts    o assado do campo de distância, do próprio mesh
 lib/scene/probe.ts         a sonda de medição (`?probe=1`, só em dev)
 lib/scene/probe-contrast.ts a varredura de contraste e a conferência do véu
 lib/scene/probe-measure.ts as quatro medidas de aceite e seus controles
-lib/scene/curve.ts         a coreografia: câmera, ângulo de ataque, abertura
+lib/scene/probe-cards.ts   a separação em profundidade e a esteira por card
+lib/scene/curve.ts         a coreografia: câmera, ângulo de ataque, abertura,
+                           névoa, fonte a montante, esteiras do rio
 lib/scene/proxy-sim.ts     64 macro-partículas a 15 Hz — luz, estrutura, véu
 lib/scene/veil.ts          lê do DOM as caixas de texto que o véu protege
 lib/scene/readout-store.ts o fio da cena para a HUD (DENS., Z) — sem three
 lib/scene/gpu.ts           o triângulo de tela cheia e o blit
 lib/scene/type-article.ts  o dono do corpo de prova
-lib/scene/settings.ts      dof, contagem do bando e ?bench, lidos da URL
+lib/scene/settings.ts      dof, bando, rio, ?bench e ?probe, lidos da URL
 lib/scene/bench.ts         o banco de prova: escada de K, estatística, coletor
-components/scene/          Scene → SceneWorld → {Chamber, Structure, Flock,
-                           Specimen, Composer,
-                           SceneClock | ComposedClock | BenchClock}
+components/scene/          Scene → SceneWorld → {Chamber, Structure, Cards,
+                           Flock, Specimen, Composer,
+                           SceneClock | ComposedClock | BenchClock | ProbeClock}
 ```
 
 **Um laço mestre.** `SceneWorld` tem o único `useFrame` que lê o progresso e o
@@ -782,8 +811,37 @@ há esteira turbulenta para acender.
    numa rodada e 1.12 na seguinte, e controles de fluxo livre com **zero**
    corpos. Daí os 700 + 1300 quadros, e daí tudo ser **fração da própria laje**
    em vez de contagem — assim a lâmina se cancela entre numerador e denominador.
-   Na descida real a câmera desce, o plano de renascimento se move junto e a
-   lâmina se desmancha: é artefato de medir parado, não defeito do bando.
+
+   > ⚠️ **A última frase desta nota dizia que a lâmina se desmancha na descida
+   > real, "artefato de medir parado, não defeito do bando". Isso está errado, e
+   > o corredor do rio provou.** Medido numa descida contínua de 0.02 a 0.80 a
+   > 1 vh/s, sem assentamento nenhum, a população em bins de seis unidades de `z`
+   > relativo à câmera:
+   >
+   > | progresso | onde está o bando |
+   > |---|---|
+   > | 0.50 | 11.2 mil de 16.4 mil num bin, colados na lente |
+   > | 0.60 | 7.9 mil num bin a 50 unidades |
+   > | 0.70 | 8.7 mil num bin a 27 unidades |
+   > | 0.80 | 12.4 mil num bin a 9 unidades |
+   >
+   > A lâmina **não** se desmancha: ela translada. E não tinha por que se
+   > desmanchar — todos os corpos têm a mesma velocidade relativa à câmera, e
+   > translação uniforme preserva a forma da distribuição. O plano de renascimento
+   > acompanhar a câmera não espalha nada; só move o plano.
+   >
+   > A consequência aparece no rio porque o beat é longo: o bando atravessa o
+   > corredor duas vezes em 0.40 de progresso, e entre as passagens o corredor
+   > fica com o bando **longe e comido pela névoa** — 0% de pixel acima do limiar
+   > de corpo em 0.55 e 0.62, contra 6.5% em 0.75. Nos beats de cima a câmera mal
+   > se move e a fase não aparece.
+   >
+   > **Não foi consertado nesta rodada, e a razão é blast radius.** O conserto é
+   > espalhar o renascimento em `z` em vez de num plano, e ele muda a densidade
+   > que chega ao corpo de prova — ou seja invalida os números de aceite dos dois
+   > beats já fechados. É uma rodada de re-medição da descida inteira, não uma
+   > linha no shader dos cards. O que esta nota entrega é o número e o
+   > diagnóstico.
 
 ##### As letras das pontas, e o tubo que abre
 
@@ -1053,6 +1111,233 @@ exposta do site, na tela o tempo todo) fica na borda por onde os cards
 passam por baixo dela. 5.5 é o ponto de partida para o beat de Trabalho, não
 a palavra final; reavaliar quando o rio existir.
 
+#### O rio, medido
+
+O beat de 0.45 a 0.85. Sete cards montados ao longo de 27 unidades da câmara, a
+câmera atravessando por entre eles, o bando escoando no meio e se descolando em
+cada um. Contact sheet da travessia inteira em `.screens/05a-corredor.png`.
+
+**A geometria, e de onde cada número saiu** (`lib/scene/cards.ts`):
+
+| | valor | por quê |
+|---|---|---|
+| corpo do card | 3.8 × 2.375 (16:10) | o maior que fecha a conta da esteira — ver abaixo |
+| corredor | `z = −55` a `−82` | primeiro à distância de leitura em 0.45; último **lido** antes de 0.85 |
+| espaçamento | **4.5**, exatamente o piso | `27 ÷ 6`; oito cards exigiriam 3.86, abaixo do piso |
+| estações | cinco, em `(±3.4, +2)`, `(±6, −2)` e `(0, −2)` | ver "a corrente de estações" |
+| ângulo de montagem | `−atan(x / 12)` | a peça vira para o eixo, como um corpo de prova numa haste |
+| câmera | `z = −42` a `−86`, 5.24 u/vh | dentro da faixa de 4.2 a 5.6 dos beats já fechados |
+
+**A corrente de estações é o que torna a esteira de um card mensurável.** Cada
+card é montado na estação seguinte da lista, então dois cards só voltam a dividir
+a mesma coluna de escoamento cinco slots adiante — 22.5 unidades, contra as 15.2
+que a laje de quatro larguras alcança e as 3.56 da rampa de aproximação que o
+card de trás projeta a montante. Sobram 2.8 unidades de água limpa. Com quatro
+estações a margem viraria −1.7 e o número medido deixaria de ser "a esteira deste
+card". Isso não é exigência do instrumento: é a exigência do beat. Se as esteiras
+se fundem, o rio tem uma esteira, não sete.
+
+##### Os cards leem como camadas em profundidade, e a régua é o pixel entregue
+
+`__probe.corridor()` tira uma peça do quadro, redesenha o **mesmo instante da
+simulação** e mede a pegada dos pixels que mudaram. Dela saem a largura projetada
+entregue, a fração ocluída e a maciez da borda. 14 pares por card, progresso
+0.50, plano de foco a 13.1. Duas rodadas ficam registradas, e as duas importam:
+
+**Resolução de produção (2160×1254, DPR 1.5) — a que vale.** A tabela anterior
+desta seção media a 1456×817, metade do buffer canônico do M5; esta é a
+remedição, no mesmo buffer que o resto do projeto usa:
+
+| card | distância | fora de foco | largura entregue | calculada | ocluída | borda 20–80% |
+|---|---|---|---|---|---|---|
+| 0 | 8.2 | 4.9 | **682** | 682 | 0.00 | 13 px |
+| 1 | 16.3 | 3.2 | **437** | 437 | 0.00 | 49 px |
+| 2 | 17.0 | 4.0 | **356** | 356 | 0.29 | 13 px |
+| 3 | 22.9 | 9.8 | **257** | 256 | 0.00 | 21 px |
+| 4 | 26.3 | 13.2 | **239** | 217 | 0.24 | 39 px |
+| 5 | 30.5 | 17.4 | **204** | 188 | 0.00 | 37 px |
+| 6 | 36.4 | 23.4 | **175** | 156 | 0.10 | 33 px |
+
+Razões entre vizinhos em profundidade: **1.56 · 1.23 · 1.39 · 1.08 · 1.17 ·
+1.17**. Todas acima de 1, e a do par à distância de leitura — onde o
+DIRECTION.md §4 derivou o piso de "30% menos largura", ou seja 1.30 — em **1.56**.
+As conclusões da rodada anterior sobrevivem à resolução, ponto a ponto:
+
+- **A largura entregue segue a perspectiva, com uma exceção que tem nome.**
+  `largura × distância` fica entre 5592 e 7123 nos sete cards — ±10 a 15% em
+  torno de 6219, com a distância variando 4.4×. É quase constante, o que já
+  descarta uma parede — uma parede sem perspectiva daria a mesma largura para
+  todos, não um produto estável. O único fora da faixa apertada é o card 1
+  (7123, 15% acima da média): ele é o mais deslocado para a lateral de todas as
+  estações (`x = −6`, ver `CARD_STATIONS`), e a invariante `largura ∝ 1/distância`
+  vale para um plano de frente para a lente — um card mais de esguelha projeta
+  mais largura que a distância sozinha prevê.
+- **Os cards se ocluem.** Duas peças escondem 29% e 24% de si atrás das da
+  frente. Uma parede é coplanar e não oclui nada.
+- **A borda amolece com a distância ao foco**, de 13–21 px perto do plano de
+  foco a 33–39 px no fundo. É o círculo de confusão entregue — ver abaixo por
+  quê, e por que isso também explica o excesso de largura nos três cards mais
+  distantes.
+
+**Por que a largura entregue supera a calculada, e cresce com a distância — e
+por que não é bloom nem piso de detecção.** Os cards 4, 5 e 6 (os mais fora de
+foco) entregam 8.5% a 12.2% a mais do que a projeção calculada, e a rodada anterior
+já mostrava o mesmo padrão crescendo com a distância (152×142, 138×122,
+119×102). Duas causas concorriam — halo de bloom, ou um piso de detecção do
+método de diferença de quadro — e a segunda rodada as descarta: **com
+`?dof=off`, medido quatro vezes, a largura entregue bate com a calculada** em
+seis dos sete cards, inclusive os três mais distantes — 681–682, 356, 252–256,
+213–218, 188 e 155–157 contra 682, 356, 256, 217, 188 e 156, todos dentro de
+5 px. O card 1 fica a até 13 px da calculada (424–435 contra 437) nas quatro rodadas,
+tanto com DOF quanto sem — é o mesmo card cuja borda já saía instável na
+tabela acima (49 px), o mais deslocado para a lateral da corrente, e não entra
+na comparação porque o próprio instrumento é mais ruidoso ali, com ou sem
+desfoque.
+
+A causa é geométrica, não um artefato do instrumento: um retângulo borrado por
+um kernel de raio `R` tem uma rampa de 100% a 0% ao longo de `2R` centrada na
+borda real, e o corte de 25% do perfil (ver `footprint`, em
+`lib/scene/probe-cards.ts`) cai em `borda + 0.5R` — para fora da peça. Card mais
+longe do foco, maior o círculo de confusão, maior o excesso. É o preço de medir
+a borda de uma peça desfocada com um limiar único, não um defeito do perfil.
+
+**E o mesmo desfoque amplifica uma contaminação mais séria: a lâmina do bando.**
+Repetindo a mesma chamada várias vezes, dois cards (os índices 4 e 5)
+devolveram larguras **bimodais** — um agrupamento perto do valor limpo, outro
+50 a 100% acima — porque a lâmina viajante do bando (ver "Três armadilhas do
+método", abaixo) entra e sai da janela de busca entre uma amostra e outra, e o
+desfoque espalha o brilho disocluído por área maior, tornando mais provável que
+ele cruze o limiar de 25%. Isto é uma manifestação nova do problema já
+registrado da lâmina, não um bug do método de pegada — ver "O que falta",
+item 4, para o agendamento do conserto. Até lá, `corridor()` precisa de várias
+chamadas e da mediana entre elas — a tabela acima usa uma rodada limpa,
+verificada contra as outras por não ter caído no agrupamento contaminado.
+
+**O controle é `?span=3`**, que colapsa a corrente em três unidades de Z. Na
+rodada original (1456×817) a faixa de distâncias caiu de 4.44× para 1.85× e a
+de larguras projetadas de 3.73× para 1.61×: o instrumento responde à
+profundidade em vez de devolver sempre o mesmo número.
+
+##### Cada card tem esteira própria, e a estação decide quão rápido ela fecha
+
+Mesmo método do descolamento: densidade na sombra da tinta a uma, duas e quatro
+larguras de card a jusante, como **fração da própria laje**. O sinal é o modo
+`solo` — a peça medida sozinha no escoamento, com as outras seis estacionadas
+fora do duto — e o controle é o modo `off`, com a corrente inteira estacionada.
+Os dois rodam no **mesmo carregamento**, e a razão sai da mesma laje.
+
+Card 3, progresso 0.523, 2600 quadros por condição, duas rodadas:
+
+| | 1 W | 2 W | 4 W |
+|---|---|---|---|
+| sinal (`solo`) | 7.7 · 13.1 | 48.2 · 51.1 | 87.2 · 84.1 |
+| controle (`off`) | 79.9 · 85.8 | 84.6 · 86.9 | 99.0 · 88.6 |
+| **razão** | **0.10 · 0.15** | **0.57 · 0.59** | **0.88 · 0.95** |
+
+Monotônico nas duas rodadas, fechando em ~92% do escoamento não perturbado a
+quatro larguras, sem passar dele. E a aresta de ataque, no perfil radial logo a
+montante do plano: o envelope de raspagem fica **vazio** (0.76 do controle na
+primeira faixa) e a pilha aparece a um quarto de altura de card da silhueta, a
+**1.58×** o controle. Os corpos são expulsos da borda e se acumulam encostados
+nela — que é o que "descolamento" quer dizer.
+
+**A estação decide o resto, e a diferença é grande:**
+
+| card | estação | 1 W | 2 W | 4 W |
+|---|---|---|---|---|
+| 3 | `(−3.4, +2.0)` | 0.13 | 0.58 | **0.92** |
+| 4 | `(0, −2.0)` | 0.00 | 0.06 | **0.07** |
+
+A estação 4 está encostada no chão do tubo do bando — a meia-altura da elipse em
+`x = 0` é 3.31 e a borda de baixo do card fica em −3.19, **0.12 unidade da
+parede**. A sombra dela só pode ser reabastecida por cima, e não é. Isso é o
+comportamento certo lido pelo lado errado: um card colado na borda do escoamento
+**deve** deixar um vazio atrás dele. O que ele não deve é ser a peça de onde se
+afirma que cada card tem esteira. Quem mexer na altura do tubo ou na altura das
+estações remede os dois.
+
+##### O que custou, em quadro
+
+> ⚠️ **Toda a tabela abaixo saiu na resolução errada, e não vale como número
+> final.** O buffer de 1.19–1.27 Mpx é metade do canônico do M5 (2160×1254,
+> 2.71 Mpx) — a janela do navegador não estava no tamanho nativo quando esta
+> rodada aconteceu. Numa cena limitada por preenchimento, "11 a 12% do quadro"
+> medido a meia resolução não é o número real; a proporção pode mudar nos dois
+> sentidos, porque tanto o custo do rio quanto o custo do resto da cena escalam
+> com pixel. **A remedição está pronta para rodar** —
+> `?bench=1&plan=debts&port=3131`, a mesma URL que resolve as outras duas
+> dívidas de uma vez (ver "O que falta", item 3) — e falta só a janela em
+> primeiro plano no momento de rodar. Os números abaixo ficam registrados
+> riscados, não apagados, até a remedição substituir esta nota.
+
+| | GPU/quadro | mediana | p95 |
+|---|---|---|---|
+| rio on | 1.78 · 1.92 · 1.98 ms | 1.67 · 1.69 · 1.68 | 2.50 · 2.54 · 3.33 |
+| rio off | 1.58 · 1.74 · **3.15** ms | 1.66 · 1.67 · 3.33 | 1.73 · 2.50 · 5.00 |
+
+Na única rodada com os dois lados no mesmo buffer e sem anomalia, o rio custa
+**+0.18 ms**. As medianas são indistinguíveis (1.67 contra 1.66): o quadro típico
+custa o mesmo, e a diferença mora na cauda.
+
+**O 3.15 da terceira célula é o controle, não o efeito, e ele diz uma coisa
+útil.** Tirar os cards muda onde o bando vai parar — sem as sete peças para
+desviá-lo e sem elas ocluindo o que está atrás, a mesma varredura pode encontrar
+a população inteira colada na lente. O A/B "com e sem os cards" nunca é limpo por
+isso, e o número honesto é a comparação com o resto da descida:
+
+| varredura | GPU/quadro | mesmo aparelho, mesmo buffer |
+|---|---|---|
+| 0.00 – 0.28 (Emergência + Identidade) | 1.93 ms | dof on, 16.384 corpos |
+| 0.45 – 0.85 (o rio) | 1.78 – 1.98 ms | idem |
+
+**O beat de Trabalho custa o mesmo que os dois beats acima dele.** Contra os 16.7
+ms de um quadro a 60 Hz são **11 a 12%**; contra os 13.3 ms desta tela de 75 Hz,
+14%.
+
+> ⏳ **O iPhone não foi medido.** Esta sessão não teve o aparelho, e o banco mede
+> tempo de parede — ele exige a janela em primeiro plano no próprio telefone. O
+> procedimento está em "Desempenho da cena, medido"; a célula que falta é
+> `?bench=1&plan=cards` no iOS, e o que se espera dela é a mesma proporção: o
+> rio custa o que o resto da descida custa, e lá a descida fecha em 4.62 ms de
+> 17.0.
+
+##### O calor, e o que o rio faz com o bando
+
+Descendo de 0.12 a 0.83 a 1 vh/s e medindo pixels quentes no quadro entregue
+(`__probe.warmth`, teto do PROJECT.md §3.1 = 15% da tela):
+
+| progresso | 0.55 | 0.62 | 0.70 | 0.75 | 0.79 | 0.83 |
+|---|---|---|---|---|---|---|
+| pixels quentes | 0% | 0% | 0.03% | 1.07% | 3.45% | **6.31%** |
+
+O pico é 6.31% na saída do rio, e a solta do poleiro logo antes do beat mede
+10.86% — os dois abaixo do teto, e os dois abaixo do 11.5–13.5% que o poleiro já
+media em 0.44. **`--coral` não acende no rio**: a janela de esteira da rampa
+emissiva é ancorada ao corpo de prova (`shaders/body.ts`), que fica trinta
+unidades a jusante. As esteiras dos cards aparecem em `--cyan`, por aceleração,
+que é o que o DIRECTION.md §5 manda. Estender o coral às esteiras do rio é
+decisão de cor, e cor se calibra com capa de verdade atrás — não com capa de
+teste.
+
+##### A legibilidade, com capa de card atrás do texto
+
+Esta é a condição que o DIRECTION.md §5 registrou como **não testável** quando
+escolheu o alvo do véu: "a comparação rodou sem o beat de Trabalho existir —
+nenhum card, nenhuma capa de imagem atrás de texto". Agora existe.
+`__probe.contrast({from: 0.45, to: 0.85})`, 842 quadros a 0.6 vh/s, `en`,
+1456×817:
+
+- **pior quadro 5.16:1**, no botão `Product` dos filtros, em 0.77, com L = 0.114
+- p5 6.31, mediana 9.61
+- piso do PROJECT.md §5: 4.5 ✅
+
+Passa com folga, e **fica abaixo do alvo de 5.5** que o véu mira. O motivo é de
+orçamento, não de mecanismo: `MAX_VEIL_BOXES` é 4, e o rio acrescenta à HUD os
+três botões de filtro — são mais caixas disputando os mesmos quatro slots, e as
+pequenas perdem para as grandes. As seis piores caixas do relatório são todas da
+HUD. Quem for calibrar o véu com as capas reais mexe nos dois: no alvo e no
+número de slots.
+
 #### O compositor
 
 Cena → DOF → **campo do véu** → composite, tudo sobre `WebGLRenderTarget`. Ele
@@ -1263,7 +1548,7 @@ ordem.
 **Nenhum case é apagado para sair do corte de um aparelho.** Ficar fora do
 corte mantém tudo o mais — o arquivo, a rota `/work/[slug]`, a indexação. Use
 `getRiverCases()` para pegar o rio inteiro **em ordem de `river_rank`** e
-cortar pela capacidade do aparelho que estiver montando (~8 no desktop, ~4 no
+cortar pela capacidade do aparelho que estiver montando (7 no desktop, 4 no
 mobile — DIRECTION.md, "Capacidade do rio"); `getAllCases()` é o acervo
 inteiro, sem ordenar por rank, e é o que gera as rotas.
 
@@ -1354,6 +1639,38 @@ Três coisas que parecem detalhe e não são:
   para L = 0.16–0.20 com o teto em 0.125. É a mesma armadilha que o FBO do bando
   já documenta — `NearestFilter` **nos dois** filtros, sempre que a textura
   guarda dado e não imagem.
+- **`advance()` com o mesmo timestamp congela a posição, não o quadro.** O
+  `hold()` da sonda entrega `dt = 0`, então ninguém anda — mas o arrasto de
+  `boids.ts` é **por chamada**, não por segundo: a velocidade ainda encolhe 1.5%
+  e `energy = |Δv| / (dt·9 + 1e-5)` satura em 1 para a população inteira. Dois
+  `hold()` seguidos só ficam idênticos depois de ~8 quadros parados, e a essa
+  altura o bando está na rampa emissiva máxima, esticado e florescendo. Medido:
+  85% do quadro acima de `L = 0.01`, e a pegada de um card caindo de 68 mil
+  pixels para 7 — porque o bando saturado **cobre** a peça e o tonemap esmaga o
+  que sobra. Congelar serve para geometria de pixel; o preço é que uma medição de
+  pegada precisa de **vários pares** com o bando movido entre eles.
+- **Esconder do quadro e tirar do escoamento são perguntas diferentes.** A
+  medição de pegada precisa que o bando siga a **mesma** trajetória nas duas
+  condições — senão a diferença de pixel passa a incluir a esteira, e ela mede
+  peça mais esteira (medido: três vezes a projeção calculada, de forma estável e
+  repetível, o que é pior que ruído porque parece um resultado). A medição de
+  esteira precisa do contrário. Daí as duas alavancas: `uCardMask` esconde do
+  render, e a sonda **estaciona** o card reescrevendo `uCards[i]` fora do duto.
+- **Assentar com o progresso travado dentro do corredor represa o escoamento.**
+  `settle(p, 700)` são onze segundos de simulação com a câmera parada e sete
+  obstáculos: o bando empilha contra eles e a soltura vira uma nuvem de `--rose`
+  de tela cheia. A primeira contact sheet do rio saiu assim. Uma folha de
+  travessia tem que **descer** até o beat a partir de um progresso calmo, como a
+  varredura de contraste já fazia — é o `warmFrom` de `__probe.sheet`.
+- **O `settle` da sonda rodava com a câmera do progresso anterior.** Ele mandava
+  o `Flock` avançar N passos antes de qualquer `advance()`, e quem escreve
+  `cameraZRef` é o `useFrame` do `SceneWorld`. Como a reciclagem do bando é
+  relativa à câmera, os planos de nascimento e de reciclagem ficavam onde a
+  câmera **estava**. Com doze unidades entre dois progressos medidos o erro
+  passou despercebido; com as quarenta e quatro do rio, um `settle(0.5)` seguido
+  de `settle(0.18)` deixava o bando inteiro preso entre `z = −83` e `−61` e a
+  leitura seguinte descrevia uma câmara vazia. Consertado com um quadro em branco
+  antes do laço.
 - **Ruído de valor mostra a rede dele em superfícies alinhadas aos eixos.** As
   paredes do duto são planos em X e Z, e a rede de inteiros do `sceneNoise`
   aparecia como um moiré retangular no fundo da câmara — uma grade, que o
@@ -1526,11 +1843,19 @@ sem `?bench=1`** — o banco custa 3.1 kB gz no chunk da cena e não roda sozinh
 contra desligado, com dof e bando no padrão. Duas e não oito porque o
 comportamento térmico do aparelho é a única coisa desta seção que continua **não
 verificada**: cada configuração roda 22 a 25 s, e um 2×2×2 são três minutos e
-meio de telefone na mão. `?plan=grid` (o padrão) continua sendo o 2×2 de
-regressão. A **linha 0 de todo plano tem que ser igual aos `DEFAULTS` de
-`settings.ts`**: o primeiro passo é entrado por um `?bench=1` pelado, então ele
-renderiza o padrão — um plano que diga outra coisa na linha 0 reporta uma
-configuração e mede outra, em silêncio.
+meio de telefone na mão. **`?plan=cards`** faz o mesmo para o rio. `?plan=grid`
+(o padrão) continua sendo o 2×2 de regressão. A **linha 0 de todo plano tem que
+ser igual aos `DEFAULTS` de `settings.ts`**: o primeiro passo é entrado por um
+`?bench=1` pelado, então ele renderiza o padrão — um plano que diga outra coisa
+na linha 0 reporta uma configuração e mede outra, em silêncio.
+
+**A faixa varrida é do plano, e não deste arquivo** (`benchSweep`, em
+`lib/scene/bench.ts`). O padrão continua sendo 0.00 a 0.28; o plano do rio varre
+**0.45 a 0.85**, porque o custo de uma configuração depende do beat: entre 0.00 e
+0.28 os cards estão a cinquenta unidades da câmera, atrás de uma névoa que come
+97% deles, e medir o rio ali mediria um `for` a mais no shader dos boids e nada
+do preenchimento — a metade cara. A faixa é do plano e não da configuração porque
+`params.plan` já viaja na URL desde o passo 0.
 
 O relatório ganhou `gpuPerFrameMedianMs` ao lado do p95 e da manchete. As três
 juntas, nunca a mediana sozinha: **a mediana descreve o quadro típico e a média
@@ -1549,9 +1874,23 @@ teto de 350 são para o rio, não para instrumentação.
 
 A sonda não roda laço: a cena fica parada e cada chamada avança o relógio em
 passos fixos de 1/60 s antes de ler. `window.__probe` expõe `meta()`,
-`settle()`, `step()`, `viewport()`, `readField()`, `readSim()`, `planeMap()`,
-`measure()` e `sheet()` — a última monta a contact sheet num canvas 2D e a POSTa
-em `/shot` no coletor.
+`settle()`, `step()`, `hold()`, `viewport()`, `readField()`, `readSim()`,
+`planeMap()`, `measure()`, `occlusion()`, `corridor()`, `cardWake()`,
+`contrast()`, `descend()`, `warmth()`, `veilFootprint()` e `sheet()` — a última
+monta a contact sheet num canvas 2D e a POSTa em `/shot` no coletor, e com o
+argumento `to` ela vira uma **descida** em vez de doze poses do mesmo ponto.
+
+As chaves de URL que a medição usa, todas em `lib/scene/settings.ts`:
+
+| chave | o que faz |
+|---|---|
+| `?dof=off` | tira a profundidade de campo — regra de corte do DIRECTION.md §3 |
+| `?detach=0` | compila fora o descolamento do corpo de prova |
+| `?cards=0` | compila fora o rio: malhas **e** esteiras |
+| `?flock=N` | a contagem do bando, dentro da faixa de 4k a 16k |
+| `?river=N` | força a contagem de cards, para medir a corrente do mobile num desktop |
+| `?span=N` | o comprimento do corredor em unidades — `?span=3` é o controle "parede" |
+| `?bench=1` | o banco de prova; `?probe=1` a sonda |
 
 **Duas armadilhas de ambiente, e as duas custam uma hora se não estiverem
 escritas.** A primeira: o portão é aberto **por atributo**, não por clique. O
@@ -1677,6 +2016,31 @@ Quatro armadilhas que custaram rodadas e estão resolvidas no harness:
 22–25 s e o telefone foi medido frio. Para uma descida de oito segundos isso é o
 regime certo, mas ninguém mediu a cena aberta por dez minutos.
 
+### O rio, no mesmo aparelho
+
+> ⚠️ **Esta seção tinha uma afirmação errada, e é a mesma classe de erro que o
+> PROJECT.md §7 existe para prevenir.** Ela dizia que a tabela de "O que custou,
+> em quadro" era "de outra máquina-sessão (M5 a 2160×1254, DPR 1.5)" — não é.
+> Conferido nos três relatórios crus desta sessão: `grid` rodou a 1456×817,
+> `cards` a 1456×873 e depois 1456×817. **As duas linhas abaixo são o mesmo
+> buffer errado da tabela acima**, não uma segunda máquina. A comparação entre
+> elas (rio custa o mesmo que os beats de cima) continua válida — os dois lados
+> erram pela mesma resolução —, mas nenhuma das duas é o número de produção.
+
+As duas linhas abaixo saíram na mesma sessão, no mesmo M5, com o mesmo buffer
+(1456×817–873, a resolução errada — ver acima), e por isso **só valem entre
+si** — é a comparação que interessa, não o valor absoluto:
+
+| varredura | GPU/quadro | mediana | p95 |
+|---|---|---|---|
+| 0.00 – 0.28 (Emergência + Identidade) | 1.93 ms | 1.67 | 2.51 |
+| 0.45 – 0.85 (o rio) | 1.78 · 1.92 · 1.98 ms | 1.67–1.69 | 2.50–3.33 |
+
+Buffer 1456×817–873 (1.19–1.27 Mpx), DPR 1, tela de 75 Hz, zero paradas. **O beat
+de Trabalho custa o mesmo que os dois beats acima dele** — 11 a 12% dos 16.7 ms
+de um quadro a 60 Hz. O A/B do rio ligado contra desligado, e por que ele nunca é
+limpo, estão em "O rio, medido".
+
 ## O que falta
 
 Nesta ordem, porque cada uma depende da anterior:
@@ -1686,35 +2050,92 @@ Nesta ordem, porque cada uma depende da anterior:
    `river_rank` provisório — ver "São sete cases no repositório" acima. Faltam os
    três escritos do zero (Perfecting, WeCann Atena, Unifique Energia); só
    depois deles o fixture sai.
-2. O conteúdo dos beats de baixo em DOM — contato e placas de cota. **O
-   manifesto já existe** (`components/beats/AboutBeat.tsx`).
+2. O conteúdo do rio e da Superfície em DOM — capas reais, placas de cota com
+   cliente/ano/estação, contato. **O manifesto já existe**
+   (`components/beats/AboutBeat.tsx`), e a **geometria** do rio também: o que
+   falta ali é conteúdo, não corredor. Com a capa real vêm três decisões que esta
+   rodada deixou explicitamente na mesa, todas com o número já medido ao lado:
+   o alvo do véu e o número de slots dele (5.16:1 medido contra um alvo de 5.5,
+   ver "A legibilidade, com capa de card atrás do texto"), o `accent` de cada
+   card, e se `--coral` passa a acender nas esteiras do rio.
 3. ~~O descolamento~~ — **feito e medido**, ver "O descolamento, medido". Sobrou
-   dele **o tempo de GPU**: o banco mede tempo de parede e por isso precisa de
-   uma janela de navegador em primeiro plano, que esta sessão não teve. Rodar
-   `?bench=1&plan=detach&port=3131` com `npm run collect` no ar, no M5 e no
-   iPhone, e escrever os números na tabela de "Desempenho da cena". **O
-   orçamento de pacote já está fechado** (298.6 kB de chunk de cena contra 350),
-   então o que falta é confirmar o quadro, não caber. Junto com ele vai o custo
-   do poleiro e das três passadas do véu, que também não foi medido em tempo de
-   GPU — o banco precisa de uma janela em primeiro plano, e esta sessão não teve.
-4. Os dois beats de baixo, e com eles os pontos de controle definitivos da curva
-   da câmera de 0.65 em diante (hoje provisórios, em `lib/scene/curve.ts`) e a
-   migração da cor da fonte a montante para `--cyan` e `--peach`.
+   dele **o tempo de GPU num iPhone**: o banco mede tempo de parede e por isso
+   precisa de uma janela de navegador em primeiro plano no próprio aparelho. No
+   M5 os planos `grid` e `cards` já rodaram nesta sessão, os dois na resolução
+   errada (ver a nota abaixo, "Débito de resolução"); no iPhone, nenhum plano
+   desta rodada — nem `grid`, nem `detach`, nem `cards`, e o véu (abaixo) nunca
+   foi medido em tempo nenhum, nem aqui nem lá.
+
+   **As três dívidas — `detach`, `cards` e o véu — agora cabem num carregamento
+   só: `?bench=1&plan=debts&port=3131`.** Seis células chained (`chain`
+   automático), cada par na faixa em que o efeito importa — ver `DEBTS_PLAN` em
+   `lib/scene/bench.ts`. Com `npm run collect` no ar na máquina que serve a
+   página, abrir essa URL **no aparelho, com a janela em primeiro plano**
+   (a mesma condição que já derrubou esta medição duas vezes nesta sessão — ver
+   abaixo) resolve as três de uma vez, no M5 e no iPhone, em ~2 a 2.5 minutos
+   cada. **O orçamento de pacote já está fechado** (302.8 kB de chunk de cena
+   contra 350, com o véu incluído), então o que falta é confirmar o quadro, não
+   caber.
+
+   > ⚠️ **Débito de resolução, achado remedindo isto.** As três rodadas de banco
+   > registradas mais acima nesta sessão (`grid` e `cards` × 2) saíram todas a
+   > 1456×817–873 (1.19–1.27 Mpx) — metade do buffer canônico do M5 (2160×1254,
+   > 2.71 Mpx), porque a janela do navegador não estava no tamanho nativo.
+   > Numa cena limitada por preenchimento, "11 a 12% do quadro" medido naquela
+   > resolução não é o número real. **Ainda não refeito**: a tentativa de rodar
+   > `?bench=1&plan=cards` na resolução certa, nesta mesma sessão, ficou presa
+   > em "aba oculta — medição pausada" — o banco mede tempo de parede e por isso
+   > exige a janela em primeiro plano, e a janela perdeu o foco para outros
+   > aplicativos em uso no momento. O que **foi** refeito na resolução certa é a
+   > geometria da pegada (largura projetada, oclusão, borda) via `corridor()`,
+   > que não depende de foco — ver a tabela e a investigação em "O rio, medido".
+   > O tempo de GPU continua pendente, e `?bench=1&plan=debts` é o caminho: ele
+   > mede isto junto com as outras duas dívidas, na mesma janela.
+4. **A lâmina do bando.** Não é acabamento: é o bando atravessando o corredor em
+   bloco e deixando trechos do rio sem tecido conjuntivo — ver a nota corrigida
+   em "Três armadilhas do método". O conserto é espalhar o renascimento em `z`, e
+   ele muda a densidade que chega ao corpo de prova, ou seja obriga a re-medir os
+   critérios de aceite da Identidade e de Quem sou. É uma rodada inteira, e é a
+   primeira coisa que o rio pede depois do conteúdo.
+
+   **Agendado: depois do Prompt 5B, antes do Prompt 6.** Não antes: os sete cases
+   ainda não existem em `content/cases/`, e a remedição da Identidade e de Quem
+   sou não ganha nada rodando contra o fixture `exemplo.mdx`. Não depois: o
+   Prompt 6 é o que quer que venha a seguir — hoje candidatos são a Superfície e
+   os filtros do rio —, e os dois herdariam uma densidade de bando que ainda vai
+   mudar. A remedição do **3B** (descolamento) e do **4** (Quem sou) entram no
+   mesmo lote do conserto, não depois dele: é a mesma correção de fonte de dados
+   invalidando os dois critérios de aceite ao mesmo tempo, então uma sessão só —
+   consertar, remedir os dois, atualizar as duas seções deste arquivo.
+
+   **E o próprio instrumento do rio herdou o problema.** A medição de largura
+   projetada de `corridor()` (ver "O rio, medido") mostrou, nesta sessão, o mesmo
+   sintoma: dois dos sete cards devolveram larguras **bimodais** entre chamadas
+   repetidas no mesmo progresso — a lâmina entrando e saindo da janela de busca
+   de um card entre uma amostra e outra. O conserto que espalha o renascimento em
+   `z` corrige isto de graça; até lá, `corridor()` precisa de várias chamadas e
+   da mediana entre elas para não reportar a fase da lâmina como se fosse a peça.
+   Ver o docblock de `footprint` em `lib/scene/probe-cards.ts`.
+5. A Superfície, e com ela os pontos de controle definitivos da curva da câmera
+   de 0.85 em diante (hoje provisórios, em `lib/scene/curve.ts`), a migração da
+   cor da fonte a montante para `--cyan` e `--peach`, e o valor de topo de
+   `sourceStrengthAt`, que hoje é um palpite documentado.
 
    **E, por regra do PROJECT.md §7, a faixa medida de toda entrada que dispara
    um portão visual sai junto.** O `L_cena` do véu já está feito, e o resultado
    foi trocar o mecanismo — ver "O véu de legibilidade": o `f` não é mais
    estimado nem clampado, ele é resolvido da luminância medida do próprio
    quadro, e a faixa está registrada por caixa.
-5. Os posters do modo `poster`. O DIRECTION.md §5 manda renderizá-los "destas
-   mesmas composições", e só duas das cinco existem — gerar duas agora garantiria
+6. Os posters do modo `poster`. O DIRECTION.md §5 manda renderizá-los "destas
+   mesmas composições", e três das cinco existem — gerar três agora garantiria
    regerar as cinco depois.
-6. A rolagem sintética a 0.6 vh/s até o quadro de separação (DIRECTION.md §4),
+7. A rolagem sintética a 0.6 vh/s até o quadro de separação (DIRECTION.md §4),
    cronometrada — o outro teste de portão. **A varredura de contraste está
    feita** e mora em `__probe.contrast()`: ela desce na mesma taxa de 0.6 vh/s,
    mede cada quadro e cada linha de texto, e passou em quatro condições (ver "O
-   véu de legibilidade"). O que falta dela é rodá-la nos beats de baixo quando
-   eles existirem.
+   véu de legibilidade"). O que falta dela é rodá-la na Superfície quando ela
+   existir — **no rio ela já rodou**, e o resultado está em "A legibilidade, com
+   capa de card atrás do texto".
 
 O item que era o sétimo — verificar a cena num iPhone contra o piso de 30 fps —
 **está feito**: 4.62 ms de GPU por quadro, 55.6 fps, ver "Desempenho da cena,

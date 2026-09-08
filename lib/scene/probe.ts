@@ -1,5 +1,13 @@
-import { Matrix4, Vector3, type WebGLRenderTarget, type WebGLRenderer } from "three";
-import { SEPARATION_PROGRESS } from "@/components/beats/beats";
+import {
+  Matrix4,
+  Vector3,
+  type Vector4,
+  type WebGLRenderTarget,
+  type WebGLRenderer,
+} from "three";
+import { SCROLL_VH, SEPARATION_PROGRESS } from "@/components/beats/beats";
+import { resolveRiver } from "./cards";
+import { installCorridor } from "./probe-cards";
 import { installContrast } from "./probe-contrast";
 import {
   measureComposed,
@@ -83,6 +91,26 @@ export type ProbeDeps = {
     box: readonly { x: number; y: number; z: number; w: number }[];
     f: readonly number[];
   };
+  /**
+   * A corrente de cards, como o shader a recebeu.
+   *
+   * A sonda **escreve** aqui, e é a única que escreve depois da montagem: para
+   * tirar uma peça do quadro ela estaciona o card longe do duto em vez de pedir
+   * um caminho de render só para medir. Ver o docblock de `probe-cards.ts`.
+   */
+  cards: Vector4[];
+  /**
+   * A máscara que esconde cards **do quadro** sem tirá-los do escoamento — o
+   * outro lado da moeda de `cards`. Ver `probe-cards.ts`.
+   */
+  cardMask: { value: number };
+  /**
+   * A pose da câmera deste quadro. A sonda já tem a matriz da câmera, mas não o
+   * **alvo** — e é a distância até ele que a profundidade de campo usa como
+   * plano de foco. Sem isso a medição do corredor não sabe qual card está na
+   * navalha.
+   */
+  pose: { position: Vector3; target: Vector3 };
   /** O poleiro resolvido neste quadro, para a medição saber onde ele está. */
   roost: {
     center: Vector3;
@@ -241,8 +269,26 @@ export function installProbe(deps: ProbeDeps): () => void {
     return { width: gl.domElement.width, height: gl.domElement.height };
   };
 
+  /**
+   * Põe o bando na pose de equilíbrio de um progresso.
+   *
+   * **O quadro em branco antes do laço não é zelo, é o conserto de um viés.**
+   * O assentamento roda `settleRef`, que é o laço do `Flock` lendo
+   * `cameraZRef`, `attackRef` e `tubeRef` — e quem escreve esses três é o
+   * `useFrame` do `SceneWorld`, que só roda num `advance()`. Sem o quadro em
+   * branco, os N passos de simulação rodam com a câmera do progresso
+   * **anterior**, e a reciclagem do bando é relativa à câmera: os planos de
+   * nascimento e de reciclagem ficam onde a câmera estava, não onde ela está.
+   *
+   * Enquanto a câmera se movia doze unidades entre dois progressos medidos, o
+   * erro era pequeno e passou despercebido. O rio move quarenta e quatro: medido
+   * com o viés, um `settle(0.5)` seguido de `settle(0.18)` deixava o bando
+   * inteiro preso entre `z = −83` e `z = −61`, e a leitura seguinte descrevia
+   * uma câmara vazia com toda a população fora do quadro.
+   */
   const settle = (progress = SEPARATION_PROGRESS, steps = 150) => {
     progressRef.current = progress;
+    step(1);
     settleRef.current?.(steps);
     step(1);
     return { progress, steps };
@@ -596,8 +642,14 @@ export function installProbe(deps: ProbeDeps): () => void {
     progress: progressRef.current,
     attack: attackRef.current,
     detach: sceneSettings().detach,
+    cards: sceneSettings().cards,
     dof: sceneSettings().dof,
     flock: sceneSettings().flockTextureSize ** 2,
+    river: {
+      count: resolveRiver().count,
+      spacing: Number(resolveRiver().spacing.toFixed(3)),
+      z: resolveRiver().cards.map((card) => Number(card.z.toFixed(2))),
+    },
     capHeight: H,
     letterAdvance: W,
     specimenZ: SPECIMEN_Z,
@@ -746,16 +798,43 @@ export function installProbe(deps: ProbeDeps): () => void {
   };
 
   /**
-   * A contact sheet: uma grade de quadros no mesmo progresso, com o tempo em
-   * cada um.
+   * A contact sheet: uma grade de quadros, com a leitura de cada um embaixo.
    *
    * Montada num `<canvas>` 2D dentro da própria página e postada no coletor —
    * não há navegador sem cabeça neste repositório, e mandar um PNG de vários
    * megabytes por dentro de uma chamada de ferramenta seria pior que não ter.
+   *
+   * **Duas folhas diferentes, e a diferença é `to`.** Sem ele, os quadros são o
+   * mesmo progresso separados por tempo: é o que o quadro do descolamento pede,
+   * porque ali o assunto é o que o escoamento faz numa pose. Com ele, o
+   * progresso **desce** entre os quadros, e é o que um corredor pede — o assunto
+   * do beat de Trabalho é a travessia, e uma folha de doze poses do mesmo ponto
+   * de vista mostraria tudo menos ela.
+   *
+   * ## E a folha de descida não pode assentar dentro do beat
+   *
+   * `settle(p, N)` põe o bando em equilíbrio **com o progresso travado**, e no
+   * rio isso é uma cena que não existe: com a câmera parada, o escoamento se
+   * acumula contra as sete peças por onze segundos de simulação. A primeira
+   * folha do corredor saiu assim, e os quadros de `p = 0.54` e `p = 0.57` eram
+   * uma nuvem de `--rose` de tela cheia — a pilha represada sendo solta de uma
+   * vez. Na descida real a mesma varredura mede **0%** de pixel quente ali.
+   *
+   * É a mesma armadilha que o `descend` de `probe-contrast.ts` existe para
+   * evitar, e a saída é a mesma: assentar num progresso calmo **antes** do beat
+   * e chegar até ele descendo, na taxa de uma pessoa. `warmFrom` é onde o
+   * assentamento acontece — 0.30 por padrão, antes do poleiro, onde travar o
+   * progresso não acumula nada.
    */
   const sheet = async (
     options: {
       progress?: number;
+      /** Progresso final. Com ele a folha vira uma descida. */
+      to?: number;
+      /** Onde o bando assenta antes de descer até `progress`. Ver acima. */
+      warmFrom?: number;
+      /** Alturas de viewport por segundo na aproximação e entre os quadros. */
+      rate?: number;
       columns?: number;
       rows?: number;
       spacingSeconds?: number;
@@ -767,6 +846,9 @@ export function installProbe(deps: ProbeDeps): () => void {
   ) => {
     const {
       progress = SEPARATION_PROGRESS,
+      to = null,
+      warmFrom = 0.3,
+      rate = 1,
       columns = 4,
       rows = 3,
       spacingSeconds = 0.1,
@@ -776,7 +858,24 @@ export function installProbe(deps: ProbeDeps): () => void {
       port = 3131,
     } = options;
 
-    settle(progress, settleSteps);
+    /** Desce do progresso `from` até `at`, um quadro de cada vez. */
+    const rampTo = (from: number, at: number) => {
+      const frames = Math.max(
+        1,
+        Math.round(((at - from) * SCROLL_VH * 60) / Math.max(rate, 1e-3)),
+      );
+      for (let f = 1; f <= frames; f += 1) {
+        progressRef.current = from + ((at - from) * f) / frames;
+        step(1);
+      }
+    };
+
+    if (to === null) {
+      settle(progress, settleSteps);
+    } else {
+      settle(warmFrom, settleSteps);
+      rampTo(warmFrom, progress);
+    }
 
     const width = gl.domElement.width;
     const height = gl.domElement.height;
@@ -798,11 +897,16 @@ export function installProbe(deps: ProbeDeps): () => void {
     paper.font = "16px ui-monospace, SFMono-Regular, Menlo, monospace";
     const info = meta();
     paper.fillText(
-      `PROGRESSO ${progress.toFixed(2)} · DESCOLAMENTO ${
-        info.detach ? "ON" : "OFF"
-      } · BUFFER ${width}×${height} · DPR ${info.dpr} · PASSO ${(
-        spacingSeconds * 1000
-      ).toFixed(0)} MS`,
+      (to === null
+        ? `PROGRESSO ${progress.toFixed(2)}`
+        : `PROGRESSO ${progress.toFixed(2)} → ${to.toFixed(2)}`) +
+        ` · DESCOLAMENTO ${info.detach ? "ON" : "OFF"}` +
+        ` · RIO ${info.cards ? "ON" : "OFF"} (${
+          (info.river as { count: number }).count
+        } CARDS)` +
+        ` · BUFFER ${width}×${height} · DPR ${info.dpr} · PASSO ${(
+          spacingSeconds * 1000
+        ).toFixed(0)} MS`,
       gap,
       28,
     );
@@ -816,8 +920,22 @@ export function installProbe(deps: ProbeDeps): () => void {
     const pixels = new Uint8Array(width * height * 4);
     const framesPerTile = Math.max(1, Math.round(spacingSeconds * 60));
 
-    for (let index = 0; index < columns * rows; index += 1) {
-      if (index > 0) step(framesPerTile - 1);
+    const tiles = columns * rows;
+    for (let index = 0; index < tiles; index += 1) {
+      if (index > 0) {
+        // Numa folha de descida, o progresso avança entre os quadros e a cena
+        // é avançada **um passo de cada vez** com ele: pular direto para o
+        // progresso seguinte mostraria a câmera teleportada e o bando na pose
+        // errada, que é a diferença entre uma travessia e doze recortes.
+        if (to !== null) {
+          rampTo(
+            progressRef.current,
+            progress + ((to - progress) * index) / (tiles - 1),
+          );
+        } else {
+          step(framesPerTile - 1);
+        }
+      }
       composedInto(pixels);
       // `readPixels` entrega de baixo para cima; o canvas 2D espera o contrário.
       for (let y = 0; y < height; y += 1) {
@@ -837,7 +955,9 @@ export function installProbe(deps: ProbeDeps): () => void {
       paper.fillStyle = "#DCE9EC";
       paper.font = "13px ui-monospace, SFMono-Regular, Menlo, monospace";
       paper.fillText(
-        `t = +${(index * spacingSeconds).toFixed(3)} s`,
+        to === null
+          ? `t = +${(index * spacingSeconds).toFixed(3)} s`
+          : `p = ${progressRef.current.toFixed(3)}  ·  z = ${camera.position.z.toFixed(1)}`,
         x,
         y + tileHeight + 18,
       );
@@ -858,6 +978,25 @@ export function installProbe(deps: ProbeDeps): () => void {
       sent: response.ok,
     };
   };
+
+  const { corridor, cardWake } = installCorridor({
+    canvas: gl.domElement,
+    gl: context,
+    bindDefault: () => {
+      gl.setRenderTarget(null);
+    },
+    hold,
+    step,
+    settle: (progress, steps) => {
+      settle(progress, steps);
+    },
+    readSim,
+    cards: deps.cards,
+    mask: deps.cardMask,
+    camera,
+    target: deps.pose.target,
+    toLinear: SRGB_TO_LINEAR,
+  });
 
   const { contrast, descend, veilFootprint, warmth, readTextRects } =
     installContrast({
@@ -890,6 +1029,8 @@ export function installProbe(deps: ProbeDeps): () => void {
     bodyColumns,
     measure,
     occlusion,
+    corridor,
+    cardWake,
     contrast,
     descend,
     veilFootprint,

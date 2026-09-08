@@ -156,7 +156,8 @@ export async function getAllCases(): Promise<CaseEntry[]> {
  * O rio inteiro, em ordem de curadoria — DIRECTION.md §4. **Uma lista só,
  * não uma por aparelho:** este módulo devolve todo o acervo ordenado por
  * `river_rank` crescente, e quem monta o beat de Trabalho corta essa mesma
- * lista pela capacidade do aparelho (hoje ~8 no desktop, ~4 no mobile — ver
+ * lista pela capacidade do aparelho (7 no desktop e 4 no mobile, reconferidos
+ * com a corrente montada — ver
  * DIRECTION.md, "Capacidade do rio"). O corte não é responsabilidade deste
  * módulo: um número de capacidade aqui amarraria `lib/cases.ts`, que não
  * sabe de viewport, à composição da câmara, que sabe.

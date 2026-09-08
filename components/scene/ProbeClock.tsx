@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useThree } from "@react-three/fiber";
 import { installProbe, type FlockRead } from "@/lib/scene/probe";
-import type { Roost } from "@/lib/scene/curve";
+import type { CameraPose, Roost } from "@/lib/scene/curve";
 import type { ProxySim } from "@/lib/scene/proxy-sim";
 import type { SharedUniforms } from "@/lib/scene/uniforms";
 
@@ -13,6 +13,7 @@ type ProbeClockProps = {
   flockRef: { current: FlockRead | null };
   attackRef: { readonly current: number };
   shared: SharedUniforms;
+  pose: CameraPose;
   roost: Roost;
   proxy: ProxySim;
 };
@@ -35,6 +36,7 @@ export function ProbeClock({
   flockRef,
   attackRef,
   shared,
+  pose,
   roost,
   proxy,
 }: ProbeClockProps) {
@@ -75,12 +77,15 @@ export function ProbeClock({
       flockRef,
       attackRef,
       veil: { box: shared.veilBox.value, f: shared.veilF.value },
+      cards: shared.cards.value,
+      cardMask: shared.cardMask,
+      pose,
       roost,
       proxy,
     });
 
     console.info(
-      "[probe] pronto — window.__probe.meta() / .measure() / .contrast() / .sheet()",
+      "[probe] pronto — window.__probe.meta() / .measure() / .corridor() / .cardWake() / .contrast() / .sheet()",
     );
 
     return () => {
@@ -101,6 +106,7 @@ export function ProbeClock({
     flockRef,
     attackRef,
     shared,
+    pose,
     roost,
     proxy,
   ]);

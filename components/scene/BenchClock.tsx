@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useThree } from "@react-three/fiber";
 import {
   benchPlan,
+  stepSweep,
   SATURATED,
   createFrameTimer,
   fitSlope,
@@ -18,9 +19,16 @@ import {
 } from "@/lib/scene/bench";
 import { sceneSettings } from "@/lib/scene/settings";
 
-/** A faixa medida: Emergência e Identidade, os dois beats que existem. */
-const SWEEP_TO = 0.28;
-/** Passo fixo do relógio. A varredura tem que ser a mesma a 60 e a 20 fps. */
+/**
+ * Passo fixo do relógio. A varredura tem que ser a mesma a 60 e a 20 fps.
+ *
+ * A **faixa** que ela percorre não mora mais aqui: ela é da célula, com o plano
+ * como piso (`stepSweep`, em `lib/scene/bench.ts`). O padrão continua sendo
+ * Emergência e Identidade; o plano do rio varre 0.45 a 0.85, porque medir os
+ * cards num beat em que eles estão a cinquenta unidades atrás da névoa mediria
+ * tudo menos eles; e o plano `debts` varia a faixa célula a célula, porque
+ * chaina três dívidas que vivem em três trechos diferentes da descida.
+ */
 const STEP_MS = 1000 / 60;
 
 /**
@@ -136,9 +144,17 @@ export function BenchClock({ progressRef }: BenchClockProps) {
     };
 
     const plan = benchPlan(params.plan);
+    const currentConfig = plan[params.step] ?? plan[0];
+    const [sweepFrom, sweepTo] = currentConfig
+      ? stepSweep(params.plan, currentConfig)
+      : ([0, 0.28] as const);
     const head = `passo ${params.step + 1}/${plan.length} (${params.plan}) — dof ${
       settings.dof ? "on" : "off"
-    } · flock ${flock} · descolamento ${settings.detach ? "on" : "off"}`;
+    } · flock ${flock} · descolamento ${
+      settings.detach ? "on" : "off"
+    } · rio ${settings.cards ? "on" : "off"} · véu ${
+      settings.veil ? "on" : "off"
+    }`;
 
     const timer: FrameTimer | null =
       webgl2 === null ? null : createFrameTimer(webgl2, params.timer);
@@ -302,9 +318,20 @@ export function BenchClock({ progressRef }: BenchClockProps) {
         step: params.step,
         plan: params.plan,
         planSteps: plan.length,
-        config: { dof: settings.dof, flock, detach: settings.detach },
+        config: {
+          dof: settings.dof,
+          flock,
+          detach: settings.detach,
+          cards: settings.cards,
+          veil: settings.veil,
+        },
         sceneMode: document.documentElement.getAttribute("data-scene-mode"),
-        sweep: { from: 0, to: SWEEP_TO, frames: SWEEP_FRAMES, stepMs: STEP_MS },
+        sweep: {
+          from: sweepFrom,
+          to: sweepTo,
+          frames: SWEEP_FRAMES,
+          stepMs: STEP_MS,
+        },
         method: timer?.method ?? "slope",
         methodNote: timer?.note() ?? "sem cronômetro de GPU; só a inclinação",
         timerResolutionMs: timerResolutionMs(),
@@ -419,12 +446,15 @@ export function BenchClock({ progressRef }: BenchClockProps) {
         return;
       }
 
-      // A rampa é a varredura: 0 → 0.28 ao longo do estágio. O assentamento
-      // segura em 0 para o amortecimento do `SceneWorld` voltar ao início — sem
-      // ele, a varredura seguinte começaria de onde a anterior parou.
+      // A rampa é a varredura, do começo ao fim da faixa do plano. O
+      // assentamento segura no começo dela para o amortecimento do `SceneWorld`
+      // voltar ao início — sem ele, a varredura seguinte começaria de onde a
+      // anterior parou.
       const span = Math.max(1, stage.frames - 1);
       progressRef.current =
-        stage.kind === "settle" ? 0 : (frameInStage / span) * SWEEP_TO;
+        stage.kind === "settle"
+          ? sweepFrom
+          : sweepFrom + (frameInStage / span) * (sweepTo - sweepFrom);
 
       elapsed += STEP_MS / 1000;
 

@@ -47,12 +47,32 @@ type Stop = {
 /**
  * Os pontos de controle da descida inteira.
  *
- * De 0.00 a 0.45 eles são dirigidos: a aproximação, o quadro do descolamento em
- * 0.18, a passagem raspando a peça no fim da Identidade e a **derivada para a
- * parede graduada** em Quem sou. De 0.65 em diante são **provisórios** —
- * existem para a curva ser uma curva só quando os outros beats entrarem, e para
- * a câmera não parar no meio do duto. Trocar esses três é o trabalho dos
- * prompts seguintes.
+ * De 0.00 a 0.85 eles são dirigidos: a aproximação, o quadro do descolamento em
+ * 0.18, a passagem raspando a peça no fim da Identidade, a **derivada para a
+ * parede graduada** em Quem sou e o **corredor do rio**. De 0.85 em diante
+ * continua **provisório** — existe para a curva ser uma curva só quando a
+ * Superfície entrar, e para a câmera não parar no meio do duto.
+ *
+ * ## O corredor do rio
+ *
+ * De 0.45 a 0.85 a câmera percorre **44 unidades**, de `z = −42` a `z = −86`.
+ * São 5.24 u/vh no desktop, dentro da faixa que os dois beats já fechados
+ * praticam (Identidade a 4.2, Quem sou a 5.6) — a estimativa do DIRECTION.md §4
+ * era ~5 u/vh, e ela se confirma.
+ *
+ * **A deriva é lenta, e não um slalom.** Os cards alternam de lado a cada 4.7
+ * unidades (`lib/scene/cards.ts`), e uma câmera que desviasse de cada um leria
+ * como pista de obstáculos. Ela não precisa desviar: o vão livre entre a borda
+ * interna de um card e o eixo do duto é de 1.5 unidade, e a estação central
+ * passa por baixo da lente. O que a curva faz são três "S" largos, de amplitude
+ * pouco maior que uma unidade — o suficiente para a paralaxe mudar de sinal
+ * algumas vezes e o corredor não virar um trilho.
+ *
+ * **O olhar vai para o eixo, ~13 unidades à frente.** É a mesma distância de
+ * leitura para a qual o corpo do card foi resolvido, e é ela que a profundidade
+ * de campo usa como plano de foco: o card à distância de leitura fica na
+ * navalha, os de trás desfocam. A separação em profundidade do DIRECTION.md §3
+ * ("parcial, só para separar cards em profundidade") é literalmente isso.
  *
  * ## O desvio de Quem sou
  *
@@ -90,10 +110,15 @@ const STOPS: readonly Stop[] = [
   { at: 0.34, position: [5.0, -0.2, -28.5], target: [1.8, 0.0, -42.0] },
   { at: 0.4, position: [6.8, -0.05, -35.0], target: [3.2, 0.0, -48.0] },
   { at: 0.45, position: [8.0, 0.05, -42.0], target: [4.5, 0.0, -55.0] },
+  // O rio: a câmera volta da parede para o eixo do duto e desce o corredor em
+  // três "S" largos, com o olhar preso ao eixo à distância de leitura.
+  { at: 0.51, position: [3.6, -0.15, -48.3], target: [0.9, 0.0, -61.0] },
+  { at: 0.59, position: [-1.2, 0.2, -56.7], target: [-0.2, 0.05, -69.5] },
+  { at: 0.68, position: [1.1, -0.2, -66.2], target: [0.3, 0.0, -79.0] },
+  { at: 0.77, position: [-1.0, 0.25, -75.6], target: [-0.2, 0.05, -88.0] },
+  { at: 0.85, position: [0.4, 0.35, -86.0], target: [0.0, 0.3, -98.0] },
   // Daqui para baixo é provisório — ver o docblock.
-  { at: 0.65, position: [-0.9, 0.0, -58.0], target: [0.0, 0.0, -70.0] },
-  { at: 0.85, position: [0.7, 0.4, -78.0], target: [0.0, 0.2, -90.0] },
-  { at: 1.0, position: [0.0, 1.2, -92.0], target: [0.0, 0.6, -104.0] },
+  { at: 1.0, position: [0.0, 1.0, -93.0], target: [0.0, 0.6, -105.0] },
 ];
 
 const toVectors = (key: "position" | "target") =>
@@ -390,7 +415,36 @@ export function resolveRoost(
  * para cima porque a curva forte gasta a maior parte do movimento no começo).
  *
  * Depois de 0.28 fica fechada: Quem sou é beat de leitura.
+ *
+ * **E reabre parcialmente no rio.** O DIRECTION.md §3 dá a esta abertura um
+ * trabalho específico e único no site — "parcial, só para separar cards em
+ * profundidade; nunca sobre o título do card" —, e ela é a segunda metade do
+ * critério de aceite do beat: os cards têm que ler como camadas distintas, não
+ * como uma parede. A largura projetada faz a primeira metade; o círculo de
+ * confusão faz a segunda, porque um card fora do plano de foco **não é só menor,
+ * é mais macio**, e é isso que o olho lê como distância.
+ *
+ * `RIVER_APERTURE` é 0.42 e não 1.0 porque a regra é "parcial": com a abertura
+ * cheia o corredor inteiro atrás do card em foco vira mingau, e o rio deixa de
+ * ter sete peças para ter uma peça e um fundo.
  */
+const RIVER_APERTURE = 0.26;
+
+/**
+ * Quanto o beat de Trabalho está ligado, 0 a 1 — a mesma curva para as três
+ * coisas que ele muda na atmosfera: a abertura, a profundidade do plano nítido e
+ * a densidade da névoa.
+ *
+ * Uma curva só porque as três são o mesmo enquadramento visto de três ângulos.
+ * Três rampas independentes entrariam e sairiam de fase no primeiro ajuste de
+ * ritmo, e o sintoma seria a névoa engrossando antes de a abertura abrir.
+ */
+function riverAmount(progress: number): number {
+  const rise = clamp01((progress - 0.44) / 0.05);
+  const fall = clamp01((progress - 0.8) / 0.06);
+  return easeStrong(rise) * (1 - easeStrong(fall));
+}
+
 export function apertureAt(progress: number): number {
   if (progress <= 0.06) return 1;
   if (progress < 0.11) {
@@ -401,5 +455,124 @@ export function apertureAt(progress: number): number {
     // O corte de navalha.
     return 0.75 * (1 - easeStrong(clamp01((progress - 0.11) / 0.045)));
   }
-  return 0;
+  // Parcial no rio, e fechada de novo na saída: a Superfície reabre "só na
+  // fresta de luz" (DIRECTION.md §3), e esse beat ainda não existe.
+  return RIVER_APERTURE * riverAmount(progress);
+}
+
+/**
+ * A densidade da névoa, por progresso.
+ *
+ * Espessa na Emergência — "não dá pra saber se a câmara tem três metros ou
+ * trezentos" — abrindo conforme a escala se estabelece, e **engrossando de novo
+ * no rio**.
+ *
+ * O engrossamento não é gosto, é a regra do DIRECTION.md §2 aplicada onde ela
+ * pegou: "se em algum frame dá pra ler a câmara inteira, a névoa está fina
+ * demais". Nos beats de cima a câmera olha para uma peça que ocupa 84% do
+ * quadro e as paredes ficam de esguelha; no corredor ela olha para o fundo do
+ * duto, e a 0.056 dava para ler a câmara inteira — as quatro paredes, a
+ * convergência, o canto. Medido no quadro entregue, 22% dos pixels acima de
+ * L = 0.02 contra 9.8% no quadro do descolamento.
+ *
+ * E ela **também é o terceiro sinal de profundidade** do beat, junto com o
+ * tamanho projetado e o círculo de confusão: com a névoa mais espessa os cards
+ * do fundo do corredor viram fantasmas e emergem um a um, que é a diferença
+ * entre um rio e uma galeria com sete quadros pendurados.
+ */
+const RIVER_FOG = 0.082;
+
+export function fogDensityAt(progress: number): number {
+  const base = 0.098 - 0.042 * clamp01(progress / 0.22);
+  return base + (RIVER_FOG - base) * riverAmount(progress);
+}
+
+/**
+ * A fonte distante a montante — DIRECTION.md §5: "quase zero no começo, subindo
+ * para o máximo **só entre 0.85 e 1.00**. É a luz para a qual você está
+ * andando."
+ *
+ * **A rampa antiga chegava ao máximo em 0.28**, e enquanto a câmera ficava a
+ * oitenta unidades da tampa do fundo ninguém via: a névoa comia o disco inteiro.
+ * No corredor a câmera fecha para quarenta e sete, o disco cresce na tela, e a
+ * fonte passa a lavar o meio do quadro justamente onde os cards do fundo
+ * precisam ser lidos como silhuetas. O sintoma é do beat novo; o desvio da §5
+ * é antigo.
+ *
+ * O platô fica baixo pela descida inteira e a subida mora onde o documento a
+ * põe. O valor de topo é **provisório**, como os pontos de controle de 0.85 em
+ * diante: quem o resolve é o beat da Superfície, que ainda não existe.
+ */
+const SOURCE_SURFACE = 0.55;
+
+/**
+ * Quanto as esteiras dos cards agem no escoamento, 0 a 1.
+ *
+ * **Elas não agem o tempo todo, e isso não é conveniência: é uma correção
+ * medida.** Os cards estão montados de `z = −56` a `−84`, e o bando nasce em
+ * `uCameraZ − 64` — ou seja, no quadro do descolamento (progresso 0.18, câmera
+ * em −12) o escoamento **atravessa o corredor inteiro** antes de chegar ao corpo
+ * de prova, trinta a cinquenta e oito unidades a jusante. Medido em 0.18, com as
+ * sete peças agindo contra `?cards=0`:
+ *
+ * | | com o corredor | sem |
+ * |---|---|---|
+ * | sombra da tinta a 1 / 2 / 4 larguras de letra | 142 / 218 / 265 | 175 / 271 / 287 |
+ * | travessia por quinto do título | 56·101·167·68·58 | 58·119·105·114·70 |
+ * | discordância cima/baixo do perfil | **26.0%** | 14.8% |
+ *
+ * A última linha é a que condena. O par de metades do perfil vertical é o
+ * **controle** do critério de aceite do descolamento (AGENTS.md, "as duas de
+ * fora concordam entre si"): ele existe para descartar "o bando está torto", e
+ * com o corredor ligado o bando fica torto. O beat que o DIRECTION.md §1 chama
+ * de "o motivo do site existir" não paga essa conta por um beat que só começa
+ * duas centenas de progresso depois.
+ *
+ * A força entra junto com o beat, pela mesma disciplina que o poleiro
+ * (`roostAmount`), o tubo do bando (`flockTubeHalfWidth`) e o ângulo de ataque
+ * da peça já seguem: nesta cena as forças são coreografadas pela variável única
+ * (PROJECT.md §3.3), não simuladas o tempo todo. O que **não** é coreografado é
+ * a geometria — os cards estão montados na câmara desde sempre, e se veem de
+ * longe, atrás da névoa, como qualquer outra coisa presa nas paredes.
+ *
+ * A subida termina em 0.46, antes de a câmera alcançar o primeiro card em 0.577,
+ * então ninguém vê uma esteira começar. A descida em 0.88 é higiene: a essa
+ * altura a corrente inteira está atrás do plano de reciclagem e não há corpo
+ * nenhum para desviar.
+ */
+export function cardAmount(progress: number): number {
+  const rise = easeStrong(clamp01((progress - 0.4) / 0.06));
+  const fall = easeStrong(clamp01((progress - 0.88) / 0.07));
+  return rise * (1 - fall);
+}
+
+export function sourceStrengthAt(progress: number): number {
+  const early = 0.05 + 0.05 * clamp01(progress / 0.28);
+  const surface = easeStrong(clamp01((progress - 0.85) / 0.15));
+  return early + (SOURCE_SURFACE - early) * surface;
+}
+
+/**
+ * A profundidade do plano nítido, em unidades de mundo — o denominador do
+ * círculo de confusão (`cocAt` em `shaders/post.ts`).
+ *
+ * Fora do rio ela é larga: a abertura só existe na Emergência e no corte de
+ * navalha da Identidade, e ali o que se quer é um borrão de ambiente, não um
+ * plano de foco recortado.
+ *
+ * **No rio ela é o instrumento.** Com 26 unidades, dois cards separados por 4.7
+ * têm círculos de confusão que diferem em 0.18 · abertura — invisível. Com 13, a
+ * mesma separação dá 0.36 · abertura, e o card seguinte lê perceptivelmente mais
+ * macio que o card em foco. O plano de foco é a distância ao alvo da câmera
+ * (`focusRef`, em `SceneWorld`), que a curva mantém a ~13 unidades à frente — ou
+ * seja, na distância de leitura do card.
+ */
+const FOCUS_RANGE_WIDE = 26;
+const FOCUS_RANGE_RIVER = 12;
+
+export function focusRangeAt(progress: number): number {
+  return (
+    FOCUS_RANGE_WIDE +
+    (FOCUS_RANGE_RIVER - FOCUS_RANGE_WIDE) * riverAmount(progress)
+  );
 }

@@ -23,7 +23,11 @@ import {
 import { SEED_FRAG } from "@/lib/scene/shaders/seed";
 import type { FlockRead } from "@/lib/scene/probe";
 import { TYPE_ARTICLE } from "@/lib/scene/type-article";
-import { fogUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
+import {
+  cardUniforms,
+  fogUniforms,
+  type SharedUniforms,
+} from "@/lib/scene/uniforms";
 import {
   FLOCK_TUBE_HEIGHT,
   FLOCK_TUBE_NARROW,
@@ -135,13 +139,19 @@ export function Flock({
       uTypeRect: shared.typeFieldRect,
       uTypeReady: shared.typeFieldReady,
       uTypeH: { value: TYPE_ARTICLE.capHeight },
+
+      // A corrente de cards do rio. Os mesmos objetos que o material dos cards
+      // recebe (`lib/scene/uniforms.ts`): a esteira precisa se descolar
+      // exatamente onde a peça está desenhada, e duas cópias da corrente é a
+      // forma mais fácil de as duas coisas divergirem meio metro.
+      ...cardUniforms(shared),
     };
 
     // Os dois passos compartilham o mesmo mapa de uniforms de propósito: são a
     // mesma simulação lida de dois jeitos, e um `uDt` diferente entre eles
     // seria um bug impossível de ver.
     const velocityMaterial = createPassMaterial(
-      boidsVelocityFrag(settings.detach),
+      boidsVelocityFrag(settings.detach, settings.cards),
       simUniforms,
       GLSL3,
     );

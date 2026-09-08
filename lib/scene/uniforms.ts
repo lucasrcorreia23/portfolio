@@ -1,5 +1,11 @@
 import { Color, Vector2, Vector4, type Texture } from "three";
 import { readPalette, type Palette } from "@/lib/palette";
+import {
+  CARD_CORNER,
+  CARD_HALF_HEIGHT,
+  CARD_HALF_WIDTH,
+  MAX_CARDS,
+} from "./cards";
 import { MAX_VEIL_BOXES } from "./veil";
 import { CHAMBER_FAR, SPECIMEN_Z } from "./world";
 
@@ -108,6 +114,51 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
     typeField: { value: null as Texture | null },
     typeFieldRect: { value: new Vector4(0, 0, 1, 1) },
     typeFieldReady: { value: 0 },
+
+    /**
+     * A corrente de cards do rio: `xyz` é o centro em mundo e `w` é o ângulo de
+     * montagem em torno de Y.
+     *
+     * Compartilhados pelo mesmo motivo que o campo do corpo de prova: quem
+     * escreve é um só (`SceneWorld`, a partir de `lib/scene/cards.ts`), e quem
+     * lê são dois — o material dos cards e o passo de velocidade do bando. Uma
+     * cópia em cada um seria a garantia de que um dia a esteira se descole ao
+     * lado de onde o card está desenhado.
+     *
+     * `cardCount` é a capacidade do aparelho, não o tamanho do array: o array é
+     * `MAX_CARDS` porque uniform array é compile-time, e o laço do shader sai em
+     * `cardCount`.
+     */
+    cards: {
+      value: Array.from({ length: MAX_CARDS }, () => new Vector4()),
+    },
+    cardCount: { value: 0 },
+    /**
+     * Quanto as esteiras dos cards agem, 0 a 1 — ver `cardAmount` em
+     * `lib/scene/curve.ts` para a medição que a tornou necessária.
+     */
+    cardAmount: { value: 0 },
+    /**
+     * Máscara de bits dos cards escondidos **do quadro**. Zero na cena, sempre.
+     *
+     * Só a sonda escreve isto. Ela esconde do render e não do escoamento: quem
+     * tira um card da simulação é a própria sonda, reescrevendo `cards`. Ver
+     * `probe-cards.ts` para por que as duas coisas são perguntas diferentes.
+     */
+    cardMask: { value: 0 },
+    cardHalf: { value: new Vector2(CARD_HALF_WIDTH, CARD_HALF_HEIGHT) },
+    cardCorner: { value: CARD_CORNER },
+  };
+}
+
+/** O mapa que o material dos cards e o passo de velocidade do bando esperam. */
+export function cardUniforms(shared: SharedUniforms) {
+  return {
+    uCards: shared.cards,
+    uCardCount: shared.cardCount,
+    uCardAmount: shared.cardAmount,
+    uCardHalf: shared.cardHalf,
+    uCardCorner: shared.cardCorner,
   };
 }
 

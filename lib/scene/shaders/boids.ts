@@ -57,8 +57,32 @@
  * real a separação começa **antes** do corpo" do mesmo §5 — os `±0.05·H`
  * continuam sendo a espessura do **sólido**, os dois finos, e não o alcance da
  * força.
+ *
+ * ## As esteiras do rio
+ *
+ * O beat de Trabalho monta outros corpos de prova ao longo da câmara, e o
+ * DIRECTION.md §4 diz o que eles fazem ao escoamento: "Cada card tem sua própria
+ * esteira: ao se aproximar, o bando se descola nele também. É a mesma física do
+ * beat de identidade, em escala menor, e é o que impede o rio de virar uma
+ * galeria."
+ *
+ * **Mesma física, campo diferente.** Os três efeitos são os mesmos — aresta de
+ * ataque, turbulência, recolamento — e as janelas são as mesmas frações da
+ * altura da peça. O que muda é de onde sai a distância com sinal: para o corpo
+ * de prova ela é **assada** com jump flood, porque glifo tem forma arbitrária;
+ * para um card ela é **analítica**, cinco linhas de retângulo de cantos
+ * arredondados, exata em qualquer ponto e com o gradiente de brinde. Assar um
+ * campo por card seria trocar precisão infinita por sete texturas.
+ *
+ * A única diferença de desenho está na turbulência. No corpo de prova ela mora
+ * nas **contra-formas** — os olhos das letras, que o enclausuramento do assado
+ * sabe achar. Um card não tem contra-forma; o lugar onde um escoamento fica
+ * turbulento atrás de uma placa é a **camada de cisalhamento**, a fronteira
+ * entre a esteira parada e o escoamento que passou raspando. É ali que a força
+ * age, e é a mesma leitura física que pôs a do glifo dentro do olho da letra.
  */
 
+import { MAX_CARDS } from "../cards";
 import {
   ROOST_CAPTURE,
   ROOST_HOLD,
@@ -135,6 +159,69 @@ vec2 indexToUv(float index) {
 
 float selfIndex() {
   return floor(gl_FragCoord.y) * uTexSize.x + floor(gl_FragCoord.x);
+}
+`;
+
+/**
+ * O que o descolamento do corpo de prova e as esteiras do rio compartilham: a
+ * volta do referencial da peça para o mundo, e o campo de ruído da turbulência.
+ *
+ * Ele entra quando **qualquer um dos dois** entra. Duas cópias seriam duas
+ * turbulências, e a segunda divergiria da primeira no primeiro ajuste.
+ */
+const DEFLECTION_COMMON = /* glsl */ `
+/**
+ * Frequência espacial e deriva do campo de turbulência — ver o docblock em
+ * TURB_SCALE, logo abaixo do bloco do campo assado. Elas moram aqui porque as
+ * duas peças que agitam o escoamento amostram **o mesmo campo**.
+ */
+const float TURB_SCALE = 0.85;
+const float TURB_DRIFT = 0.9;
+
+/** Vetor no plano da peça de volta para o mundo. Inversa de Ry(-yaw). */
+vec3 articleToWorld(vec2 planar, float c, float s) {
+  return vec3(c * planar.x, planar.y, s * planar.x);
+}
+
+float eddyHash(vec3 p) {
+  p = fract(p * 0.3183099 + vec3(0.71, 0.113, 0.419));
+  p *= 17.0;
+  return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+
+/**
+ * Ruído de valor, com a **rede girada para fora dos eixos do mundo**.
+ *
+ * A rede alinhada aos eixos já apareceu neste projeto como moiré retangular no
+ * fundo da câmara, e grade é vetada pelo PROJECT.md §2. Aqui o sintoma seria
+ * outro e pior: os vórtices da contra-forma nascendo em fileiras paralelas a X
+ * e a Y, ou seja o bando desenhando uma grade — a proibição da §6.
+ */
+float eddy(vec3 p) {
+  const mat3 turn = mat3(
+     0.00,  0.80,  0.60,
+    -0.80,  0.36, -0.48,
+    -0.60, -0.48,  0.64
+  );
+  vec3 q = turn * p;
+  vec3 i = floor(q);
+  vec3 f = fract(q);
+  f = f * f * (3.0 - 2.0 * f);
+
+  float n000 = eddyHash(i + vec3(0.0, 0.0, 0.0));
+  float n100 = eddyHash(i + vec3(1.0, 0.0, 0.0));
+  float n010 = eddyHash(i + vec3(0.0, 1.0, 0.0));
+  float n110 = eddyHash(i + vec3(1.0, 1.0, 0.0));
+  float n001 = eddyHash(i + vec3(0.0, 0.0, 1.0));
+  float n101 = eddyHash(i + vec3(1.0, 0.0, 1.0));
+  float n011 = eddyHash(i + vec3(0.0, 1.0, 1.0));
+  float n111 = eddyHash(i + vec3(1.0, 1.0, 1.0));
+
+  return mix(
+    mix(mix(n000, n100, f.x), mix(n010, n110, f.x), f.y),
+    mix(mix(n001, n101, f.x), mix(n011, n111, f.x), f.y),
+    f.z
+  ) * 2.0 - 1.0;
 }
 `;
 
@@ -233,59 +320,144 @@ const float WAKE_GAIN = 1.3;
  * sem mudar o que se mede — e uniformidade demais é o caminho para o campo
  * virar uma lufada que balança a contra-forma inteira, que é o oposto de
  * vórtice.
+ *
+ * As duas constantes moram em DEFLECTION_COMMON, porque as esteiras do rio
+ * amostram o mesmo campo.
  */
-const float TURB_SCALE = 0.85;
-const float TURB_DRIFT = 0.9;
-
 float solidBand(float z) {
   return 1.0 - smoothstep(SOLID_IN * uTypeH, SOLID_OUT * uTypeH, abs(z));
 }
+`;
 
-/** Vetor no plano da peça de volta para o mundo. Inversa de Ry(-yaw). */
-vec3 articleToWorld(vec2 planar, float c, float s) {
-  return vec3(c * planar.x, planar.y, s * planar.x);
-}
+/**
+ * A corrente de cards e o SDF analítico deles — DIRECTION.md §4, "Cada card tem
+ * sua própria esteira".
+ *
+ * As dimensões entram por **uniform** e não por constante interpolada: a
+ * capacidade do rio muda com o aparelho (sete no desktop, quatro no mobile) e a
+ * corrente é remontada em tempo de execução, então o shader precisa ler o corpo
+ * e a contagem em vez de tê-los assados na compilação. Ver `lib/scene/cards.ts`.
+ *
+ * As frações são as mesmas do corpo de prova, medidas contra a **altura do
+ * card** em vez da altura de caixa alta — é o que faz "a mesma física em escala
+ * menor" ser literal. As duas exceções, e as duas têm motivo:
+ *
+ * - `CWAKE_RISE` é `1.6` e não `1.111`: a unidade do critério de recolamento é
+ *   uma **largura de peça**, e um card é 1.6 alturas de largura enquanto uma
+ *   letra é 1.111 caixas altas. O número muda para a grandeza continuar a mesma.
+ * - `CSHEAR`/`CTURB_Z` substituem a janela de contra-forma. Um card não tem
+ *   olho de letra; o que ele tem é uma camada de cisalhamento logo atrás da
+ *   borda, e é ali que a esteira fica turbulenta.
+ */
+const CARD_CHUNK = /* glsl */ `
+uniform vec4  uCards[${MAX_CARDS}];
+uniform float uCardCount;
+/** Quanto as esteiras agem. Ver cardAmount em lib/scene/curve.ts. */
+uniform float uCardAmount;
+uniform vec2  uCardHalf;
+uniform float uCardCorner;
 
-float eddyHash(vec3 p) {
-  p = fract(p * 0.3183099 + vec3(0.71, 0.113, 0.419));
-  p *= 17.0;
-  return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+const float CGRAZE     = 0.015;
+const float CSOLID_IN  = 0.02;
+const float CSOLID_OUT = 0.05;
+const float CAPPROACH  = 1.5;
+const float CSEP_FADE  = 0.32;
+/** Uma largura de card, em alturas de card: 3.8 / 2.375. */
+const float CWAKE_RISE = 1.6;
+/**
+ * O atrator morre em **cinco alturas de card** — 11.9 unidades, pouco mais de
+ * três larguras de peça —, e não nas doze que o corpo de prova usa.
+ *
+ * As doze do glifo são 24 unidades para uma silhueta de 15.9 de largura: uma
+ * vez e meia a peça. Copiadas para o card elas viram **sete larguras e meia**,
+ * e um atrator que continua puxando muito depois de o buraco ter fechado não
+ * recola nada — ele empilha. Medido, com a janela longa a sombra da tinta a
+ * quatro larguras batia em 1.41 vez o mesmo trecho sem o efeito, e baixar o
+ * ganho de 1.3 para 0.45 só levou de 1.56 para 1.41: o problema nunca foi a
+ * intensidade, foi a duração.
+ *
+ * A razão de a mesma janela servir ao glifo e não ao card é o tamanho da
+ * sombra. A silhueta de sete letras é larga e cheia de vãos, e o fluxo que o
+ * anel de captura entrega não dá conta de enchê-la; a de um card é pequena e
+ * fecha rápido. Depois de fechada, força continuada é excesso.
+ */
+const float CWAKE_FALL = 5.0;
+const float CPULL_IN   = 0.06;
+const float CPULL_OUT  = 0.45;
+/** A camada de cisalhamento: quão longe da borda ela ainda agita, e até onde. */
+const float CSHEAR     = 0.30;
+const float CTURB_Z    = 2.0;
+
+const float CSEP_GAIN  = 11.0;
+const float CCORE_GAIN = 34.0;
+const float CTURB_GAIN = 26.0;
+/**
+ * O atrator da esteira, e ele é **um terço** do que o corpo de prova usa.
+ *
+ * Medido, com 1.3 — o mesmo número do glifo — a sombra da tinta a quatro
+ * larguras de card fechava em **1.56 vez** o mesmo trecho sem o efeito
+ * (?cards=0): o escoamento não voltava ao eixo, ele passava do ponto e
+ * empilhava. É exatamente a falha que o atrator do corpo de prova já teve, e o
+ * critério é o mesmo — recolamento é a densidade subindo **até** o escoamento
+ * não perturbado, não além dele.
+ *
+ * O card precisa de menos ganho que o glifo pelo motivo geométrico: a silhueta
+ * de sete letras é larga e cheia de vãos, então o escoamento atravessa ela e o
+ * atrator só precisa fechar as hastes; um card é sólido e estreito, e o buraco
+ * que ele deixa é fundo e pequeno. Mesma força enche esse buraco muito mais
+ * rápido.
+ */
+const float CWAKE_GAIN = 0.45;
+
+float cardBand(float z, float h) {
+  return 1.0 - smoothstep(CSOLID_IN * h, CSOLID_OUT * h, abs(z));
 }
 
 /**
- * Ruído de valor, com a **rede girada para fora dos eixos do mundo**.
+ * Distância com sinal a um retângulo de cantos arredondados, e o gradiente
+ * dela — as duas coisas que o assado com jump flood produz para o glifo, aqui
+ * em forma fechada.
  *
- * A rede alinhada aos eixos já apareceu neste projeto como moiré retangular no
- * fundo da câmara, e grade é vetada pelo PROJECT.md §2. Aqui o sintoma seria
- * outro e pior: os vórtices da contra-forma nascendo em fileiras paralelas a X
- * e a Y, ou seja o bando desenhando uma grade — a proibição da §6.
+ * Devolve vec3(gradiente.xy, distância). A distância é negativa dentro da
+ * peça e o gradiente aponta **para fora**, que é a mesma convenção do campo
+ * assado (field.xy = para longe da tinta).
  */
-float eddy(vec3 p) {
-  const mat3 turn = mat3(
-     0.00,  0.80,  0.60,
-    -0.80,  0.36, -0.48,
-    -0.60, -0.48,  0.64
-  );
-  vec3 q = turn * p;
-  vec3 i = floor(q);
-  vec3 f = fract(q);
-  f = f * f * (3.0 - 2.0 * f);
-
-  float n000 = eddyHash(i + vec3(0.0, 0.0, 0.0));
-  float n100 = eddyHash(i + vec3(1.0, 0.0, 0.0));
-  float n010 = eddyHash(i + vec3(0.0, 1.0, 0.0));
-  float n110 = eddyHash(i + vec3(1.0, 1.0, 0.0));
-  float n001 = eddyHash(i + vec3(0.0, 0.0, 1.0));
-  float n101 = eddyHash(i + vec3(1.0, 0.0, 1.0));
-  float n011 = eddyHash(i + vec3(0.0, 1.0, 1.0));
-  float n111 = eddyHash(i + vec3(1.0, 1.0, 1.0));
-
-  return mix(
-    mix(mix(n000, n100, f.x), mix(n010, n110, f.x), f.y),
-    mix(mix(n001, n101, f.x), mix(n011, n111, f.x), f.y),
-    f.z
-  ) * 2.0 - 1.0;
+vec3 cardField(vec2 p) {
+  vec2 q = abs(p) - uCardHalf + uCardCorner;
+  vec2 w = max(q, 0.0);
+  float d = length(w) + min(max(q.x, q.y), 0.0) - uCardCorner;
+  // Fora, o gradiente é a direção do canto; dentro, é o eixo mais próximo da
+  // borda. As duas concordam na fronteira, então não há degrau na força.
+  vec2 g = (w.x + w.y) > 0.0
+    ? normalize(w + vec2(1e-6))
+    : (q.x > q.y ? vec2(1.0, 0.0) : vec2(0.0, 1.0));
+  vec2 s = vec2(p.x < 0.0 ? -1.0 : 1.0, p.y < 0.0 ? -1.0 : 1.0);
+  return vec3(g * s, d);
 }
+`;
+
+/**
+ * O campo de turbulência deste corpo neste quadro, amostrado **uma vez**.
+ *
+ * Ele não depende de qual peça está desviando o escoamento: é um campo vetorial
+ * do espaço, e a projeção perpendicular à velocidade é o que o torna um giro em
+ * vez de uma lufada. Amostrá-lo dentro do laço dos cards custaria três `eddy()`
+ * por card — vinte e uma leituras de ruído por corpo, para obter sete vezes o
+ * mesmo vetor.
+ *
+ * Quem escolhe **onde** ele age continua sendo cada peça, pelo seu próprio
+ * campo de distância: a contra-forma no corpo de prova, a camada de
+ * cisalhamento nos cards.
+ */
+const TURB_SAMPLE = /* glsl */ `
+  vec3 swirl = pos * TURB_SCALE + uTime * TURB_DRIFT;
+  vec3 gust  = vec3(
+    eddy(swirl),
+    eddy(swirl + vec3(31.4, 17.9, 5.6)),
+    eddy(swirl + vec3(-11.2, 43.7, 27.3))
+  );
+  vec3 along = normalize(vel + vec3(0.0, 1e-4, 1e-4));
+  vec3 swirlForce = gust - along * dot(gust, along);
 `;
 
 /**
@@ -354,14 +526,7 @@ const FIELD_FORCE = /* glsl */ `
   // contra-forma.
   float zturb = 1.0 - smoothstep(0.0, TURB_Z * uTypeH, abs(lz));
   float turb  = enc * zturb * (1.0 - smoothstep(0.0, TURB_D * uTypeH, max(dist, 0.0)));
-  vec3  swirl = pos * TURB_SCALE + uTime * TURB_DRIFT;
-  vec3  gust  = vec3(
-    eddy(swirl),
-    eddy(swirl + vec3(31.4, 17.9, 5.6)),
-    eddy(swirl + vec3(-11.2, 43.7, 27.3))
-  );
-  vec3  along = normalize(vel + vec3(0.0, 1e-4, 1e-4));
-  force += (gust - along * dot(gust, along)) * (TURB_GAIN * turb * within);
+  force += swirlForce * (TURB_GAIN * turb * within);
 
   // 3. recolamento
   float zwake = smoothstep(0.0, WAKE_RISE * uTypeH, lz)
@@ -373,19 +538,97 @@ const FIELD_FORCE = /* glsl */ `
 `;
 
 /**
- * Passo de velocidade. Coesão, alinhamento, separação, escoamento pelo eixo,
- * retorno ao eixo e — com `detach` — os três efeitos do descolamento.
+ * As esteiras do rio: o mesmo bloco de cima, uma vez por card, com o campo
+ * analítico no lugar do assado.
  *
- * É uma função e não uma constante porque `?detach=0` precisa produzir um
- * shader **sem** o bloco, e não um shader com o bloco multiplicado por zero.
- * Mesmo motivo da DOF em `Composer.tsx`: uma regra de corte só é acionável se
- * der para medir os dois lados no mesmo binário.
+ * **O laço tem um `break`, e ele não é o ramo que a nota do `FIELD_FORCE`
+ * proíbe.** Aquele seria por posição do corpo — divergente por construção,
+ * porque corpos vizinhos no texel são vizinhos em nada. Este é por `uCardCount`,
+ * um **uniform**: toda warp concorda, o hardware sai do laço junta, e o que ele
+ * economiza é a corrente inteira que não existe (quatro cards no mobile, zero
+ * slots vazios computados).
+ *
+ * Dentro do laço não há ramo nenhum, pelo mesmo motivo de sempre: o corpo que
+ * está longe deste card paga as contas e recebe força zero das janelas.
  */
-export function boidsVelocityFrag(detach: boolean): string {
+const CARD_FORCE = /* glsl */ `
+  // --- as esteiras do rio ---------------------------------------------------
+  //
+  // O laço inteiro é pulado fora do beat, e o ramo é de **uniform**: toda warp
+  // concorda, e o que ele economiza é a corrente inteira nos dois terços da
+  // descida em que ela não age.
+  float cardH = uCardHalf.y * 2.0;
+  for (int ci = 0; ci < ${MAX_CARDS}; ci++) {
+    if (float(ci) >= uCardCount || uCardAmount <= 0.0) break;
+
+    vec4  card = uCards[ci];
+    float cc = cos(-card.w);
+    float cs = sin(-card.w);
+    vec3  crel = pos - card.xyz;
+    vec3  cloc = vec3(cc * crel.x + cs * crel.z, crel.y, -cs * crel.x + cc * crel.z);
+
+    vec3  cfield = cardField(cloc.xy);
+    vec2  caway  = cfield.xy;
+    float cdist  = cfield.z;
+
+    float clz  = cloc.z;
+    float clvz = -cs * vel.x + cc * vel.z;
+    float clz0 = clz - clvz * uDt;
+    float clzM = 0.5 * (clz0 + clz);
+    // O mesmo Simpson do corpo de prova, e pela mesma razão: a banda sólida tem
+    // 0.03 · H de espessura e um corpo a 6 u/s a atravessa em dois quadros.
+    float csolid = (cardBand(clz0, cardH) + 4.0 * cardBand(clzM, cardH) + cardBand(clz, cardH)) / 6.0;
+
+    // 1. aresta de ataque
+    float czsep = smoothstep(-CAPPROACH * cardH, -CSOLID_OUT * cardH, clz)
+                * (1.0 - smoothstep(CSOLID_OUT * cardH, 0.35 * cardH, clz));
+    float clat  = 1.0 - smoothstep(CGRAZE * cardH, (CGRAZE + CSEP_FADE) * cardH, cdist);
+    float ccore = 1.0 - smoothstep(-0.30 * cardH, CGRAZE * cardH, cdist);
+    force += articleToWorld(
+      caway * (CSEP_GAIN * clat * czsep + CCORE_GAIN * ccore * csolid), cc, cs
+    ) * uCardAmount;
+
+    // 2. turbulência na camada de cisalhamento
+    //
+    // Não é a contra-forma do glifo — um card não tem olho de letra. É a
+    // fronteira entre a esteira parada e o escoamento que passou raspando a
+    // borda, que é onde uma placa larga solta vórtice. A janela é uma faixa em
+    // volta de cdist = 0 (dos dois lados da borda) que só existe **a jusante**
+    // do plano do card.
+    float cshear = (1.0 - smoothstep(0.0, CSHEAR * cardH, abs(cdist)))
+                 * smoothstep(0.0, 0.2 * cardH, clz)
+                 * (1.0 - smoothstep(0.2 * cardH, CTURB_Z * cardH, clz));
+    force += swirlForce * (CTURB_GAIN * cshear * uCardAmount);
+
+    // 3. recolamento
+    float czwake = smoothstep(0.0, CWAKE_RISE * cardH, clz)
+                 * (1.0 - smoothstep(CWAKE_RISE * cardH, CWAKE_FALL * cardH, clz));
+    float cpull  = smoothstep(0.0, CPULL_IN * cardH, cdist)
+                 * (1.0 - smoothstep(CPULL_IN * cardH, CPULL_OUT * cardH, cdist));
+    force += articleToWorld(-caway * (CWAKE_GAIN * czwake * cpull), cc, cs) * uCardAmount;
+  }
+  // ------------------------------------------------------------------------
+`;
+
+/**
+ * Passo de velocidade. Coesão, alinhamento, separação, escoamento pelo eixo,
+ * retorno ao eixo, os três efeitos do descolamento (`detach`) e as esteiras do
+ * rio (`cards`).
+ *
+ * É uma função e não uma constante porque `?detach=0` e `?cards=0` precisam
+ * produzir um shader **sem** o bloco, e não um shader com o bloco multiplicado
+ * por zero. Mesmo motivo da DOF em `Composer.tsx`: uma regra de corte só é
+ * acionável se der para medir os dois lados no mesmo binário — e, aqui, o
+ * desligado é também o melhor controle possível do critério de aceite: mesma
+ * geometria, mesma semente, sem o efeito.
+ */
+export function boidsVelocityFrag(detach: boolean, cards: boolean): string {
   return /* glsl */ `
 ${COMMON}
 ${ROOST_CONSTANTS}
+${detach || cards ? DEFLECTION_COMMON : ""}
 ${detach ? FIELD_CHUNK : ""}
+${cards ? CARD_CHUNK : ""}
 
 out vec4 fragColor;
 
@@ -528,7 +771,9 @@ void main() {
   // acumularia a população inteira; este desacelera e deixa passar.
   float vzTarget = mix(drive, uRoostDrift, ROOST_HOLD * roost * band);
   force.z += (vzTarget - vel.z) * 1.7;
+${detach || cards ? TURB_SAMPLE : ""}
 ${detach ? FIELD_FORCE : ""}
+${cards ? CARD_FORCE : ""}
   vec3 next = vel + force * uDt;
   next *= 0.985;
 

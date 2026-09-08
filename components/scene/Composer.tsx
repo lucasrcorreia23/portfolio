@@ -60,6 +60,12 @@ type ComposerProps = {
   apertureRef: { readonly current: number };
   /** Distância da câmera ao ponto em foco, em unidades de mundo. */
   focusRef: { readonly current: number };
+  /**
+   * Profundidade do plano nítido, em unidades de mundo — o denominador do
+   * círculo de confusão. Ela é do beat, não do compositor: no rio ela fecha
+   * para separar cards vizinhos em profundidade (`focusRangeAt`, em `curve.ts`).
+   */
+  focusRangeRef: { readonly current: number };
 };
 
 /**
@@ -78,7 +84,12 @@ type ComposerProps = {
  * multiamostragem, então dá para ter antisserrilhado geométrico *e* o
  * círculo de confusão por pixel — que era a escolha difícil aqui.
  */
-export function Composer({ shared, apertureRef, focusRef }: ComposerProps) {
+export function Composer({
+  shared,
+  apertureRef,
+  focusRef,
+  focusRangeRef,
+}: ComposerProps) {
   const { size, viewport, camera } = useThree();
   const settings = sceneSettings();
   /** Qual dos dois alvos de três texels tem a resolução do quadro anterior. */
@@ -346,6 +357,7 @@ export function Composer({ shared, apertureRef, focusRef }: ComposerProps) {
     const aperture = apertureRef.current;
     rig.depthUniforms.uAperture.value = settings.dof ? aperture : 0;
     rig.depthUniforms.uFocus.value = focusRef.current;
+    rig.depthUniforms.uFocusRange.value = focusRangeRef.current;
 
     // --- profundidade de campo, kernel duplo --------------------------------
     // Ela é a primeira coisa da lista de corte do DIRECTION.md §3, então o
@@ -394,40 +406,50 @@ export function Composer({ shared, apertureRef, focusRef }: ComposerProps) {
     // Depois do bloom de propósito: o que ele mede é a luminância que vai para
     // a tela, e o bloom é justamente o que espalha a luz de um corpo que está
     // **fora** da caixa para dentro dela. Ver o bloco do véu em post.ts.
-    const seedTarget = rig.veilField[0];
-    if (seedTarget !== undefined && first !== undefined) {
-      setUniform(rig.veilSeed, "uSource", rig.scene.texture);
-      setUniform(rig.veilSeed, "uBloom", first.texture);
-      setVec2(
-        rig.veilSeed,
-        "uTexel",
-        TEXEL.set(1 / rig.scene.width, 1 / rig.scene.height),
-      );
-      blit(renderer, rig.veilSeed, seedTarget);
-    }
+    //
+    // **`?veil=0` pula as quatro passadas inteiras.** Diferente de DOF, cards e
+    // descolamento, aqui não há shader a recompilar — cada passada já é um
+    // material e uma chamada de `blit()` à parte, então "desligado" é
+    // simplesmente não emitir as chamadas. `uVeilSolved` fica apontando para o
+    // que já estava lá (o alvo nasce zerado), e o composite lê `f = 0`: sem
+    // escurecimento, o que não importa numa rodada de banco. Ver o docblock de
+    // `veil` em `lib/scene/settings.ts`.
+    if (settings.veil) {
+      const seedTarget = rig.veilField[0];
+      if (seedTarget !== undefined && first !== undefined) {
+        setUniform(rig.veilSeed, "uSource", rig.scene.texture);
+        setUniform(rig.veilSeed, "uBloom", first.texture);
+        setVec2(
+          rig.veilSeed,
+          "uTexel",
+          TEXEL.set(1 / rig.scene.width, 1 / rig.scene.height),
+        );
+        blit(renderer, rig.veilSeed, seedTarget);
+      }
 
-    for (let level = 1; level < rig.veilField.length; level += 1) {
-      const source = rig.veilField[level - 1];
-      const target = rig.veilField[level];
-      if (source === undefined || target === undefined) continue;
-      setUniform(rig.veilReduce, "uSource", source.texture);
-      setVec2(
-        rig.veilReduce,
-        "uTexel",
-        TEXEL.set(1 / source.width, 1 / source.height),
-      );
-      blit(renderer, rig.veilReduce, target);
-    }
+      for (let level = 1; level < rig.veilField.length; level += 1) {
+        const source = rig.veilField[level - 1];
+        const target = rig.veilField[level];
+        if (source === undefined || target === undefined) continue;
+        setUniform(rig.veilReduce, "uSource", source.texture);
+        setVec2(
+          rig.veilReduce,
+          "uTexel",
+          TEXEL.set(1 / source.width, 1 / source.height),
+        );
+        blit(renderer, rig.veilReduce, target);
+      }
 
-    const field = rig.veilField[rig.veilField.length - 1];
-    const read = rig.veilSolve[veilSwap.current];
-    const write = rig.veilSolve[veilSwap.current ^ 1];
-    if (field !== undefined && read !== undefined && write !== undefined) {
-      setUniform(rig.veilSolver, "uField", field.texture);
-      setUniform(rig.veilSolver, "uPrevious", read.texture);
-      blit(renderer, rig.veilSolver, write);
-      veilSwap.current ^= 1;
-      setUniform(rig.composite, "uVeilSolved", write.texture);
+      const field = rig.veilField[rig.veilField.length - 1];
+      const read = rig.veilSolve[veilSwap.current];
+      const write = rig.veilSolve[veilSwap.current ^ 1];
+      if (field !== undefined && read !== undefined && write !== undefined) {
+        setUniform(rig.veilSolver, "uField", field.texture);
+        setUniform(rig.veilSolver, "uPrevious", read.texture);
+        blit(renderer, rig.veilSolver, write);
+        veilSwap.current ^= 1;
+        setUniform(rig.composite, "uVeilSolved", write.texture);
+      }
     }
 
     // --- composite ----------------------------------------------------------

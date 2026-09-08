@@ -76,6 +76,20 @@ A abertura respira por beat:
 | Trabalho | parcial, só para separar cards em profundidade | nunca sobre o título do card |
 | Superfície | reabre só na fresta de luz | o fora ainda não tem foco |
 
+**"Parcial" no rio virou dois números, e o primeiro foi medido errado antes.**
+A abertura fica em **0.26** e a profundidade do plano nítido fecha de 26 para
+**12 unidades** (`apertureAt` e `focusRangeAt`, em `lib/scene/curve.ts`). Os dois
+juntos entregam uma rampa: o card na distância de leitura fica na navalha, o
+seguinte lê perceptivelmente mais macio, e o fundo do corredor satura em ~63% de
+borrão.
+
+A primeira tentativa usou 0.42, e o resultado não foi "parcial": a resposta do
+compositor satura em `coc = 0.35`, então tudo além de ~26 unidades ficava
+**inteiramente** borrado, e o corredor virava um mingau de luz uniforme — medido,
+40% do quadro acima de `L = 0.02` contra 9.8% no quadro do descolamento. Com
+0.26 o mesmo número volta para 8%. Abertura que satura não separa camadas: ela
+apaga o que está atrás da primeira.
+
 Regras duras:
 
 - **Texto de leitura nunca tem desfoque.** Nem o texto, nem o que está atrás
@@ -121,6 +135,12 @@ por ter trabalhado.
 > Eram comprimento derivado da contagem, e a relação agora é a inversa. Ficam
 > riscados porque foram o raciocínio original, não porque ainda valem.
 
+> ✅ **RECONFERIDO — o beat de Trabalho existe.** O que segue nesta subseção é
+> o raciocínio original, feito antes do card e da curva definitiva, e ele fica
+> porque é de onde o piso de 4.5 unidades saiu — esse piso continua valendo e
+> continua sendo o que decide tudo. O que mudou foi a **contagem**, e a
+> reconferência está logo abaixo, em "Capacidade do rio, medida".
+
 **Capacidade do rio — valor derivado, calculado antes de o beat de Trabalho
 existir.** O componente de card ainda não foi escrito e a curva de câmera de
 0.45 a 0.85 continua provisória (`lib/scene/curve.ts`, docblock de `STOPS`),
@@ -154,9 +174,47 @@ travessia rolada mais rápido — então o corredor do mobile encolhe na mesma
 proporção que o vh encolheu (5.1 ÷ 8.4 ≈ 0.61), o que dá **~26 unidades**, e
 com o mesmo piso de 4.5, `(26 − 4.5) ÷ 4.5 ≈` **4 cards no mobile**.
 
-**A meta de curadoria é 8 cards no desktop e 4 no mobile.** Com sete cases no
-acervo (PROJECT.md §6), o desktop comporta o acervo inteiro se a curadoria
-decidir por isso; o mobile não — exige um corte de até quatro.
+~~**A meta de curadoria é 8 cards no desktop e 4 no mobile.**~~ São **7 e 4** —
+ver a subseção seguinte. O que não mudou é o que a meta existia para garantir:
+com sete cases no acervo (PROJECT.md §6), o desktop comporta o acervo inteiro se
+a curadoria decidir por isso; o mobile não — exige um corte de até quatro.
+
+### Capacidade do rio, medida
+
+A corrente existe (`lib/scene/cards.ts`), a curva de 0.45 a 0.85 deixou de ser
+provisória, e a reconferência que a estimativa acima pedia foi feita. **A
+capacidade do desktop é sete, não oito**, e o motivo é que a estimativa não
+contava duas coisas que só aparecem com a curva na mão:
+
+- **O primeiro card entra à distância de leitura, não colado.** Treze unidades à
+  frente da câmera em 0.45, que é onde `SPECIMEN_SIZE` foi resolvido. Começar o
+  rio com um card explodindo em cima de quem acabou de sair do manifesto não é
+  entrada, é susto.
+- **O último tem que ser *lido* antes de 0.85, não só ultrapassado.** A leitura
+  acontece catorze unidades antes da passagem. Com o último card no limite de
+  passagem, a última décima do beat fica sem nada à frente — e ficou: a primeira
+  contact sheet do corredor tinha dois quadros de doze com a câmara vazia.
+
+Sobram 27 unidades entre o primeiro e o último. Com o piso de 4.5, `27 ÷ 6 = 4.5`
+— **sete cards, exatamente no piso**. Oito exigiriam 3.86, abaixo dele.
+
+Isso não muda a meta de curadoria: o motivo declarado para "~8 no desktop" é que
+"o desktop comporta o acervo inteiro se a curadoria decidir por isso", e o
+acervo tem sete cases. Sete cabem.
+
+**E o mobile percorre o mesmo corredor em mundo.** A estimativa de ~26 unidades
+supunha que o corredor encolhesse na proporção do vh, e a curva definitiva não
+pode fazer isso: ela é função do **progresso**, e progresso não sabe de
+breakpoint — dois corredores em mundo seriam duas curvas, e a regra da variável
+única (PROJECT.md §3.3) tem uma só. O que encolhe no mobile é o **custo em
+rolagem**: as mesmas 44 unidades em 5.1 vh em vez de 8.4. É a "travessia mais
+curta" do PROJECT.md §5 lida como tempo, que é como uma pessoa a sente.
+
+A contagem cai para quatro pelo mesmo motivo de ritmo que sempre a governou:
+`8.4 ÷ 7 = 1.20` vh por card no desktop, `5.1 ÷ 4 = 1.28` no mobile — a mesma
+respiração por card. Com quatro cards no mesmo corredor o espaçamento vai a 9.0
+unidades, o dobro do piso, e as razões de largura projetada entregue ficam em
+2.12 · 1.45 · 1.49 (medidas; o piso pede 1.30).
 
 **A curadoria é um ranking único, não duas listas por aparelho.** `river_rank`
 (`lib/cases.ts`) é uma ordem só, decidida olhando os cards montados; cada
@@ -214,9 +272,10 @@ parado do fim, descrito acima, sempre 1 inteiro independente do breakpoint.
 > ✅ **RESOLVIDO — prompt de migração.** ~~O 5.1 nasceu de `1.7 × 3 cases`~~,
 > uma derivação que não vale mais. O número permanece como o comprimento fixo
 > do rio no mobile — o que mudou é que ele deixou de ser consequência da
-> contagem: com o piso de 4.5 unidades e o corredor estimado de ~26 unidades
-> (ver a capacidade do rio, acima), 5.1 vh comportam **4 cards**, que é a meta
-> de curadoria do mobile. Se a curadoria eventual pedir mais que isso no
+> contagem: ~~com o piso de 4.5 unidades e o corredor estimado de ~26 unidades~~
+> (ver "Capacidade do rio, medida", acima: o corredor do mobile é o **mesmo** de
+> 44 unidades, percorrido em menos rolagem), 5.1 vh comportam **4 cards**, que é
+> a meta de curadoria do mobile. Se a curadoria eventual pedir mais que isso no
 > mobile, é o **espaçamento** que cede primeiro, ou o subconjunto exibido —
 > nunca o comprimento do beat, porque esticá-lo quebraria os totais e a regra
 > dos oito segundos.
@@ -392,12 +451,42 @@ beat de identidade, em escala menor, e é o que impede o rio de virar uma galeri
 
 Cada card carrega uma placa de cota gravada: cliente, ano, estação.
 
+> ✅ **A física está feita e medida** — `lib/scene/shaders/boids.ts`, bloco
+> `CARD_FORCE`. Os mesmos três efeitos do descolamento (aresta de ataque,
+> turbulência, recolamento), nas mesmas frações da altura da peça, com uma
+> diferença de fonte e uma de desenho.
+>
+> A de fonte: a distância com sinal do card é **analítica**, um retângulo de
+> cantos arredondados resolvido no shader, e não um campo assado. O assado com
+> jump flood existe porque glifo tem forma arbitrária; card não tem, e assar um
+> campo por card trocaria precisão infinita por sete texturas.
+>
+> A de desenho: a turbulência do glifo mora nas **contra-formas**, e um card não
+> tem nenhuma. Ela passa a morar na **camada de cisalhamento** — a fronteira
+> entre a esteira parada e o escoamento que passou raspando a borda —, que é
+> onde uma placa larga solta vórtice. É a mesma leitura física que pôs a do
+> glifo dentro do olho da letra.
+>
+> Medido pelo método do descolamento (sombra da tinta a uma, duas e quatro
+> larguras de card a jusante, sinal sobre controle na mesma laje): **0.13 → 0.58
+> → 0.92**, monotônico, sem passar do escoamento não perturbado. Os números por
+> card, os controles e o que eles custaram estão no AGENTS.md, "O rio, medido".
+>
+> **E a esteira só age dentro do beat.** As sete peças estão montadas de trinta
+> a cinquenta e oito unidades a montante do corpo de prova, e agindo desde 0.00
+> elas entortavam o escoamento que chega no quadro do descolamento — a
+> discordância entre as metades do perfil vertical, que é o **controle** do
+> critério de aceite daquele beat, dobrava de 14.8% para 26.0%. A força entra com
+> o beat, pela mesma disciplina que o poleiro e o tubo do bando já seguem. O que
+> não é coreografado é a geometria: os cards estão montados na câmara desde
+> sempre, e se veem de longe, atrás da névoa.
+
 **A curadoria é um ranking único, não um booleano por aparelho.** `river_rank`
 (um número, obrigatório e único em todo o acervo — `lib/cases.ts` falha a
 build se dois cases colidirem no mesmo posto) é decidido **olhando os cards
 montados na cena**, não lendo a lista de projetos. **Não existem duas listas
 de curadoria, uma por aparelho**: existe uma ordem só, e cada aparelho corta
-essa mesma ordem pela capacidade que couber — hoje ~8 cards no desktop e ~4 no
+essa mesma ordem pela capacidade que couber — 7 cards no desktop e 4 no
 mobile (ver "Capacidade do rio", abaixo). Editar a curadoria é reordenar um
 número; o corte por tela é derivado, não escolhido caso a caso.
 
@@ -514,6 +603,16 @@ sobre luz variável".
 - **Uma fonte distante a montante**, quase zero no começo, subindo para o máximo
   só entre 0.85 e 1.00. É a luz para a qual você está andando. A cor viaja
   `--teal` → `--cyan` → `--peach` ao longo da descida.
+
+  > **A rampa estava chegando ao máximo em 0.28, e o rio denunciou.** Enquanto a
+  > câmera ficava a oitenta unidades da tampa do fundo ninguém via — a névoa
+  > comia o disco inteiro. No corredor ela fecha para quarenta e sete, o disco
+  > cresce na tela, e a fonte passava a lavar o meio do quadro justamente onde os
+  > cards do fundo precisam ser lidos como silhuetas. O sintoma é do beat novo, o
+  > desvio desta linha é antigo. Corrigido em `sourceStrengthAt`
+  > (`lib/scene/curve.ts`): platô baixo pela descida inteira, subida onde este
+  > documento sempre a pôs. O valor de topo é **provisório**, como os pontos de
+  > controle de 0.85 em diante — quem o resolve é o beat da Superfície.
 - A luz nasce dentro da cena. Nenhum `box-shadow` participa da iluminação.
 - Bloom sim, mas apertado e com threshold alto: só corpos emissivos e a fresta
   da tomada de ar. Bloom não é o efeito, é o transbordo dele.
