@@ -228,12 +228,12 @@ Estado medido, com o portão e a cena dos dois primeiros beats:
 |---|---|---|
 | `/` e `/pt` — a descida, com portão e preloader | **181.1 kB** | 200 kB ✅ |
 | `/work/[slug]` — case, sem portão e sem cena | 174.1 kB | 200 kB ✅ |
-| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, **campo de distância e descolamento** | **293.3 kB** | 350 kB ✅ |
+| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, **campo de distância e descolamento** | **294.1 kB** | 350 kB ✅ |
 | chunk do driver de scroll (gsap + ScrollTrigger + lenis) | 47.8 kB | fora da rota inicial |
 
 O descolamento inteiro — o assado do campo (`type-field.ts` + `shaders/field.ts`)
-e as três forças no shader dos boids — custou **9.3 kB gz**, de 284.0 para 293.3.
-Sobram 56.7 kB do teto para o rio e a transição para o case.
+e as três forças no shader dos boids — custou **10.1 kB gz**, de 284.0 para 294.1.
+Sobram 55.9 kB do teto para o rio e a transição para o case.
 
 **A sonda de medição não aparece nesta conta porque não existe em produção.**
 Verificado no build: nenhum chunk de `.next/static/chunks` menciona `__probe`,
@@ -1317,7 +1317,7 @@ Nesta ordem, porque cada uma depende da anterior:
    uma janela de navegador em primeiro plano, que esta sessão não teve. Rodar
    `?bench=1&plan=detach&port=3131` com `npm run collect` no ar, no M5 e no
    iPhone, e escrever os números na tabela de "Desempenho da cena". **O
-   orçamento de pacote já está fechado** (293.3 kB de chunk de cena contra 350),
+   orçamento de pacote já está fechado** (294.1 kB de chunk de cena contra 350),
    então o que falta é confirmar o quadro, não caber.
 4. Os três beats de baixo, e com eles os pontos de controle definitivos da curva
    da câmera de 0.45 em diante (hoje provisórios, em `lib/scene/curve.ts`) e a
