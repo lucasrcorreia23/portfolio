@@ -6,7 +6,8 @@ import {
   type WebGLRenderer,
 } from "three";
 import { SCROLL_VH, SEPARATION_PROGRESS } from "@/components/beats/beats";
-import { resolveRiver } from "./cards";
+import { CARD_HALF_HEIGHT, CARD_HALF_WIDTH, resolveRiver } from "./cards";
+import { hoverLatency, resetHoverLatency } from "./card-pick";
 import { installCorridor } from "./probe-cards";
 import { installContrast } from "./probe-contrast";
 import {
@@ -631,6 +632,104 @@ export function installProbe(deps: ProbeDeps): () => void {
     };
   };
 
+  /**
+   * A resposta de ponteiro do rio — PROJECT.md §3.3 e §7.
+   *
+   * O teto é 100 ms **do evento até o quadro pintado**, e é por não ter medido
+   * assim que o clique de entrada do portão passou sete rodadas custando 110 ms
+   * dentro de um orçamento aparente de 100. Aqui a medição é a mesma
+   * construção: quem fecha o intervalo é um `requestAnimationFrame` agendado no
+   * quadro que aplicou a resposta, o que dá um **teto** do event-to-paint em vez
+   * de uma estimativa. Ver `hoverLatency`, em `card-pick.ts`.
+   *
+   * O que esta função entrega é o outro lado: onde cada card está **na tela**,
+   * para quem dirige a medição poder mandar o ponteiro para o centro de um deles
+   * em vez de adivinhar, e o estado que o material recebeu, para confirmar que a
+   * peça acesa é a peça apontada.
+   */
+  const cardsMesh = (): {
+    uniforms: {
+      uHoverCard?: { value: number };
+      uHoverAmount?: { value: number };
+      uCoverBlend?: { value: number[] };
+    };
+  } | null => {
+    let found: {
+      uniforms: {
+        uHoverCard?: { value: number };
+        uHoverAmount?: { value: number };
+        uCoverBlend?: { value: number[] };
+      };
+    } | null = null;
+    scene.traverse((object) => {
+      if (found !== null) return;
+      const mesh = object as { material?: unknown };
+      const material = Array.isArray(mesh.material)
+        ? mesh.material[0]
+        : mesh.material;
+      if (
+        typeof material !== "object" ||
+        material === null ||
+        !("uniforms" in material)
+      ) {
+        return;
+      }
+      const uniforms = (material as { uniforms: Record<string, unknown> })
+        .uniforms;
+      if ("uHoverCard" in uniforms) {
+        found = material as typeof found;
+      }
+    });
+    return found;
+  };
+
+  const hover = () => {
+    const material = cardsMesh();
+    const chain = deps.cards;
+    const count = resolveRiver().count;
+    const centers: {
+      index: number;
+      screen: [number, number];
+      cssScreen: [number, number];
+      depth: number;
+    }[] = [];
+
+    for (let i = 0; i < count; i += 1) {
+      const card = chain[i];
+      if (card === undefined) continue;
+      const at = project(card.x, card.y, card.z);
+      centers.push({
+        index: i,
+        screen: [at.x, at.y],
+        cssScreen: [
+          Math.round(at.x * window.innerWidth),
+          Math.round(at.y * window.innerHeight),
+        ],
+        depth: Number(
+          new Vector3(card.x, card.y, card.z)
+            .distanceTo(camera.position)
+            .toFixed(2),
+        ),
+      });
+    }
+
+    return {
+      /** O card aceso, como o **material** o recebeu. −1 é nenhum. */
+      hoverCard: material?.uniforms.uHoverCard?.value ?? null,
+      hoverAmount: Number(
+        (material?.uniforms.uHoverAmount?.value ?? 0).toFixed(4),
+      ),
+      /** A travessia campo procedural → fotografia, por card. */
+      coverBlend: (material?.uniforms.uCoverBlend?.value ?? []).map((value) =>
+        Number(value.toFixed(3)),
+      ),
+      /** Meia-largura e meia-altura da peça, para quem mira o ponteiro. */
+      half: [CARD_HALF_WIDTH, CARD_HALF_HEIGHT],
+      centers,
+      latency: hoverLatency(),
+    };
+  };
+
   /** Meia-largura da tinta, em caixas altas. */
   const inkHalfWidthH = () => {
     const held = currentTypeField();
@@ -1031,6 +1130,8 @@ export function installProbe(deps: ProbeDeps): () => void {
     occlusion,
     corridor,
     cardWake,
+    hover,
+    resetHoverLatency,
     contrast,
     descend,
     veilFootprint,

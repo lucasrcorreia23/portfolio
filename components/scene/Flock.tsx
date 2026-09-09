@@ -69,6 +69,16 @@ type FlockProps = {
    * literal de objeto — nenhum import novo, nenhum byte a mais no pacote.
    */
   readRef?: { current: FlockRead | null };
+  /**
+   * O relógio do bando, como fração do normal. 1 na descida.
+   *
+   * Dentro do case ele cai para `CASE_FLOCK_RATE`: "a cena recua e vira
+   * atmosfera de fundo, com o organismo desacelerado". Escala o **passo**, e não
+   * a velocidade dos corpos — encolher a velocidade mudaria a rampa emissiva,
+   * que é dirigida pela aceleração (DIRECTION.md §5), e o bando desaceleraria
+   * apagando. Com o passo escalado a física é a mesma, rodando mais devagar.
+   */
+  rateRef?: { readonly current: number };
 };
 
 /**
@@ -98,6 +108,7 @@ export function Flock({
   roost,
   settleRef,
   readRef,
+  rateRef,
 }: FlockProps) {
   const { gl } = useThree();
   const swap = useRef(0);
@@ -388,7 +399,7 @@ export function Flock({
     // voltar de uma aba em segundo plano entrega vários segundos de uma vez, e
     // um passo desse tamanho explode a integração.
     step(
-      Math.min(delta, 1 / 30),
+      Math.min(delta, 1 / 30) * (rateRef?.current ?? 1),
       progressRef.current,
       attackRef.current,
       cameraZRef.current,

@@ -3,9 +3,11 @@ import { BEAT_IDS, type BeatId } from "@/components/beats/beats";
 import { EMAIL, PROFILES } from "@/lib/contact";
 import { DISCIPLINES, type Discipline } from "@/lib/disciplines";
 import { requireLocale } from "@/lib/i18n/locale";
+import { CaseReturn } from "@/components/work/CaseReturn";
 import { ArchiveLink } from "./ArchiveLink";
 import { AudioToggle } from "./AudioToggle";
 import { BeatReadout } from "./BeatReadout";
+import { DescentSlot } from "./DescentSlot";
 import { HudPanel } from "./HudPanel";
 import { LanguageToggle } from "./LanguageToggle";
 import { RiverFilters } from "./RiverFilters";
@@ -84,14 +86,24 @@ export async function Hud() {
       </div>
 
       <div className="flex flex-col gap-4">
-        <ScrollRule progressLabel={t("progress")} />
-        <BeatReadout
-          stationLabel={t("lexicon.station")}
-          densityLabel={t("lexicon.density")}
-          depthLabel={t("lexicon.depth")}
-          beatLabels={beatLabels}
-        />
-        <RiverFilters label={t("filters")} disciplines={disciplines} />
+        <DescentSlot
+          fallback={
+            <CaseReturn
+              label={tWork("case.back")}
+              title={tWork("case.backTitle")}
+              className="type-mono text-hud text-mist w-fit text-left hover:text-cyan"
+            />
+          }
+        >
+          <ScrollRule progressLabel={t("progress")} />
+          <BeatReadout
+            stationLabel={t("lexicon.station")}
+            densityLabel={t("lexicon.density")}
+            depthLabel={t("lexicon.depth")}
+            beatLabels={beatLabels}
+          />
+          <RiverFilters label={t("filters")} disciplines={disciplines} />
+        </DescentSlot>
       </div>
 
       <div className="flex flex-col gap-3">

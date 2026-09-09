@@ -93,7 +93,9 @@ apaga o que está atrás da primeira.
 Regras duras:
 
 - **Texto de leitura nunca tem desfoque.** Nem o texto, nem o que está atrás
-  dele encostando na caixa. Nas rotas `/work/[slug]` a DOF está **desligada**.
+  dele encostando na caixa. Nas rotas `/work/[slug]` a DOF está **desligada** —
+  a abertura é multiplicada pelo complemento da travessia, então ela fecha
+  **junto** com a aproximação e mede **zero** no repouso do case (medido).
 - DOM nunca recebe `filter: blur()`. O desfoque acontece dentro do canvas.
 - A transição de abertura usa `cubic-bezier(0.16, 1, 0.3, 1)`, como todo o resto.
 - Implementação barata: círculo de confusão + kernel duplo, não bokeh completo.
@@ -433,6 +435,14 @@ Abertura fechada, tudo nítido, velocidade dos corpos caindo para planeio longo.
 Manifesto em coluna estreita alinhada a uma margem, nunca centralizada, grotesca
 regular, medida de 60 a 70 caracteres.
 
+> **A medida era 66ch e entregava 80 caracteres.** `ch` é a largura do algarismo
+> zero, que no Archivo é bem mais largo que a média de um texto em minúsculas —
+> então o token descrevia uma coluna e a página desenhava outra. Contado no que
+> foi desenhado (o offset em que `Range.getClientRects()` ganha uma caixa nova),
+> `--measure` foi para **54ch** e a superfície de leitura longa passou a entregar
+> mediana **66**, p10 58, p90 69. Ver MEASUREMENTS.md, "A medida de leitura,
+> contada no que foi desenhado".
+
 ### 0.45 – 0.85 — Trabalho
 
 O rio. Os cards são outros corpos de prova montados ao longo da câmara, em
@@ -506,41 +516,44 @@ para encurtar o rio confundiria as duas coisas e perderia a única cópia do
 material migrado.
 
 **Filtros por disciplina, não por categoria.** Três eixos — **produto**,
-**sistema**, **marca** — e cada case aparece em mais de um:
+**sistema**, **marca** — e cada case aparece em mais de um. A matriz dos sete,
+na ordem da curadoria (`river_rank`):
 
-| | produto | sistema | marca |
-|---|:--:|:--:|:--:|
-| Perfecting | ● | | ● |
-| WeCann Atena | ● | ● | |
-| Unifique Energia | ● | ● | ● |
+| # | | produto | sistema | marca |
+|--:|---|:--:|:--:|:--:|
+| 1 | Perfecting | ● | | ● |
+| 2 | Unifique Energia | ● | ● | ● |
+| 3 | Decision Suite | ● | ● | |
+| 4 | WeCann Atena | ● | ● | |
+| 5 | Prime8 | ● | ● | ● |
+| 6 | ZOOMtecnologia | ● | | ● |
+| 7 | Nestlé | ● | | ● |
 
 Nenhum filtro devolve menos de dois cases, e nenhum esvazia o rio.
 
-> ⏳ **PENDENTE — prompt de migração, antes do rio.** Esta matriz cobre três
-> cases; o repositório terá sete (PROJECT.md §6). Os três eixos continuam
-> valendo — são disciplinas, não categorias, e não crescem com o acervo. O que
-> falta é a marcação **desta matriz** para os quatro cases migrados — a que
-> decide os filtros do rio — e ela sai junto com a curadoria de quem aparece
-> no rio, olhando os cards na cena. Não preencher esta matriz agora é
-> deliberado: classificar por disciplina um case que ainda não foi visto
-> montado é escolher o filtro antes de conhecer o escoamento.
+> ✅ **RESOLVIDO — Prompt 5A.** A matriz acima cobre os sete cases e é a que os
+> filtros do rio usam. Ela substitui a de três linhas que estava aqui, e a
+> pendência que a acompanhava ("classificar por disciplina um case que ainda
+> não foi visto montado é escolher o filtro antes de conhecer o escoamento")
+> está cumprida: a marcação foi feita com os sete cards montados na câmara e a
+> travessia na tela (contact sheet em `.screens/05b-rio.png`).
 >
-> **Isto não é o mesmo `disciplines` que já foi escrito no frontmatter dos
-> quatro migrados.** `parseFrontmatter` (`lib/cases.ts`) exige o campo não
-> vazio para o `next build` não quebrar, então os quatro têm uma tag de
-> primeira passada — pelo conteúdo do case, não pela composição da câmara —,
-> registrada no AGENTS.md ("São sete cases no repositório"). Os quatro também
-> têm um `river_rank` provisório (posto arbitrário, ordem alfabética, ver o
-> mesmo trecho do AGENTS.md); nem essa tag nem esse posto afetam a garantia
-> abaixo — o que ainda não existe é a decisão final, que só chega com a
-> curadoria.
+> **A garantia deixou de ser uma expectativa e virou uma guarda de build.**
+> `assertFilterFloor` (`lib/cases.ts`) confere os três eixos contra o corte
+> **mais apertado** que existe — os quatro primeiros postos, que é o rio do
+> mobile —, porque um corte maior só pode aumentar as contagens. Ela distingue
+> os dois modos de falha que o PROJECT.md §7 exige de toda guarda: um eixo com
+> **zero** cases é "o filtro esvaziaria o rio", um eixo com **um** é "o filtro
+> devolveria menos de dois", e cada mensagem nomeia o eixo, a contagem e os
+> postos do corte. **Verificada nos dois sentidos**, quebrando a matriz de
+> propósito: a build cai nos dois casos, com a mensagem certa.
+>
+> Contagens: no desktop (7) produto 7 · sistema 4 · marca 5; no corte do mobile
+> (4) produto 4 · sistema 3 · marca 2.
 >
 > Os filtros operam sobre **quem está no rio** — o topo do ranking `river_rank`
 > até a capacidade do aparelho —, não sobre o acervo inteiro — senão promover
 > um card que não está montado na câmara não teria o que promover.
->
-> A regra que sobrevive à ampliação: nenhum filtro devolve menos de dois
-> cases, e nenhum esvazia o rio.
 
 **E o filtro nunca remove.** Ele **promove**: as peças que casam vêm para o eixo
 da câmara, as outras recuam para a periferia e continuam montadas, ainda
@@ -551,6 +564,29 @@ Sem recarregar a página.
 **Transição para o case.** O card se aproxima da câmera e vira a capa; o bando
 continua escoando atrás dele, e é a esteira que te leva para `/work/[slug]`. Sem
 tela branca. Dentro do case: DOF desligada, névoa parada, texto plano e imóvel.
+
+> ✅ **FEITA E MEDIDA.** O canvas **não remonta**: a cena mora no layout de um
+> grupo de rotas que cobre a home e o case, e `/work` fica de fora — o acervo
+> continua sem 3D, e é ele o controle da medição.
+>
+> "O card vira a capa" é literal e é uma medida: a região de capa projetada casa
+> com o `<img>` da página em **0.0024 px** de pior aresta, contra **212 px** de
+> controle no meio do voo. "Sem tela branca" é o invariante que a sustenta —
+> **zero quadros** em que a peça já saiu e a capa em DOM ainda não está opaca,
+> com 252 ms de sobreposição entre as duas. A abertura chega a **zero** no fim
+> do voo, então o encaixe acontece na navalha.
+>
+> **A câmera de repouso ficou fora do tubo do bando** (`x = −10.2`, entre o tubo
+> de 8.6 e a parede de 12), e isso não foi composição: parada no eixo, ela tem
+> corpos atravessando a lente, e a varredura de contraste do artigo reprovou em
+> **3.47:1**. Fora dele, o bando **cruza** o quadro em vez de vir contra ele — que
+> é a diferença entre observar o organismo e continuar dentro dele — e o mesmo
+> número vai a **10.95**. Junto com ela, dentro do case a capa das peças vizinhas
+> cai a um décimo e a gravação da placa a 12%: elas continuam montadas e continuam
+> se vendo de relance, que é como o §2 descreve a estrutura.
+>
+> Números, controles e as três reprovações que mudaram o desenho: MEASUREMENTS.md,
+> "A travessia para o case, medida".
 
 ### 0.85 – 1.00 — Superfície
 
@@ -708,6 +744,31 @@ Ele volta à mesa depois que o rio existir de verdade, com cards montados e
 capas de brilho variável passando atrás da HUD; 5.5 é o ponto de partida para
 essa etapa, não a palavra final sobre o assunto.
 
+> ✅ **VOLTOU À MESA, e 5.5 fica — Prompt 5A.** O caso que faltava agora
+> existe: sete cards montados com **capas reais**, duas delas fotografias de
+> produto quase brancas (Prime8 e ZOOMtecnologia entregam L = 0.286 e 0.236
+> depois do ganho da capa, contra ~0.03 do campo procedural que estava lá),
+> passando por baixo da HUD durante a travessia inteira.
+>
+> Medido em cinco condições, todas com o rio no ar: **pior quadro 5.64 a 5.82
+> de 1**, contra o piso de 4.5 do PROJECT.md §5 e o alvo de 5.5 daqui. Os
+> números por caixa e a faixa de luminância atrás de cada uma estão no
+> MEASUREMENTS.md, "A legibilidade, com capa de card atrás do texto".
+>
+> O que a medição mostra é o alvo funcionando como alvo: o teto entregue pousa
+> em L = 0.0955–0.0962 em **todas** as caixas piores, contra o
+> `VEIL_CEILING` de 0.0868 mais os até 0.013 do grão. O véu não está sobrando
+> nem faltando — ele está exatamente onde foi mandado, e o pior quadro fica ~0.3
+> acima do alvo porque a conta do grão é margem, não erro.
+>
+> **A hipótese que estava registrada aqui e no `veil.ts` estava errada.** O
+> 5.16:1 da rodada anterior foi atribuído a `MAX_VEIL_BOXES` (então 4) sendo
+> disputado pelas caixas da HUD e dos filtros. Contado ao vivo em cinco
+> progressos do rio: existem no **máximo duas** caixas com área visível ao
+> mesmo tempo — o painel da HUD, e o rótulo da Superfície quando ele entra.
+> Nunca houve disputa de slot. O teto em 8 é folga para uma HUD futura, e não
+> o conserto de nada.
+
 **O teto de 0.138 só vale para `--mist` em opacidade cheia.** Isso colide com a
 mono "de opacidade reduzida" do `PROJECT.md` §3.2: a 60% sobre `--void` a mono
 compõe para L ≈ 0.271, e o teto despenca de 0.138 para **0.021** — sete vezes
@@ -747,6 +808,15 @@ viewport.
 Duas coisas mudaram aqui depois de a primeira versão ser escrita, e as duas por
 medição:
 
+- **A caixa do véu é aparada pela janela.** Uma coluna de leitura de cinco
+  viewports não tem uma caixa: convertida inteira para UV de tela ela cobre o
+  quadro, e o resultado é o scrim de sangria total que este documento veta pelo
+  nome. Aparada, ela é a **fatia visível** da coluna — largura da coluna, altura
+  da janela —, que é literalmente o "véu ancorado à coluna de texto" acima. Na
+  descida a mudança é um no-op (lá todo bloco marcado já cabe numa viewport), e
+  foi conferido que os números dela não se moveram. A alternativa — marcar bloco
+  a bloco — foi implementada e **reprovou em 2.87:1**: nove blocos disputando os
+  oito slots de `MAX_VEIL_BOXES`, com os menores perdendo.
 - **Descida, não varredura de poses.** Travar o progresso e rodar alguns quadros
   em cada passo mede uma cena que não existe: com o progresso parado, o poleiro
   de Quem sou acumula corpos que na descida real já teriam passado. Um quadro de

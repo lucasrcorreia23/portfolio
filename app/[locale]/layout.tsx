@@ -27,6 +27,10 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: "meta" });
 
   return {
+    // Sem isto, a capa que a rota de case declara como imagem de Open Graph
+    // sai como caminho relativo e o Next resolve contra `localhost:3000` — o
+    // aviso da build é literal sobre isso. O domínio é o do PROJECT.md §0.
+    metadataBase: new URL("https://www.lucasrc.com.br"),
     title: t("title"),
     description: t("description"),
   };
@@ -48,11 +52,13 @@ export default async function LocaleLayout({
           projeto traduz. As strings são resolvidas no servidor e descem como
           props, o que mantém o formatador ICU fora do navegador — 13 kB
           comprimidos de diferença medida. Ver AGENTS.md, "Orçamento de JS". */}
-      {/* A cena **não** mora aqui. Ela é montada pela home, ao lado do portão,
-          porque só a home tem descida: quem chega direto num case por link não
-          tem progresso para dirigir a câmera nem motivo para baixar 350 kB. O
-          `bg-void` do body já sustenta o fundo das outras rotas, e a névoa
-          parada dentro do case (DIRECTION.md §4) é outro prompt. */}
+      {/* A cena **não** mora aqui, e não é mais porque "só a home tem descida":
+          ela mora em `app/[locale]/(scene)/layout.tsx`, um grupo de rotas que
+          cobre `/` e `/work/[slug]` e deixa `/work` de fora. O acervo continua
+          sem 3D (DIRECTION.md §4) e o canvas atravessa vivo a navegação da home
+          para o case, que é o que a transição contínua exige. O motivo original
+          — um link direto de case não pagar 350 kB no caminho crítico —
+          continua respeitado pelo `import()` memoizado de `loadScene()`. */}
       {/* **Sem `bg-void` aqui.** Quem pinta o fundo é o `html`
           (`styles/globals.css`), e a diferença não é de gosto: a camada da cena
           é `-z-10`, e a ordem de pintura do CSS põe camadas de z negativo

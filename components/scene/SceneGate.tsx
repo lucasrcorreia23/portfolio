@@ -1,38 +1,45 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useSceneMode } from "@/lib/capabilities/use-scene-mode";
+import { stripLocale } from "@/lib/i18n/config";
 import { loadScene, type SceneComponent } from "@/lib/scene/load-scene";
+import type { RiverCard } from "@/lib/scene/river-content";
+import { setCaseRoute } from "@/lib/work/case-transition";
 
 type SceneGateProps = {
-  /** A string do corpo de prova, resolvida no servidor e descida como prop. */
   specimen: string;
+  river: readonly RiverCard[];
 };
 
+/** `/work/<slug>` → `<slug>`; qualquer outra rota do grupo → `null`. */
+function caseSlugOf(pathname: string): string | null {
+  const bare = stripLocale(pathname);
+  if (!bare.startsWith("/work/")) return null;
+  const slug = bare.slice("/work/".length);
+  return slug.length > 0 && !slug.includes("/") ? slug : null;
+}
+
 /**
- * O portão da cena: decide, em um lugar só, qual das três versões do site roda.
+ * O portão **da cena** — decide qual das três versões dela roda, e agora também
+ * informa em qual rota do grupo ela está.
  *
- *   driven   → a cena, com a câmera na curva dirigida pelo progresso do scroll
- *   composed → a mesma cena, com a câmera cortando entre composições fixas
- *   poster   → sem WebGL: câmara escura, e o conteúdo em DOM inteiro
+ * Não confundir com `components/gate/`, que é o portão **de entrada** (o
+ * preloader, o contador, a veneziana). Nomes parecidos, papéis sem interseção.
  *
- * É o único consumidor de `useSceneMode()`, que por sua vez é o único
- * consumidor de `useReducedMotion` e `useWebGLSupport` juntos. Sem esse funil,
- * cada componente inventaria a própria combinação das duas capacidades.
+ * ## O `pathname` é a autoridade da travessia
  *
- * **Não existe `import` estático da cena aqui, e isso é o orçamento falando.**
- * O `loadScene()` é o mesmo módulo de promessa memoizada que o preloader do
- * portão chama, então os dois convergem num download só — e um `import`
- * estático que escapasse para este arquivo não custaria 350 kB de chunk de
- * cena, custaria 350 kB de **rota inicial**, que tem teto de 200.
- *
- * **O modo vai para o `<html>`**, e não só para esta `div`. É o mesmo contrato
- * do `data-gate`: o CSS precisa saber se existe cena desenhando o título
- * display para decidir se o `h1` do DOM é o título visível ou só o texto
- * indexável (ver `styles/globals.css`).
+ * O clique num card publica `entering` na hora, mas quem confirma que a
+ * travessia aconteceu é a rota. Ler isso aqui, e não no clique, é o que faz o
+ * mecanismo cobrir os caminhos que ninguém orquestrou: o botão voltar do
+ * navegador, um link direto para um case, a entrada pelo acervo, um reload
+ * dentro do case, uma navegação abortada. Todos passam por `pathname`, e
+ * nenhum passa pelo clique. Ver `lib/work/case-transition.ts`.
  */
-export function SceneGate({ specimen }: SceneGateProps) {
+export function SceneGate({ specimen, river }: SceneGateProps) {
   const mode = useSceneMode();
+  const pathname = usePathname();
   const [Scene, setScene] = useState<SceneComponent | null>(null);
 
   useEffect(() => {
@@ -44,18 +51,21 @@ export function SceneGate({ specimen }: SceneGateProps) {
   }, [mode]);
 
   useEffect(() => {
-    if (mode !== "driven" && mode !== "composed") return;
+    const slug = caseSlugOf(pathname);
+    const index =
+      slug === null ? -1 : river.findIndex((card) => card.slug === slug);
+    setCaseRoute(slug, index);
+  }, [pathname, river]);
 
+  useEffect(() => {
+    if (mode !== "driven" && mode !== "composed") return;
     let cancelled = false;
-    // O `.then(…, …)` com dois braços: uma falha de rede deixa a câmara escura
-    // e o conteúdo inteiro, que é o degradado certo — não uma tela de erro.
     loadScene().then(
       (component) => {
         if (!cancelled) setScene(() => component);
       },
       () => {},
     );
-
     return () => {
       cancelled = true;
     };
@@ -68,7 +78,11 @@ export function SceneGate({ specimen }: SceneGateProps) {
       className="pointer-events-none fixed inset-0 -z-10 bg-void"
     >
       {Scene === null ? null : (
-        <Scene specimen={specimen} composed={mode === "composed"} />
+        <Scene
+          specimen={specimen}
+          river={river}
+          composed={mode === "composed"}
+        />
       )}
     </div>
   );

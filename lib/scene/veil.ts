@@ -218,14 +218,36 @@ export function readVeilBoxes(): VeilBox[] {
       Math.max(0, Math.min(rect.bottom, height) - Math.max(rect.top, 0)) *
       Math.max(0, Math.min(rect.right, width) - Math.max(rect.left, 0));
 
+    /**
+     * A caixa é aparada pela janela, mais a mesma margem de antecipação.
+     *
+     * Na descida isto não muda nada: todo bloco marcado é um painel `sticky` de
+     * uma altura de viewport, e aparar uma caixa que já cabe é um no-op — a
+     * varredura de contraste dos quatro beats devolve os mesmos números.
+     *
+     * O que ele destrava é o texto **longo**. Uma coluna de leitura de cinco
+     * viewports não tem uma caixa: convertida inteira para UV de tela, ela cobre
+     * o quadro, e o resultado é o scrim de sangria total que o DIRECTION.md §5
+     * veta pelo nome. Aparada, ela vira o que sempre deveria ter sido — a
+     * **fatia visível** da coluna, com a largura da coluna e a altura da janela.
+     *
+     * A alternativa era marcar bloco a bloco, e ela foi implementada e medida
+     * antes desta: no mobile, nove blocos disputavam os oito slots de
+     * `MAX_VEIL_BOXES`, os pequenos perdiam, e o pior contraste caía para
+     * **2.87:1** numa linha de metadados. O problema não era o teto de slots —
+     * era estar gastando oito caixas para descrever uma coluna só.
+     */
+    const top = Math.max(rect.top, -margin);
+    const bottom = Math.min(rect.bottom, height + margin);
+
     candidates.push({
       area: visible,
       box: {
         rect: [
           (rect.left - pad) / width,
-          1 - (rect.bottom + pad) / height,
+          1 - (bottom + pad) / height,
           (rect.right + pad) / width,
-          1 - (rect.top - pad) / height,
+          1 - (top - pad) / height,
         ],
       },
     });

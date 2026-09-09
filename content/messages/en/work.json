@@ -1,5 +1,6 @@
 {
   "label": "Work",
+  "enter": "Open case",
   "disciplines": {
     "produto": "Product",
     "sistema": "System",
@@ -10,5 +11,15 @@
     "empty": "No cases yet.",
     "riverRank": "River #{rank}",
     "all": "All"
+  },
+  "case": {
+    "back": "River",
+    "backTitle": "Back to the river",
+    "next": "Next",
+    "role": "Role",
+    "stack": "Stack",
+    "disciplines": "Disciplines",
+    "cover": "{title} — case cover",
+    "generated": "Generated image"
   }
 }

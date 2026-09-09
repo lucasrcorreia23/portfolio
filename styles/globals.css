@@ -274,4 +274,210 @@
       min-height: calc(var(--beat-vh-mobile) * 100svh);
     }
   }
+
+  /* ---------------------------------------------------------------------
+   * Trabalho: a lista de estações.
+   *
+   * A entrada é a mesma família das outras — varredura de recorte, escalonada
+   * pelo índice —, e pelo mesmo motivo de contraste: o piso de 4.5:1 vale
+   * durante a entrada, e uma rampa de opacidade mostraria a lista inteira em
+   * contraste reduzido.
+   *
+   * O acento entra só como uma marca de intervalo à esquerda, e só sob filtro:
+   * o DIRECTION.md §4 diz que o filtro **promove** em vez de remover, e uma
+   * lista que reordenasse seria o "cards trocando de lugar" que ele veta pelo
+   * nome. A linha da peça que a câmera está passando ganha a marca em `--cyan`,
+   * que é a mesma leitura da régua da HUD: onde você está.
+   * ------------------------------------------------------------------- */
+  .station-row {
+    --station-mark: transparent;
+    position: relative;
+    padding-left: 0.875rem;
+    clip-path: inset(0 calc((1 - var(--reveal)) * 100%) 0 0);
+  }
+
+  .station-row::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.15em;
+    width: 1px;
+    height: 1.1em;
+    background-color: var(--station-mark);
+    transition: background-color var(--dur-snap) var(--ease-strong);
+  }
+
+  .station-row[data-promoted="true"] {
+    --station-mark: var(--station-accent);
+  }
+
+  .station-row[data-near="true"] {
+    --station-mark: var(--cyan);
+  }
+
+  .station-link {
+    display: grid;
+    gap: 0.15rem;
+  }
+
+  .station-cota,
+  .station-meta {
+    display: block;
+  }
+
+  .station-title {
+    display: block;
+    color: var(--mist);
+    transition: color var(--dur-snap) var(--ease-strong);
+  }
+
+  .station-link:hover .station-title,
+  .station-row[data-near="true"] .station-title {
+    color: var(--cyan);
+  }
+
+  /* O ponteiro sobre uma peça do rio. A camada da cena é `pointer-events-none`
+     e o card não é um nó de DOM, então o CSS não tem como descobrir isso
+     sozinho — quem escreve o atributo é o laço dos cards. */
+  html[data-card-hover="true"] {
+    cursor: pointer;
+  }
+
+  /* ---------------------------------------------------------------------
+   * A rota de case.
+   *
+   * "O layout do case é calmo. Ele é onde a pessoa lê." Nada aqui reage ao
+   * scroll: a única entrada é a chegada, e depois dela o texto fica imóvel
+   * (DIRECTION.md §4).
+   * ------------------------------------------------------------------- */
+  .case {
+    --case-wide: 68rem;
+  }
+
+  /* A capa, e ela é a superfície de entrega.
+     A razão de aspecto chega inline, de `CARD_COVER_ASPECT` — a mesma constante
+     que o material do card usa para recortar a região da capa. Um número
+     digitado aqui seria a segunda fonte de verdade que `card-layout.ts` existe
+     para não ter, e o sintoma seriam alguns pixels de desencontro no quadro da
+     troca. */
+  .case-cover {
+    width: 100%;
+    max-width: var(--case-wide);
+    overflow: hidden;
+    background-color: var(--abyss);
+  }
+
+  .case-cover img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    /* O mesmo enquadramento que o canvas do atlas aplica e que o shader
+       reproduz em `uDockCoverCrop`. Três lugares, um comportamento. */
+    object-fit: cover;
+  }
+
+  .case-head {
+    max-width: var(--case-wide);
+  }
+
+  .case-meta {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.4rem 1.5rem;
+    max-width: var(--measure);
+    color: var(--mist);
+  }
+
+  .case-meta dt {
+    opacity: 1;
+    white-space: nowrap;
+  }
+
+  .case-body {
+    position: relative;
+    margin-top: 6rem;
+    color: var(--mist);
+  }
+
+  /* A âncora do véu da coluna de leitura. Não desenha nada: ela existe para
+     `readVeilBoxes` ter uma caixa da largura da medida e da altura do artigo. */
+  .case-veil {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: min(100%, var(--measure));
+    pointer-events: none;
+  }
+
+  .case-figure {
+    margin: 3rem 0;
+    max-width: var(--case-wide);
+  }
+
+  .case-figure img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .case-figure figcaption {
+    margin-top: 0.5rem;
+    color: var(--mist);
+  }
+
+  .case-foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    border-top: 1px solid var(--deep);
+    padding-top: 1.5rem;
+    max-width: var(--case-wide);
+  }
+
+  .case-foot-link {
+    color: var(--mist);
+    transition: color var(--dur-snap) var(--ease-strong);
+  }
+
+  .case-foot-link:hover {
+    color: var(--cyan);
+  }
+
+  /* A chegada.
+
+     A capa **continua no fluxo** durante o voo, com o tamanho final: é o
+     retângulo dela que a cena lê para saber onde parar. O que falta nela é
+     opacidade, e a subida dessa opacidade é o corte de 120 ms — o mesmo
+     `--dur-cut` do modo calmo. Nesse intervalo as duas imagens estão
+     sobrepostas, e é isso que impede que exista um quadro sem nenhuma das duas.
+
+     O resto do conteúdo entra por recorte, escalonado: metadados descendo da
+     aresta de baixo da capa, e o corpo logo atrás. Nada translada, nada
+     esmaece — a mesma regra dos beats. */
+  [data-case] .case-cover {
+    opacity: 1;
+    transition: opacity var(--dur-cut) linear;
+  }
+
+  [data-case="arriving"] .case-cover {
+    opacity: 0;
+  }
+
+  [data-case] .case-head,
+  [data-case] .case-body,
+  [data-case] .case-foot {
+    clip-path: inset(0 0 0 0);
+    transition: clip-path 620ms var(--ease-strong);
+  }
+
+  [data-case] .case-body,
+  [data-case] .case-foot {
+    transition-delay: 140ms;
+  }
+
+  [data-case="arriving"] .case-head,
+  [data-case="arriving"] .case-body,
+  [data-case="arriving"] .case-foot {
+    clip-path: inset(0 0 100% 0);
+    transition: none;
+  }
 }

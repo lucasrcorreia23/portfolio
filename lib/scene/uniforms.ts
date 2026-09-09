@@ -148,6 +148,59 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
     cardMask: { value: 0 },
     cardHalf: { value: new Vector2(CARD_HALF_WIDTH, CARD_HALF_HEIGHT) },
     cardCorner: { value: CARD_CORNER },
+
+    /**
+     * O card que a travessia levou até a lente, e o estado da entrega.
+     *
+     * **Por que isto não é um bit no `cardMask`.** A máscara já tem uma dona — a
+     * sonda —, e ela a usa para uma pergunta diferente: esconder do quadro sem
+     * tirar do escoamento, num regime em que a cena está parada e cada `advance()`
+     * é uma medição. Um segundo escritor por quadro desfaria o que a medição
+     * acabou de montar, e o sintoma seria uma pegada medida com o card de volta
+     * na tela. São dois estados, então são dois uniforms.
+     *
+     * - `dockCard` é o índice da peça, ou −1. Ela é escondida quando o DOM assume
+     *   a capa (`dockHandoff` em 1), não antes.
+     * - `dockBlend` faz a capa daquele card sair da camada de 640 px do atlas e
+     *   entrar na textura em resolução de entrega. Sem isso a peça chegaria à
+     *   lente com a capa ampliada quase o dobro, e a troca para o `<img>` leria
+     *   como um pulo de foco — um efeito acidental vestido de decisão.
+     * - `dockCover` é essa textura, carregada do **`currentSrc` do próprio
+     *   `<img>`**: a URL que o navegador escolheu, não a que o código pediu. É o
+     *   que garante que os dois mundos desenhem os mesmos bytes e que o download
+     *   seja um só.
+     */
+    dockCard: { value: -1 },
+    dockBlend: { value: 0 },
+    dockHandoff: { value: 0 },
+    dockCover: { value: null as Texture | null },
+    /**
+     * O recorte `cover` da textura de entrega, em fração de UV.
+     *
+     * A camada do atlas já chega recortada — quem a desenha é um canvas 2D, com
+     * enquadramento `cover` (`drawCover`, em `card-atlas.ts`). A textura de
+     * entrega é o arquivo cru, então o mesmo recorte precisa acontecer na
+     * amostragem, senão a capa aparece **esticada** justamente no quadro em que
+     * ela vai ser comparada com um `<img>` que usa `object-fit: cover`.
+     */
+    dockCoverCrop: { value: new Vector2(1, 1) },
+    /**
+     * Quanto a cena já recuou para virar fundo de leitura, 0 a 1.
+     *
+     * Ele apaga a **capa das outras peças** — não a da que virou a página. O
+     * motivo é medido: dentro do case a câmera para no meio do corredor, e as
+     * capas vizinhas continuavam sendo fotografia de produto a plena luz atrás
+     * da coluna de texto. Uma delas cruzando uma linha derrubou o contraste para
+     * **3.01:1**, contra o piso de 4.5 do PROJECT.md §5.
+     *
+     * Isto não é trabalho do véu, e insistir nele seria pedir para ele apagar uma
+     * coisa que **não precisa estar acesa**: o DIRECTION.md §4 diz que dentro do
+     * case a cena é atmosfera, e um corredor de capas iluminadas é o rio ainda
+     * sendo o assunto. As peças continuam montadas e continuam se vendo — como
+     * substrato e chanfro na névoa, que é como o §5 descreve uma peça vista de
+     * relance.
+     */
+    caseRecess: { value: 0 },
   };
 }
 

@@ -34,6 +34,7 @@ medido, com que método, e por quê o número é esse".
 - [Quem sou, medido](#quem-sou-medido)
 - [O véu de legibilidade, e por que o mecanismo mudou](#o-véu-de-legibilidade-e-por-que-o-mecanismo-mudou)
 - [O rio, medido](#o-rio-medido)
+- [A travessia para o case, medida](#a-travessia-para-o-case-medida)
 - [Desempenho da cena, medido](#desempenho-da-cena-medido)
 
 ---
@@ -706,6 +707,26 @@ rodada original (1456×817) a faixa de distâncias caiu de 4.44× para 1.85× e 
 de larguras projetadas de 3.73× para 1.61×: o instrumento responde à
 profundidade em vez de devolver sempre o mesmo número.
 
+**Reconferido depois das capas reais e da placa com texto** (mediana de três
+rodadas, `pairs: 10`, progresso 0.50, mesmo buffer de 2205×1254):
+
+| card | distância | largura entregue | antes | calculada | ocluída |
+|---|---|---|---|---|---|
+| 0 | 8.2 | **682** | 682 | 682 | 0.00 |
+| 1 | 16.3 | **435** | 437 | 437 | 0.00 |
+| 2 | 17.0 | **348** | 356 | 356 | 0.10 |
+| 3 | 22.9 | **255** | 257 | 256 | 0.40 |
+| 4 | 26.3 | **222** | 239 | 217 | 0.32 |
+| 5 | 30.5 | **199** | 204 | 188 | 0.03 |
+| 6 | 36.4 | **173** | 175 | 156 | 0.00 |
+
+Razões entre vizinhos: **1.57 · 1.25 · 1.36 · 1.15 · 1.12 · 1.15**, contra
+1.56 · 1.23 · 1.39 · 1.08 · 1.17 · 1.17 antes — o par à distância de leitura em
+1.57 contra o piso de 1.30. **Sem regressão**: trocar o campo procedural pela
+fotografia e acrescentar a placa gravada não muda a separação em profundidade
+que o critério de aceite mede. A oclusão continua presente em três peças, que é
+o que uma parede não teria.
+
 ### Cada card tem esteira própria, e a estação decide quão rápido ela fecha
 Mesmo método do descolamento: densidade na sombra da tinta a uma, duas e quatro
 larguras de card a jusante, como **fração da própria laje**. O sinal é o modo
@@ -797,7 +818,33 @@ Descendo de 0.12 a 0.83 a 1 vh/s e medindo pixels quentes no quadro entregue
 
 O pico é 6.31% na saída do rio, e a solta do poleiro logo antes do beat mede
 10.86% — os dois abaixo do teto, e os dois abaixo do 11.5–13.5% que o poleiro já
-media em 0.44. **`--coral` não acende no rio**: a janela de esteira da rampa
+media em 0.44.
+
+**Remedido com as capas reais, no buffer canônico** (2205×1254, descendo de 0.12
+a 0.82 a 1 vh/s, com o assentamento fora do corredor):
+
+| progresso | 0.44 | 0.46 | 0.50 | 0.56 | 0.62 | 0.70 | 0.76 | 0.82 |
+|---|---|---|---|---|---|---|---|---|
+| pixels quentes | 9.05% | 9.73% | 0.10% | 0.02% | 2.03% | **9.79%** | 1.06% | 0.00% |
+| acima do limiar de corpo | 14.8% | 12.6% | 3.3% | 3.1% | 4.9% | 21.2% | 4.2% | 2.6% |
+
+Pico **9.79%** contra o teto de 15% ✅. As capas reais não movem esta conta — o
+que acende é o bando, e os dois acentos quentes do acervo (`--rose` na WeCann,
+`--coral` na Nestlé) tingem só a quina e a gravação, que juntas são menos de 1%
+da área de um card.
+
+O vale em 0.50–0.56 e o pico em 0.70 são a **lâmina viajante** já registrada em
+"Três armadilhas do método": o bando atravessa o corredor em bloco, e entre as
+passagens o rio fica com ele longe e comido pela névoa. A rodada anterior viu o
+mesmo padrão com a fase deslocada (0% em 0.55 e 0.62, 6.31% em 0.83) — mesma
+patologia, outro instante.
+
+> ⚠️ **E o aspecto da janela é uma variável desta medida, não um detalhe.** A
+> primeira tentativa desta rodada rodou por engano a 1024×860 (razão 1.19:1, uma
+> janela alta) e devolveu **30.98%** em 0.46 — o dobro do teto. Não era
+> regressão: num quadro alto e estreito a coluna do poleiro soltando ocupa uma
+> fração muito maior da tela. Toda linha de `warmth` precisa do buffer ao lado,
+> como toda linha de banco precisa. **`--coral` não acende no rio**: a janela de esteira da rampa
 emissiva é ancorada ao corpo de prova (`shaders/body.ts`), que fica trinta
 unidades a jusante. As esteiras dos cards aparecem em `--cyan`, por aceleração,
 que é o que o DIRECTION.md §5 manda. Estender o coral às esteiras do rio é
@@ -807,39 +854,379 @@ teste.
 ### A legibilidade, com capa de card atrás do texto
 Esta é a condição que o DIRECTION.md §5 registrou como **não testável** quando
 escolheu o alvo do véu: "a comparação rodou sem o beat de Trabalho existir —
-nenhum card, nenhuma capa de imagem atrás de texto". Agora existe.
-`__probe.contrast({from: 0.45, to: 0.85})`, 842 quadros a 0.6 vh/s, `en`,
-1456×817:
+nenhum card, nenhuma capa de imagem atrás de texto". Agora o caso existe de
+verdade — sete cards com **capa real**, duas delas fotografias de produto quase
+brancas passando por baixo da HUD durante a travessia inteira.
 
-- **pior quadro 5.16:1**, no botão `Product` dos filtros, em 0.77, com L = 0.114
-- p5 6.31, mediana 9.61
-- piso do PROJECT.md §5: 4.5 ✅
+`__probe.contrast({from: 0.45, to: 0.85, rate: 0.6})`, 842 quadros por condição,
+DPR 1.5, o rio no ar com as capas dos cases:
 
-Passa com folga, e **fica abaixo do alvo de 5.5** que o véu mira. A hipótese
-registrada aqui era de orçamento — `MAX_VEIL_BOXES` em 4, com o rio
-acrescentando três botões de filtro a competir pelos mesmos quatro slots, e as
-caixas pequenas perdendo para as grandes.
+| condição | viewport | buffer | pior quadro | p5 | mediana | p95 |
+|---|---|---|---|---|---|---|
+| en | 1470×836 | 2205×1254 | **5.79** | 6.18 | 7.85 | 14.01 |
+| pt | 1470×836 | 2205×1254 | **5.79** | 6.15 | 7.83 | 14.01 |
+| en | 1450×816 | 2175×1224 | **5.82** | 6.54 | 9.23 | — |
+| pt | 1024×860 | 1536×1290 | **5.64** | 5.94 | 7.39 | — |
+| pt, mobile (HUD colapsada, 4 cards) | 500×844 | 750×1266 | **5.69** | 6.13 | 11.28 | — |
 
-**Essa hipótese estava errada, e a checagem é direta.** `HudPanel.tsx` marca o
-painel inteiro (contato, acervo, filtros, régua, áudio, idioma) como um
-`data-veil` **só** — os botões `Product`/`System`/`Brand` não têm `data-veil`
-próprio, então nunca disputaram slot nenhum. Verificado ao vivo com
-`document.querySelectorAll('[data-veil]')` em cinco progressos (0.35, 0.42,
-0.44, 0.60, 0.77): o máximo de caixas simultâneas com área visível foi
-**três**, nunca perto do teto de quatro. Não havia competição para o teto
-resolver.
+Piso do PROJECT.md §5: 4.5 ✅ — e as cinco condições ficam **acima do alvo de
+5.5** que o véu mira, que é o que a rodada anterior não conseguia.
 
-`MAX_VEIL_BOXES` subiu para 8 mesmo assim (ver `lib/scene/veil.ts`) — cobre com
-margem qualquer HUD futura que separe elementos em caixas individuais, e o
-custo é quase de graça: 302.7 → 302.9 kB gz no chunk da cena, +0.2 kB. **O que
-isso não fez** é uma nova rodada de `__probe.contrast({from: 0.45, to: 0.85})`
-pós-mudança — bloqueada nesta sessão por uma aba que não veio ao primeiro
-plano (ver "A sonda", a mesma classe de bloqueio do banco de GPU). A suspeita,
-não medida, é que 5.16:1 nunca dependeu de `MAX_VEIL_BOXES` e a causa real
-esteja na grade de 24×16 do resolvedor (`VEIL_SOLVE_FRAG`) subamostrando um
-pico de brilho dentro da caixa alta e estreita da HUD inteira. Reconfirmar
-antes de calibrar o véu contra o rio de verdade.
+**O que o número diz é o véu funcionando como mecanismo exato, não com sorte.**
+A coluna que importa é a luminância máxima entregue atrás de cada caixa pior:
+ela pousa em **0.0955 a 0.0962** em todas elas, contra o `VEIL_CEILING` de
+0.0868 mais os até 0.013 que o grão soma depois. O véu não está sobrando nem
+faltando — está onde foi mandado, e os ~0.3 de folga sobre o alvo são a conta do
+grão, não erro. A faixa que a entrada percorre é de duas ordens de grandeza
+(L mínimo 0.005 nas mesmas caixas), e é ela que valida o teto, como o
+PROJECT.md §7 exige.
 
+As seis piores caixas, en, 1470×836:
+
+| caixa | pior razão | em | L mín | L mediana | L máx |
+|---|---|---|---|---|---|
+| hud `PROGRESS` | **5.79** | 0.466 | 0.0053 | 0.0268 | 0.0962 |
+| surface (rótulo) | 5.79 | 0.846 | 0.0053 | 0.0709 | 0.0961 |
+| hud `en` · `pt` | 5.81 | 0.720 | 0.0053 | 0.0114 | 0.0956 |
+| hud `AUDIO ON` | 5.82 | 0.718 | 0.0050 | 0.0127 | 0.0955 |
+| hud `GH` | 5.94 | 0.811 | 0.0050 | 0.0093 | 0.0925 |
+
+#### A hipótese do `MAX_VEIL_BOXES` estava errada, e agora está falseada
+A rodada anterior media **5.16:1** (capas de teste, `MAX_VEIL_BOXES` = 4, DPR 1)
+e este arquivo atribuía o número a disputa de slot: "o rio acrescenta à HUD os
+três botões de filtro — são mais caixas disputando os mesmos quatro slots, e as
+pequenas perdem para as grandes".
+
+A sessão do split já havia mostrado que a HUD inteira é **uma** caixa
+`data-veil`, e a contagem ao vivo no rio fecha o assunto. Contado em cinco
+progressos do beat (0.46, 0.55, 0.65, 0.77, 0.84), com
+`document.querySelectorAll('[data-veil]')` e a área visível de cada uma:
+
+| progresso | caixas com área visível |
+|---|---|
+| 0.46 · 0.55 · 0.65 · 0.77 | **1** — o painel da HUD |
+| 0.84 | **2** — a HUD e o rótulo da Superfície entrando |
+
+Nunca mais de duas, contra um teto de quatro. **Não existia disputa de slot para
+o teto resolver**, e o rótulo do beat de Trabalho — que aparece como pior caixa
+em algumas rodadas — só está na tela na entrada do beat, porque a seção é alta e
+o rótulo não é `sticky`.
+
+**O que sobrou sem atribuição limpa é a melhora de 5.16 para 5.79**, e é honesto
+dizer isso: entre as duas rodadas mudaram três coisas — as capas (procedurais →
+fotografias reais), o `MAX_VEIL_BOXES` (4 → 8, agora sabidamente inerte) e o DPR
+(1 → 1.5). A resolução foi controlada e **não é a variável**: 5.79 a 2205×1254
+contra 5.82 a 2175×1224. O candidato restante é a mudança de material — a placa
+de cota passou a ocupar 20% da altura do card com **substrato recessado escuro**
+no lugar de capa, o que tira luz de cada peça. Um controle limpo exigiria
+rodar com DPR 1 forçado e com o campo procedural de volta, e nenhuma das duas
+coisas vale a rodada: o número atual passa o piso e o alvo, e a atribuição não
+muda decisão nenhuma.
+
+### A placa de cota, e a resposta de ponteiro
+A placa carrega **cliente, título e ano** gravados, em dois níveis de detalhe
+(ver `card-atlas.ts`: canal R o principal, canal G o detalhe). O nível de
+detalhe entra por rampa de aproximação, entre 24 e 9 unidades de profundidade —
+as distâncias medidas dos sete cards no meio da travessia vão de 8.2 a 36.4, então
+o detalhe pertence a um card por vez, o que a câmera está passando.
+
+**A latência de ponteiro é medida do evento até o quadro pintado**, que é o que
+o PROJECT.md §7 exige e é o que o clique de entrada do portão custou uma rodada
+por não medir. Ela **não pode** ser medida sob `?probe=1`: o `ProbeClock` não
+roda laço nenhum, então ali não existem quadros espontâneos entre os quais o
+ponteiro chegue — a medição sai no site como ele roda, com o portão aberto por
+clique, o ticker do GSAP publicando quadros e o scroll de verdade. O gancho é
+`window.__cardPick` (`lib/scene/card-pick.ts`), dev-only pelo mesmo motivo que o
+`__lenis` que a varredura de contraste usa.
+
+Progresso 0.55, 2205×1254, 28 movimentos de ponteiro reais espaçados ~70 ms,
+**25 deles acertando card** (seis cards distintos — o número existe porque a
+resposta existe, não porque nada aconteceu):
+
+| | ms |
+|---|---|
+| mínimo | 17.4 |
+| **mediana** | **28.2** |
+| p95 | 28.9 |
+| máximo | **29.0** |
+
+Teto do PROJECT.md §3.3: **100 ms** ✅ — com folga de 3.4×.
+
+O número é um **teto**, não uma estimativa: quem fecha o intervalo é um
+`requestAnimationFrame` agendado no quadro que aplicou a resposta, e ele dispara
+antes da pintura seguinte, ou seja **depois** de a pintura daquele quadro ter
+acontecido. Os 29 ms de pior caso são ~1.7 quadros a 60 Hz, que é exatamente o
+que o mecanismo prevê: o evento cai entre dois quadros, é consumido no seguinte,
+e a pintura fecha o intervalo.
+
+**Duas armadilhas do caminho, e as duas foram vividas nesta rodada:**
+
+1. **O canvas não recebe evento de ponteiro.** O `SceneGate` monta a cena numa
+   camada `pointer-events-none` atrás de tudo, de propósito — um canvas que
+   capturasse ponteiro roubaria o clique de cada link. Então o `raycaster` do
+   R3F não tem como ver os cards, e o ouvinte é de `window`. Como a cena cobre
+   a viewport, coordenada de viewport **é** coordenada de canvas.
+2. **`useMemo` no StrictMode cria duas instalações.** A fábrica é invocada duas
+   vezes no mesmo render; nascem dois picks, cada um com o próprio par de
+   ouvintes, e o React usa um. A limpeza mora no efeito e pertence ao que
+   ficou, então o órfão vaza ouvintes — e, pior, o gancho publicado no `window`
+   era o dele: `debug()` reportava `calls: 0` para sempre enquanto o laço de
+   quadro resolvia normalmente. Custou vinte minutos de depuração de um
+   fantasma. O pick nasce num **efeito**, que o React emparelha, e o estado de
+   diagnóstico é de **módulo**, não de instância.
+
+### O filtro reorganiza o escoamento, e isso é medido na tela
+O DIRECTION.md §4: "o filtro nunca remove. Ele **promove**: as peças que casam
+vêm para o eixo da câmara, as outras recuam para a periferia e continuam
+montadas". Medido nas caixas projetadas dos sete cards, progresso 0.55, antes e
+depois de acender `marca` (sem recarregar, sem trocar de rota):
+
+| card | case | casa `marca` | centro x em repouso | com filtro | Δ |
+|---|---|:--:|---|---|---|
+| 0 | Perfecting | ● | 2077 | 1205 | **−872** → eixo |
+| 1 | Unifique Energia | ● | −150 | 326 | **+476** → eixo |
+| 2 | Decision Suite | | 1268 | 1659 | **+391** → parede |
+| 3 | WeCann Atena | | 529 | 251 | **−278** → parede |
+| 4 | Prime8 | ● | 752 | 831 | +79 |
+| 5 | ZOOMtecnologia | ● | 898 | 824 | −74 |
+| 6 | Nestlé | ● | 560 | 677 | +117 |
+
+Os dois primeiros são os que mais se movem porque são os mais próximos — a
+perspectiva comprime o resto. Todos os sete continuam montados e visíveis.
+
+**E o bando muda de rota junto**, porque quem move o card move a esteira: o laço
+dos cards escreve `shared.cards` **por quadro enquanto a reorganização acontece**,
+e é esse mesmo array que o passo de velocidade dos boids amostra. Sem isso o
+filtro seria uma peça deslizando com o escoamento parado no lugar antigo, que é
+exatamente o "cards trocando de lugar" que o documento veta pelo nome.
+
+**Só `x` se move, nunca `z`**, e isso não é economia: o espaçamento em Z é a
+única medida da corrente com **piso medido** (4.5 unidades). Um filtro que
+mexesse em Z reordenaria a fila e quebraria, no primeiro clique, todos os
+números de aceite do beat — largura projetada, fração ocluída, esteira por card.
+
+**E o laço volta a não escrever quando assenta.** Isso preserva a medição: a
+sonda tira um card do escoamento escrevendo `uCards[i]` direto (`park`, em
+`probe-cards.ts`), e um laço que reescrevesse a corrente todo quadro desfaria o
+estacionamento no quadro seguinte — a medida de esteira mediria sete cards
+achando que mede um. Com o filtro em repouso, que é o estado de toda medição,
+`shared.cards` é bit a bit o que `resolveRiver()` resolveu.
+
+## A travessia para o case, medida
+
+O DIRECTION.md §4: "o card se aproxima da câmera e vira a capa; o bando continua
+escoando atrás dele… **Sem tela branca**. Dentro do case: DOF desligada, névoa
+parada, texto plano e imóvel."
+
+São quatro afirmações e todas são sobre o quadro entregue, então nenhuma pode
+ser conferida lendo o que o código calculou (PROJECT.md §7). O instrumento é
+`window.__caseTrace` (`lib/scene/case-trace.ts`), dev-only, num `useFrame` de
+prioridade **2** — depois do compositor, que é a única ordem em que o
+framebuffer padrão já tem o quadro. Ele grava por quadro, do clique ao repouso.
+
+**Ela não pode rodar sob `?probe=1`**, pelo mesmo motivo da latência de
+ponteiro: o `ProbeClock` não roda laço, e uma travessia é feita de navegação,
+`damp` e quadros espontâneos. A medição sai do site como ele roda.
+
+### O canvas não remonta, e o controle prova que a pergunta é boa
+
+| | resultado |
+|---|---|
+| mesmo nó `<canvas>` depois de home → case → home | **sim** |
+| eventos `webglcontextlost` | **0** |
+| **controle:** o mesmo, passando por `/work` (o acervo) | **não** — canvas novo |
+
+O controle é o que torna a primeira linha uma medição em vez de uma afirmação.
+`/work` mora no grupo `(archive)` e por projeto **derruba** a cena (DIRECTION.md
+§4: "DOM puro, sem cena, sem 3D"); se o instrumento não acusasse a quebra ali,
+ele não estaria olhando para nada. Ele acusa.
+
+### O card vira a capa, e o desencontro é de dois milésimos de pixel
+
+A peça é comparada com o `<img>` que a substitui: a caixa envolvente da **região
+de capa** projetada pela câmera entregue, contra o `getBoundingClientRect()` do
+elemento. Não a caixa do card — a capa vai de `v = 0.2` a `v = 0.975`, e a faixa
+de baixo é a placa de cota.
+
+| | desencontro, pior aresta |
+|---|---|
+| **controle:** durante o voo, antes de atracar (19 quadros) | **212.3 px** |
+| **atracado**, nos 15 quadros em que a peça ainda desenha | **0.0024 px** |
+
+O controle é a mesma expressão, no mesmo traço, com a câmera ainda a caminho: um
+sinal de duzentos pixels e um repouso de dois milésimos separam "a conta está
+certa" de "o instrumento sempre diz zero".
+
+### Nunca existe um quadro sem nenhuma das duas imagens
+
+A leitura de pixel enxerga só o canvas — o `<img>` é DOM e não está no buffer do
+WebGL —, então "o quadro não apagou" não sai dela sozinha. O que sai é o
+invariante que a sustenta:
+
+| | quadros |
+|---|---|
+| com a peça já fora (`handed`) e a capa em DOM ainda transparente | **0** |
+| com as duas desenhando ao mesmo tempo | **15** (252 ms) |
+
+Enquanto o primeiro for zero, há sempre uma das duas na tela. Os 252 ms de
+sobreposição são o corte de `--dur-cut` (120 ms) mais a margem de 260 ms com que
+a cena espera antes de esconder a peça — duas imagens iguais, uma sobre a outra,
+que é o único jeito de a troca não ter um vão.
+
+**E o degrau de luminância do canvas no quadro da entrega é esperado**, não um
+defeito: o `meanL` cai de 0.187 para 0.014 porque a peça saiu do quadro, e o que
+a substitui está fora do buffer que a sonda lê. É por isso que a prova é o
+invariante acima, e não a série de luminância.
+
+### A volta cai onde saiu
+
+| | valor |
+|---|---|
+| progresso na saída | 0.5500 |
+| progresso depois da volta | 0.5500 |
+| **Δ** | **0.00000** |
+| câmera em Z, no repouso | −52.301 |
+
+Medido nos **três** caminhos, com o mesmo resultado: o controle da HUD, o link
+da lista de estações, e o **botão voltar do navegador**. Os três passam por uma
+mudança de `pathname`, que é onde a reposição mora — e é por isso que o terceiro
+funciona sem ninguém ter escrito código para ele.
+
+> **A restauração do navegador não bastava, e ela falhou de um jeito que passa
+> despercebido.** A primeira versão confiava na entrada de histórico da home, que
+> guarda o `scrollY` do rio: `router.back()` deveria devolvê-lo. Medido, a volta
+> caía em **progresso 0.000, câmera em `z = 8`** — o começo da descida. A causa é
+> o Lenis: a troca de rota o obriga a remedir, e ele reassenta a janela na posição
+> interna dele, que é a do documento curto que acabou de sair. O navegador
+> restaura e o quadro seguinte desfaz.
+
+### Latência e ritmo
+
+| | ms |
+|---|---|
+| ponteiro sobre o card, mediana (n = 24) | **26.8** |
+| ponteiro, pior caso | **35.3** |
+| clique → câmera atracada | 1095 |
+| clique → capa entregue ao DOM | 1362 |
+
+Teto do PROJECT.md §3.3 para resposta de ponteiro: **100 ms** ✅.
+
+O voo de ~1.1 s é ritmo, não latência: a resposta começa no quadro seguinte ao
+clique. Ele encurtou de 1574 ms quando o encaixe passou a fechar em 0.995 em vez
+de 0.9995 — o `damp` é assintótico, e a última casa decimal custava meio segundo
+de conteúdo retido para um movimento que o olho já tinha visto terminar. A
+precisão não mudou: `easeStrong(0.995)` vale 0.99997, e o desencontro continua
+em 0.0024 px.
+
+### A legibilidade dentro do case
+
+Mesma varredura do véu: descida do artigo a **0.6 vh/s**, medindo cada quadro e
+cada **linha** desenhada (`Range.getClientRects()` sobre os nós de texto).
+
+| condição | pior razão | mediana por quadro | L máx |
+|---|---|---|---|
+| `en`, 1456×940, Decision Suite (o corpo mais longo) | **5.83** | 13.00 | 0.095 |
+| `en`, 1024×900, Prime8 (a capa mais clara) | 7.41 | 13.71 | 0.064 |
+| `en`, 390×844, Decision Suite (layout mobile) | 11.95 | 13.12 | 0.021 |
+
+Piso do PROJECT.md §5: **4.5:1** ✅. O L máximo de 0.095 no pior caso pousa em
+cima do `VEIL_CEILING` (0.0908) mais o grão — o véu está exatamente onde foi
+mandado.
+
+E a descida continua passando com a medida nova: **4.92:1** no pior quadro de uma
+varredura de 0.00 a 1.00 a 0.6 vh/s, mediana 6.77 por quadro.
+
+#### Três reprovações, e cada uma mudou o desenho em vez da calibragem
+
+Nenhuma delas foi consertada apertando o véu, e é isso que elas têm em comum: o
+véu existe para cobrir o que a cena **precisa** ter aceso, não para apagar o que
+não precisava estar lá.
+
+**1. 2.54:1 — a coluna de leitura não tinha véu nenhum.** O artigo entrou sem
+`data-veil` porque a suposição era que a cena recuada seria escura o bastante
+sozinha. Ela é escura quase o tempo todo — L mediano perto de zero — e "quase" é
+exatamente o que o mecanismo existe para cobrir.
+
+**2. 2.87:1 — marcar bloco a bloco gastou os oito slots.** A correção seguinte
+pôs `data-veil` em cada parágrafo, título e lista. No desktop passou (5.26 a
+5.48); no mobile **nove blocos disputavam os oito de `MAX_VEIL_BOXES`**, os
+menores perdiam, e a placa de metadados ficava descoberta. O erro era de
+granularidade: o DIRECTION.md §5 diz "véu ancorado à **coluna de texto**", e uma
+página de leitura tem uma coluna, não trinta caixas.
+
+O que faltava para uma caixa só funcionar era **aparar a caixa pela janela**
+(`readVeilBoxes`). Uma coluna de cinco viewports, convertida inteira para UV de
+tela, cobre o quadro — o scrim de sangria total que o mesmo parágrafo veta pelo
+nome. Aparada, ela é a fatia visível da coluna: largura da medida, altura da
+janela. Na descida a mudança é um no-op, porque lá todo bloco marcado já cabe
+numa viewport — conferido, os números da descida não se moveram.
+
+**3. 3.47:1 — a câmera de repouso estava dentro do tubo do bando.** Com a
+reciclagem em `uCameraZ + 2`, os corpos vinham **atravessar a lente**: um corpo
+emissivo a duas unidades é um borrão claro, e o mapa do quadro no instante da
+falha mostra 0.01 em toda parte e **uma célula em 0.13**, bem em cima de uma
+linha de metadados. Atravessar o bando não é observá-lo — é continuar dentro
+dele, e o DIRECTION.md §4 pede atmosfera. A câmera saiu para `x = −10.2`, entre
+o tubo (8.6) e a parede (12), e o pior contraste do mobile foi de 3.47 para
+**10.95**.
+
+Duas decisões de cor entraram junto, pela mesma leitura: dentro do case a
+**capa das peças vizinhas** cai a um décimo do ganho e a **gravação da placa** a
+12% do realce (`uCaseRecess`). A peça que virou a página vai ao contrário — para
+ganho 1.0, porque ali ela **é** a imagem, e entregar a 0.38 e trocar por um
+`<img>` sem ganho seria um degrau no quadro da troca.
+
+#### Uma armadilha do instrumento, e ela reprovou a descida por engano
+
+A primeira varredura da descida devolveu **2.27:1** numa caixa chamada
+`Correia` — o `h1` do corpo de prova, que continua no DOM para ser lido e
+indexado mas some da vista quando existe cena desenhando-o, numa caixa de 1×1 px
+com `clip-path: inset(50%)`. Os retângulos do nó de texto dele continuam
+existindo e continuam medindo o brilho da peça atrás. Elementos com caixa
+menor que 2 px saíram da conta, e o número virou 4.92.
+
+### A medida de leitura, contada no que foi desenhado
+
+O PROJECT.md §3.2 pede 60 a 70 caracteres. A contagem é por **linha desenhada**:
+o offset em que `Range.getClientRects()` ganha uma caixa nova é onde o navegador
+quebrou a linha.
+
+| `--measure` | mediana | p10 | p90 | máx |
+|---|---|---|---|---|
+| 66ch (antes) | **80** | 72 | 85 | 85 |
+| **54ch (agora)** | **66** | 58 | 69 | 71 |
+
+`ch` não é um caractere: é a largura do algarismo zero, e no Archivo o zero é
+bem mais largo que a média de um texto de leitura em minúsculas. A conta do
+ajuste é a própria medição, `66 × 65/80 ≈ 54`.
+
+O token é um só, então isto corrige também o manifesto de Quem sou, que estava
+largo pelo mesmo motivo. Ele agora entrega mediana 55 em nove linhas — abaixo da
+faixa, e por uma razão tipográfica e não de medida: `text-wrap: pretty` reequilibra
+as últimas linhas, e o efeito domina em parágrafos de três linhas. A superfície
+de leitura longa — o corpo do case, 41 linhas — é a que a regra descreve, e ela
+está dentro.
+
+No mobile a medida entregue é 44 (mediana, 390 px). É físico: encolher o corpo
+para caber 60 caracteres num aparelho desses trocaria uma regra de ritmo por
+texto pequeno demais para ler.
+
+### O que a travessia custou em pacote
+
+| | antes | depois |
+|---|---|---|
+| `/` e `/pt` | 182.4 kB | **184.0 kB** |
+| `/work/[slug]` | 175.6 kB | **183.0 kB** |
+| chunk da cena | 307.3 kB | **310.5 kB** |
+
+Tetos: 200 kB de rota inicial, 350 kB de chunk de cena — os três passam, e
+sobram **39.5 kB** do chunk da cena para a Superfície.
+
+A rota do case subiu 7.4 kB porque ela ganhou três coisas que não tinha: a
+montagem da cena (o `SceneGate` e os hooks de capacidade), o store da travessia,
+e o `next/image` do corpo. O gatilho de recuo previsto — trocar `next/image` por
+`<img>` com dimensões de build se a rota passasse de ~195 kB — **não foi
+acionado**.
 
 ## Desempenho da cena, medido
 
@@ -899,9 +1286,44 @@ A sonda não roda laço: a cena fica parada e cada chamada avança o relógio em
 passos fixos de 1/60 s antes de ler. `window.__probe` expõe `meta()`,
 `settle()`, `step()`, `hold()`, `viewport()`, `readField()`, `readSim()`,
 `planeMap()`, `measure()`, `occlusion()`, `corridor()`, `cardWake()`,
-`contrast()`, `descend()`, `warmth()`, `veilFootprint()` e `sheet()` — a última
+`hover()`, `contrast()`, `descend()`, `warmth()`, `veilFootprint()` e `sheet()` — a última
 monta a contact sheet num canvas 2D e a POSTa em `/shot` no coletor, e com o
 argumento `to` ela vira uma **descida** em vez de doze poses do mesmo ponto.
+
+**Uma medição não cabe aqui, e é a de ponteiro.** `?probe=1` troca o relógio da
+cena pelo `ProbeClock`, que **não roda laço**: a cena fica parada até alguém
+chamar `__probe`. Latência de ponteiro medida ali seria o intervalo entre duas
+chamadas de ferramenta, não o que a pessoa sente. Ela sai do site como ele roda,
+pelo gancho `window.__cardPick` (`lib/scene/card-pick.ts`), dev-only pelo mesmo
+motivo que o `__lenis` da varredura de contraste. `__probe.hover()` existe para
+o outro lado da conta: onde cada card está na tela, e qual deles o material
+recebeu como aceso.
+
+**E sem extensão de navegador o caminho é o CDP.** `scripts/cdp.mjs` fala o
+protocolo de DevTools com só builtins do Node (o `WebSocket` global do Node 22+):
+`eval`, `nav`, `shot`, `mouse`, `click`, `sweep`, `bounds` e `emulate`. Duas
+coisas que ele resolve e custaram tempo:
+
+1. O Chrome precisa de `--disable-backgrounding-occluded-windows` (e
+   `--disable-features=CalculateNativeWinOcclusion`) para não marcar a janela
+   como oculta quando outra passa na frente — e aba oculta não cria canvas, ver
+   as duas armadilhas de ambiente acima.
+2. `--emulate` e `--bounds` são aplicados **na mesma conexão** do comando,
+   porque uma emulação posta numa conexão e desfeita em outra **não desfaz**:
+   depois de um `emulate off` num processo, o processo seguinte ainda lia
+   1024×860, e uma varredura que devia rodar no buffer canônico rodou no do
+   mobile sem nada na saída denunciando. É a mesma classe de erro do "débito de
+   resolução" — daí a regra de toda expressão medida conferir o **próprio**
+   buffer antes de medir, e abortar se ele não for o pedido.
+3. **`Page.captureScreenshot` pode devolver um quadro velho, e devolveu.** O
+   compositor do Chrome não produz quadro novo para uma janela que não está em
+   primeiro plano. Medido: a leitura viva do DOM dizia `EST. 0620 / Work /
+   Z −47` e o screenshot do mesmo instante mostrava a Emergência em `EST. 0000`,
+   idêntico a um tirado minutos antes. Screenshot do CDP serve para **olhar**,
+   nunca como fonte de número — quem mede pixel é a sonda, que lê o buffer do
+   WebGL de dentro da página, na mesma tarefa do `advance()`, sem passar pelo
+   compositor. É por isso que a contact sheet é confiável com a janela coberta e
+   um `shot` não é.
 
 As chaves de URL que a medição usa, todas em `lib/scene/settings.ts`:
 

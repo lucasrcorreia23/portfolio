@@ -26,8 +26,24 @@
   --dur-aperture: 600ms; /* borrão → navalha, a assinatura da Identidade */
   --dur-glide: 2200ms; /* planeio entre estalos */
 
-  /* Medida de leitura — PROJECT.md §3.2: 60 a 70 caracteres. */
-  --measure: 66ch;
+  /* Medida de leitura — PROJECT.md §3.2: 60 a 70 caracteres.
+   *
+   * **54ch, e não 66ch, porque `ch` não é um caractere.** A unidade é a largura
+   * do algarismo zero, e no Archivo o zero é bem mais largo que a média de um
+   * texto de leitura em minúsculas. Medido no ponto de entrega — contando os
+   * caracteres de cada linha **desenhada**, pelo offset em que
+   * `Range.getClientRects()` ganha uma caixa nova — 66ch entregavam mediana de
+   * **80 caracteres**, dez acima do teto da regra.
+   *
+   * A conta do ajuste é a própria medição: 66 × 65/80 ≈ 54. Depois da troca a
+   * mediana entregue é 66, com p10 em 59 e p90 em 70.
+   *
+   * O token é um só de propósito, então isto vale também para o manifesto de
+   * Quem sou, que o DIRECTION.md §4 mede com a mesma régua e que estava largo
+   * pelo mesmo motivo. No mobile a medida é limitada pela tela (mediana 44), e
+   * isso é físico: encolher o corpo para caber 60 caracteres num aparelho de
+   * 390 px seria trocar uma regra de ritmo por texto pequeno demais para ler. */
+  --measure: 54ch;
 
   /* -----------------------------------------------------------------------
    * Entradas da escala de display.

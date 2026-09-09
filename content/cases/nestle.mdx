@@ -9,7 +9,19 @@ export const frontmatter = {
   summary_en:
     "Materiais de comunicação online e offline para uma ampla rede de parceiros, key visuals para Nestlé Professional e Nutrição Infantil, e otimização da jornada de compra na Lojinha Baby & Me.",
   accent: "coral",
-  cover: "/assets/img/nestle/capa.jpg",
+  // **A capa do rio não é `capa.jpg`, e o motivo é a razão de aspecto.**
+  // `capa.jpg` é uma tira de 3840×500 (7.68:1), um banner de topo de página do
+  // site antigo. A capa do card é 1.96:1 (ver `CARD_COVER_ASPECT`, em
+  // `lib/scene/card-layout.ts`), então o enquadramento `cover` corta 75% da
+  // largura e o que sobra é o vermelho de fundo — na câmara ele lê como
+  // retângulo de cor chapada, que o PROJECT.md §2 chama de cenário, e gasta
+  // orçamento de calor sem ser um evento.
+  //
+  // `post2.jpg` é material migrado igual (mídia real ganha de gerada, sempre),
+  // tem 1.91:1 — recorte quase nulo —, é escura (RGB médio 91,78,78 contra
+  // 179,59,63) e é Key Visual de Nestlé Professional, que é justamente o que
+  // este case descreve. `capa.jpg` continua no `media[]` e no corpo do case.
+  cover: "/assets/img/nestle/post2.jpg",
   media: [
     { src: "/assets/img/nestle/capa.jpg", alt_pt: "Capa do case Nestlé", alt_en: "Nestlé case cover", generated: false },
     { src: "/assets/img/nestle/capa2.jpg", alt_pt: "Capa alternativa do case Nestlé", alt_en: "Alternate Nestlé case cover", generated: false },
@@ -22,11 +34,12 @@ export const frontmatter = {
     { src: "/assets/img/nestle/nescafe2.png", alt_pt: "Key visual da marca Nescafé", alt_en: "Nescafé key visual", generated: false },
     { src: "/assets/img/nestle/mucilon2.png", alt_pt: "Key visual da marca Mucilon", alt_en: "Mucilon key visual", generated: false },
   ],
-  disciplines: ["marca", "produto"],
-  // Provisório: posto arbitrário (ordem alfabética dos quatro migrados),
-  // não curadoria. A curadoria de verdade sai no Prompt 5A, olhando os
-  // cards montados na cena (DIRECTION.md §4, "Capacidade do rio").
-  river_rank: 2,
+  disciplines: ["produto", "marca"],
+  // Curadoria (Prompt 5A, primeira passada): Nestlé fecha o rio em 7º — ofício
+  // de marca em escala com cliente global reconhecível, menor carga de leitura
+  // e imagem mais forte, boa saída antes da Superfície. Fora do corte mobile
+  // (4), mas com rota e acervo intactos. Revisitável.
+  river_rank: 7,
   generated: false,
 };
 
@@ -38,32 +51,38 @@ eventos e marketing digital dos setores internos. Colaborei diretamente com
 agências internacionais como Ogilvy, Oliver e Publicis, adaptando os projetos
 às necessidades de internacionalização.
 
+![Capa do case Nestlé](/assets/img/nestle/capa.jpg)
+
 Fui responsável pelo desenvolvimento, adaptação e criação de Key Visuals (KVs)
 para as Business Units (BUs) de Nestlé Professional e Nutrição Infantil. Além
 disso, trabalhei na otimização da jornada do cliente na plataforma de
 e-commerce Lojinha Baby & Me, visando melhorar a experiência do usuário e
 aumentar as conversões.
 
+![Peças de feed para redes sociais](/assets/img/nestle/feed.png)
+
 ### Data
 
 2024
+
+![Animação de comunicação digital](/assets/img/nestle/gif2.gif)
 
 ### Clientes
 
 Nestlé Professional, Nutrição Infantil, Lojinha Baby & Me
 
+![Post de comunicação digital](/assets/img/nestle/post2.jpg)
+
 ### Softwares
 
 Adobe Photoshop, Adobe Illustrator, Figma, After Effects
+
+![Animação de comunicação digital](/assets/img/nestle/gif1.gif)
 
 ### Serviços
 
 Anúncios, PDV, marketing digital, e-commerce, trade, eventos
 
-![Capa do case Nestlé](/assets/img/nestle/capa.jpg)
-![Peças de feed para redes sociais](/assets/img/nestle/feed.png)
-![Animação de comunicação digital](/assets/img/nestle/gif2.gif)
-![Post de comunicação digital](/assets/img/nestle/post2.jpg)
-![Animação de comunicação digital](/assets/img/nestle/gif1.gif)
 ![Key visual da marca Mucilon](/assets/img/nestle/mucilon2.png)
+
 ![Key visual da marca Nescafé](/assets/img/nestle/nescafe2.png)

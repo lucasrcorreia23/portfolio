@@ -1,3 +1,10 @@
+import {
+  CARD_CORNER,
+  CARD_HALF_HEIGHT,
+  CARD_HALF_WIDTH,
+  CARD_HEIGHT,
+  CARD_WIDTH,
+} from "./card-layout";
 import { sceneSettings } from "./settings";
 import { FLOCK_TUBE_HEIGHT, FLOCK_TUBE_WIDE } from "./world";
 
@@ -77,42 +84,20 @@ import { FLOCK_TUBE_HEIGHT, FLOCK_TUBE_WIDE } from "./world";
  */
 
 /**
- * Corpo do card, em unidades de mundo. Razão 16:10, a das capas.
- *
- * **3.8 não é gosto: é o maior corpo que fecha a conta da esteira.** O critério
- * de aceite mede a densidade na sombra da tinta a uma, duas e **quatro larguras
- * de card** a jusante, e para esse número significar "a esteira deste card" a
- * coluna precisa estar livre de outros cards ao longo dessas quatro larguras.
- * A conta, com a corrente de estações abaixo:
- *
- *   4·W + 0.25·W (meia laje) + 1.5·H (a rampa de aproximação do card seguinte
- *   na mesma estação) < 5 · espaçamento
- *
- * Com `H = W/1.6` isso é `5.1875 · W < 22.5`, ou seja `W < 4.34`. O corpo fica
- * abaixo disso, e a folga medida na laje de quatro larguras é de 2.8 unidades —
- * ver `CARD_STATIONS`.
- *
- * Na tela: à distância de leitura de 14 unidades, com FOV 45° a 16:10, a
- * meia-largura visível é 9.28, então o card ocupa **20% da largura**. É
- * subordinado de propósito. O DIRECTION.md §1 é explícito — "nenhum beat pode
- * disputar atenção com o frame do descolamento" —, e o corpo de prova ocupa 84%.
- * A escala do rio acontece na passagem: a 5 unidades o mesmo card ocupa 57%.
+ * O corpo do card mora em `card-layout.ts`, e é reexportado daqui porque foi
+ * daqui que ele sempre saiu. A mudança de casa tem um motivo só: a página do
+ * case precisa da razão de aspecto da capa para dimensionar o retângulo com que
+ * o card vai casar, e este módulo importa `settings.ts` — estado de módulo, lê
+ * `window.location` —, que não tem o que fazer na rota inicial. Ver o docblock
+ * de `card-layout.ts`.
  */
-export const CARD_WIDTH = 3.8;
-export const CARD_HEIGHT = CARD_WIDTH / 1.6;
-
-/** Meias-medidas, que é o que o SDF do retângulo arredondado consome. */
-export const CARD_HALF_WIDTH = CARD_WIDTH / 2;
-export const CARD_HALF_HEIGHT = CARD_HEIGHT / 2;
-
-/**
- * Raio dos cantos, em unidades de mundo.
- *
- * Pequeno de propósito: um card é uma peça montada, não um botão. O que ele
- * compra é que o SDF não tenha quina infinitamente afiada — a força de separação
- * lê o gradiente do campo, e num canto reto o gradiente gira 90° num ponto.
- */
-export const CARD_CORNER = 0.16;
+export {
+  CARD_CORNER,
+  CARD_HALF_HEIGHT,
+  CARD_HALF_WIDTH,
+  CARD_HEIGHT,
+  CARD_WIDTH,
+};
 
 /**
  * Onde o primeiro card está montado, e onde o último.
@@ -222,8 +207,12 @@ export const CARD_STATIONS: readonly (readonly [number, number])[] = [
  *
  * Doze e não catorze: a peça vira um pouco mais do que o estritamente de face, e
  * é o que dá paralaxe na passagem em vez de um retângulo chapado deslizando.
+ *
+ * Exportado porque o filtro do rio move os cards em `x` e precisa recalcular o
+ * ângulo com **o mesmo** número (`lib/scene/river-flow.ts`): uma peça recuada
+ * que guardasse o ângulo antigo ficaria de face para a parede.
  */
-const CARD_TOE_IN = 12;
+export const CARD_TOE_IN = 12;
 
 export type Card = {
   /** Índice na corrente, 0 é o mais a jusante (o primeiro que se vê). */

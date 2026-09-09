@@ -29,6 +29,25 @@ export function stripLocale(pathname: string): string {
 }
 
 /**
+ * Qual idioma um caminho já está falando.
+ *
+ * O inverso de `stripLocale`, e a fonte é a mesma: sob `localePrefix:
+ * "as-needed"` a URL **é** a verdade sobre o idioma. Existe para o chunk da
+ * cena, que precisa montar o href de um case e está longe demais do servidor
+ * para receber o idioma por prop — quatro saltos de componente para uma string
+ * de duas letras que a barra de endereço já tem.
+ */
+export function localeOf(pathname: string): Locale {
+  for (const locale of LOCALES) {
+    if (locale === DEFAULT_LOCALE) continue;
+    if (pathname === `/${locale}` || pathname.startsWith(`/${locale}/`)) {
+      return locale;
+    }
+  }
+  return DEFAULT_LOCALE;
+}
+
+/**
  * Reescreve um caminho para outro idioma, preservando a rota.
  * `/work/x` ↔ `/pt/work/x`, `/` ↔ `/pt`.
  *

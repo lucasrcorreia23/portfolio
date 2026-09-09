@@ -4,6 +4,8 @@ import { Suspense, useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Vector2, Vector3 } from "three";
 import { clamp01, damp } from "@/lib/motion";
+import { createCaseDrive } from "@/lib/scene/case-drive";
+import { CASE_FLOCK_RATE, CASE_FOG, CASE_SOURCE } from "@/lib/scene/case-pose";
 import {
   apertureAt,
   cameraPose,
@@ -20,6 +22,7 @@ import {
 } from "@/lib/scene/curve";
 import type { FlockRead } from "@/lib/scene/probe";
 import { createProxySim } from "@/lib/scene/proxy-sim";
+import type { RiverCard } from "@/lib/scene/river-content";
 import { clearReadout, publishReadout } from "@/lib/scene/readout-store";
 import { createSharedUniforms } from "@/lib/scene/uniforms";
 import { sceneSettings } from "@/lib/scene/settings";
@@ -28,6 +31,7 @@ import { ROOST_RADIUS, SPECIMEN_Z } from "@/lib/scene/world";
 import { useScrollProgress } from "@/lib/scroll/use-scroll-progress";
 import { BenchClock } from "./BenchClock";
 import { Cards } from "./Cards";
+import { CaseTrace } from "./CaseTrace";
 import { Chamber } from "./Chamber";
 import { ComposedClock } from "./ComposedClock";
 import { Composer } from "./Composer";
@@ -43,6 +47,11 @@ const AHEAD_OF_SPECIMEN = new Vector3(0, 0, SPECIMEN_Z - 6);
 type SceneWorldProps = {
   /** A string do corpo de prova, resolvida no servidor. */
   specimen: string;
+  /**
+   * O conteúdo do rio, em ordem de curadoria — resolvido no servidor a partir
+   * de `river_rank` e descido como prop. Ver `lib/scene/river-content.ts`.
+   */
+  river: readonly RiverCard[];
   /**
    * `true` no modo calmo: a câmera **corta** entre composições fixas em vez de
    * percorrer a curva, então nada é amortecido — amortecer entre dois cortes
@@ -71,6 +80,7 @@ type SceneWorldProps = {
  */
 export function SceneWorld({
   specimen,
+  river,
   instant,
   canvasRef,
 }: SceneWorldProps) {
@@ -81,6 +91,7 @@ export function SceneWorld({
   const proxy = useMemo(() => createProxySim(), []);
   const pose = useMemo(() => createCameraPose(), []);
   const roost = useMemo(() => createRoost(), []);
+  const caseDrive = useMemo(() => createCaseDrive(), []);
 
   const composedRef = useRef(0);
   const benchRef = useRef(0);
@@ -115,6 +126,9 @@ export function SceneWorld({
     new Vector2(flockTubeHalfWidth(0), flockTubeHalfHeight(0)),
   );
   const veilBoxes = useRef<VeilBox[]>([]);
+  const flockRateRef = useRef(1);
+  /** Quanto do voo até o case já aconteceu. Lido só pela sonda da travessia. */
+  const caseAmountRef = useRef(0);
   /** Último progresso em que o proxy foi aquecido em lote. Só sob a sonda. */
   const warmed = useRef(Number.NaN);
 
@@ -147,6 +161,23 @@ export function SceneWorld({
 
     // --- câmera -------------------------------------------------------------
     cameraPose(progress, pose);
+
+    // A travessia para o case entra **aqui dentro**, misturada por cima da pose
+    // da curva e antes de qualquer coisa que dependa dela. Uma pose aplicada
+    // depois deste laço seria sobrescrita no quadro seguinte; e `focusRef`, o
+    // poleiro e a leitura da HUD leem `pose` logo abaixo, então a mistura tem
+    // que já ter acontecido. Ver `lib/scene/case-drive.ts`.
+    const inCase = caseDrive.update(
+      dt,
+      instant || probe,
+      shared,
+      pose,
+      state.size.width,
+      state.size.height,
+    );
+    caseAmountRef.current = inCase;
+    shared.caseRecess.value = inCase;
+
     camera.position.copy(pose.position);
     camera.lookAt(pose.target);
     focusRef.current = pose.position.distanceTo(pose.target);
@@ -182,7 +213,12 @@ export function SceneWorld({
     // conveniência: ela começa em 1 (borrão total) e o alvo em 0.18 é 0, então
     // amortecendo a 8 os primeiros trinta quadros medidos sairiam desfocados —
     // a varredura mediria o transiente da navalha, não o quadro.
-    const aperture = apertureAt(progress);
+    // Dentro do case ela vai a zero, e não é gosto: o DIRECTION.md §3 tem uma
+    // regra dura — "texto de leitura nunca tem desfoque… nas rotas
+    // `/work/[slug]` a DOF está desligada". Multiplicar pelo complemento do voo
+    // faz a abertura fechar **junto** com a aproximação, então o encaixe da capa
+    // acontece na navalha, que é onde uma imagem tem que estar.
+    const aperture = apertureAt(progress) * (1 - inCase);
     apertureRef.current =
       instant || probe ? aperture : damp(apertureRef.current, aperture, 8, dt);
     // A profundidade do plano nítido acompanha o beat: larga fora do rio, curta
@@ -197,6 +233,11 @@ export function SceneWorld({
     // 0.00 ele entortava o escoamento que chega no quadro do descolamento. Ver
     // `cardAmount` em `curve.ts` para os números.
     shared.cardAmount.value = cardAmount(progress);
+
+    // O organismo desacelerado do case. A rampa é a mesma do voo, então o bando
+    // vai perdendo velocidade **durante** a aproximação, e não num degrau
+    // quando a página abre.
+    flockRateRef.current = 1 + (CASE_FLOCK_RATE - 1) * inCase;
 
     // --- o proxy, e os três consumidores dele -------------------------------
     // No modo calmo ele roda em lote: os aglomerados precisam chegar à pose
@@ -236,8 +277,16 @@ export function SceneWorld({
     // desse trecho der para ler a câmara inteira, este número está baixo demais.
     shared.forming.value = clamp01(progress / 0.16);
 
-    const fog = fogDensityAt(progress);
-    const source = sourceStrengthAt(progress);
+    // Dentro do case a atmosfera fecha e a fonte a montante recua: "névoa
+    // parada, texto plano e imóvel" (DIRECTION.md §4). Névoa mais densa é névoa
+    // mais **escura**, porque a rampa dela vai para `--void`, e é isso que põe o
+    // quadro inteiro abaixo do teto de luminância que o texto de leitura pede —
+    // o véu passa a ser garantia, não mecanismo. Ver MEASUREMENTS.md, "A
+    // travessia, medida", para a faixa entregue.
+    const fogBase = fogDensityAt(progress);
+    const sourceBase = sourceStrengthAt(progress);
+    const fog = fogBase + (CASE_FOG - fogBase) * inCase;
+    const source = sourceBase + (CASE_SOURCE - sourceBase) * inCase;
     shared.fogDensity.value =
       instant || probe ? fog : damp(shared.fogDensity.value, fog, 3, dt);
     shared.sourceStrength.value =
@@ -278,6 +327,7 @@ export function SceneWorld({
   }, -10);
 
   useEffect(() => clearReadout, []);
+  useEffect(() => caseDrive.dispose, [caseDrive]);
 
   return (
     <>
@@ -308,7 +358,7 @@ export function SceneWorld({
       {/* O rio. `?cards=0` tira as malhas **e** as esteiras do shader dos
           boids — é o A/B de desempenho e, ao mesmo tempo, o controle da medida
           de esteira (ver `lib/scene/settings.ts`). */}
-      {settings.cards ? <Cards shared={shared} /> : null}
+      {settings.cards ? <Cards shared={shared} river={river} /> : null}
       <Flock
         shared={shared}
         progressRef={progressRef}
@@ -318,6 +368,7 @@ export function SceneWorld({
         roost={roost}
         settleRef={settleRef}
         readRef={flockReadRef}
+        rateRef={flockRateRef}
       />
       <Suspense fallback={null}>
         <Specimen shared={shared} text={specimen} attackRef={attackRef} />
@@ -328,6 +379,21 @@ export function SceneWorld({
         focusRef={focusRef}
         focusRangeRef={focusRangeRef}
       />
+      {/* A sonda da travessia. O ramo é escrito com o `process.env.NODE_ENV` na
+          frente para o Next constante-dobrar a condição e o import cair junto,
+          exatamente como o da sonda — e `npm run measure` falha se algum chunk
+          de produção mencionar `__caseTrace`. Ela **não** fica atrás de
+          `?probe=1`: o que ela mede é o site como ele roda, com o laço de
+          quadro do ticker e uma navegação de verdade, e sob a sonda não existe
+          laço nenhum. É o mesmo motivo do gancho de latência de ponteiro. */}
+      {process.env.NODE_ENV !== "production" ? (
+        <CaseTrace
+          pose={pose}
+          shared={shared}
+          apertureRef={apertureRef}
+          amountRef={caseAmountRef}
+        />
+      ) : null}
     </>
   );
 }

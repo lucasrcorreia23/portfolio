@@ -3,7 +3,9 @@ import path from "node:path";
 import type { ComponentType } from "react";
 import type { MDXProps } from "mdx/types";
 import { DISCIPLINES, type Discipline } from "./disciplines";
+import { imageSize, type MediaSize } from "./media-size";
 import type { PaletteToken } from "./palette";
+import { RIVER_CAPACITY_MOBILE } from "./scene/cards";
 
 /**
  * Os cases moram em `content/cases/*.mdx`, sem CMS externo (PROJECT.md §5).
@@ -112,6 +114,16 @@ export type CaseEntry = {
 
 export type LoadedCase = CaseEntry & {
   Content: ComponentType<MDXProps>;
+  /**
+   * As dimensões intrínsecas de cada imagem do case, por `src`.
+   *
+   * Elas não estão no frontmatter porque não são autoria: são um fato do
+   * arquivo, e escrevê-las à mão criaria um número que diverge do arquivo no dia
+   * em que alguém trocar a imagem. Lidas do cabeçalho na build (`lib/media-size.ts`);
+   * um `src` ausente do mapa é uma imagem cujo formato não foi reconhecido, e
+   * quem desenha cai para `<img>` simples.
+   */
+  sizes: Readonly<Record<string, MediaSize>>;
 };
 
 type CaseModule = {
@@ -131,12 +143,25 @@ export async function loadCase(slug: string): Promise<LoadedCase> {
   // Import dinâmico com caminho de padrão fixo: o bundler resolve o
   // diretório inteiro em tempo de build. Ver o guia de MDX do Next 16.
   const mod = (await import(`@/content/cases/${slug}.mdx`)) as CaseModule;
+  const frontmatter = parseFrontmatter(slug, mod.frontmatter);
 
-  return {
-    slug,
-    frontmatter: parseFrontmatter(slug, mod.frontmatter),
-    Content: mod.default,
-  };
+  // A capa entra na lista mesmo quando não está em `media[]` — ela é a imagem
+  // que a travessia entrega, e a única que **precisa** de dimensão para o
+  // retângulo existir antes de a imagem chegar.
+  const wanted = new Set<string>([
+    frontmatter.cover,
+    ...frontmatter.media.map((item) => item.src),
+  ]);
+
+  const sizes: Record<string, MediaSize> = {};
+  await Promise.all(
+    [...wanted].map(async (src) => {
+      const size = await imageSize(src);
+      if (size !== null) sizes[src] = size;
+    }),
+  );
+
+  return { slug, frontmatter, Content: mod.default, sizes };
 }
 
 /** Todo o acervo. É isto que gera rotas: um case fora do corte do rio ainda tem página. */
@@ -164,9 +189,51 @@ export async function getAllCases(): Promise<CaseEntry[]> {
  */
 export async function getRiverCases(): Promise<CaseEntry[]> {
   const cases = await getAllCases();
-  return cases
+  const ordered = cases
     .slice()
     .sort((a, b) => a.frontmatter.river_rank - b.frontmatter.river_rank);
+  assertFilterFloor(ordered);
+  return ordered;
+}
+
+/**
+ * "Nenhum filtro devolve menos de dois cases, e nenhum esvazia o rio" —
+ * DIRECTION.md §4, e é uma **garantia**, não uma expectativa.
+ *
+ * Ela é conferida contra o corte mais apertado que existe, o do mobile
+ * (`RIVER_CAPACITY_MOBILE`), porque um corte maior só pode aumentar as
+ * contagens: se os quatro primeiros postos já dão dois de cada eixo, os sete
+ * primeiros dão pelo menos isso.
+ *
+ * **E a guarda distingue os dois modos de falha**, como o PROJECT.md §7 exige
+ * de toda guarda de teto: um eixo com **zero** cases é um filtro que esvazia o
+ * rio, e um eixo com **um** é um filtro que devolve menos de dois. Os dois são
+ * reportados pelo nome, com a contagem, e derrubam a build — não a página em
+ * produção.
+ */
+const FILTER_FLOOR = 2;
+
+function assertFilterFloor(ordered: readonly CaseEntry[]): void {
+  const cut = ordered.slice(0, RIVER_CAPACITY_MOBILE);
+  if (cut.length === 0) return;
+
+  for (const discipline of DISCIPLINES) {
+    const matching = cut.filter((entry) =>
+      entry.frontmatter.disciplines.includes(discipline),
+    );
+    if (matching.length >= FILTER_FLOOR) continue;
+
+    const shown = cut
+      .map((entry) => `${entry.frontmatter.river_rank}:${entry.slug}`)
+      .join(", ");
+    throw new Error(
+      matching.length === 0
+        ? `curadoria do rio inválida: o filtro \`${discipline}\` esvaziaria o rio no corte de ${RIVER_CAPACITY_MOBILE} cards (${shown}). ` +
+            "DIRECTION.md §4 exige que nenhum filtro esvazie o rio — reordene `river_rank` ou revise `disciplines`."
+        : `curadoria do rio inválida: o filtro \`${discipline}\` devolveria ${matching.length} case (\`${matching[0]?.slug}\`) no corte de ${RIVER_CAPACITY_MOBILE} cards (${shown}). ` +
+            `DIRECTION.md §4 exige no mínimo ${FILTER_FLOOR} — reordene \`river_rank\` ou revise \`disciplines\`.`,
+    );
+  }
 }
 
 export function caseSummary(

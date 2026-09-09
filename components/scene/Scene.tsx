@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { Canvas } from "@react-three/fiber";
+import type { RiverCard } from "@/lib/scene/river-content";
 import { DPR_CAP } from "@/lib/scene/settings";
 import { CAMERA_FOV } from "@/lib/scene/world";
 import { SceneWorld } from "./SceneWorld";
@@ -9,6 +10,13 @@ import { SceneWorld } from "./SceneWorld";
 export type SceneProps = {
   /** A string do corpo de prova (`identity.specimen`), traduzida no servidor. */
   specimen: string;
+  /**
+   * O conteúdo do rio, em ordem de curadoria (`river_rank`), resolvido no
+   * servidor. São strings curtas — cliente, título, ano, slug, acento — e elas
+   * viajam no payload da rota inicial; as **imagens** de capa não, elas são
+   * carregadas aqui dentro, depois do primeiro quadro útil.
+   */
+  river: readonly RiverCard[];
   /**
    * `true` no modo calmo. A cena é a mesma; o que muda é que a câmera corta
    * entre composições fixas em vez de percorrer a curva.
@@ -38,7 +46,7 @@ export type SceneProps = {
  * R3F, porque quem faz as duas coisas é a última linha do composite. Deixar os
  * dois ligados aplicaria a conversão duas vezes.
  */
-export default function Scene({ specimen, composed }: SceneProps) {
+export default function Scene({ specimen, river, composed }: SceneProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   return (
@@ -59,6 +67,7 @@ export default function Scene({ specimen, composed }: SceneProps) {
     >
       <SceneWorld
         specimen={specimen}
+        river={river}
         instant={composed}
         canvasRef={canvasRef}
       />

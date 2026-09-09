@@ -7,7 +7,12 @@ import Lenis from "lenis";
 import { useReducedMotion } from "@/lib/capabilities/use-reduced-motion";
 import { LENIS_LERP } from "@/lib/motion";
 import { publishFrame } from "./frame-bus";
-import { publishScroll, resetScroll } from "./scroll-store";
+import {
+  consumeScrollRequest,
+  consumeScrollResize,
+  publishScroll,
+  resetScroll,
+} from "./scroll-store";
 
 /**
  * O único driver de scroll do site, e o único lugar que publica no store.
@@ -37,23 +42,38 @@ export default function ScrollDriver() {
     gsap.registerPlugin(ScrollTrigger);
 
     if (reducedMotion) {
+      const limitOf = () =>
+        document.documentElement.scrollHeight - window.innerHeight;
+
       const readNativeScroll = () => {
-        const limit =
-          document.documentElement.scrollHeight - window.innerHeight;
+        const limit = limitOf();
         publishScroll({
           progress: limit > 0 ? window.scrollY / limit : 0,
           velocity: 0,
         });
       };
 
+      // Mesmo contrato do caminho normal, sem Lenis: o pedido de rolagem da
+      // volta é atendido, e uma troca de rota remede antes de publicar.
+      const drain = () => {
+        if (consumeScrollResize()) ScrollTrigger.refresh();
+        const wanted = consumeScrollRequest();
+        if (wanted !== null) {
+          window.scrollTo({ top: wanted * limitOf(), behavior: "auto" });
+        }
+        readNativeScroll();
+      };
+
       readNativeScroll();
       window.addEventListener("scroll", readNativeScroll, { passive: true });
       window.addEventListener("resize", readNativeScroll);
+      gsap.ticker.add(drain);
       ScrollTrigger.refresh();
 
       return () => {
         window.removeEventListener("scroll", readNativeScroll);
         window.removeEventListener("resize", readNativeScroll);
+        gsap.ticker.remove(drain);
         resetScroll();
       };
     }
@@ -75,6 +95,19 @@ export default function ScrollDriver() {
     };
 
     const tick = (time: number, deltaMs: number) => {
+      // **Remedir antes de rolar, e rolar antes de publicar.** Uma navegação de
+      // cliente troca 22 alturas de viewport por três sem o Lenis saber, e um
+      // `scrollTo` contra o limite antigo vai para o lugar errado — ou, pior,
+      // para o topo, que é exatamente o que a volta do case não pode fazer.
+      if (consumeScrollResize()) {
+        lenis.resize();
+        ScrollTrigger.refresh();
+      }
+      const wanted = consumeScrollRequest();
+      if (wanted !== null) {
+        lenis.scrollTo(wanted * lenis.limit, { immediate: true, force: true });
+      }
+
       // O ticker do GSAP conta em segundos; o Lenis quer milissegundos.
       lenis.raf(time * 1000);
       // O quadro é publicado **depois** do Lenis, porque o `lenis.raf` é quem

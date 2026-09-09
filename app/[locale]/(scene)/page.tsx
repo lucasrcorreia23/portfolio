@@ -5,14 +5,32 @@ import { BEATS } from "@/components/beats/beats";
 import { EmergenceBeat } from "@/components/beats/EmergenceBeat";
 import { IdentityBeat } from "@/components/beats/IdentityBeat";
 import { Gate } from "@/components/gate/Gate";
-import { SceneGate } from "@/components/scene/SceneGate";
+import { WorkBeat } from "@/components/beats/WorkBeat";
+import { getRiverCases } from "@/lib/cases";
+import { localizePath } from "@/lib/i18n/config";
 import { requireLocale } from "@/lib/i18n/locale";
 
 export default async function HomePage({ params }: PageProps<"/[locale]">) {
   const { locale } = await params;
-  setRequestLocale(requireLocale(locale));
+  const typed = requireLocale(locale);
+  setRequestLocale(typed);
 
   const t = await getTranslations();
+
+  // A curadoria do rio, em ordem de `river_rank`. Quem desce a mesma lista para
+  // a **cena** é o layout do grupo (`(scene)/layout.tsx`); aqui ela serve à
+  // lista de estações em DOM, que é o caminho de teclado, de sem-JS e de
+  // indexação para os mesmos cases.
+  const river = (await getRiverCases()).map((entry) => ({
+    rank: entry.frontmatter.river_rank,
+    slug: entry.slug,
+    href: localizePath(`/work/${entry.slug}`, typed),
+    client: entry.frontmatter.client,
+    title: entry.frontmatter.title,
+    year: entry.frontmatter.year,
+    accent: entry.frontmatter.accent,
+    disciplines: entry.frontmatter.disciplines,
+  }));
 
   // As três linhas do posicionamento, na ordem de leitura. São as mesmas três
   // disciplinas que filtram o rio mais adiante — a arquitetura do site dita
@@ -35,11 +53,11 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
 
   return (
     <>
+      {/* O portão vive na home, e só nela: quem chega direto num case por link
+          não tem cena para carregar nem descida para destravar. A **cena**, ao
+          contrário, mora um nível acima — em `(scene)/layout.tsx` —, porque ela
+          precisa atravessar viva a navegação para o case. */}
       <Gate />
-      {/* A cena vive na home, com o portão: é aqui que existe descida. O
-          `specimen` desce como prop porque nenhum componente de cliente deste
-          projeto importa o next-intl. */}
-      <SceneGate specimen={t("identity.specimen")} />
       <main id="descent" tabIndex={-1} className="md:pl-44">
         {BEATS.map((beat) => (
           <BeatSection key={beat.id} beat={beat} label={t(`${beat.id}.label`)}>
@@ -59,6 +77,14 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
             ) : null}
             {beat.id === "about" ? (
               <AboutBeat beat={beat} manifesto={manifesto} />
+            ) : null}
+            {beat.id === "work" ? (
+              <WorkBeat
+                beat={beat}
+                river={river}
+                stationLabel={t("hud.lexicon.station")}
+                enterLabel={t("work.enter")}
+              />
             ) : null}
           </BeatSection>
         ))}

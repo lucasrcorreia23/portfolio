@@ -110,16 +110,54 @@ antigo com 1.21:1.
 
 **O corredor do rio está feito e medido** (ver "O rio, medido"): sete cards
 montados em cinco estações ao longo de 27 unidades, planos na cena com
-perspectiva real, capa de teste procedural, cota gravada, e **esteira própria por
-card** — a mesma física do descolamento com o campo de distância resolvido
-analiticamente no shader, sem assado. A curva da câmera de 0.45 a 0.85 deixou de
-ser provisória.
+perspectiva real e **esteira própria por card** — a mesma física do descolamento
+com o campo de distância resolvido analiticamente no shader, sem assado. A curva
+da câmera de 0.45 a 0.85 deixou de ser provisória.
 
-**Não entraram nesta rodada, e é deliberado:** conteúdo real nos cards (as capas
-são procedurais e a placa de cota não carrega número), os filtros do rio
-mexendo na composição, e a transição do card para `/work/[slug]`. A Superfície
-continua sem conteúdo e os pontos de controle da câmera **de 0.85 em diante**
-seguem provisórios (ver `lib/scene/curve.ts`).
+**E o rio tem conteúdo, curadoria e filtros que mexem no escoamento.** Os sete
+cases existem em `content/cases/` — quatro migrados com mídia real e três
+(Perfecting, Unifique Energia, WeCann Atena) como **placeholder de frontmatter
+real com corpo por escrever**; o fixture `exemplo.mdx` foi apagado. A curadoria
+é o `river_rank` de cada um, e o corte por aparelho sai dela (7 no desktop, 4 no
+mobile). Sobre isso, nesta rodada:
+
+- **capas reais** no material dos cards, numa `sampler2DArray` por camada, com o
+  campo procedural rebaixado a estado de espera — nunca um cinza (`card-atlas.ts`);
+- **placa de cota gravada com cliente, título e ano**, em dois níveis de detalhe
+  num só par de canais, com o segundo entrando na aproximação (`card-layout.ts`);
+- **resposta de ponteiro** por raycast analítico contra os quads projetados,
+  medida do evento ao quadro pintado: **28.2 ms de mediana, 29.0 de pior caso**
+  contra o teto de 100 ms (`card-pick.ts`);
+- **filtros que reorganizam o rio** promovendo ao eixo e recuando à periferia,
+  sem recarregar e sem trocar de rota, com o bando mudando de rota junto
+  (`river-flow.ts`);
+- a varredura de contraste refeita com o rio no ar: **5.79:1 no pior quadro**,
+  contra o piso de 4.5 e o alvo de 5.5 do véu.
+
+Ver, no MEASUREMENTS.md, "A legibilidade, com capa de card atrás do texto", "A
+placa de cota, e a resposta de ponteiro" e "O filtro reorganiza o escoamento".
+Contact sheet da travessia em `.screens/05b-rio.png`.
+
+**E a travessia do rio para o case existe, medida.** O canvas **não remonta**
+entre a home e um case: a cena subiu para o layout de um grupo de rotas
+(`app/[locale]/(scene)/`) que cobre `/` e `/work/[slug]` e deixa `/work` de fora.
+O clique num card leva a câmera até ele, a peça casa com o retângulo da capa em
+DOM — **0.0024 px** de desencontro contra 212 px de controle — e entrega o pixel
+com 252 ms de sobreposição, sem nenhum quadro em que nenhuma das duas desenhe.
+Sair devolve a câmera ao progresso exato de onde saiu (Δ = 0.00000), pelos três
+caminhos: o controle da HUD, a lista de estações e o botão voltar do navegador.
+Ver "A travessia para o case, medida" no MEASUREMENTS.md.
+
+Com ela vieram **a rota de case de verdade** (capa, metadados em mono, corpo com
+a mídia intercalada e medida de leitura conferida no pixel) e **a lista de
+estações do beat de Trabalho**, que é o caminho de teclado, de sem-JS e de
+indexação para os sete cases — até aqui o rio existia só na cena e não tinha
+`href` nenhum.
+
+**Não entraram nesta rodada, e é deliberado:** o corpo dos três cases
+placeholder e a tradução de `summary_en` (hoje cópia do português nos quatro
+migrados). A Superfície continua sem conteúdo e os pontos de controle da câmera
+**de 0.85 em diante** seguem provisórios (ver `lib/scene/curve.ts`).
 
 O template HTML comprado que ocupava este repositório foi **descartado, não
 migrado** (PROJECT.md §5). Nada dele sobreviveu: nem SCSS, nem jQuery, nem
@@ -187,6 +225,8 @@ npm run start      # roda o build
 npm run lint       # eslint (flat config)
 npm run typecheck  # tsc --noEmit
 npm run collect    # o coletor de medições, em :3131 (ver "Desempenho da cena")
+npm run measure    # o orçamento de JS, lido do prerender desta build (ver abaixo)
+npm run covers     # regera as capas provisórias dos cases sem mídia real
 ```
 
 Node 24 (`.nvmrc`); o mínimo do Next 16 é 20.9. Não há suíte de testes.
@@ -199,8 +239,11 @@ Node 24 (`.nvmrc`); o mínimo do Next 16 é 20.9. Não há suíte de testes.
 
 ```
 app/[locale]/          rotas; o layout raiz é app/[locale]/layout.tsx
+app/[locale]/(scene)/  o grupo que **é dono da cena**: home + /work/[slug]
+app/[locale]/(archive)/ o acervo, deliberadamente fora dele — /work sem 3D
 components/gate/       o preloader e o portão de entrada (o beat "pré")
 components/scene/      a cena 3D e o portão que escolhe qual versão roda
+components/work/       o DOM da rota de case: chegada e volta ao rio
 components/hud/        a HUD lateral fixa (substitui o rodapé; não há rodapé)
                        Hud (servidor) → HudPanel (colapso no mobile) → régua,
                        leitura por beat, filtros do rio, áudio, idioma, acervo
@@ -217,9 +260,43 @@ styles/                globals.css + tokens.css
 **Dois "portões", e eles não são a mesma coisa.** `components/gate/` é o portão
 de entrada — o preloader, o contador, a veneziana. `components/scene/SceneGate`
 é o portão *da cena*, que decide qual das três versões dela roda
-(`driven | composed | poster`). Nomes parecidos, papéis sem interseção.
+(`driven | composed | poster`) e informa em qual rota do grupo ela está. Nomes
+parecidos, papéis sem interseção.
 
 Não existe `src/`. O alias é um só: `@/*` → raiz do repositório.
+
+### Os dois grupos de rota, e por que a cena mudou de casa
+
+O layout raiz continua sendo `app/[locale]/layout.tsx` (html/body,
+`ScrollProvider`, `Hud`). Abaixo dele há **dois grupos**, que não aparecem em
+nenhuma URL:
+
+```
+app/[locale]/(scene)/layout.tsx             monta <SceneGate>, resolve o rio
+app/[locale]/(scene)/page.tsx               a home — o portão continua só aqui
+app/[locale]/(scene)/work/[slug]/page.tsx   o case
+app/[locale]/(archive)/work/page.tsx        o acervo, sem cena
+```
+
+**O mecanismo inteiro da travessia é essa divisão.** Quem está no mesmo grupo
+divide a mesma instância de layout, então navegar de `/` para `/work/[slug]`
+reconcilia o `(scene)/layout.tsx` em vez de remontá-lo: o `<div>` do
+`SceneGate`, o `<Canvas>` e o contexto WebGL atravessam a troca de rota **vivos**.
+Sem isso não existe "sem tela branca" — existe um canvas novo com um bando novo,
+e nada que se possa animar entre os dois.
+
+`/work` fica de fora de propósito: o DIRECTION.md §4 quer o acervo em "DOM puro,
+sem cena, sem 3D", e ali a cena **deve** cair. Isso é medido, e é o controle da
+verificação de persistência (MEASUREMENTS.md).
+
+**O comentário do layout raiz que recusava hospedar a cena foi revertido, com o
+motivo preservado.** Ele existia para um link direto de case não pagar 350 kB no
+caminho crítico — e isso continua verdade, porque `loadScene()` continua sendo
+`import()` memoizado pedido depois do primeiro quadro útil. O que mudou é que o
+case também tem cena, porque o DIRECTION.md §4 sempre disse que tem.
+
+> **Não mova o `<Gate />` para o layout do grupo.** Ele é o beat "pré" da
+> descida, e quem chega direto num case por link não tem descida para destravar.
 
 ### Rotas e idiomas
 
@@ -259,10 +336,15 @@ Estado medido, com o portão, a HUD e a cena dos quatro primeiros beats:
 
 | Rota / chunk | gz | contra |
 |---|---|---|
-| `/` e `/pt` — a descida, com portão, preloader e HUD | **182.4 kB** | 200 kB ✅ |
-| `/work` e `/work/[slug]` — acervo e case, sem portão e sem cena | 175.6 kB | 200 kB ✅ |
-| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, campo de distância, descolamento, poleiro, véu medido e **o corredor do rio** | **302.9 kB** | 350 kB ✅ |
-| chunk do driver de scroll (gsap + ScrollTrigger + lenis) | 47.9 kB | fora da rota inicial |
+| `/` e `/pt` — a descida, com portão, preloader, HUD e a lista de estações | **184.0 kB** | 200 kB ✅ |
+| `/work/[slug]` — o case, sem portão, **com a cena em chunk dinâmico** | **183.0 kB** | 200 kB ✅ |
+| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, campo de distância, descolamento, poleiro, véu medido, o corredor do rio, o conteúdo dele e **a travessia para o case** | **310.5 kB** | 350 kB ✅ |
+| chunk do driver de scroll (gsap + ScrollTrigger + lenis) | 48.0 kB | fora da rota inicial |
+
+`/work` não entra na tabela e não é esquecimento: ele lê `searchParams`, então é
+renderizado sob demanda e não há HTML pré-renderizado no disco para o
+`npm run measure` ler — e o script existe justamente para não levantar servidor.
+O que ele carrega é um subconjunto do que o case carrega, menos a cena.
 
 O descolamento inteiro — o assado do campo (`type-field.ts` + `shaders/field.ts`)
 e as três forças no shader dos boids — custou **10.1 kB gz**, de 284.0 para 294.1.
@@ -281,6 +363,34 @@ Subir `MAX_VEIL_BOXES` de 4 para 8 (ver "O que falta", item 2, e
 array de uniforms, não um efeito novo. **Sobram 47.1 kB do teto** para a
 Superfície e a transição para o case.
 
+**O conteúdo do rio custou 4.4 kB**, de 302.9 para 307.3: as duas texturas em
+camadas e o desenho da placa (`card-atlas.ts`), a geometria das duas regiões
+(`card-layout.ts`), o raycast analítico do ponteiro (`card-pick.ts`), o desvio
+lateral do filtro (`river-flow.ts`) e o material novo.
+
+**A travessia para o case custou 3.2 kB**, de 307.3 para 310.5: as duas poses e
+a inversão da curva (`case-pose.ts`), a máquina de estados por quadro
+(`case-drive.ts`), a textura de entrega com o recorte e as quatro passagens
+novas no material dos cards. **Sobram 39.5 kB do teto** para a Superfície.
+
+Na rota inicial ela custou 1.6 kB na home (a lista de estações e o store da
+travessia) e 7.4 kB no case, que ganhou três coisas que não tinha: a montagem da
+cena, o mesmo store e o `next/image` do corpo do artigo.
+
+As **texturas** não entram nesta conta e não deveriam: sete camadas de capa a
+640×326 mais sete de placa a 1024×118 são ~9 MB de VRAM, e VRAM não é pacote —
+o que o teto de 350 kB mede é o que a rede entrega e o motor de JS executa. As
+imagens de capa são baixadas dentro do chunk da cena, depois do primeiro quadro
+útil, e enquanto não chegam quem desenha é o campo procedural.
+
+**E o payload da curadoria fica na rota inicial, medido.** A ordem dos sete
+cases desce do servidor como prop do `SceneGate` (`lib/scene/river-content.ts`),
+ou seja no payload RSC dentro do HTML: **0.43 kB gz** dos 6.0 kB do HTML da home.
+A conta das tags `<script src>` — que é a régua com que todo o histórico desta
+tabela foi levantado — não se move: 182.4 kB antes e depois. O `npm run measure`
+imprime as duas ao lado uma da outra, para a diferença nunca ficar fora da
+conta.
+
 A rota inicial **não mudou**: 182.8 → 182.4 kB, dentro da variação de hash de
 build. O rio inteiro vive no chunk dinâmico, como tem que ser.
 
@@ -289,11 +399,12 @@ beats, leitura por beat, controle de áudio, colapso no mobile — custou **1.7 
 na rota inicial, de 181.1 para 182.8. Nenhuma dependência nova: o que entrou
 foram componentes de cliente e dois stores de trinta linhas.
 
-**A sonda de medição não aparece nesta conta porque não existe em produção.**
-Verificado neste build: nenhum chunk de `.next/static/chunks` menciona `__probe`,
-`installProbe`, `installCorridor`, `cardWake`, `readTextRects` nem
-`veilFootprint` — e nenhum menciona `__lenis`, o atalho de desenvolvimento que a
-varredura de contraste usa para rolar a página. Ver "A sonda" abaixo.
+**As sondas de medição não aparecem nesta conta porque não existem em
+produção.** Verificado neste build: nenhum chunk de `.next/static/chunks`
+menciona `__probe`, `installProbe`, `installCorridor`, `cardWake`,
+`readTextRects`, `veilFootprint`, `installCaseTrace` nem `__caseTrace` — e
+nenhum menciona `__lenis`, o atalho de desenvolvimento que a varredura de
+contraste usa para rolar a página. Ver "A sonda" abaixo.
 
 **Uma única afordância de medição viaja em produção, e ela é declarada:**
 `uCardMask`, no vertex shader dos cards. Ela esconde instâncias **do quadro** sem
@@ -335,11 +446,21 @@ servidor é mais simples, não porque seja um corte dramático.
 
 #### Como medir, e como eu errei
 
-O erro que produziu números falsos: eu media contra um **servidor antigo ainda
-no ar** (`pkill -f "next start"` não pega o processo) enquanto o `.next` já
-tinha sido reconstruído. O HTML servido citava chunks com hash velho, o laço de
-medição pulava em silêncio os arquivos que não existiam mais, e o total
-encolhia a cada rebuild. Três precauções:
+**Hoje é `npm run build && npm run measure`**, e o script
+(`scripts/measure-bundle.mjs`) fecha o erro abaixo por construção: ele não
+levanta servidor nenhum. O HTML que ele lê é o prerender que **aquela** build
+escreveu em `.next/server/app/*.html`, os chunks citados nele são resolvidos no
+disco da mesma build, e um chunk citado e ausente **derruba a medição com erro**
+em vez de valer zero. Ele também acha os dois chunks dinâmicos por conteúdo
+(three+troika para a cena, ScrollTrigger+lenis para o driver), confere que a cena
+não vazou para a rota inicial, e confere que a sonda não existe em produção.
+
+O erro que produziu números falsos, e que o script existe para tornar
+impossível: eu media contra um **servidor antigo ainda no ar**
+(`pkill -f "next start"` não pega o processo) enquanto o `.next` já tinha sido
+reconstruído. O HTML servido citava chunks com hash velho, o laço de medição
+pulava em silêncio os arquivos que não existiam mais, e o total encolhia a cada
+rebuild. As três precauções, para quando alguém medir à mão:
 
 ```bash
 # 1. matar pela porta, não pelo nome do processo
@@ -411,6 +532,25 @@ e as revelações de texto. Isso é literal no código.
 `velocity` existe no store como leitura de HUD e **não dirige nada**. A regra
 da variável única continua valendo.
 
+**E a variável é da descida, não da rota em que se está.** O driver publica
+`lenis.progress`, que é a rolagem do documento atual — na home isso **é** a
+variável, num case é a leitura de um artigo. Sem separar as duas, rolar o corpo
+de um case varreria o progresso de 0 a 1 e mandaria a câmera atravessar a câmara
+inteira enquanto alguém lê. Então o store tem um **papel**
+(`ScrollRole = "descent" | "page"`), derivado do `pathname` num lugar só, o
+`ScrollProvider`:
+
+- `"descent"` — a rolagem é a variável, como sempre foi;
+- `"page"` — a rolagem vai para `pageProgress` (leitura, não dirige nada) e
+  `progress` **congela** no último valor. Esse congelamento é o que faz "a câmera
+  volta para a posição do rio de onde saiu" ser consequência, e não restauração.
+
+`requestScrollTo(progresso)` é o único jeito de pedir uma rolagem de fora, e o
+driver continua sendo o único dono do Lenis. **O pedido é retido até o papel
+virar `descent`**: entre o clique de voltar e o commit da rota passam quadros em
+que o documento ainda é o do case, e atender ali levaria a página errada para o
+lugar errado.
+
 ### Capacidades e o portão da cena
 
 `useReducedMotion` e `useWebGLSupport` devolvem `boolean | null`, onde `null` é
@@ -437,6 +577,15 @@ nenhum dos dois depende de WebGL. Quem precisa das duas juntas usa
 lib/scene/load-scene.ts    promessa memoizada — espelho de load-driver.ts
 lib/scene/world.ts         as medidas da câmara; uma unidade ≈ um metro
 lib/scene/cards.ts         a corrente do rio: corpo, estações, espaçamento
+lib/scene/card-layout.ts   onde a capa e a placa ficam no card, e a resolução delas
+lib/scene/card-atlas.ts    as capas e as placas, em texturas por camada
+lib/scene/card-pick.ts     qual card está sob o ponteiro, o clique e a latência
+lib/scene/river-content.ts o conteúdo curado que desce do servidor para a cena
+lib/scene/river-flow.ts    para onde o filtro move cada card
+lib/scene/case-pose.ts     o encaixe da capa, o repouso, e a estação da volta
+lib/scene/case-drive.ts    a travessia quadro a quadro — o lado da cena
+lib/scene/case-trace.ts    a sonda da travessia (dev): costura, buraco, linhas
+lib/work/case-transition.ts o estado da travessia, fora do React e da cena
 lib/scene/type-field.ts    o assado do campo de distância, do próprio mesh
 lib/scene/probe.ts         a sonda de medição (`?probe=1`, só em dev)
 lib/scene/probe-contrast.ts a varredura de contraste e a conferência do véu
@@ -621,6 +770,38 @@ por falta de slot: `MAX_VEIL_BOXES` já subiu de 4 para 8 e a causa segue aberta
 (ver item 2 de "O que falta" e MEASUREMENTS.md, "A legibilidade, com capa de
 card atrás do texto").
 
+#### A travessia para o case
+
+O beat que não é um beat: ela não tem faixa de progresso, ela tem uma rota. Três
+poses e dois escalares, misturados **dentro** do laço mestre — uma pose aplicada
+depois dele seria sobrescrita no quadro seguinte.
+
+```
+curva(p) ──amount──▶ encaixe(card, retângulo da capa) ──recede──▶ repouso
+```
+
+Método, controles e números — costura de 0.0024 px, zero quadros de buraco,
+volta com Δ de progresso 0.00000 — em **MEASUREMENTS.md, "A travessia para o
+case, medida"**.
+
+Quatro coisas que decidem se ela funciona, e todas custaram uma medição:
+
+- **O `pathname` manda; o clique só adianta.** O clique publica `entering` na
+  hora (senão há tempo morto até o payload chegar) e a rota confirma, corrige ou
+  desfaz. É isso que faz o mecanismo cobrir o botão voltar, o link direto, o
+  acervo, o reload e a navegação abortada — nenhum desses passa pelo clique.
+- **A distância do encaixe sai do retângulo entregue**, o
+  `getBoundingClientRect()` do `<img>` da capa, não de uma constante. Por isso a
+  CSS é dona do corpo da capa e a cena só lê: não existe segunda fonte de verdade
+  para desencontrar.
+- **A entrega espera o DOM, nunca o contrário.** A cena avisa que atracou, o
+  `<img>` sobe por cima com o corte de 120 ms, e só **depois** a peça sai do
+  quadro. Esconder no instante em que o voo fecha abriria 120 ms sem nenhuma das
+  duas — a tela em branco que a rodada existe para não ter.
+- **A capa entregue vem do `currentSrc` do próprio `<img>`.** Pedir a URL do
+  frontmatter baixaria uma segunda imagem, em outro tamanho, e as duas deixariam
+  de ser a mesma imagem justamente no quadro em que uma substitui a outra.
+
 #### O compositor
 
 Cena → DOF → **campo do véu** → composite, tudo sobre `WebGLRenderTarget`. Ele
@@ -753,27 +934,39 @@ produção.
 Campos além do PROJECT.md §6: `disciplines` e `river_rank` (os dois
 obrigatórios, DIRECTION.md §4) e `generated` (opcional, PROJECT.md §6).
 
-`content/cases/exemplo.mdx` é um **fixture descartável**, não conteúdo: existe
-só para o pipeline ter o que compilar enquanto os cases não chegam. Ele fica
-até o **Prompt 5B**, onde é **apagado inteiro** — não renomeado, não copiado,
-não usado como molde para os cases reais. Os sete cases nascem do PROJECT.md
-§6, não deste arquivo; herdar a estrutura dele significaria herdar os travessões
-de placeholder e o `generated: true` que ele carrega só para não fingir ser
-conteúdo. Se ele ainda existir depois do Prompt 5B, alguma coisa deu errado.
+**As dimensões das imagens não estão no frontmatter, e não devem estar.** Elas
+são um fato do arquivo, não autoria: escrevê-las à mão criaria um número que
+diverge da imagem no dia em que alguém a trocar. `loadCase()` as lê do cabeçalho
+na build (`lib/media-size.ts`, sem dependência nova — PNG, GIF, WEBP e JPEG, só
+os primeiros 64 kB) e as devolve em `sizes`, por `src`. Sem elas não há
+`next/image`, e sem `next/image` um JPEG de 3840 px viaja inteiro.
 
-`river_rank: 99` (ver acima) é a mesma regra aplicada ao ranking: um posto
-fora da faixa real de propósito, para nunca ser confundido com curadoria nem
-copiado para dentro de um case novo junto com o resto do arquivo.
+**A capa é a exceção, e é um `<img>` puro.** Toda a mídia do corpo passa por
+`next/image`; a capa não, porque ela é a **superfície de entrega** da travessia —
+a cena carrega o `currentSrc` dela e desenha os mesmos bytes no card. Duas
+imagens do mesmo assunto em tamanhos diferentes seriam dois downloads e duas
+versões que não coincidem justamente no quadro da troca.
+
+**O fixture `exemplo.mdx` foi apagado**, e é assim que se sabe que os sete
+cases existem: ele existia só para o pipeline de MDX ter o que compilar, com
+`river_rank: 99` — um posto fora da faixa real, de propósito, para nunca ser
+confundido com curadoria. Os três nomes que faltavam nasceram do PROJECT.md §6 e
+não dele: nenhum travessão de placeholder e nenhum campo foram copiados de lá.
+Se `exemplo.mdx` reaparecer, alguma coisa deu errado.
 
 **São sete cases no repositório**, não três: Perfecting, WeCann Atena e
 Unifique Energia escritos do zero, mais Decision Suite, ZOOMtecnologia, Prime8
 e Nestlé migrados do portfólio antigo. Organiconecta e Orbsofty ficam de fora
 por ora — não foram descartados, só não entram nesta rodada.
 
-**Os quatro migrados já existem em `content/cases/`** — `decision-suite.mdx`,
-`nestle.mdx`, `prime8.mdx`, `zoomtecnologia.mdx` —, todos com um `river_rank`
-provisório de nascença (ver abaixo). Faltam os três escritos do zero, e com eles o momento
-de apagar `exemplo.mdx`. A migração não passou pelo `resgatar-midia.sh` que
+**Os sete existem em `content/cases/`.** Quatro migrados com mídia real —
+`decision-suite.mdx`, `nestle.mdx`, `prime8.mdx`, `zoomtecnologia.mdx` — e três
+como **placeholder**: `perfecting.mdx`, `unifique-energia.mdx`,
+`wecann-atena.mdx` têm frontmatter real (título, cliente, resumo do PROJECT.md
+§6, disciplinas da matriz do DIRECTION.md §4, acento, posto) e **corpo por
+escrever**, com capa gerada marcada `generated: true`. O que falta neles é
+conteúdo, não estrutura: o rio já os monta, a rota já existe e o acervo já os
+lista. A migração dos quatro não passou pelo `resgatar-midia.sh` que
 esta seção descrevia: o arquivo nunca existiu no repositório. Como a tag
 `template-legado` já está local, o resgate saiu direto dela — `git checkout
 template-legado -- <caminho>` para os diretórios que não mudaram de nome
@@ -799,21 +992,32 @@ antigo não tinha alt text nenhum, só placeholders como `"image-here"` — ent�
 escrever os dois idiomas ali não fere a regra de não traduzir conteúdo do
 Lucas, porque não é conteúdo dele.
 
-**`disciplines`, `accent` e `river_rank` dos quatro são palpite de primeira
-passada, não curadoria.** O DIRECTION.md §4 adia deliberadamente a
-classificação por disciplina e o ranking do rio até ver os cards montados na
-cena, mas `parseFrontmatter` exige os dois campos — `disciplines` não vazio,
-`river_rank` um inteiro positivo e único em todo o acervo — sem isso `next
-build` quebra (`assertUniqueRiverRank` em `lib/cases.ts` verificado: um
-segundo case com o mesmo posto derruba a build, e um case sem o campo
-também). A saída: um palpite editorial pelo conteúdo do case (não pela
-composição da câmara), seguro por agora porque não é isso que decide a
-garantia "nenhum filtro devolve menos de dois cases" nem o corte por
-aparelho — os dois só passam a valer quando a curadoria de verdade escolher
-a ordem. Ficou: Decision Suite produto+sistema, cyan, posto 1; Nestlé
-marca+produto, coral, posto 2; Prime8 produto+marca+sistema, rose, posto 3;
-ZOOMtecnologia produto+marca, teal, posto 4 — ordem alfabética dos slugs,
-arbitrária, revisitável inteira no Prompt 5A.
+**`disciplines` e `river_rank` dos sete são curadoria, e `accent` continua
+sendo escolha de cor.** O DIRECTION.md §4 adiava a classificação por disciplina
+e o ranking do rio até ver os cards montados na cena; eles foram vistos (contact
+sheet em `.screens/05b-rio.png`) e a decisão está gravada:
+
+| # | case | disciplinas | acento |
+|--:|---|---|---|
+| 1 | Perfecting | produto · marca | cyan |
+| 2 | Unifique Energia | produto · sistema · marca | teal |
+| 3 | Decision Suite | produto · sistema | cyan |
+| 4 | WeCann Atena | produto · sistema | rose |
+| 5 | Prime8 | produto · sistema · marca | rose |
+| 6 | ZOOMtecnologia | produto · marca | teal |
+| 7 | Nestlé | produto · marca | coral |
+
+O corte do mobile são os quatro primeiros; 5, 6 e 7 continuam com rota
+`/work/[slug]` e na lista de acervo, em qualquer aparelho. A ordem é editorial —
+profundidade primeiro, alcance em seguida, ofício de marca fechando — e a
+justificativa de cada posto está na mensagem de commit desta rodada.
+
+**A garantia "nenhum filtro devolve menos de dois cases" virou guarda de
+build**: `assertFilterFloor`, em `lib/cases.ts`, confere os três eixos contra o
+corte mais apertado que existe (o do mobile, quatro cards) e distingue os dois
+modos de falha que o PROJECT.md §7 exige — "esvaziaria o rio" (zero) e
+"devolveria menos de dois" (um). Verificada nos dois sentidos, quebrando a
+matriz de propósito: a build cai com a mensagem certa em cada caso.
 
 **Contagem de palavras dos quatro migrados** (corpo do MDX, título+parágrafos+
 listas, sem contar frontmatter nem legenda de imagem): Decision Suite 566,
@@ -859,6 +1063,24 @@ varre cada linha de cima para baixo, escalonada; **Quem sou é uma lâmina de
 medida que desce pela coluna** — recorte do bloco inteiro, com um fio de um pixel
 e uma marca de intervalo na ponta correndo na fronteira do recorte. A lâmina é
 ornamento e por isso pode ter alpha; o texto atrás dela não tem nenhum.
+**Trabalho é a lista de estações varrida da esquerda**, escalonada pelo índice,
+como a corrente de cotas que ela descreve.
+
+**E o beat de Trabalho ganhou DOM, que é o que torna o rio navegável.**
+`components/beats/WorkBeat.tsx` monta uma lista mono — uma linha por case curado,
+`EST. NNN · cliente · título · ano —, e **cada linha é um `<a>` de verdade**. Até
+aqui os sete cards viviam só na cena e `card-pick.ts` só escutava `pointermove`:
+não havia clique, não havia `href`, e o rio inteiro era inalcançável por teclado,
+sem JavaScript e para um indexador. É também a metade em DOM de "placas e títulos
+de card", que o DIRECTION.md §5 já contava entre os beats com texto sob luz
+variável.
+
+O destaque da linha sai do **mesmo progresso** (o beat dividido em tantas faixas
+quantos são os cards), sem mecanismo novo e sem ler nada da cena — então ele
+continua funcionando em modo `poster`. E o clique daqui e o clique no card 3D são
+o mesmo clique: os dois chamam `enterCase()` com o mesmo slug, o mesmo posto e o
+mesmo progresso antes de navegar, que é o que garante que a volta caia no mesmo
+lugar pelas duas portas.
 
 ### A HUD
 
@@ -873,6 +1095,7 @@ cliente que colapsa a coluna num acionador no topo do mobile.
 | Emergência · Identidade | leitura de profundidade, `Z −38` |
 | **Quem sou** | a leitura vira `DENS. 0.62` — é o único beat em que a estrutura chega perto o bastante para medir o bando contra ela (DIRECTION.md §4) |
 | Trabalho · Superfície | entram os filtros por disciplina; antes do rio não há o que promover |
+| **dentro de um case** | a régua sai e entra o caminho de volta (`← RIO`); ver `DescentSlot` |
 
 A régua de progresso tem **as cotas nas fronteiras dos beats**, lidas de
 `BEATS` — não uma graduação regular a cada dez por cento, que seria papel
@@ -886,20 +1109,74 @@ Três coisas que parecem detalhe e não são:
 - **A preferência de áudio mora no módulo de áudio**, não no componente: o
   controle existe antes do `AudioContext`, e "mudo antes de entrar" tem que
   continuar mudo no clique de entrada.
-- **O filtro do rio já faz efeito hoje.** Ele vai como `?d=` para a entrada de
-  acervo, e `/work` filtra a lista. O rio ainda não existe; um controle que só
-  publicasse estado seria um botão morto na tela.
+- **O filtro do rio move o rio e o acervo.** Na descida ele promove as peças que
+  casam e recua as outras; na HUD ele viaja como `?d=` para a entrada de acervo,
+  e `/work` filtra a lista. Mesmo eixo, dois efeitos, nenhum botão morto.
+- **Dentro de um case a régua da descida sai, e o caminho de volta ocupa a casa
+  dela.** Quem troca é `DescentSlot`, pelo `pathname`. A régua mede a descida, e
+  ali não há descida acontecendo: o progresso está congelado no ponto do rio de
+  onde se saiu, então ela mostraria um cursor parado numa escala que não descreve
+  a página. É o mesmo argumento que faz `readout-store` publicar `live: false` em
+  vez de `0.00` — um instrumento apontando para outra coisa é pior que nenhum.
 
 ---
 
 ## Armadilhas conhecidas
 
+- **Uma `<figure>` dentro de um `<p>` é HTML inválido, e o MDX produz isso
+  sozinho.** Ele embrulha nós de nível de texto em `<p>`, então uma imagem que
+  vire figura sai dentro do parágrafo: o navegador fecha o `<p>` ao encontrar a
+  figura, a árvore deixa de ser a que o React renderizou, e o erro é de
+  hidratação, no meio do corpo do case. Quem desfaz o embrulho é o `p` de
+  `lib/work/mdx-case.tsx` — e **a comparação é com o componente, não com a
+  string `"img"`**: o MDX compila para `_jsx(_components.img, …)`, então o `type`
+  do elemento é a função do mapa. A primeira versão comparou com `"img"`, passou
+  por cima de toda imagem, e o Next abriu o erro na cara.
+- **O véu é ancorado à coluna, e a caixa precisa ser aparada pela janela.** Um
+  artigo de cinco viewports não tem uma caixa: convertida inteira para UV de
+  tela, ela cobre o quadro — o scrim de sangria total que o DIRECTION.md §5 veta
+  pelo nome. `readVeilBoxes` apara pela janela mais a margem de antecipação, o
+  que na descida é no-op (lá todo bloco marcado já cabe numa viewport) e no case
+  transforma a coluna na fatia visível dela. Marcar bloco a bloco **não** é a
+  saída: nove blocos disputando os oito slots reprovaram em 2.87:1.
 - **Nunca uma crase dentro de um literal de GLSL.** O shader mora num template
   literal, e uma crase de markdown num comentário do GLSL **fecha o literal**. O
   erro sai como `TS1005: ',' expected` apontando para o meio de um shader, e em
   dev o `import()` dinâmico do módulo passa a **lançar de forma síncrona** — o
   que já derrubou o manifesto do preload inteiro. Custou três rodadas; escreva
   `uFlockAhead`, não `` `uFlockAhead` ``.
+- **Array de samplers não aceita índice de varying, e a saída é `sampler2DArray`.**
+  Os sete cards são uma malha instanciada só, então o fragmento escolhe a capa
+  pelo índice da instância — que chega num varying e por isso **não é
+  dinamicamente uniforme**. GLSL ES 3.00 proíbe `uCovers[vIndex]`: não compila.
+  Atlas em tira compila e sangra (com filtragem linear o texel da borda de uma
+  linha mede a média com a vizinha). Numa textura em **camadas** o índice é
+  parte da coordenada — `texture(tex, vec3(uv, layer))` —, não um índice de
+  array: é legal com índice não uniforme e cada camada filtra sozinha. Ver
+  `lib/scene/card-atlas.ts`.
+- **Varying de instância precisa de `flat`, e não é estilo.** `vIndex` e
+  `vAccent` são constantes por instância, então interpolar não muda o valor —
+  **mas muda os bits**. Um `vIndex` de 3 chega como 2.9999997 no meio do
+  triângulo, e `int(vIndex)` trunca para 2: o card leria a capa e a placa do
+  vizinho. Com `flat` o valor atravessa exato.
+- **`useMemo` no StrictMode cria duas instalações, e só uma tem limpeza.** A
+  fábrica de um `useMemo` é invocada **duas vezes** no mesmo render em
+  desenvolvimento. Para um valor puro isso é inofensivo; para algo que registra
+  ouvintes no `window` ou publica um gancho global, nascem dois e o React usa
+  um — e a limpeza mora no efeito, que pertence ao que ficou. O órfão vaza
+  ouvintes, e o sintoma é pior que o vazamento: o gancho publicado no `window`
+  pode ser o **dele**, respondendo sobre um objeto que ninguém mais chama
+  (`debug()` reportando `calls: 0` para sempre enquanto o laço de quadro
+  resolvia normalmente — custou vinte minutos). Quem registra efeito colateral
+  nasce num `useEffect`, que o React emparelha; e estado de diagnóstico é de
+  **módulo**, não de instância. Ver `installCardPick` e o docblock dele.
+- **A câmera parada no eixo da câmara fica dentro do bando.** A reciclagem é
+  relativa à câmera (`uCameraZ + 2`), então uma pose de repouso no eixo tem
+  corpos **atravessando a lente**: um corpo emissivo a duas unidades é um borrão
+  claro do tamanho de meia tela. Na rota de case isso reprovou a varredura de
+  contraste em 3.47:1 com o resto do quadro em 0.01. Toda pose que fique parada
+  por mais de um instante sai do tubo (`FLOCK_TUBE_WIDE = 8.6`) — a de repouso do
+  case fica em `x = −10.2`, entre o tubo e a parede.
 - **`body` não pode ter `background`.** Quem pinta o fundo é o `html`. A ordem de
   pintura do CSS põe as camadas de z-index negativo **antes** do fundo dos
   descendentes em fluxo, então um `bg-void` no `body` pinta por cima do canvas da
@@ -1117,24 +1394,43 @@ preenchimento irredutível.
 
 Nesta ordem, porque cada uma depende da anterior:
 
-1. Os sete cases em `content/cases/` (e apagar o fixture). **Quatro já
-   migrados** — Decision Suite, ZOOMtecnologia, Prime8, Nestlé, todos com
-   `river_rank` provisório — ver "São sete cases no repositório" acima. Faltam os
-   três escritos do zero (Perfecting, WeCann Atena, Unifique Energia); só
-   depois deles o fixture sai.
-2. O conteúdo do rio e da Superfície em DOM — capas reais, placas de cota com
-   cliente/ano/estação, contato. **O manifesto já existe**
-   (`components/beats/AboutBeat.tsx`), e a **geometria** do rio também: o que
-   falta ali é conteúdo, não corredor. Com a capa real vêm três decisões que esta
-   rodada deixou explicitamente na mesa, todas com o número já medido ao lado:
-   o alvo do véu (5.16:1 medido contra um alvo de 5.5 — ver MEASUREMENTS.md, "A
-   legibilidade, com capa de card atrás do texto"; **não é o número de slots**,
-   que já foi verificado ao vivo e descartado como causa — nunca existiram mais
-   de três `[data-veil]` simultâneos contra um teto de quatro. O teto subiu para
-   oito mesmo assim, por outro motivo — ver `lib/scene/veil.ts` —, mas se isso
-   move o 5.16:1 ainda **não foi reconfirmado**, bloqueado nesta sessão pela
-   mesma aba-fora-do-primeiro-plano que também trava o banco de GPU), o
-   `accent` de cada card, e se `--coral` passa a acender nas esteiras do rio.
+1. **O corpo dos três cases placeholder** — Perfecting, WeCann Atena e Unifique
+   Energia existem em `content/cases/` com frontmatter real, curadoria e capa
+   gerada, e o que falta neles é o texto. O material de origem de Unifique é
+   `estudionakama.com.br/projetos/unifique-energia`; Perfecting e WeCann têm só
+   a linha do PROJECT.md §6, então precisam de briefing ou de mídia do Lucas.
+   Com o texto vêm as capas reais, e com elas o `generated: false`.
+
+   Ao lado, e independente: **`summary_en` dos quatro migrados é cópia literal
+   do português**, porque a rodada de migração foi só de PT. São 1.314 palavras
+   de corpo para dimensionar a tradução (ver a contagem acima), mais os sete
+   resumos. **A rota de case já entrega o idioma onde pode**: os `alt` das
+   imagens do corpo saem de `media[]` por idioma, e é o corpo do MDX e o
+   `summary_en` que continuam em português. `en` não é uma rota que alguém deva visitar de propósito até isso
+   ser resolvido.
+2. **As duas decisões de cor que o rio deixou na mesa.** Nenhuma bloqueia nada
+   e as duas têm número medido ao lado — a Superfície, que é o beat que falta de
+   verdade, está no item 5.
+
+   - **Duas capas leem como caixa de luz na câmara escura.** Prime8
+     (`poster-prime8.png`) e ZOOMtecnologia (`zoomtech-hero.jpg`) entregam
+     L = 0.286 e 0.236 depois do ganho da capa, contra ~0.03 das geradas e 0.059
+     da Decision Suite. Elas passam o contraste e o calor, e são as imagens que
+     o Lucas escolheu como capa — então trocá-las é curadoria, não conserto.
+     Existem alternativas reais mais escuras nos mesmos diretórios
+     (`prime8/fotocapa.png` a 0.063, `zoomtecnologia/ZOOMtech-home.jpg` a
+     0.032), e a régua para comparar é a luminância da imagem **recortada na
+     razão do card** — não a da imagem inteira, que é outra coisa.
+   - **`--coral` continua não acendendo no rio**, porque a janela de esteira da
+     rampa emissiva é ancorada ao corpo de prova, trinta unidades a jusante.
+     Estender o coral às esteiras dos cards é decisão de cor, e agora ela pode
+     ser tomada com capa de verdade atrás — o que a rodada anterior não podia.
+
+   **A capa da Nestlé já foi trocada, e essa não era curadoria: era bug.**
+   `capa.jpg` é uma tira de 3840×500 (7.68:1), e recortada para a razão do card
+   (1.96:1) sobrava o vermelho de fundo — um retângulo de cor chapada, que o
+   PROJECT.md §2 chama de cenário. Entrou `post2.jpg`, material migrado igual,
+   1.91:1 e escura. O motivo está no comentário do frontmatter.
 3. ~~O descolamento~~ — **feito e medido**, ver "O descolamento, medido". Sobrou
    dele **o tempo de GPU num iPhone**: o banco mede tempo de parede e por isso
    precisa de uma janela de navegador em primeiro plano no próprio aparelho. No
@@ -1176,15 +1472,13 @@ Nesta ordem, porque cada uma depende da anterior:
    critérios de aceite da Identidade e de Quem sou. É uma rodada inteira, e é a
    primeira coisa que o rio pede depois do conteúdo.
 
-   **Agendado: depois do Prompt 5B, antes do Prompt 6.** Não antes: os sete cases
-   ainda não existem em `content/cases/`, e a remedição da Identidade e de Quem
-   sou não ganha nada rodando contra o fixture `exemplo.mdx`. Não depois: o
-   Prompt 6 é o que quer que venha a seguir — hoje candidatos são a Superfície e
-   os filtros do rio —, e os dois herdariam uma densidade de bando que ainda vai
-   mudar. A remedição do **3B** (descolamento) e do **4** (Quem sou) entram no
-   mesmo lote do conserto, não depois dele: é a mesma correção de fonte de dados
-   invalidando os dois critérios de aceite ao mesmo tempo, então uma sessão só —
-   consertar, remedir os dois, atualizar as duas seções deste arquivo.
+   **Agendado: agora é a próxima coisa.** A condição que segurava — "os sete
+   cases ainda não existem" — caiu, e a travessia para o case também. A remedição
+   do **3B** (descolamento) e do **4** (Quem sou) entra no mesmo lote do conserto,
+   não depois dele: é a mesma correção de fonte de dados invalidando os dois
+   critérios de aceite ao mesmo tempo, então uma sessão só — consertar, remedir os
+   dois, atualizar as duas seções deste arquivo. **Antes da Superfície**, que
+   herdaria uma densidade de bando que ainda vai mudar.
 
    **E o próprio instrumento do rio herdou o problema.** A medição de largura
    projetada de `corridor()` (ver "O rio, medido") mostrou, nesta sessão, o mesmo
@@ -1213,7 +1507,14 @@ Nesta ordem, porque cada uma depende da anterior:
    mede cada quadro e cada linha de texto, e passou em quatro condições (ver "O
    véu de legibilidade"). O que falta dela é rodá-la na Superfície quando ela
    existir — **no rio ela já rodou**, e o resultado está em MEASUREMENTS.md, "A
-   legibilidade, com capa de card atrás do texto".
+   legibilidade, com capa de card atrás do texto". **Na rota de case também**,
+   em três condições: ver "A travessia para o case, medida".
+8. **A composição do case no modo calmo.** O `ComposedClock` corta entre cinco
+   composições fixas, uma por beat; a rota de case entra hoje pelo mesmo caminho
+   da travessia, com o corte instantâneo em vez do voo — que é o que o
+   DIRECTION.md §5 pede ("a troca é corte, não movimento de câmera") —, mas
+   ninguém **mediu** o quadro que ela produz. É uma pose a mais na tabela do §5,
+   e ela cabe na mesma sessão que gerar os posters do item 6.
 
 O item que era o sétimo — verificar a cena num iPhone contra o piso de 30 fps —
 **está feito**: 4.62 ms de GPU por quadro, 55.6 fps, ver "Desempenho da cena,
