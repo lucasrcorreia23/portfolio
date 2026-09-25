@@ -7,6 +7,12 @@ import {
 } from "three";
 import type { RiverCard } from "./river-content";
 import {
+  COVER_FIELD_GAIN,
+  COVER_GAIN_MAX,
+  COVER_GAIN_MIN,
+  COVER_SELF_TARGET,
+} from "./shaders/cards";
+import {
   COVER_LAYER_HEIGHT,
   COVER_LAYER_WIDTH,
   PLATE_LAYER_HEIGHT,
@@ -78,6 +84,12 @@ export type CardAtlas = {
    * `uCoverBlend` amortecido por quadro — este array é só o alvo.
    */
   readonly loaded: Float32Array;
+  /**
+   * A luz própria de cada capa (rodada 12): o ganho que leva a luminância
+   * média **desta** imagem a `COVER_SELF_TARGET` antes da névoa. Calculado uma
+   * vez, quando a camada chega; até lá vale o do campo procedural.
+   */
+  readonly gain: Float32Array;
   /**
    * `true` quando alguma camada mudou e a textura precisa subir de novo.
    *
@@ -202,6 +214,33 @@ function drawPlate(
   }
 }
 
+const SRGB_TO_LINEAR = new Float32Array(256).map((_, i) => {
+  const c = i / 255;
+  return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+});
+
+/**
+ * O ganho da luz própria de uma capa: `COVER_SELF_TARGET` sobre a luminância
+ * média **linear** da camada (já recortada na razão da capa), dentro da faixa.
+ * Um pixel em cada quatro, nas duas direções: é uma média, não uma imagem.
+ */
+function coverGain(pixels: Uint8ClampedArray): number {
+  let sum = 0;
+  let n = 0;
+  for (let y = 0; y < COVER_LAYER_HEIGHT; y += 4) {
+    for (let x = 0; x < COVER_LAYER_WIDTH; x += 4) {
+      const at = (y * COVER_LAYER_WIDTH + x) * 4;
+      sum +=
+        0.2126 * (SRGB_TO_LINEAR[pixels[at] ?? 0] ?? 0) +
+        0.7152 * (SRGB_TO_LINEAR[pixels[at + 1] ?? 0] ?? 0) +
+        0.0722 * (SRGB_TO_LINEAR[pixels[at + 2] ?? 0] ?? 0);
+      n += 1;
+    }
+  }
+  const mean = sum / Math.max(n, 1);
+  return Math.min(COVER_GAIN_MAX, Math.max(COVER_GAIN_MIN, COVER_SELF_TARGET / Math.max(mean, 1e-4)));
+}
+
 /**
  * Monta as duas texturas em camadas para a corrente montada.
  *
@@ -253,6 +292,7 @@ export function createCardAtlas(cards: readonly RiverCard[]): CardAtlas {
   plate.generateMipmaps = false;
 
   const loaded = new Float32Array(count);
+  const gain = new Float32Array(count).fill(COVER_FIELD_GAIN);
   let pending = true;
   let disposed = false;
 
@@ -328,6 +368,7 @@ export function createCardAtlas(cards: readonly RiverCard[]): CardAtlas {
         COVER_LAYER_HEIGHT,
       ).data;
       coverData.set(pixels, i * coverStride);
+      gain[i] = coverGain(pixels);
       loaded[i] = 1;
       pending = true;
     };
@@ -346,6 +387,7 @@ export function createCardAtlas(cards: readonly RiverCard[]): CardAtlas {
     cover,
     plate,
     loaded,
+    gain,
     consumePending: () => {
       if (!pending) return false;
       pending = false;

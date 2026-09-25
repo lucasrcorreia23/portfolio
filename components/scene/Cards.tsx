@@ -343,6 +343,9 @@ export function Cards({ shared, river }: CardsProps) {
         value: new Vector2(1 / PLATE_LAYER_WIDTH, 1 / PLATE_LAYER_HEIGHT),
       },
       uCoverBlend: { value: Array.from({ length: MAX_CARDS }, () => 0) },
+      // A luz própria de cada capa (rodada 12) — copiada do atlas por quadro,
+      // porque cada capa chega quando decodifica. Ver `COVER_SELF_TARGET`.
+      uCoverGain: { value: Array.from({ length: MAX_CARDS }, () => 1) },
       uHoverCard: { value: -1 },
       uHoverAmount: { value: 0 },
     };
@@ -488,7 +491,9 @@ export function Cards({ shared, river }: CardsProps) {
     // --- a travessia para a fotografia -----------------------------------
     atlas.consumePending();
     const blend = uniforms.uCoverBlend.value;
+    const gains = uniforms.uCoverGain.value;
     for (let i = 0; i < count; i += 1) {
+      gains[i] = atlas.gain[i] ?? 1;
       const target = atlas.loaded[i] ?? 0;
       const current = blend[i] ?? 0;
       if (current !== target) {

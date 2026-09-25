@@ -159,22 +159,55 @@ void main() {
  * As duas regras que a governam continuam valendo, e agora valem para a
  * fotografia também:
  *
- * 1. **Ela não pode passar do limiar de bloom — nem de L 0.2.** Desde a rodada
- *    9 a capa não tem ganho próprio: ela é **placa fosca**, albedo iluminado
- *    pelos aglomerados, com um teto de valor (ver `COVER_CEILING`). Uma capa
- *    que acende sozinha seria a segunda fonte de luz da câmara.
+ * 1. **Ela não pode virar caixa de luz.** Desde a rodada 12 a capa tem luz
+ *    própria baixa (ver `COVER_SELF_TARGET`) e um joelho de valor
+ *    (`COVER_KNEE`/`COVER_CEILING`): ela lê como imagem no escuro, não como
+ *    a segunda fonte de luz da câmara.
  * 2. **Ela não gasta o orçamento de calor.** `--rose` e `--coral` são eventos do
  *    bando (§2), então a rampa procedural fica no lado frio: `--void` →
  *    `--deep` → o tom do card, que é uma mistura de `--teal` e `--cyan`.
  */
 /**
- * O teto de valor da capa, em HDR linear, **antes** do tonemap.
+ * **A capa tem luz própria, baixa e constante** — rodada 12.
  *
- * O composite faz `1 − exp(−c · 1.15)`; para o pixel entregue ficar em L ≤ 0.2
- * a entrada precisa ficar em `−ln(0.8) / 1.15 ≈ 0.194`. A névoa e o grão vêm
- * depois e podem mexer na última casa — a sonda mede no quadro entregue.
+ * Da rodada 9 à 11 ela era placa fosca: albedo × (0.16 + 1.1 × luz dos
+ * aglomerados), com teto em L 0.2. O objetivo era a capa não virar caixa de
+ * luz branca, e ele foi cumprido ao preço de a capa sumir: medido na leitura
+ * (6.2 unidades, bando escondido), a média entregue ficava entre **0.003 e
+ * 0.054** — as três capas geradas praticamente pretas, as fotografias em um
+ * quarto do próprio valor. A névoa come ~40% na leitura, e o que sobrava era
+ * a luz do bando, que não está sempre lá.
+ *
+ * Agora a capa é uma impressão iluminada por trás, com pouco brilho: cada
+ * imagem é multiplicada por um **ganho próprio** (`coverGain`, calculado da
+ * luminância média dela quando a camada chega — `card-atlas.ts`), escolhido
+ * para a imagem chegar à névoa com média perto de `COVER_SELF_TARGET`. É
+ * linear por imagem, então a imagem continua sendo a imagem (a correlação
+ * com o original é o critério). Um ganho único não serviria: a capa do ZOOM
+ * tem L média 0.03 e a da Decision Suite 0.29 — o mesmo número apagaria uma
+ * ou estouraria a outra.
+ *
+ * O bando **soma** por cima (`COVER_FLOCK_GAIN`): perto dele a capa acende um
+ * pouco mais, longe dele ela continua lá.
  */
-export const COVER_CEILING = -Math.log(0.8) / 1.15;
+export const COVER_SELF_TARGET = 0.23;
+/** Faixa do ganho — nem uma capa escura vira farol, nem uma clara some. */
+export const COVER_GAIN_MIN = 0.4;
+export const COVER_GAIN_MAX = 16;
+/** O ganho do campo procedural enquanto a imagem não chega. */
+export const COVER_FIELD_GAIN = 1;
+/** Quanto a luz dos aglomerados soma por cima da luz própria. */
+const COVER_FLOCK_GAIN = 0.6;
+
+/**
+ * O joelho de valor da capa, em HDR linear, **antes** do tonemap.
+ *
+ * Só comprime o que passa de `COVER_KNEE`, e se aproxima de `COVER_CEILING`
+ * sem cruzá-lo: um fundo branco de site lê como claro e não estoura em caixa
+ * de luz. Abaixo do joelho a capa é linear — que é onde a média mora.
+ */
+const COVER_KNEE = 0.3;
+const COVER_CEILING = 0.6;
 
 const COVER_GLSL = /* glsl */ `
 vec3 coverField(vec2 uv, vec3 world, vec3 tone, float seed) {
@@ -245,6 +278,7 @@ uniform vec2 uPlateTexel;
  * uniforme é legal em GLSL ES 3.00 (ao contrário de um array de samplers).
  */
 uniform float uCoverBlend[${MAX_CARDS}];
+uniform float uCoverGain[${MAX_CARDS}];
 
 /**
  * A capa do card atracado, em resolução de entrega.
@@ -349,36 +383,36 @@ void main() {
   // ainda não chegou mas a imagem de entrega chegou, é ela que se vê.
   float shown = max(clamp(uCoverBlend[int(vIndex)], 0.0, 1.0), docked);
 
-  // **A capa é uma placa fosca vista através da névoa, não uma tela acesa.**
+  // **A capa é uma impressão iluminada por trás, com pouco brilho** (rodada
+  // 12). Luz própria constante, um ganho por imagem (uCoverGain, da luminância
+  // média dela), e o bando somando por cima quando passa perto. Da rodada 9 à
+  // 11 ela era placa fosca iluminada só pelo bando, e longe dele sumia: medido
+  // na leitura, 0.003 a 0.054 de luminância entregue. Ver COVER_SELF_TARGET.
   //
-  // Até a rodada 9 ela era a fotografia com um ganho fixo de 0.38 — uma tela
-  // rebaixada, que acendia sozinha. Medido na folha do rio: capturas de site
-  // brancas liam como caixas de luz na câmara escura, e em 0.708 uma placa
-  // quase branca ocupava o terço de baixo do quadro — o "branco de
-  // laboratório" que o DIRECTION.md §6 proíbe pelo nome. A regra agora é
-  // física: a capa é **albedo**, iluminado pelo que passa perto dela (os
-  // mesmos aglomerados que acendem as paredes) mais um ambiente baixo, e um
-  // teto de valor impede que ela seja a coisa mais clara do quadro. Uma
-  // captura branca vira material claro no escuro — papel sob luz fraca —, que é
-  // uma coisa que existe no mundo.
+  // O joelho de valor continua: uma captura de site branca lê como papel claro
+  // no escuro, não como caixa de luz — o branco de laboratório que o
+  // DIRECTION.md §6 proíbe.
   //
-  // **Na lente o teto sai.** A peça atracada **é** a imagem do case, e um <img>
-  // em DOM não tem luz nem teto: entregar uma placa fosca e trocar pela
-  // fotografia seria um degrau de luminância no quadro da troca. Então a peça
-  // atracada volta a ser a fotografia crua, pela mesma rampa do voo.
+  // **Na lente o joelho sai.** A peça atracada é a imagem do case, e um img em
+  // DOM não tem luz nem teto: entregar uma placa e trocar pela fotografia seria
+  // um degrau de luminância no quadro da troca. Então a peça atracada volta a
+  // ser a fotografia crua, pela mesma rampa do voo.
   //
   // **E as peças vizinhas apagam quando a cena vira fundo de leitura** (medido:
   // com elas acesas, uma capa cruzando uma linha do case derrubava o contraste
   // para 3.01:1).
   vec3 albedo = mix(field, shot, shown);
-  float coverLight = 0.16 + 1.1 * practicalLight(vWorld, vNormal, 0.3);
-  vec3 matte = albedo * coverLight * mix(1.0, 0.10, uCaseRecess);
+  float selfLight = mix(${COVER_FIELD_GAIN.toFixed(2)}, uCoverGain[int(vIndex)], shown);
+  float flockLight = ${COVER_FLOCK_GAIN.toFixed(2)} * practicalLight(vWorld, vNormal, 0.3);
+  vec3 matte = albedo * (selfLight + flockLight) * mix(1.0, 0.10, uCaseRecess);
   float matteLum = dot(matte, vec3(0.2126, 0.7152, 0.0722));
-  // Teto suave: abaixo dele a placa responde linear à luz; perto dele ela
-  // satura sem degrau.
-  matte *= matteLum > 1e-5
-    ? ${COVER_CEILING.toFixed(4)} * (1.0 - exp(-matteLum / ${COVER_CEILING.toFixed(4)})) / matteLum
-    : 1.0;
+  // O joelho: linear até COVER_KNEE, e dali dobrando para o teto sem degrau.
+  // A cor é escalada, não substituída — o matiz da imagem não muda.
+  if (matteLum > ${COVER_KNEE.toFixed(3)}) {
+    float room = ${(COVER_CEILING - COVER_KNEE).toFixed(3)};
+    float folded = ${COVER_KNEE.toFixed(3)} + room * (1.0 - exp(-(matteLum - ${COVER_KNEE.toFixed(3)}) / room));
+    matte *= folded / matteLum;
+  }
   field = mix(matte, shot, docked);
 
   // "Levemente recuada": a sombra do rebaixo, na borda de cima e na da
