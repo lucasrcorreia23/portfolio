@@ -157,13 +157,27 @@ vec3 applyFog(vec3 color, float viewDepth, vec3 worldPos) {
 
   float density = uFogDensity * pocket * (0.55 + 0.9 * n);
   float amount = 1.0 - exp(-density * max(viewDepth, 0.0));
+  // **O fundo da câmara é névoa, sempre** (rodada 12). A 90 unidades a névoa
+  // da Emergência ainda deixava passar ~7% da superfície: o plano do céu atrás
+  // da abertura, com o brilho fraco da fonte, saía mais claro que a parede
+  // escura em volta, e lia como um retângulo atrás da palavra — achado
+  // escondendo uma malha de cada vez. Além de ~40 unidades tudo vai saturando
+  // em névoa, e céu, parede do fundo e abertura ficam a mesma cor. Nada que a
+  // descida precise ler fica tão longe: a tomada de ar é vista de ~20, e o
+  // card lido, de 6.
+  amount = max(amount, smoothstep(40.0, 70.0, viewDepth));
   float depth01 = clamp(viewDepth / 88.0, 0.0, 1.0);
 
   vec3 fogColor = fogRamp(depth01);
-  // A luz da fonte só tinge o que está fundo o bastante na névoa para ser
-  // névoa: uma superfície perto continua com a cor dela, e uma letra na frente
-  // do brilho continua silhueta.
-  fogColor = mix(fogColor, uDeep, clamp(sourceHalo(worldPos) * smoothstep(0.22, 0.75, depth01), 0.0, 1.0));
+  // A luz da fonte tinge a névoa **pela direção, não pela profundidade**. A
+  // primeira versão pesava o halo por smoothstep(0.22, 0.75) da profundidade,
+  // e isso recriou a aresta que ele existia para apagar: a parede do fundo, a
+  // 88 unidades, pegava o halo cheio e as laterais, a 50–80, a metade — o
+  // retângulo da seção voltava, mais fraco (apontado pelo Lucas em 0.12). Só o
+  // que está muito perto da lente fica fora. Uma letra na frente do brilho
+  // continua silhueta porque a névoa dela é menor que a do fundo, não porque a
+  // cor da névoa muda.
+  fogColor = mix(fogColor, uDeep, clamp(sourceHalo(worldPos) * smoothstep(0.02, 0.12, depth01), 0.0, 1.0));
   // **A Superfície: a névoa lê quente no topo** (DIRECTION.md §5). Não é uma
   // cor nova na rampa, é a luz de fora espalhada pela névoa perto da tomada de
   // ar: um volume de --peach em volta da abertura, amostrado no trecho do raio

@@ -389,7 +389,11 @@ void main() {
   // DIRECTION.md §5 deixa florescer.
   float up = smoothstep(-4.0, 7.0, vWorld.y);
   vec3 sky = uPeach * (1.3 + 1.6 * up) * (0.85 + 0.3 * broken);
-  vec3 color = mix(glow, sky, uOutside);
+  // **Na descida o plano não tem luz própria** (rodada 12): o brilho da fonte
+  // mora na névoa agora (sourceHalo, em shaders/fog.ts), e um plano aceso a
+  // cem unidades atrás da abertura lia como um retângulo atrás da palavra da
+  // Emergência. O glow fica calculado só para a Superfície não mudar.
+  vec3 color = mix(glow * 0.0, sky, uOutside);
   color = applyFog(color, vViewDepth, vWorld);
 
   fragColor = vec4(color, 1.0);
