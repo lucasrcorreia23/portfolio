@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import Script from "next/script";
 import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Hud } from "@/components/hud/Hud";
@@ -50,6 +51,22 @@ export async function generateMetadata({
   };
 }
 
+/**
+ * A rolagem de um reload **na home** volta ao topo, antes da hidratação.
+ *
+ * O navegador restaura a posição de um reload, e na home isso abriria o site
+ * no meio da descida com o portão por cima. O script morava no `Gate`, e saiu
+ * de lá porque um `<script>` dentro de um componente não roda quando o
+ * componente monta por navegação de cliente (ver o docblock de
+ * `components/gate/Gate.tsx`). Aqui ele roda uma vez, no carregamento.
+ *
+ * **Só na home.** `beforeInteractive` roda em qualquer rota carregada pelo
+ * servidor, e um reload no meio de um case ou do acervo deve continuar onde
+ * estava. A home é `/` (inglês, sem prefixo) ou `/pt` — `localePrefix:
+ * "as-needed"`, em `lib/i18n/config.ts`.
+ */
+const RESTORE_SCRIPT = `try{var p=location.pathname;if(p==="/"||p==="/pt"||p==="/pt/"){if("scrollRestoration" in history){history.scrollRestoration="manual"}window.scrollTo(0,0)}}catch(e){}`;
+
 export default async function LocaleLayout({
   children,
   params,
@@ -81,6 +98,9 @@ export default async function LocaleLayout({
           enquanto a camada era só uma div da mesma cor, e total no instante em
           que ela virou a câmara. */}
       <body className="text-mist">
+        <Script id="restore-scroll" strategy="beforeInteractive">
+          {RESTORE_SCRIPT}
+        </Script>
         <ScrollProvider>
           <Hud />
           {children}

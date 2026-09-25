@@ -2,10 +2,29 @@
 
 import { useRef } from "react";
 import { Canvas } from "@react-three/fiber";
+import { setConsoleFunction } from "three";
 import type { RiverCard } from "@/lib/scene/river-content";
 import { sceneSettings } from "@/lib/scene/settings";
 import { CAMERA_FOV } from "@/lib/scene/world";
 import { SceneWorld } from "./SceneWorld";
+
+/**
+ * **Um aviso do three, e um só, sai do console.** O R3F 9 cria um
+ * `THREE.Clock` no próprio store de cada raiz, e o three 0.185 marca a classe
+ * como obsoleta com um `warn` no construtor. Não há o que fazer do lado de cá:
+ * o relógio é do R3F, e é ele que o `SceneClock` avança (ver "Duas armadilhas
+ * do R3F" no AGENTS.md). O critério da rodada 12 é console limpo em dev, então
+ * a mensagem é descartada **pelo texto exato** e toda outra saída do three
+ * passa inalterada. Sai daqui no dia em que o R3F trocar o `Clock` pelo
+ * `Timer`.
+ */
+const R3F_CLOCK_NOTICE = "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.";
+setConsoleFunction((type: string, message: string, ...params: unknown[]) => {
+  if (type === "warn" && message === R3F_CLOCK_NOTICE) return;
+  if (type === "error") console.error(message, ...params);
+  else if (type === "warn") console.warn(message, ...params);
+  else console.log(message, ...params);
+});
 
 export type SceneProps = {
   /** A string do corpo de prova (`identity.specimen`), traduzida no servidor. */

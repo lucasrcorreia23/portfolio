@@ -15,30 +15,26 @@ import { GateOverlay } from "./GateOverlay";
  */
 
 /**
- * A trava da descida **não está mais aqui**, e a mudança tem uma razão só.
+ * A trava da descida **não está mais aqui**, e o script de restauração também
+ * não. Os dois saíram por motivos diferentes.
  *
- * Este script escrevia `data-gate="closed"` no `<html>` durante o parse, antes
- * da hidratação — e portanto num atributo que a marcação do servidor não tinha.
- * O React comparava os dois e acusava divergência de hidratação em toda visita.
+ * A trava escrevia `data-gate="closed"` no `<html>` durante o parse, e o React
+ * acusava divergência de hidratação em toda visita. Ela virou uma regra de CSS
+ * ancorada no `data-gate-phase` do próprio overlay (`styles/globals.css`), que
+ * vem no HTML do servidor.
  *
- * A trava continua valendo desde o primeiro paint, e agora sem script nenhum:
- * ela é uma regra de CSS ancorada no `data-gate-phase` do próprio overlay
- * (`styles/globals.css`), que **vem no HTML do servidor**. Servidor e cliente
- * concordam porque estão olhando o mesmo elemento, e a trava sai sozinha quando
- * a fase muda no clique.
- *
- * O que sobra de imperativo tem que ser imperativo: `scrollRestoration` e o
- * `scrollTo` não são atributos renderizados, não entram na comparação de
- * hidratação, e precisam rodar antes do primeiro paint — senão o navegador
- * restaura a posição de um reload e o site abre no meio da descida com o portão
- * por cima.
+ * O script de `scrollRestoration` (rodada 12) saiu porque um `<script>` dentro
+ * de um componente só roda no HTML do servidor: quando o portão monta por
+ * navegação de cliente — voltar de um case, o link do acervo, a troca de
+ * idioma — o React **cria** o elemento, não o executa, e o Next 16 acusa
+ * "Encountered a script tag while rendering React component". Ele mora agora
+ * no layout raiz como `next/script` `beforeInteractive` (`RESTORE_SCRIPT`, em
+ * `app/[locale]/layout.tsx`), e confere o caminho da home ele mesmo.
  *
  * Sem JavaScript nada disso roda, e aí o `<noscript>` abaixo tira o portão do
  * caminho: todo o conteúdo textual já está no DOM (PROJECT.md §5), então o
  * site sem JS é o site sem cena, não um site trancado.
  */
-const LOCK_SCRIPT = `try{if("scrollRestoration" in history){history.scrollRestoration="manual"}window.scrollTo(0,0)}catch(e){}`;
-
 const NOSCRIPT_STYLE = `<style>[data-gate-overlay]{display:none}</style>`;
 
 export async function Gate() {
@@ -46,7 +42,6 @@ export async function Gate() {
 
   return (
     <>
-      <script dangerouslySetInnerHTML={{ __html: LOCK_SCRIPT }} />
       <noscript dangerouslySetInnerHTML={{ __html: NOSCRIPT_STYLE }} />
       <GateOverlay
         label={t("gate.label")}
