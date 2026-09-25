@@ -63,6 +63,19 @@ import { formatLevel, formatVelocity } from "./readout";
 
 type GatePhase = "loading" | "ready" | "opening" | "gone";
 
+/**
+ * **O portão se atravessa uma vez por carga da página** (rodada 12).
+ *
+ * Ele mora na home, então voltar de um case para o rio — o `← RIO`, o clique
+ * fora da coluna, o `Esc`, o botão voltar — remonta o `Gate` por navegação de
+ * cliente. Sem esta marca ele nascia de novo em `loading`, trancava a descida
+ * atrás da veneziana e pedia o clique de entrada outra vez: o progresso voltava
+ * exato (Δ 0.00000) para um rio que ninguém via. Medido por CDP, igual antes da
+ * rodada. Estado de módulo, e não `sessionStorage`: um reload **é** uma chegada
+ * nova, e o portão volta — é o beat "pré" da descida.
+ */
+let crossed = false;
+
 type GateOverlayProps = {
   /** Nome acessível do portão inteiro. */
   label: string;
@@ -188,8 +201,10 @@ export function GateOverlay({
 }: GateOverlayProps) {
   const reducedMotion = useReducedMotion();
 
-  const [phase, setPhaseState] = useState<GatePhase>("loading");
-  const phaseRef = useRef<GatePhase>("loading");
+  const [phase, setPhaseState] = useState<GatePhase>(() =>
+    crossed ? "gone" : "loading",
+  );
+  const phaseRef = useRef<GatePhase>(crossed ? "gone" : "loading");
 
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -245,7 +260,13 @@ export function GateOverlay({
       window.scrollTo(0, 0);
     }
     return () => {
-      if (root.getAttribute("data-gate") === "closed") {
+      // **E `opening` também** (rodada 12). Quem entra e clica num card antes
+      // de a veneziana terminar (1.45 s) desmonta o portão no meio da abertura;
+      // sem isto o `<html>` ficava em `opening` para sempre, e a regra que
+      // esconde a HUD e a descida atrás das frestas escondia o case inteiro —
+      // artigo e HUD em `visibility: hidden`, reproduzido por CDP.
+      const gate = root.getAttribute("data-gate");
+      if (gate === "closed" || gate === "opening") {
         root.removeAttribute("data-gate");
       }
     };
@@ -557,6 +578,7 @@ export function GateOverlay({
   const open = useCallback(() => {
     if (phaseRef.current !== "ready") return;
     phaseRef.current = "opening";
+    crossed = true;
 
     // 1. O áudio destrava. Precisa ser síncrono: um `await` antes daqui já
     //    perde o gesto do usuário em alguns navegadores.
