@@ -186,6 +186,8 @@ para ter bloom, profundidade de campo, grão e aberração cromática. O composi
 escrito à mão entrega os quatro em ~200 linhas de GLSL
 (`lib/scene/shaders/post.ts` + `components/scene/Composer.tsx`), e com ele o
 chunk da cena fechou em **284 kB comprimidos** contra o teto de 350.
+A aberração cromática saiu depois, na rodada 12: deslocar canais é separação
+RGB, que a §2 veta pelo nome.
 
 **A consequência é permanente: nenhum efeito de biblioteca entra depois sem
 reabrir esta conta.** Os 66 kB entre 284 e 350 são a folga de tudo que a cena

@@ -1785,6 +1785,154 @@ que falta", item 3.
 Rota inicial 186.6 kB (home) e 184.9 kB (case) de 200; chunk da cena 325.9 kB
 de 350. Nenhuma instrumentação vazou, incluindo `__calm`.
 
+## Rodada 12, medida
+
+Oito defeitos de imersão. Bancada: Chrome 153 próprio por CDP
+(`scripts/cdp.mjs`), 1440×900 emulado, DPR 1, `?probe=1`, e `?grain=0` onde a
+medição compara quadros. As funções novas moram em `lib/scene/probe-round12.ts`.
+Folhas: `.screens/12-descida.png`, `12-capas.png`, `12-emergencia.png`,
+`12-case-saida.png` (`screencapture -C`, cursor do sistema), `12-placa.png`.
+
+**A lição de método da rodada, duas vezes:** uma causa escrita no roteiro
+precisa ser conferida **no pixel**, não na conta. A leitura analítica derrubou
+a causa 6 ("a abertura está a 105 unidades, a névoa a apaga"); escondendo uma
+malha de cada vez, o retângulo era exatamente o plano atrás da abertura. E o
+primeiro conserto da névoa recriou a aresta por outro caminho — só a
+reclamação do Lucas sobre 0.12 e o mesmo isolamento acharam.
+
+### 1. Console
+
+Roteiro por CDP: `/`, `/pt`, case, acervo, e as navegações case→home,
+acervo→case, card→case, voltar do navegador e troca de idioma. **0 erro, 0
+aviso** (com clique de entrada real; um `el.click()` sintético no portão gera o
+aviso de `AudioContext` do próprio Chrome, que não é gesto). O único aviso do
+three era o `THREE.Clock` do store do R3F, descartado pelo texto exato.
+
+### 2. Saídas do case
+
+Entrando pelo link do card em progresso 0.620011:
+
+| saída | depois | Δ | chega em |
+|---|---|---|---|
+| `← RIO` | 0.620011 | **0.00000** | `/pt`, portão aberto, descida visível |
+| clique fora (1376, 450) | 0.620011 | **0.00000** | idem |
+| `Esc` | 0.620011 | **0.00000** | idem |
+| voltar do navegador | 0.620011 | **0.00000** | idem |
+
+Cursor no vazio: `data-case-exit="on"`, `cursor: pointer`. Clique em imagem,
+texto e no vão entre parágrafos: fica no case. **Antes do conserto do portão,
+as quatro davam Δ 0 atrás da veneziana fechada** — o portão remontava em
+`loading` (igual no estado anterior à rodada).
+
+### 3. Capas
+
+Cada card no progresso de leitura, bando escondido, grade de 96×48 pontos na
+capa projetados no pixel entregue, contra a luminância da camada do atlas:
+
+| | L média entregue | correlação r |
+|---|---|---|
+| antes (mesma leitura a 6.2 u) | 0.003–0.054 | 0.90–1.00 |
+| depois, com a luz do bando | **0.115–0.132** | **0.922–0.972** |
+| depois, luz do bando zerada | **0.114–0.130** | **0.922–0.972** |
+
+Critério 0.08–0.25 e r ≥ 0.8 ✅. O ganho sai da luminância média linear da
+camada (`COVER_SELF_TARGET` 0.23, faixa 0.4–16); as capas geradas batem no
+teto, as fotografias ficam entre 0.7 e 1.1.
+
+### 4. Ocupação do card na leitura
+
+A causa real dos ~85% era a **passagem** (câmera a 1.5 u das peças; Prime8 a
+74–97% em 0.72–0.74); na leitura antiga, a 14 u, o card ocupava 17–23%.
+Depois: diferença de pixel com a peça mascarada, mesmo instante (`hold`):
+
+| card | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
+|---|---|---|---|---|---|---|---|
+| visível (com a borda da DOF) | 0.511 | 0.501 | 0.480 | 0.526 | 0.512 | 0.522 | 0.516 |
+| projeção | 0.481 | 0.479 | 0.479 | 0.481 | 0.482 | 0.481 | 0.479 |
+
+Centro 0.49–0.51, profundidade 6.2. Pico visível numa passagem, simulado: 0.63.
+
+### 5. Corpos
+
+Só o bando desenha, um corpo em 64 (`#define PROBE_SUBSET`), componentes
+conexas acima de L 0.03, diagonal da caixa em px de CSS, 201 quadros de 0 a 1:
+
+| | pegada máxima | núcleo (meia altura) |
+|---|---|---|
+| antes | **167.2 px** (0.4625, poleiro) | — |
+| depois | 6.7 px (0.33) | **5.8 px** (0.365) |
+| depois, poleiro com 1/1024 | 5.0–5.8 px | 5.7 |
+
+Os 6.4–7.2 px da amostra de 1/64 no poleiro são dois corpos sobrepostos ou a
+cauda de bloom de um corpo denso (núcleo 4.1–4.2); com amostras mais esparsas o
+pico cai. Por beat (pegada/núcleo): Emergência 2.2/2.2, Identidade 5.0/4.5,
+Quem sou 6.7/5.8, rio 6.4/5.0, Superfície 4.5/3.6.
+
+**A onda da rodada 8 não se reproduz, antes nem depois.** Reconstruído o
+método ("dispersão da contagem de pixels de corpo entre 24 faixas, 120 quadros
+em 0.24") e acrescentado um controle de verdade (`PROBE_NO_WAVE`, a frente de
+pressão compilada fora):
+
+| | dispersão média | amplitude | desvio no tempo | luz por faixa no tempo |
+|---|---|---|---|---|
+| antes, onda ligada (2 rodadas) | 0.161 / 0.283 | 0.060 / 0.058 | 0.013 / 0.015 | 0.151 / 0.190 |
+| antes, onda desligada | 0.252 / 0.194 | 0.084 / 0.104 | 0.018 / 0.026 | 0.242 / 0.147 |
+| depois, onda ligada | 0.510 / 0.404 | 0.175 / 0.317 | 0.033 / 0.093 | 0.215 / 0.214 |
+| depois, onda desligada | 0.458 / 0.323 | 0.336 / 0.170 | 0.099 / 0.043 | 0.210 / 0.211 |
+
+Ligada e desligada não se separam, e duas rodadas da mesma condição
+discordam mais que as condições entre si. O 0.315 da rodada 8 não é
+reproduzível pelo método escrito; a onda existe na simulação, que esta rodada
+não tocou.
+
+### 6. Emergência
+
+Isolamento por malha (`__probe.objects()`/`objectVisible`), 0.00–0.12 e
+0.11–0.20: o retângulo interno era o plano do céu (a ~110 u a rampa saturava em
+`--deep`; depois, o brilho próprio dele passando ~7% pela névoa); o externo, a
+seção da câmara desenhada pela cor da névoa por profundidade; os blocos sobre
+"EIA", os cards do rio contra o céu. Depois: sem aresta reta em 0.00–0.12,
+inclusive com contraste esticado; "CORREIA" inteira com a mesma névoa.
+
+### 7. Faces chapadas
+
+Face à vista = quadro normal contra o quadro com as superfícies pretas antes da
+névoa (`PROBE_BLACK`); bloco chapado = desvio de L abaixo do limiar em 16×16 px;
+maior região conexa; 101 quadros de 0 a 1:
+
+| limiar | antes | depois |
+|---|---|---|
+| 0.0008 | 0.586 (0.31) | 0.107 (0.31) |
+| 0.0015 | 0.612 (0.31) | 0.148 (0.86) → 0.133 (0.78) com a névoa final |
+| 0.003 | 0.642 (0.31) | 0.107 (0.31) |
+
+### 8. Placa
+
+Placa do WeCann na leitura: pixels com dominante quente **2.2% → 0**.
+
+### Regressões
+
+| | resultado |
+|---|---|
+| contraste, descida pt, 0.6 vh/s | 5.84 / 5.68 / 5.68 / 5.69 / 5.67 por beat (rio: 5.34 → 5.69) |
+| contraste, descida **en** (cookie `NEXT_LOCALE`, `lang` conferido) | idem |
+| contraste no case (linhas, 0.6 vh/s) | Decision Suite 5.95 (pt e en), Prime8 10.76 |
+| costura da travessia | **0.0024 px**, 0 quadros de buraco, 3 cases |
+| pacote | 188.0 / 187.0 kB de 200; cena 329.5 de 350 |
+| GPU | ver abaixo |
+
+**A costura saiu 13.808 px primeiro, e era o instrumento.** O `case-trace`
+projetava com `window.innerWidth`, e este Chrome tem barra de rolagem clássica
+de 15 px que o canvas não tem. Medido igual na build do estado anterior à
+rodada (worktree em `c190103`), o que prova que não era a cena.
+
+**GPU, no buffer nativo (2160×1350, DPR 2 emulado), plano `descent`, build de
+produção:** o cronômetro de query saturou em **4.1× o teto físico** numa tela
+de 75 Hz, e dá 11–15 ms tanto antes quanto depois — mede o vsync. O que
+sobra é o teto: quadro mediano **13.3–13.4 ms** (75 fps) em todas as faixas,
+p95 ~26.7 ms (um quadro perdido), **igual no estado anterior**. A fração de GPU
+dos 16.7 ms não foi medida.
+
 ## Desempenho da cena, medido
 
 Varredura sintética de 0.00 a 0.28, passo de relógio fixo em 1/60 s, DPR travado

@@ -85,6 +85,19 @@ dois divergirem, o `PROJECT.md` ganha. Este arquivo é só o mapa do código.
 
 ## Estado atual
 
+**A rodada 12 corrigiu oito defeitos de imersão, sem mudar o estilo.** Ver
+MEASUREMENTS.md, "Rodada 12, medida", para os números. Em uma linha cada:
+o script do portão saiu do componente (`next/script` no layout) e o console
+está limpo; o case sai pelo clique no vazio e pelo `Esc` (`CaseExit`); as capas
+têm luz própria (um ganho por imagem); cada card é lido de perto, com uma
+parada da curva por card (`riverStops()`); os corpos têm teto de tamanho na
+tela e brilho por densidade; a névoa não desenha mais a seção da câmara (o
+`--deep` virou halo da fonte, por direção); a câmera não atravessa mais a
+palavra no fim da Identidade; e a placa perdeu a franja (bisel acromático, sem
+aberração cromática). Fora da lista, e achado medindo as saídas do case: o
+portão reabria ao voltar para o rio, e ficava em `opening` se desmontado no
+meio da abertura — os dois consertados em `GateOverlay`.
+
 **A descida existe de ponta a ponta (rodada 11).** A Superfície fecha 0.85–1.00:
 a câmera vira do último card para a tomada de ar — aletas verticais na
 abertura, a luz de fora entrando em lâminas pela névoa, a cota ±00.000 gravada
@@ -231,7 +244,8 @@ Verificado no `node_modules`, não estimado: o pacote exporta um barril só
 descartá-lo com segurança — são ~50 kB comprimidos de SSAO que esta cena nunca
 usa, mais ~110 kB do `postprocessing` inteiro. O compositor próprio
 (`lib/scene/shaders/post.ts` + `components/scene/Composer.tsx`) entrega bloom,
-grão, aberração e DOF em ~200 linhas, e o chunk da cena fechou em **284 kB gz**.
+grão e DOF em ~200 linhas (a aberração cromática saiu na rodada 12 — separação
+de canal, vetada pelo PROJECT.md §2), e o chunk da cena fechou em **284 kB gz**.
 
 **Nenhum efeito de biblioteca entra depois sem reabrir essa conta** (PROJECT.md
 §5). Os 66 kB de folga entre 284 e 350 são o espaço do que a cena ainda vai
@@ -282,7 +296,9 @@ app/[locale]/(scene)/  o grupo que **é dono da cena**: home + /work/[slug]
 app/[locale]/(archive)/ o acervo, deliberadamente fora dele — /work sem 3D
 components/gate/       o preloader e o portão de entrada (o beat "pré")
 components/scene/      a cena 3D e o portão que escolhe qual versão roda
-components/work/       o DOM da rota de case: chegada e volta ao rio
+components/work/       o DOM da rota de case: chegada e volta ao rio (o `← RIO`,
+                       e `CaseExit`: clique no vazio e `Esc`; a escolha de
+                       histórico mora em `lib/work/leave-case.ts`)
 components/hud/        a HUD lateral fixa (substitui o rodapé; não há rodapé)
                        Hud (servidor) → HudPanel (colapso no mobile) → régua,
                        leitura por beat, filtros do rio, idioma, acervo
@@ -377,8 +393,13 @@ Estado medido, com o portão, a HUD e a cena dos quatro primeiros beats:
 |---|---|---|
 | `/` e `/pt` — a descida, com portão, preloader, HUD, os links dos cards, o controle de áudio, a Superfície e o poster sem WebGL | **186.6 kB** | 200 kB ✅ |
 | `/work/[slug]` — o case, sem portão, **com a cena em chunk dinâmico** | **184.9 kB** | 200 kB ✅ |
-| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, campo de distância, descolamento, poleiro, véu medido, o corredor do rio, o conteúdo dele e **a travessia para o case** e **a câmara** (planta, loft, quadros, gravação, números) e **a Superfície** (aletas, soleira, lâminas de luz, saída do bando) | **325.9 kB** | 350 kB ✅ |
+| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, campo de distância, descolamento, poleiro, véu medido, o corredor do rio, o conteúdo dele e **a travessia para o case** e **a câmara** (planta, loft, quadros, gravação, números) e **a Superfície** (aletas, soleira, lâminas de luz, saída do bando) | **329.5 kB** | 350 kB ✅ |
 | chunk do driver de scroll (gsap + ScrollTrigger + lenis) | 48.0 kB | fora da rota inicial |
+
+**Rodada 12.** 188.0 kB na home (+1.4: o `next/script` do layout), 187.0 kB no
+case (+2.1: `CaseExit` e `leaveCase`) e **329.5 kB** no chunk da cena (+3.6: o
+ganho das capas, o teto dos corpos, o halo da névoa, o campo próximo da DOF).
+Sobram 20.5 kB do teto da cena.
 
 **Rodadas 10 e 11.** O som custou 0.9 kB na rota inicial (o controle e os dois
 stores; o leito é um `import()` depois do gesto, num chunk à parte) e 0.2 kB no
@@ -579,6 +600,12 @@ e as revelações de texto. Isso é literal no código.
   `{ steps: N }` devolve também o valor quantizado como estado, para quem
   precisa desenhar (a régua da HUD usa 100 degraus).
 
+**A exceção declarada: a deriva da Emergência** (rodada 12, `SceneWorld`). Com
+a câmera parada no eixo, qualquer borda ficava imóvel na tela como moldura; até
+0.11 a pose ganha uma deriva de ~0.2 unidade que corre no **tempo**, não no
+progresso — do mesmo tipo do bando, que também anda sem scroll. Não existe no
+modo calmo.
+
 `velocity` existe no store como leitura de HUD e **não dirige nada**. A regra
 da variável única continua valendo.
 
@@ -641,6 +668,8 @@ lib/scene/probe.ts         a sonda de medição (`?probe=1`, só em dev)
 lib/scene/probe-contrast.ts a varredura de contraste e a conferência do véu
 lib/scene/probe-measure.ts as quatro medidas de aceite e seus controles
 lib/scene/probe-cards.ts   a separação em profundidade e a esteira por card
+lib/scene/probe-round12.ts ocupação na leitura, capas, corpo, onda, faces
+                           chapadas e placa — as medições da rodada 12
 lib/scene/curve.ts         a coreografia: câmera, ângulo de ataque, abertura,
                            névoa, fonte a montante, esteiras do rio
 lib/scene/chamber-plan.ts  a planta da câmara: seção por z, quadros, nichos,
@@ -691,6 +720,13 @@ retângulo preto para sempre — daí o cão de guarda de 500 ms no `SceneClock`
 não existe.
 
 #### O bando
+
+**Nenhum corpo passa de ~6 px na tela** (rodada 12): o teto é por eixo, em px de
+CSS (`BODY_MAX_PX` = 3.5 de comprimento, `BODY_MAX_WIDTH_PX` = 2 de largura), com
+o fator (1 + tan²) de fora do eixo, e `uFocalPx` vem do `Flock` a cada quadro.
+Encolher o corpo inteiro por um fator só deixava um fio sub-pixel e o bando
+sumia. Perto da lente ele encolhe e apaga (`BODY_NEAR_GONE`/`FULL`). Depois de
+formado, o isolado brilha 0.2 e o aglomerado até 1.75.
 
 FBO ping-pong, RGBA32F, `NearestFilter` **explícito nos dois filtros** — o padrão
 de `minFilter` é linear, filtrar float exige `OES_texture_float_linear`, e o
@@ -827,6 +863,12 @@ quase não aparecer.
 
 #### O rio, medido
 
+> **Rodada 12: a leitura é de perto.** As paradas de 0.45 a 0.85 são geradas da
+> corrente deste aparelho (`riverStops()` em `curve.ts`), uma por card, à
+> distância em que ele ocupa `READING_FILL` = 0.48 da largura (6.2 unidades num
+> 16:10, até 16 num telefone em pé). `stationProgress` é o `at` dessa parada.
+> Os números abaixo, de largura projetada entre vizinhos, são da curva antiga.
+
 O beat de 0.45 a 0.85. Sete cards, esteira própria por SDF analítico, critério
 de aceite (largura projetada por perspectiva, oclusão entre peças, esteira
 fechando contra o controle), custo de GPU e a medição de que o pior contraste
@@ -905,6 +947,12 @@ Mexer numa medida da câmara é mexer num lugar só.
 - **A fonte do fundo é a abertura, não a parede.** A luz a montante tem termo de
   incidência (com raspão só a mais de ~10 unidades da abertura). Sem ele a
   parede do fundo, coplanar à abertura, saía mais clara que a própria fonte.
+- **A cor da névoa não depende da profundidade** além de ~14 unidades (rodada
+  12): o `--deep` é o halo da fonte, **pela direção do raio** (`sourceHalo`), e
+  além de 40–70 unidades tudo satura em névoa. Pesar o halo pela profundidade,
+  ou deixar uma superfície distante passar alguns por cento da própria cor,
+  redesenha as seções da câmara como retângulos concêntricos — aconteceu duas
+  vezes nesta rodada. O plano do céu não tem luz própria na descida.
 - **Bolsões de névoa** (`fogPocket`, em `shaders/fog.ts`) são fixos em z e
   amostrados ao longo do raio, não só no ponto: um bolsão entre a câmera e a
   parede vela a parede, um atrás dela não.
@@ -926,7 +974,7 @@ O rosa do bando depende de **densidade e** proximidade da aresta de ataque de
 uma peça (`nearLeadingEdge`, em `shaders/body.ts`, lendo `uCards`). Sem a
 segunda condição, qualquer aglomerado denso virava rosa e o teto de 15% caía.
 
-#### O desfoque não pode riscar
+#### O desfoque não pode riscar, nem virar quadrado
 
 A profundidade de campo é separável, em meia resolução. Com poucas amostras e
 passo largo, um corpo pequeno e claro vira um pente de riscas — lia como grade
@@ -934,13 +982,32 @@ no portão. Por isso o núcleo tem **dez** amostras com deslocamento por pixel
 (`DOF_FRAG`), e a abertura máxima é **0.5** (`APERTURE_WIDE`). Subir qualquer um
 dos dois é refazer a folha do portão.
 
-#### A capa é placa fosca
+**A gaussiana é truncada em ~3σ** (rodada 12): com σ de cinco amostras ela
+parava em exp(−2), e o produto de duas passadas separáveis de uma gaussiana
+cortada é um quadrado — todo corpo claro desfocado virava caixa. σ = 3.13 e
+passo 13.4, mesmo raio.
 
-Desde a rodada 9 a capa não tem ganho próprio: albedo × luz dos aglomerados, com
-teto suave `COVER_CEILING` (`shaders/cards.ts`). **Na peça atracada o teto sai** —
-a entrega ao `<img>` do case precisa dos mesmos bytes, sem luz nem teto; é a
-rampa `docked` que faz a troca. Mexer nesse `mix` é mexer na costura da
-travessia.
+**O campo próximo desfoca sempre** (`cocAt`, menos de 2.5 unidades), com a
+abertura em zero inclusive; por isso as passadas rodam sempre que a DOF está
+ligada, e não só com abertura > 0. Dentro do case ele sai junto com o resto
+(`uNearBlur = 1 − caseRecess`).
+
+#### A capa tem luz própria
+
+Da rodada 9 à 11 a capa era placa fosca iluminada só pelo bando, e longe dele
+sumia (0.003 a 0.054 de L entregue na leitura). Desde a rodada 12 ela é uma
+impressão iluminada por trás: `uCoverGain[i]`, calculado em `card-atlas.ts` da
+luminância média **linear** da camada quando ela chega, leva a imagem a
+`COVER_SELF_TARGET` antes da névoa; o bando soma por cima; um joelho alto
+(`COVER_KNEE` → `COVER_CEILING`) segura fundos brancos. **É um ganho por
+imagem**, e é de propósito: a capa do ZOOM tem L média 0.03 e a da Decision
+Suite 0.29. **Na peça atracada tudo isso sai** — a entrega ao `<img>` do case
+precisa dos mesmos bytes; é a rampa `docked` que faz a troca. Mexer nesse `mix`
+é mexer na costura da travessia.
+
+A tinta e o bisel da placa são **acromáticos**: somar mist→cyan de um lado do
+traço e subtraí-lo do outro pintava franja vermelha e ciano, que lia como
+separação de canais.
 
 #### A Superfície
 
@@ -1079,11 +1146,20 @@ eventos), e a abertura vira o corte de 120 ms — que é a única coisa do port�
 que esmaece.
 
 **`data-gate` no `<html>` é o contrato**, e vale para CSS e para teste:
-`closed` (trava `overflow: hidden`), `opening`, `open`. Ele é escrito no parse
-por um script inline, e não na hidratação — senão a página rola por trás de um
-portão opaco e um reload restaura a posição no meio da descida. Sem JS o
-script não roda e o `<noscript>` esconde o portão: o site sem JS é o site sem
-cena, não um site trancado.
+`closed` (trava `overflow: hidden`), `opening`, `open`. Quem o escreve é o
+`GateOverlay`; a trava do primeiro paint é CSS sobre o `data-gate-phase` do
+overlay, e o `scrollRestoration` de um reload na home é um `next/script`
+`beforeInteractive` no layout raiz (`RESTORE_SCRIPT`), porque um `<script>`
+dentro de um componente não roda quando ele monta por navegação de cliente.
+Sem JS o `<noscript>` esconde o portão: o site sem JS é o site sem cena, não um
+site trancado.
+
+**O portão se atravessa uma vez por carga da página** (`crossed`, estado de
+módulo): voltar de um case para o rio remonta o `Gate` por navegação de
+cliente, e ele nascia fechado — o rio voltava ao progresso exato atrás da
+veneziana. E a limpeza apaga `opening` além de `closed`: quem clica num card
+antes de a veneziana terminar desmontava o portão no meio da abertura, e o case
+ficava em `visibility: hidden` para sempre.
 
 **O clique faz três coisas no mesmo handler, síncronas** — destrava o áudio,
 libera a descida e dispara a veneziana. O `unlockAudio()` precisa ser síncrono
@@ -1406,6 +1482,15 @@ Três coisas que parecem detalhe e não são:
   que na descida é no-op (lá todo bloco marcado já cabe numa viewport) e no case
   transforma a coluna na fatia visível dela. Marcar bloco a bloco **não** é a
   saída: nove blocos disputando os oito slots reprovaram em 2.87:1.
+- **Dois quadros comparados precisam ser o mesmo instante.** Uma medição por
+  diferença (peça com e sem máscara, superfície normal e preta) feita em dois
+  `step(1)` seguidos compara também o que o tempo mudou — a névoa tem ruído no
+  tempo, e a "pegada do card 5" começava 200 px antes da borda dele. O segundo
+  quadro é `hold()`.
+- **A sonda projeta no retângulo do canvas, não na janela.** Com barra de
+  rolagem clássica `innerWidth` inclui 15 px que o canvas não tem, e a costura
+  da travessia saiu 13.8 px — igual antes e depois de uma mudança, que é como
+  se reconhece erro de instrumento.
 - **Nunca uma crase dentro de um literal de GLSL.** O shader mora num template
   literal, e uma crase de markdown num comentário do GLSL **fecha o literal**. O
   erro sai como `TS1005: ',' expected` apontando para o meio de um shader, e em
@@ -1792,16 +1877,24 @@ Nesta ordem, porque cada uma depende da anterior:
    (MEASUREMENTS.md, "O escuro e o ângulo, medidos"). É mudança de desenho do
    bando na Identidade, e obriga a remedir o 3B, o calor e o véu da Identidade.
    Rodada própria.
-10. **O tempo de GPU na resolução certa e num celular.** O plano `descent`
-   (`?bench=1&plan=descent`) rodou no M5 a 1440×900 com DPR 1 — 1.3 Mpx, metade
-   do buffer nativo —, então os 13–15% do quadro que ele deu são o mesmo débito
-   de resolução do item 3. No telefone ele não rodou. E a linha 0 dos planos diz
+10. **O tempo de GPU na resolução certa e num celular.** Na rodada 12 o plano
+   `descent` rodou no buffer nativo (2160×1350, DPR 2 emulado, que o teto de
+   1.5 corta) e o cronômetro de query **saturou** (4.1× o teto físico, numa
+   tela de 75 Hz): a fração de GPU não sai dali. O que saiu é o teto: quadro
+   mediano de 13.3 ms em todas as faixas, igual ao estado anterior. Falta um
+   método que não dependa do cronômetro (a escada de K, com a janela em primeiro
+   plano). No telefone ele não rodou. E a linha 0 dos planos diz
    `flock: 16384`, que desde a rodada 11 **não** é o padrão do telefone (9.216):
    num celular, o passo 0 roda com 9.216 e reporta 16.384. Corrigir antes de
    medir lá.
-11. **A varredura de contraste em inglês.** O Chrome desta bancada negocia `pt`
-   em `/`, e a varredura "em inglês" mediu o português. Precisa de
-   `Accept-Language` emulado na mesma conexão.
+11. ~~A varredura de contraste em inglês~~ — **feita na rodada 12**, com o
+   cookie `NEXT_LOCALE=en` antes da carga (`lang` conferido na página).
+12. **A onda de densidade no pixel.** A rodada 8 registrou amplitude 0.315
+   contra 0.032 do controle, e o método descrito não reproduz isso: com
+   `__probe.wave()` e o controle `PROBE_NO_WAVE`, a onda **não se separa** do
+   controle nem no estado anterior à rodada 12 nem depois. A onda existe na
+   simulação (`surge` em `boids.ts`, intocado); falta um instrumento que a veja
+   no quadro entregue.
 
 O item que era o sétimo — verificar a cena num iPhone contra o piso de 30 fps —
 **está feito**: 4.62 ms de GPU por quadro, 55.6 fps, ver "Desempenho da cena,
