@@ -67,6 +67,8 @@ export type ChamberProbeDeps = {
   /** A corrente de cards como o shader a recebe (x, y, z, yaw). */
   cards: readonly { x: number; y: number; z: number; w: number }[];
   cardCount: { value: number };
+  /** Os aglomerados do rig, como o shader os recebe (xyz, w = energia). */
+  clusters: readonly { x: number; y: number; z: number; w: number }[];
   toLinear: Float32Array;
 };
 
@@ -853,12 +855,212 @@ export function installChamberProbe(deps: ChamberProbeDeps) {
     return { name, cards: crops.length, sent: response.ok, size: [sheet.width, sheet.height] };
   };
 
+  /**
+   * O escuro (rodada 9.5): a câmara só aparece onde o bando passa.
+   *
+   * Duas séries na mesma descida, 0.00 → 0.85:
+   *
+   * - **sem o bando**: sem os corpos e **sem a luz deles** — o bando é a única
+   *   luz prática (DIRECTION.md §5), então esconder os corpos e manter a luz dos
+   *   aglomerados mediria uma câmara iluminada por ninguém. A luminância média
+   *   do quadro tem que ficar perto de `--abyss`, e a densidade de feições
+   *   perto de zero.
+   * - **com o bando**: a contribuição da estrutura (quadro com o concreto menos
+   *   o mesmo quadro com o concreto preto) contra a proximidade dos aglomerados
+   *   às paredes. A correlação de Pearson entre as duas é o "de relance" em
+   *   número.
+   */
+  const darkness = (options: { samples?: number; edgeThreshold?: number } = {}) => {
+    const { samples = 18, edgeThreshold = 0.0012 } = options;
+    const layers = findLayers(scene);
+    const host = window as unknown as { __probeClusters?: number[][] };
+    const n = canvas.width * canvas.height;
+    const A = new Uint8Array(n * 4);
+    const B = new Uint8Array(n * 4);
+    const structural = [...layers.chamber, ...layers.structure];
+    const W = canvas.width;
+    const rows: { p: number; darkMean: number; darkEdges: number; structure: number; proximity: number }[] = [];
+    const pairs: [number, number][] = [];
+
+    settle(0.0, 150);
+    try {
+      for (let s = 0; s < samples; s += 1) {
+        const target = (0.85 * s) / Math.max(1, samples - 1);
+        if (s > 0) ramp(progressRef.current, target);
+
+        // --- a estrutura acesa **pelo bando**: com os aglomerados menos sem
+        // eles, e só no concreto (cada lado é "normal − concreto preto"). A
+        // fonte a montante acende a parede sem ter nada a ver com o bando, e
+        // entraria na conta como ruído contra a proximidade.
+        const zero = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]];
+        const C = new Uint8Array(n * 4);
+        const D = new Uint8Array(n * 4);
+        setVisible(layers.flock, false);
+        setBlack(structural, false);
+        step(1);
+        read(A);
+        // A proximidade dos aglomerados **deste** quadro, antes de zerá-los.
+        const lights = deps.clusters.map((c) => ({ x: c.x, y: c.y, z: c.z, w: c.w }));
+        let proximity = 0;
+        for (const c of deps.clusters) {
+          const sec = plan.section(c.z);
+          let d = Math.min(sec.right - c.x, c.x + sec.left, sec.ceiling - c.y, c.y + sec.floor);
+          // Os anéis: a borda interna deles fica `inset` para dentro da seção,
+          // e é o que a luz curta alcança primeiro no rio.
+          for (const rib of plan.ribs) {
+            const rs = plan.section(rib.z);
+            const inner = Math.min(
+              rs.right - rib.inset - c.x,
+              c.x + rs.left - rib.inset,
+              rs.ceiling - rib.inset - c.y,
+              c.y + rs.floor - rib.inset,
+            );
+            const dz = Math.max(0, Math.abs(c.z - rib.z) - rib.depth / 2);
+            d = Math.min(d, Math.hypot(Math.max(0, inner), dz));
+          }
+          const fall = Math.max(0, 1 - d / 7.5);
+          proximity += c.w * fall * fall;
+        }
+        setBlack(structural, true);
+        step(1);
+        read(B);
+        host.__probeClusters = zero;
+        step(1);
+        read(D);
+        setBlack(structural, false);
+        step(1);
+        read(C);
+        let structure = 0;
+        const S0 = new Float32Array(n);
+        for (let i = 0; i < n; i += 1) {
+          const lit = lum(A, i * 4) - lum(B, i * 4);
+          const bare = lum(C, i * 4) - lum(D, i * 4);
+          S0[i] = bare;
+          structure += Math.max(0, lit - bare);
+        }
+        structure /= n;
+
+        // --- ponto a ponto: pontos nas superfícies **visíveis** da câmara, a luz
+        // prevista pela distância aos aglomerados (a mesma queda curta do
+        // shader) contra a luz do bando medida no pixel do ponto.
+        {
+          const cz = camera.position.z;
+          for (let k = 0; k < 320; k += 1) {
+            const h1 = Math.abs(Math.sin((s + 1) * 12.9898 + k * 78.233) * 43758.5453) % 1;
+            const h2 = Math.abs(Math.sin((s + 1) * 39.346 + k * 11.135) * 24634.6345) % 1;
+            const h3 = Math.abs(Math.sin((s + 1) * 73.156 + k * 52.235) * 12345.6789) % 1;
+            const z = cz - 2 - h1 * 28;
+            const sec = plan.section(z);
+            const face = Math.floor(h2 * 4);
+            const t = h3 * 2 - 1;
+            const point =
+              face === 0
+                ? new Vector3(sec.right - 0.01, t * sec.ceiling, z)
+                : face === 1
+                  ? new Vector3(-sec.left + 0.01, t * sec.ceiling, z)
+                  : face === 2
+                    ? new Vector3(t * sec.right, -sec.floor + 0.01, z)
+                    : new Vector3(t * sec.right, sec.ceiling - 0.01, z);
+            const at = project(point);
+            if (at === null) continue;
+            if (!unobstructed(point, layers.chamber)) continue;
+            const px = Math.floor(at[0]);
+            const py = canvas.height - 1 - Math.floor(at[1]);
+            let measured = 0;
+            let count = 0;
+            for (let oy = -1; oy <= 1; oy += 1) {
+              for (let ox = -1; ox <= 1; ox += 1) {
+                const x = Math.min(W - 1, Math.max(0, px + ox));
+                const y = Math.min(canvas.height - 1, Math.max(0, py + oy));
+                const i = (y * W + x) * 4;
+                measured += Math.max(0, lum(A, i) - lum(B, i) - (lum(C, i) - lum(D, i)));
+                count += 1;
+              }
+            }
+            let predicted = 0;
+            for (const c of lights) {
+              const d = Math.hypot(c.x - point.x, c.y - point.y, c.z - point.z);
+              const fall = Math.max(0, 1 - d / 7.5);
+              predicted += c.w * fall * fall;
+            }
+            pairs.push([predicted, measured / count]);
+          }
+        }
+
+        // --- sem o bando: nem corpos, nem a luz deles. C já é esse quadro.
+        delete host.__probeClusters;
+        setVisible(layers.flock, true);
+        let mean = 0;
+        for (let i = 0; i < n; i += 1) mean += lum(C, i * 4);
+        mean /= n;
+        // Feições **da estrutura** sem o bando: bordas na contribuição do
+        // concreto (não nos cards, que têm base própria, nem na peça).
+        let edges = 0;
+        for (let y = 2; y < canvas.height - 2; y += 1) {
+          for (let x = 2; x < W - 2; x += 1) {
+            const i = y * W + x;
+            const gx = (S0[i + 2] ?? 0) - (S0[i - 2] ?? 0);
+            const gy = (S0[i + 2 * W] ?? 0) - (S0[i - 2 * W] ?? 0);
+            if (Math.hypot(gx, gy) > edgeThreshold) edges += 1;
+          }
+        }
+        rows.push({
+          p: Number(progressRef.current.toFixed(3)),
+          darkMean: Number(mean.toFixed(5)),
+          darkEdges: Number((edges / n).toFixed(4)),
+          structure: Number(structure.toFixed(6)),
+          proximity: Number(proximity.toFixed(4)),
+        });
+      }
+    } finally {
+      delete host.__probeClusters;
+      setVisible(layers.flock, true);
+      setBlack(structural, false);
+    }
+    const xs = rows.map((r) => r.proximity);
+    const ys = rows.map((r) => r.structure);
+    const mx = xs.reduce((a, b) => a + b, 0) / xs.length;
+    const my = ys.reduce((a, b) => a + b, 0) / ys.length;
+    let sxy = 0;
+    let sxx = 0;
+    let syy = 0;
+    for (let i = 0; i < xs.length; i += 1) {
+      sxy += ((xs[i] ?? 0) - mx) * ((ys[i] ?? 0) - my);
+      sxx += ((xs[i] ?? 0) - mx) ** 2;
+      syy += ((ys[i] ?? 0) - my) ** 2;
+    }
+    const pearsonOf = (list: readonly [number, number][]) => {
+      const mx2 = list.reduce((a, b) => a + b[0], 0) / list.length;
+      const my2 = list.reduce((a, b) => a + b[1], 0) / list.length;
+      let a = 0;
+      let b = 0;
+      let c = 0;
+      for (const [x, y] of list) {
+        a += (x - mx2) * (y - my2);
+        b += (x - mx2) ** 2;
+        c += (y - my2) ** 2;
+      }
+      return Number((a / Math.sqrt(b * c)).toFixed(3));
+    };
+    return {
+      buffer: [canvas.width, canvas.height],
+      pointPairs: pairs.length,
+      pointPearson: pearsonOf(pairs),
+      litPoints: pairs.filter(([x]) => x > 0).length,
+      maxDarkMean: Math.max(...rows.map((r) => r.darkMean)),
+      maxDarkEdges: Math.max(...rows.map((r) => r.darkEdges)),
+      pearson: Number((sxy / Math.sqrt(sxx * syy)).toFixed(3)),
+      rows,
+    };
+  };
+
   return {
     presence,
     parallax,
     engraving,
     covers,
     lineup,
+    darkness,
     findLayers: () => findLayers(scene),
   };
 }

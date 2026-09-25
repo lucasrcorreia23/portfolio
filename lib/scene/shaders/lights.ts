@@ -47,6 +47,32 @@ float practicalLight(vec3 worldPos, vec3 normal, float grazing) {
   return total;
 }
 
+/**
+ * A mesma luz, com **alcance curto**: cai a zero em reach unidades.
+ *
+ * É a luz da estrutura desde a rodada 9.5. A queda inversa do quadrado da
+ * versão longa nunca chega a zero — com quatro aglomerados no eixo do duto,
+ * toda parede recebia alguma coisa o tempo todo, e a câmara inteira ficava
+ * legível. Aqui a parede só acende quando um aglomerado passa rente a ela.
+ */
+float practicalLightNear(vec3 worldPos, vec3 normal, float grazing, float reach) {
+  float total = 0.0;
+  for (int i = 0; i < 4; i++) {
+    vec4 cluster = uClusters[i];
+    vec3 delta = cluster.xyz - worldPos;
+    float dist = length(delta);
+    float fall = 1.0 - smoothstep(0.0, reach, dist);
+    fall *= fall;
+    float incidence = mix(
+      max(dot(normal, delta / max(dist, 1e-4)), 0.0),
+      1.0 - abs(dot(normal, delta / max(dist, 1e-4))),
+      grazing
+    );
+    total += cluster.w * fall * incidence;
+  }
+  return total;
+}
+
 /** A fonte a montante, como um termo de distância ao longo do eixo. */
 float upstreamLight(vec3 worldPos) {
   float axial = 1.0 - clamp((worldPos.z - uSourceZ) / 90.0, 0.0, 1.0);

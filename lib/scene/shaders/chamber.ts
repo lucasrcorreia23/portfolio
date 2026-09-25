@@ -73,15 +73,21 @@ vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity
   float stain = sceneNoise(world * vec3(0.11, 0.0, 0.07) + vec3(3.1, 0.0, 1.7));
   grain = mix(grain, grain * (0.7 + 0.6 * stain), floorness);
 
-  float ambient = mix(mix(0.16, 0.20, floorness), 0.06, ceilingness);
-  vec3 color = uWallColor * (ambient + 0.42 * grain * mix(1.0, 0.45, ceilingness));
+  // **Nenhum termo ambiente.** A rodada 7 acendeu a câmara inteira para provar
+  // que ela existia, e o resultado foi a parede ser a maior superfície clara do
+  // quadro — dava para ler a câmara inteira em todo quadro, que é exatamente o
+  // "a névoa está fina demais" do DIRECTION.md §2. Agora o albedo só modula a
+  // luz que chega; longe do bando a parede é preta debaixo da névoa, ou seja é
+  // a névoa.
+  vec3 albedo = uWallColor * (0.55 + 0.9 * grain * mix(1.0, 0.45, ceilingness));
 
-  // A luz do bando. Parede: rasante. Piso: direta, porque o bando passa por
-  // cima dele. Teto: quase nada.
+  // A luz do bando, **de alcance curto**. A estrutura aparece de relance, onde
+  // um aglomerado passa rente, e some quando ele vai embora. Parede: rasante.
+  // Piso: direta, porque o bando passa por cima dele. Teto: quase nada.
   float grazing = mix(mix(0.78, 0.30, floorness), 0.78, ceilingness);
-  float lit = practicalLight(world, shadingNormal, grazing);
-  float gain = mix(mix(0.7, 0.8, floorness), 0.14, ceilingness);
-  color += uCyan * lit * gain;
+  float lit = practicalLightNear(world, shadingNormal, grazing, 7.5);
+  float gain = mix(mix(2.6, 2.4, floorness), 0.5, ceilingness);
+  vec3 color = (albedo * 2.0 + uCyan * 0.35) * lit * gain;
   // A fonte a montante, com incidência. Ela entra pela abertura do fundo, então
   // uma superfície tem que estar **de frente** para a abertura para recebê-la —
   // sem este termo a parede do fundo, coplanar à abertura, recebia a luz
@@ -93,9 +99,15 @@ vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity
   vec3 toSourceRaw = vec3(0.0, ${f(APERTURE_Y)}, uSourceZ - 1.0) - world;
   vec3 toSource = normalize(toSourceRaw);
   float along = dot(shadingNormal, toSource);
-  float rake = (1.0 - abs(along)) * smoothstep(6.0, 14.0, length(toSourceRaw));
+  // O raspão só existe em superfície **paralela** ao eixo (parede, piso, teto).
+  // A parede do fundo é perpendicular a ele e coplanar à abertura: sem o
+  // (1 − |n.z|) ela recebia raspão em tudo que estivesse a mais de seis
+  // unidades da abertura, e virava um retângulo aceso no fim do duto.
+  float rake = (1.0 - abs(along)) * smoothstep(6.0, 14.0, length(toSourceRaw))
+    * (1.0 - abs(geomNormal.z));
   float facing = 0.15 + 0.85 * max(along, 0.0) + 0.75 * rake;
-  color += uSourceColor * upstreamLight(world) * 0.5 * facing * mix(1.0, 0.4, ceilingness);
+  // Fraquíssima, como o DIRECTION.md §4 pede da Emergência até 0.85.
+  color += uSourceColor * upstreamLight(world) * 0.3 * facing * mix(1.0, 0.4, ceilingness);
 
   // O fundo da vala não recebe nada de ninguém.
   color *= 1.0 - 0.62 * cavity;

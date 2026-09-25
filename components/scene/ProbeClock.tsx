@@ -84,6 +84,7 @@ export function ProbeClock({
       cards: shared.cards.value,
       cardMask: shared.cardMask,
       cardCount: shared.cardCount,
+      clusters: shared.clusters.value,
       pose,
       roost,
       proxy,

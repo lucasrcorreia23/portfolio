@@ -38,6 +38,7 @@ medido, com que método, e por quê o número é esse".
 - [A câmara, medida](#a-câmara-medida)
 - [O bando e o frame, medidos](#o-bando-e-o-frame-medidos)
 - [As capas e o fim do corredor, medidos](#as-capas-e-o-fim-do-corredor-medidos)
+- [O escuro e o ângulo, medidos](#o-escuro-e-o-ângulo-medidos)
 - [Desempenho da cena, medido](#desempenho-da-cena-medido)
 
 ---
@@ -1558,6 +1559,110 @@ sessão. Os números registrados antes (1.56 → 1.08) foram medidos a 2205×125
 - GPU no rio (0.45–0.85), intercalado com o controle sob a mesma carga: 5.17–5.93
   contra 3.97–4.38 ms — a mesma razão de ~1.3–1.4× da rodada 8. As capas foscas
   não mudaram a conta.
+
+## O escuro e o ângulo, medidos
+
+Rodada 9.5. Sem acrescentar elemento: o concreto perdeu o termo ambiente e a
+luz dos aglomerados passou a ter alcance curto (`practicalLightNear`, ~7.5
+unidades); de onze quadros estruturais ficaram cinco, em intervalos de 19, 16.5,
+21.5 e 15; a câmera sai do eixo no frame (decisão do Lucas, 2026-09-25); o tubo
+do bando abre mais no frame; e o portão ganhou os corpos isolados perto da lente.
+
+### O escuro
+
+`__probe.darkness({samples: 18})`, descida 0.00 → 0.85, `?grain=0`, 1440×813.
+"Sem o bando" é **sem os corpos e sem a luz deles** — o bando é a única luz
+prática (DIRECTION.md §5); esconder os corpos mantendo a luz dos aglomerados
+mediria uma câmara iluminada por ninguém.
+
+- **Luminância média do quadro sem o bando**: 0.0064–0.0094 em 16 dos 18
+  pontos. `--abyss` mede L = 0.0075 e `--deep` 0.0232. Os dois picos não são
+  estrutura: **0.025 em 0.30** é a face da peça atravessando a lente (a base
+  dela é `--deep`, não emissivo, e ocupa o quadro) e **0.017 em 0.70** são os
+  cards, que ainda têm base própria.
+- **Feições da estrutura sem o bando** (bordas na contribuição do concreto):
+  0 a 0.0013 do quadro até 0.80, e **0.0148 em 0.85**, que é a fonte a montante
+  acendendo o requadro da abertura — a única luz que a direção permite além do
+  bando. Antes (rodada 7) a mesma medida, com a luz, dava 0.02–0.22.
+
+### A luz da estrutura acompanha o bando
+
+Pontos amostrados nas superfícies **visíveis** da câmara (parede, piso, teto; o
+raio de visibilidade contra a malha descarta os ocluídos), 1685 pares em 18
+quadros: a luz prevista pela distância aos aglomerados (a mesma queda curta do
+shader) contra a luz do bando medida no pixel do ponto — com os aglomerados
+menos sem eles, só no concreto, para a fonte a montante não entrar.
+
+**Pearson = 0.737.** A correlação por quadro, com uma proximidade agregada, dá
+0.40 — e o motivo é de desenho da medida: um aglomerado rente a uma parede
+**atrás da câmera** conta como proximidade e não acende nada no quadro. A
+correlação ponto a ponto é a que responde "a parede acende onde o bando passa".
+
+### A face da peça, letra por letra
+
+Luminância da face (tinta sem corpo na frente) contra o anel de névoa em volta,
+por letra, 20 quadros por ponto:
+
+| p | face | névoa | razão | C | O | R | R | E | I | A |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0.14 | 0.0180 | 0.0119 | 1.51 | 2.89 | 2.01 | 1.22 | 0.93 | 0.98 | 1.06 | 2.19 |
+| **0.18** | 0.0234 | 0.0114 | **2.04** | **3.37** | 2.70 | 2.25 | 2.08 | 1.76 | 1.79 | **1.98** |
+| 0.22 | 0.0260 | 0.0107 | 2.43 | 3.39 | 3.20 | 2.90 | 2.66 | 2.32 | 2.17 | 2.29 |
+
+Monotônica, e em 0.18 **todas as letras** acima da névoa, o C e o A inclusive.
+
+### A silhueta sem a malha, no pixel — **não passa**
+
+Em 0.19, 60 quadros, malha escondida: **0.74:1** (tinta mais densa que o anel)
+com a pose nova e nada mais. O que foi tentado, cada um medido:
+
+| tentativa | razão anel/tinta |
+|---|---|
+| pose oblíqua sozinha | 0.74 |
+| atrator da esteira 1.3 → 0.35, rampa a montante 1.5 → 3.0 H | 0.98 |
+| + banco de névoa denso atrás da peça | 1.02 |
+| + separação 11 → 30, alcance 0.32 → 0.6 H | 0.93 |
+| navalha de foco (abertura 0.35, plano de 4.5 u) em vez de "tudo nítido" | **0.37** |
+
+Nenhuma ficou; as cinco foram desfeitas. **O diagnóstico**, medido projetando
+cada corpo na tela e separando pela distância ao plano das letras: do lado da
+câmera a esteira funciona (1 corpo sobre a tinta para 8 no anel); **o que enche a
+tinta são os corpos da zona de compressão logo atrás das letras** (0 a 3
+unidades a montante), que a pose oblíqua mostra através delas. Numa corrente
+contínua, todo raio que atravessa uma letra encontra essa zona. O banco de névoa
+apagou o escoamento distante e não mudou nada porque o distante não era a
+causa. O borrão piorou porque transforma o escoamento denso num véu luminoso que
+passa do limiar de pixel de corpo.
+
+**Chegar a 3:1 no pixel pede uma mudança de desenho, não de calibragem**: o
+bando chegando como uma **massa finita** que atravessa as letras, e não como um
+rio infinito. É decisão do Lucas.
+
+### O que o 3B e o calor viraram
+
+`__probe.measure()` em 0.18: compressão **1.01** (no limite do "maior"),
+turbulência 6.3×, recolamento 0.51 → 1.07 → 1.35. O tubo mais largo no frame
+espalha a referência de fluxo livre e é ele que tirou a folga da compressão.
+Calor na descida: pico **8.67%** em 0.725.
+
+### O desfoque, e por que a "máxima" virou 0.5
+
+Com o portão mostrando a cena, a abertura 1.0 aparecia: o núcleo de seis
+amostras em meia resolução espaçava as amostras em até 14 texels e transformava
+corpos pequenos e claros em **pentes de riscas** — uma trama que lia como grade.
+Duas correções: a abertura máxima passou a 0.5, e o núcleo passou a dez
+amostras, com passo menor e deslocamento por pixel. Medido na folha do portão: as
+riscas somem, ficam manchas macias. O custo não aparece no banco (abaixo).
+
+### Contraste, custo e pacote
+
+- Contraste 0.02 → 0.85: **5.17:1** (en), **4.69:1** (pt, em "O trabalho que me
+  in…", 0.368). Passa o piso; o pt ficou perto dele.
+- GPU, com a máquina mais quieta (load ~3.7, as abas do Chrome dedicado
+  fechadas), intercalado com o controle `5de393a`, três rodadas: rodada 9.5
+  **2.18–2.80 ms**, controle **2.11–3.03 ms**. Sem diferença mensurável; ~15%
+  dos 16.7 ms. Buffer 1440×813, DPR 1 (o canônico continua em débito).
+- Pacote: chunk da cena **319.9 kB**, rota inicial 184.4 kB.
 
 ## Desempenho da cena, medido
 

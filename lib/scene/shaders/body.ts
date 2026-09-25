@@ -72,7 +72,10 @@ void main() {
   // A rampa é cúbica, não linear: na Emergência "uns poucos corpos isolados"
   // são poucos de verdade — a 0.05 de progresso entram ~7% da população, não
   // um terço dela.
-  float admit = step(lot, 0.02 + 0.98 * pow(uForming, 2.5));
+  // O piso é 3.5% e não 2%: é ele que dá vida ao portão, que desde a rodada
+  // 9.5 mostra a câmara de verdade pelas frestas — "uns poucos corpos isolados"
+  // da Emergência, adiantados para trás da veneziana.
+  float admit = step(lot, 0.035 + 0.965 * pow(uForming, 2.5));
 
   // Corpos quase encostados na lente viram lascas do tamanho da tela. Encolhem
   // nos últimos três metros: o bando passa pela câmera, não por cima dela.
@@ -100,6 +103,7 @@ uniform vec3  uRose;
 uniform vec3  uCoral;
 uniform float uSpecimenZ;
 uniform float uGain;
+uniform float uFormingFrag;
 uniform vec4  uCards[${MAX_CARDS}];
 uniform float uCardCount;
 uniform float uCardAmount;
@@ -198,7 +202,19 @@ void main() {
   // DIRECTION.md §2, legível de longe, onde nenhum corpo individual é. A faixa
   // sai da distribuição medida de vDensity (mediana 0.033, p90 0.073): a
   // mediana fica em ~0.6, o p90 em ~1.6.
-  float crowd = 0.5 + 1.25 * smoothstep(0.02, 0.10, vDensity);
+  // Antes de o bando se formar, o corpo isolado é o assunto (a Emergência e o
+  // portão): ele não é rebaixado por estar sozinho.
+  // E ele é **mais** claro: no portão e na Emergência a abertura é máxima
+  // (DIRECTION.md §3, "tudo borrado"), e um corpo borrado espalha a mesma
+  // energia por um disco inteiro — medido na rodada 9.5, os ~60 corpos
+  // admitidos perto da lente em p = 0 não passavam de pontos no quadro.
+  //
+  // **Só perto da lente.** O reforço aceso em todos os corpos isolados também
+  // acendia os distantes, e o núcleo separável da profundidade de campo os
+  // transformava numa trama de riscas verticais — uma grade, que o PROJECT.md
+  // §2 veta. O que o portão pede são corpos "passando perto da lente".
+  float lensNear = 1.0 - smoothstep(3.0, 9.0, vViewDepth);
+  float crowd = mix(mix(1.0, 7.0, lensNear), 0.5 + 1.25 * smoothstep(0.02, 0.10, vDensity), smoothstep(0.15, 0.6, uFormingFrag));
   float energy = uGain * (0.35 + 0.65 * tip) * (0.55 + 0.85 * vEnergy) * crowd;
 
   vec3 lit = color * energy;

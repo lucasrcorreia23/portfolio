@@ -100,9 +100,19 @@ const STOPS: readonly Stop[] = [
   // espaço, e a câmera mal se move.
   { at: 0.0, position: [0.0, 0.9, 8.0], target: [0.0, 0.3, -14.0] },
   { at: 0.1, position: [1.6, 0.5, -6.0], target: [0.2, 0.1, -24.0] },
-  // O quadro. A 14 unidades da peça, que é a distância para a qual
+  // A aproximação continua no eixo: a peça entra de perfil e o bando vem contra
+  // a câmera.
+  { at: 0.145, position: [2.6, 0.35, -10.2], target: [0.1, 0.05, SPECIMEN_Z] },
+  // **O quadro, fora do eixo** — decisão do Lucas, 2026-09-25 (DIRECTION.md
+  // §4, Identidade). Olhando ao longo do escoamento o descolamento é invisível
+  // por geometria: os corpos vêm radialmente contra a lente e o desvio é
+  // lateral, no plano das letras. A 33° do eixo, do lado para onde a peça já
+  // está girada (~6° em 0.18), a face é vista a ~27° da normal e o escoamento
+  // **cruza** o quadro. A 14 unidades, que é a distância para a qual
   // SPECIMEN_SIZE foi resolvido.
-  { at: 0.18, position: [1.0, 0.1, SPECIMEN_Z + 14], target: [0.0, 0.0, SPECIMEN_Z] },
+  { at: 0.175, position: [7.2, 0.4, SPECIMEN_Z + 12.1], target: [0.2, 0.0, SPECIMEN_Z] },
+  { at: 0.21, position: [7.62, 0.35, SPECIMEN_Z + 11.74], target: [0.3, 0.0, SPECIMEN_Z - 0.3] },
+  { at: 0.235, position: [6.2, 0.2, SPECIMEN_Z + 9.5], target: [0.0, 0.0, SPECIMEN_Z - 1.0] },
   // Fim da Identidade: quase encostando, as letras varrendo o quadro.
   { at: 0.28, position: [-0.7, -0.2, SPECIMEN_Z + 4], target: [0.0, 0.0, SPECIMEN_Z - 2] },
   // Quem sou: a câmera deriva para a parede de estibordo e vira o olhar de
@@ -222,9 +232,25 @@ const TUBE_TO = 0.16;
 
 export function flockTubeHalfWidth(progress: number): number {
   const local = clamp01((progress - TUBE_FROM) / (TUBE_TO - TUBE_FROM));
+  // **E abre mais no quadro do descolamento.** Com 8.6 a borda da elipse quase
+  // não recebe corpo, e o C e o A — as pontas do título, a ~7 unidades do eixo
+  // — tinham contagem zero diante da face: nunca acendiam (rodada 8). Vista da
+  // pose oblíqua, a peça inteira precisa estar dentro do escoamento.
+  const frame =
+    smoothstep01((progress - 0.13) / 0.03) * (1 - smoothstep01((progress - 0.25) / 0.03));
   return (
-    FLOCK_TUBE_NARROW + (FLOCK_TUBE_WIDE - FLOCK_TUBE_NARROW) * easeStrong(local)
+    FLOCK_TUBE_NARROW +
+    (FLOCK_TUBE_WIDE - FLOCK_TUBE_NARROW) * easeStrong(local) +
+    IDENTITY_TUBE_EXTRA * frame
   );
+}
+
+/** Quanto o tubo abre a mais no quadro do descolamento. */
+const IDENTITY_TUBE_EXTRA = 1.8;
+
+function smoothstep01(x: number): number {
+  const t = clamp01(x);
+  return t * t * (3 - 2 * t);
 }
 
 /**
@@ -452,15 +478,27 @@ function riverAmount(progress: number): number {
   return easeStrong(rise) * (1 - easeStrong(fall));
 }
 
+/**
+ * A abertura "máxima" do portão e da Emergência (DIRECTION.md §3).
+ *
+ * **0.5 e não 1.0, e o número é do instrumento, não de gosto.** Enquanto o
+ * portão era opaco ninguém via a cena em p = 0. Desde a rodada 9.5 as frestas
+ * mostram a câmara real, e em 1.0 o núcleo do desfoque (seis amostras, meia
+ * resolução) transforma corpos distantes numa trama de riscas verticais — uma
+ * grade, que o PROJECT.md §2 veta. 0.5 é o maior raio que ele entrega como
+ * borrão, sem riscar. "Tudo borrado" continua sendo verdade.
+ */
+const APERTURE_WIDE = 0.5;
+
 export function apertureAt(progress: number): number {
-  if (progress <= 0.06) return 1;
+  if (progress <= 0.06) return APERTURE_WIDE;
   if (progress < 0.11) {
     // Fechando devagar durante a Emergência, mas ainda bem aberta.
-    return 1 - 0.25 * easeStrong(clamp01((progress - 0.06) / 0.05));
+    return APERTURE_WIDE * (1 - 0.25 * easeStrong(clamp01((progress - 0.06) / 0.05)));
   }
   if (progress < 0.155) {
     // O corte de navalha.
-    return 0.75 * (1 - easeStrong(clamp01((progress - 0.11) / 0.045)));
+    return APERTURE_WIDE * 0.75 * (1 - easeStrong(clamp01((progress - 0.11) / 0.045)));
   }
   // Parcial no rio, e fechada de novo na saída: a Superfície reabre "só na
   // fresta de luz" (DIRECTION.md §3), e esse beat ainda não existe.

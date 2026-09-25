@@ -146,16 +146,15 @@ export type Rib = {
  * parede fica a catorze unidades da lente e o anel junto com ela.
  */
 const RIBS: readonly Rib[] = [
-  { z: 4, inset: 0.5, depth: 0.4 },
-  { z: -20, inset: 0.5, depth: 0.4 },
-  { z: -29, inset: 0.5, depth: 0.4 },
+  // **Poucos, e nunca em cadência.** A primeira versão tinha onze anéis, e no
+  // rio eles se enfileiravam em retângulos concêntricos — o túnel de molduras,
+  // uma grade infinita em perspectiva, que o PROJECT.md §2 veta. Cinco, com
+  // intervalos de 19, 16.5, 21.5 e 15: nunca mais de dois legíveis de uma vez,
+  // o resto engolido pela névoa.
+  { z: -17, inset: 0.5, depth: 0.4 },
   { z: -36, inset: 0.5, depth: 0.4 },
-  { z: -44, inset: 0.5, depth: 0.4 },
   { z: -52.5, inset: 2.2, depth: 0.8 },
-  { z: -61.75, inset: 2.2, depth: 0.8 },
-  { z: -66.25, inset: 1.2, depth: 0.5 },
-  { z: -75.25, inset: 2.2, depth: 0.8 },
-  { z: -79.75, inset: 1.2, depth: 0.5 },
+  { z: -74, inset: 2.2, depth: 0.8 },
   { z: -89, inset: 0.8, depth: 0.5 },
 ];
 /** O anel das paredes estreitas — a sonda usa como referência. */

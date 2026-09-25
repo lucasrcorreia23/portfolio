@@ -74,7 +74,10 @@ ${DEPTH_GLSL}
 in vec2 vUv;
 out vec4 fragColor;
 
-const int TAPS = 6;
+// Dez amostras e não seis: mesmo raio (10 × 8.4 ≈ 6 × 14 texels) e a mesma
+// gaussiana em unidades de raio, com vãos 40% menores. Ver o comentário do
+// deslocamento, abaixo.
+const int TAPS = 10;
 
 void main() {
   float coc = cocAt(vUv);
@@ -86,16 +89,24 @@ void main() {
   // Raio em texels, proporcional ao CoC do centro. É a aproximação que troca
   // bokeh por velocidade: não há vazamento correto entre planos, e a essa
   // intensidade ninguém vê a diferença.
-  vec2 step = uDirection * uTexel * coc * 14.0;
+  vec2 step = uDirection * uTexel * coc * 8.4;
 
   vec4 total = texture(uSource, vUv) * 0.196;
   float weightSum = 0.196;
 
+  // **O deslocamento das amostras varia por pixel.** Com o passo fixo, as seis
+  // amostras ficam a até catorze texels uma da outra, e um corpo pequeno e claro
+  // cai entre elas: o borrão vira um pente de riscas paralelas à direção da
+  // passada — medido na rodada 9.5, quando o portão passou a mostrar a cena com
+  // a abertura aberta, como uma trama vertical que lia como grade. Um ruído de
+  // gradiente intercalado espalha as amostras pelos vãos; o pente vira ruído
+  // fino, que o grão cobre.
+  float jitter = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
   for (int i = 1; i <= TAPS; i++) {
-    float offset = float(i);
+    float offset = float(i) - 0.5 + jitter;
     // Gaussiana amostrada; normalizada pelo peso somado, então o número de
     // taps pode mudar sem recalibrar nada.
-    float w = exp(-offset * offset / 18.0);
+    float w = exp(-offset * offset / 50.0);
     total += texture(uSource, vUv + step * offset) * w;
     total += texture(uSource, vUv - step * offset) * w;
     weightSum += w * 2.0;

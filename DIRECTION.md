@@ -333,6 +333,13 @@ ocupava, e a palavra continua existindo como nome acessível do controle. A
 seta é a única coisa que o site pede — a §4 do `PROJECT.md` é uma descida
 vertical, e o gesto é esse.
 
+> **Decisão do Lucas, 2026-09-25: pelas frestas aparece a câmara real, não o
+> campo 2D.** Quando a cena pinta o primeiro quadro, o que se vê entre as
+> lâminas é a própria câmara em p = 0, com "uns poucos corpos isolados"
+> passando perto da lente — a Emergência começando atrás da veneziana. O campo
+> dormente descrito abaixo continua valendo para o intervalo antes disso e para
+> o caminho sem WebGL.
+
 **A veneziana fechada não é opaca.** Sobra uma fresta por lâmina — cobertura de
 0.86 da faixa —, e é por ela que o organismo dormente aparece enquanto o site
 carrega. Uma veneziana cem por cento fechada seria uma tela preta com um número
@@ -420,6 +427,16 @@ descola em duas lâminas, entra em turbulência dentro dos vazios das letras,
 solta uma esteira de vórtices atrás das hastes e **se recompõe** rio abaixo. As
 letras não são desenhadas por nada: são provadas sólidas pelo que desvia nelas.
 Oclusão verdadeira, corpos passando na frente e atrás, mesmo fog, mesma pós.
+
+> **Decisão do Lucas, 2026-09-25: o frame é visto fora do eixo.** A aproximação
+> continua como está — a peça entra de perfil e o bando vem contra a câmera —,
+> mas no trecho do frame, de cerca de 0.16 a 0.22, a câmera sai do eixo do duto
+> e para numa pose oblíqua, entre 20 e 35 graus, de onde o escoamento **cruza**
+> o quadro e a curva em volta das letras aparece como curva. Olhando ao longo do
+> escoamento o descolamento é invisível por geometria: os corpos vêm
+> radialmente contra a lente e o desvio é lateral, no plano das letras. A regra
+> dos oito segundos e o piso de 4 graus de face continuam valendo. O tubo do
+> bando cobre a peça inteira vista dessa pose, pontas incluídas.
 
 Ao lado, coluna mono com o posicionamento em três linhas curtas. Ao fundo, a
 parede cotada dá escala ao corpo de prova — o título é dimensionado como peça de

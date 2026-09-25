@@ -172,6 +172,12 @@ onda de pressão atravessa o duto; o renascimento se espalha em z (a lâmina sai
 o rosa só aparece na compressão diante de uma peça. Ver MEASUREMENTS.md, "O
 bando e o frame, medidos".
 
+**E a câmara voltou a ser escura na rodada 9.5.** O concreto não tem termo
+ambiente; a luz dos aglomerados tem alcance curto; cinco quadros em vez de onze;
+o frame é visto fora do eixo (decisão do Lucas); o portão mostra corpos isolados
+perto da lente. A silhueta sem a malha **não chegou a 3:1 no pixel** — ver
+MEASUREMENTS.md, "O escuro e o ângulo, medidos", e a decisão pendente lá.
+
 **Não entraram nesta rodada, e é deliberado:** o corpo dos três cases
 placeholder e a tradução de `summary_en` (hoje cópia do português nos quatro
 migrados). A Superfície continua sem conteúdo e os pontos de controle da câmera
@@ -356,7 +362,7 @@ Estado medido, com o portão, a HUD e a cena dos quatro primeiros beats:
 |---|---|---|
 | `/` e `/pt` — a descida, com portão, preloader, HUD e os links dos cards | **184.4 kB** | 200 kB ✅ |
 | `/work/[slug]` — o case, sem portão, **com a cena em chunk dinâmico** | **182.3 kB** | 200 kB ✅ |
-| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, campo de distância, descolamento, poleiro, véu medido, o corredor do rio, o conteúdo dele e **a travessia para o case** e **a câmara** (planta, loft, quadros, gravação, números) | **318.2 kB** | 350 kB ✅ |
+| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, campo de distância, descolamento, poleiro, véu medido, o corredor do rio, o conteúdo dele e **a travessia para o case** e **a câmara** (planta, loft, quadros, gravação, números) | **319.9 kB** | 350 kB ✅ |
 | chunk do driver de scroll (gsap + ScrollTrigger + lenis) | 48.0 kB | fora da rota inicial |
 
 `/work` não entra na tabela e não é esquecimento: ele lê `searchParams`, então é
@@ -392,7 +398,7 @@ da rodada 7 a 315.9**, +5.1 kB, sem arquivo de modelo: a geometria é gerada da
 planta): as duas poses e
 a inversão da curva (`case-pose.ts`), a máquina de estados por quadro
 (`case-drive.ts`), a textura de entrega com o recorte e as quatro passagens
-novas no material dos cards. Sobravam 39.5 kB do teto; com a câmara da rodada 7 e o bando da 8, **sobram 31.8 kB** para a Superfície.
+novas no material dos cards. Sobravam 39.5 kB do teto; com a câmara da 7, o bando da 8 e as capas da 9, **sobram 30.1 kB** para a Superfície.
 
 Na rota inicial ela custou 1.6 kB na home (a lista de estações — hoje os links
 invisíveis dos cards — e o store da travessia) e 7.4 kB no case, que ganhou três coisas que não tinha: a montagem da
@@ -842,15 +848,18 @@ Mexer numa medida da câmara é mexer num lugar só.
   estibordo — mais largo que isso a parede some na névoa), piso descendo para
   −7.6. A parede de estibordo fica em 12 de −15 a −51: é a que o poleiro e a
   câmera de Quem sou raspam.
-- **Quadros** a intervalo irregular; no rio eles são **portais** (avançam 2.2,
+- **Quadros**: cinco, a 19 / 16.5 / 21.5 / 15 unidades — com onze, os portais
+  do rio viravam um túnel de molduras concêntricas. No rio eles são **portais** (avançam 2.2,
   0.8 de espessura). Um quadro nunca cai dentro de um nicho — o filtro está na
   planta, e **já derrubou os portais uma vez em silêncio** quando a espessura
   subiu e a folga não: confira `plan.ribs` depois de mudar nicho ou quadro.
 - **Nichos** alinhados aos cards **deste aparelho** (`resolveRiver()`): no mobile
   eles ficam em outros z.
 - **Um material, três papéis**, pela normal: piso com luz direta, parede de
-  raspão, teto quase sem luz. Nada emite; o ambiente é baixo e proporcional ao
-  albedo.
+  raspão, teto quase sem luz. **Nada emite e não há ambiente** (rodada 9.5): a
+  luz é `practicalLightNear` (alcance ~7.5) mais a fonte a montante,
+  fraquíssima. O raspão da fonte só vale em superfície paralela ao eixo; na
+  parede do fundo ele a transformava num retângulo aceso.
 - **Gravação** é campo de altura com a normal derivada dele (`ENGRAVING_GLSL`):
   réguas, marcas 7/11, cota do piso e a seta de escala da peça são analíticas no
   shader; os números são placas instanciadas com um atlas em Geist Mono, que
@@ -879,6 +888,14 @@ campo não existe.
 O rosa do bando depende de **densidade e** proximidade da aresta de ataque de
 uma peça (`nearLeadingEdge`, em `shaders/body.ts`, lendo `uCards`). Sem a
 segunda condição, qualquer aglomerado denso virava rosa e o teto de 15% caía.
+
+#### O desfoque não pode riscar
+
+A profundidade de campo é separável, em meia resolução. Com poucas amostras e
+passo largo, um corpo pequeno e claro vira um pente de riscas — lia como grade
+no portão. Por isso o núcleo tem **dez** amostras com deslocamento por pixel
+(`DOF_FRAG`), e a abertura máxima é **0.5** (`APERTURE_WIDE`). Subir qualquer um
+dos dois é refazer a folha do portão.
 
 #### A capa é placa fosca
 

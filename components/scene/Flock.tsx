@@ -298,6 +298,7 @@ export function Flock({
         uCoral: shared.coral,
         uSpecimenZ: shared.specimenZ,
         uGain: { value: 2.4 },
+        uFormingFrag: shared.forming,
         uCards: shared.cards,
         uCardCount: shared.cardCount,
         uCardAmount: shared.cardAmount,
