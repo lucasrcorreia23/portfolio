@@ -376,9 +376,9 @@ void main() {
 `;
 
 /**
- * O composite: mistura o nítido com o borrado pelo CoC, soma o bloom, aplica a
- * aberração crômática nas bordas, o tonemap, **o véu de legibilidade** e o grão
- * animado.
+ * O composite: mistura o nítido com o borrado pelo CoC, soma o bloom, aplica o
+ * tonemap, **o véu de legibilidade** e o grão animado. Sem aberração cromática
+ * desde a rodada 12 — ver o comentário no main().
  *
  * **Vinheta: nenhuma.** Nem leve. O pedido é explícito e a câmara já escurece
  * nas bordas por névoa e por queda de luz — uma vinheta por cima disso seria a
@@ -394,7 +394,6 @@ uniform sampler2D uBlurred;
 uniform sampler2D uBloom;
 uniform vec2  uResolution;
 uniform float uBloomStrength;
-uniform float uAberration;
 uniform float uGrain;
 uniform float uGrainSeed;
 uniform float uExposure;
@@ -418,12 +417,10 @@ out vec4 fragColor;
 /**
  * O CoC é resolvido **uma vez por fragmento**, e passado adiante.
  *
- * A versão anterior chamava cocAt() dentro da amostragem, e a amostragem roda
- * uma vez por canal por causa da aberração cromática — ou seja, tres buscas de
- * profundidade por pixel em resolucao cheia. Medido: a profundidade de campo
- * custava 7.53 ms de GPU, e o borrao em si respondia por menos de um terco
- * disso. O deslocamento da aberracao e de ~2 px; o circulo de confusao nao
- * muda nada em 2 px, entao calcula-lo tres vezes era so trabalho.
+ * Uma versão antiga chamava cocAt() dentro da amostragem, que rodava uma vez
+ * por canal por causa da aberração cromática — três buscas de profundidade por
+ * pixel em resolução cheia, 7.53 ms de GPU medidos. A aberração saiu na rodada
+ * 12 e a amostragem agora roda uma vez só; o CoC continua resolvido uma vez.
  */
 vec3 sampleFocused(vec2 uv, float blend) {
   vec3 sharp = texture(uScene, uv).rgb;
@@ -488,19 +485,14 @@ vec3 applyVeil(vec3 color, vec2 uv) {
 void main() {
   vec2 uv = vUv;
 
-  // Aberração radial: zero no centro, crescendo com o quadrado do raio. Só nas
-  // bordas, que é onde uma lente real a tem — no meio do quadro ela leria como
-  // glitch RGB, que o PROJECT.md §2 veta pelo nome.
-  vec2 centered = uv - 0.5;
-  float r2 = dot(centered, centered);
-  vec2 shift = centered * r2 * uAberration;
-
+  // **Sem aberração cromática** (rodada 12). Ela existia aqui — radial,
+  // 1.7 a 3.4 px nas bordas —, e deslocar canais é separação RGB, que o
+  // PROJECT.md §2 veta pelo nome. O Lucas pediu a remoção quando a placa dos
+  // cards mostrou franja; a franja era outra coisa (ver o bisel em
+  // shaders/cards.ts), mas o deslocamento era real e saiu junto.
   float blend = uDofEnabled < 0.5 ? 0.0 : smoothstep(0.0, 0.35, cocAt(uv));
 
-  vec3 color;
-  color.r = sampleFocused(uv + shift, blend).r;
-  color.g = sampleFocused(uv, blend).g;
-  color.b = sampleFocused(uv - shift, blend).b;
+  vec3 color = sampleFocused(uv, blend).rgb;
 
   color += texture(uBloom, uv).rgb * uBloomStrength;
 

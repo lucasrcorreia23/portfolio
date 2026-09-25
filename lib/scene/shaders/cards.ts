@@ -475,9 +475,17 @@ void main() {
               + tap.g * (0.03 + 0.30 * reveal) * reveal;
     float glint = bevel * (0.35 + 0.65 * glazing) * (0.5 + 0.5 * reveal);
 
-    vec3 engraveTint = mix(uMist, vAccent, 0.28);
-    color += engraveTint * clamp(ink, 0.0, 1.0);
-    color += mix(uMist, uCyan, clamp(glazing, 0.0, 1.0)) * clamp(glint, -0.2, 0.6);
+    // **Acromático, os dois termos** (rodada 12). A tinta era 28% do acento e
+    // o bisel somava mist→cyan de um lado do traço e **subtraía** a mesma cor
+    // do outro — e tirar ciano de um pixel escuro é pôr vermelho nele. Com o
+    // acento rose (WeCann), cada letra tinha uma franja vermelha em cima e à
+    // esquerda e ciano embaixo e à direita: lia como separação de canais, que o
+    // PROJECT.md §2 veta como glitch RGB. Agora a tinta é mist, o lado claro do
+    // bisel soma mist e o lado escuro **escala** a cor em vez de subtrair uma.
+    // O acento do case continua só no chanfro da borda.
+    color += uMist * clamp(ink, 0.0, 1.0);
+    color += uMist * clamp(glint, 0.0, 0.6);
+    color *= 1.0 + clamp(glint, -0.2, 0.0) * 2.5;
   }
 
 #ifdef PROBE_BLACK

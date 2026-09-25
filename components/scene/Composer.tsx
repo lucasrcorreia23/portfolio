@@ -247,16 +247,6 @@ export function Composer({
         uBloom: { value: bloom[0]?.texture ?? null },
         uResolution: shared.resolution,
         uBloomStrength: { value: BLOOM_STRENGTH },
-        // Sutil, e só nas bordas — e "sutil" aqui é um número, não um
-        // adjetivo. O deslocamento cresce com o quadrado do raio, e na quina
-        // do quadro `centered.x * r2` vale 0.25; para os ~2.5 px que uma lente
-        // real entrega ali, o coeficiente é 2.5/1440/0.25 ≈ 0.007.
-        //
-        // Estava em 0.9, o que deslocava R e B em **324 px**. Num corpo de dois
-        // pixels os três canais caíam em lugares diferentes do quadro e só o
-        // verde sobrava em cima do corpo: o bando inteiro lia verde e azul
-        // puros, cores que não existem na paleta.
-        uAberration: { value: 0.007 },
         uGrain: { value: 0.045 },
         uGrainSeed: { value: 0 },
         uExposure: { value: EXPOSURE },
