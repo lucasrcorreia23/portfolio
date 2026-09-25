@@ -922,5 +922,100 @@ export function installRound12(deps: Round12Deps) {
     };
   };
 
-  return { readings, covers, bodyExtent, wave, flatRegions, plate };
+  /**
+   * O mesmo instante, com e sem um conjunto de malhas (índices de
+   * `__probe.objects()`): a caixa em que o quadro muda, a luminância média
+   * dentro dela nos dois, e os dois quadros postados lado a lado. É o
+   * diagnóstico por eliminação da rodada 12, sem o bando andando entre as
+   * duas leituras.
+   */
+  const pairDiff = async (
+    options: {
+      progress: number;
+      hide: readonly number[];
+      warmFrom?: number;
+      threshold?: number;
+      name?: string;
+      port?: number;
+    },
+  ) => {
+    const { progress, hide, warmFrom = 0.25, threshold = 0.0015, name = "13-par.png", port = 3131 } = options;
+    const meshes: Mesh[] = [];
+    scene.traverse((object) => {
+      if ((object as { geometry?: unknown }).geometry !== undefined) meshes.push(object as Mesh);
+    });
+    const width = canvas.width;
+    const height = canvas.height;
+    const A = new Uint8Array(width * height * 4);
+    const B = new Uint8Array(width * height * 4);
+    settle(warmFrom, 150);
+    ramp(warmFrom, progress);
+    step(1);
+    read(A);
+    for (const index of hide) {
+      const mesh = meshes[index];
+      if (mesh !== undefined) mesh.visible = false;
+    }
+    hold(1);
+    read(B);
+    for (const index of hide) {
+      const mesh = meshes[index];
+      if (mesh !== undefined) mesh.visible = true;
+    }
+    let x0 = width;
+    let x1 = -1;
+    let y0 = height;
+    let y1 = -1;
+    let changed = 0;
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const at = (y * width + x) * 4;
+        if (Math.abs(lum(A, at) - lum(B, at)) <= threshold) continue;
+        changed += 1;
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+    }
+    let inA = 0;
+    let inB = 0;
+    let n = 0;
+    for (let y = Math.max(0, y0); y <= y1; y += 2) {
+      for (let x = Math.max(0, x0); x <= x1; x += 2) {
+        const at = (y * width + x) * 4;
+        inA += lum(A, at);
+        inB += lum(B, at);
+        n += 1;
+      }
+    }
+    const out = document.createElement("canvas");
+    out.width = width;
+    out.height = height * 2;
+    const paper = out.getContext("2d");
+    if (paper === null) throw new Error("sem contexto 2D");
+    for (const [k, frame] of [A, B].entries()) {
+      const image = paper.createImageData(width, height);
+      for (let y = 0; y < height; y += 1) {
+        const source = (height - 1 - y) * width * 4;
+        image.data.set(frame.subarray(source, source + width * 4), y * width * 4);
+      }
+      paper.putImageData(image, 0, k * height);
+    }
+    const blob = await new Promise<Blob | null>((done) => out.toBlob(done, "image/png"));
+    if (blob !== null) {
+      await fetch(`http://${window.location.hostname}:${port}/shot?name=${encodeURIComponent(name)}`, {
+        method: "POST",
+        body: blob,
+      });
+    }
+    return {
+      buffer: [width, height],
+      changedShare: Number((changed / (width * height)).toFixed(4)),
+      box: x1 < 0 ? null : [x0, height - 1 - y1, x1 - x0 + 1, y1 - y0 + 1],
+      meanInBox: [Number((inA / Math.max(n, 1)).toFixed(5)), Number((inB / Math.max(n, 1)).toFixed(5))],
+    };
+  };
+
+  return { readings, covers, bodyExtent, wave, flatRegions, plate, pairDiff };
 }

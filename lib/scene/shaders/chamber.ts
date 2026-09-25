@@ -113,10 +113,11 @@ uniform vec3 uCyan;
  */
 vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity, float viewDepth) {
 #ifdef PROBE_BLACK
-  // Só a sonda define isto (probe-chamber.ts): o concreto sai preto antes da
-  // névoa, e a diferença para o quadro normal é a estrutura que atravessa a
-  // névoa até a lente. Em produção o bloco não existe no programa compilado.
-  return applyFog(vec3(0.0), viewDepth, world);
+  // Só a sonda define isto (probe-chamber.ts, probe-round12.ts): o concreto sai
+  // sem luz nenhuma — que desde a rodada 13 é a própria névoa, ver o piso no
+  // fim desta função —, e a diferença para o quadro normal é a estrutura que a
+  // luz faz atravessar a névoa até a lente. Em produção o bloco não existe.
+  return fogColorAt(viewDepth, world);
 #endif
   float floorness = smoothstep(0.55, 0.85, geomNormal.y);
   float ceilingness = smoothstep(0.55, 0.85, -geomNormal.y);
@@ -172,6 +173,16 @@ vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity
   // e o fundo de um sulco não a vê. É o que torna a cota da soleira legível
   // atravessada pelas faixas das frestas.
   color += uPeach * (albedo * 6.0 + 0.012) * outsideLight(world, shadingNormal) * (1.0 - 0.75 * cavity);
+
+  // **O concreto sem luz não é mais escuro que a névoa diante dele** (rodada
+  // 13). Sem este piso, uma parede sem luz era preta debaixo da névoa, e a
+  // quantidade de névoa — que cresce com a profundidade — pintava cada seção do
+  // duto num tom: vista pelo eixo, a câmara virava retângulos concêntricos, o
+  // salão do rio um retângulo claro emoldurado pelas paredes mais próximas
+  // (apontado pelo Lucas em Quem sou). Com o piso, a parede sem luz é névoa, e
+  // a estrutura aparece só onde a luz a toca e nas valas — fina, precisa e
+  // discreta, como o PROJECT.md §2 descreve.
+  color = max(color, fogColorAt(viewDepth, world));
 
   // O fundo da vala não recebe nada de ninguém.
   color *= 1.0 - 0.62 * cavity;

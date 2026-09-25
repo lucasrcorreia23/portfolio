@@ -1258,6 +1258,7 @@ export function installProbe(deps: ProbeDeps): () => void {
     wave: round12.wave,
     flatRegions: round12.flatRegions,
     plate: round12.plate,
+    pairDiff: round12.pairDiff,
     presence: chamber.presence,
     parallax: chamber.parallax,
     engraving: chamber.engraving,

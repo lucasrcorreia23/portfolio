@@ -142,6 +142,37 @@ float fogPocket(float z) {
   return p;
 }
 
+/**
+ * A cor da névoa num ponto: a rampa perto da lente, o halo da fonte pela
+ * direção, e o calor da Superfície. Separada de applyFog na rodada 13 porque o
+ * concreto a usa como **piso** (ver shadeConcrete, em shaders/chamber.ts).
+ */
+vec3 fogColorAt(float viewDepth, vec3 worldPos) {
+  float depth01 = clamp(viewDepth / 88.0, 0.0, 1.0);
+
+  vec3 fogColor = fogRamp(depth01);
+  // A luz da fonte tinge a névoa **pela direção, não pela profundidade**. A
+  // primeira versão pesava o halo por smoothstep(0.22, 0.75) da profundidade,
+  // e isso recriou a aresta que ele existia para apagar: a parede do fundo, a
+  // 88 unidades, pegava o halo cheio e as laterais, a 50–80, a metade — o
+  // retângulo da seção voltava, mais fraco (apontado pelo Lucas em 0.12). Só o
+  // que está muito perto da lente fica fora. Uma letra na frente do brilho
+  // continua silhueta porque a névoa dela é menor que a do fundo, não porque a
+  // cor da névoa muda.
+  fogColor = mix(fogColor, uDeep, clamp(sourceHalo(worldPos) * smoothstep(0.02, 0.12, depth01), 0.0, 1.0));
+  // **A Superfície: a névoa lê quente no topo** (DIRECTION.md §5). Não é uma
+  // cor nova na rampa, é a luz de fora espalhada pela névoa perto da tomada de
+  // ar: um volume de --peach em volta da abertura, amostrado no trecho do raio
+  // que mais passa perto dela. Longe dela a névoa continua a mesma da descida.
+  if (uOutside > 0.0) {
+    vec3 mid = mix(cameraPosition, worldPos, 0.6);
+    vec3 d = (mid - vec3(0.0, ${APERTURE_Y.toFixed(3)}, ${LOUVER_Z.toFixed(3)})) * vec3(0.16, 0.22, 0.13);
+    float glow = exp(-dot(d, d));
+    fogColor = mix(fogColor, uPeach * 0.07, clamp(uOutside * glow, 0.0, 1.0));
+  }
+  return fogColor;
+}
+
 vec3 applyFog(vec3 color, float viewDepth, vec3 worldPos) {
   // Duas oitavas: a grossa dá bolsões, a fina dá o pó. O tempo entra só na
   // grossa, e devagar — atmosfera respira, não escoa.
@@ -166,28 +197,7 @@ vec3 applyFog(vec3 color, float viewDepth, vec3 worldPos) {
   // descida precise ler fica tão longe: a tomada de ar é vista de ~20, e o
   // card lido, de 6.
   amount = max(amount, smoothstep(40.0, 70.0, viewDepth));
-  float depth01 = clamp(viewDepth / 88.0, 0.0, 1.0);
-
-  vec3 fogColor = fogRamp(depth01);
-  // A luz da fonte tinge a névoa **pela direção, não pela profundidade**. A
-  // primeira versão pesava o halo por smoothstep(0.22, 0.75) da profundidade,
-  // e isso recriou a aresta que ele existia para apagar: a parede do fundo, a
-  // 88 unidades, pegava o halo cheio e as laterais, a 50–80, a metade — o
-  // retângulo da seção voltava, mais fraco (apontado pelo Lucas em 0.12). Só o
-  // que está muito perto da lente fica fora. Uma letra na frente do brilho
-  // continua silhueta porque a névoa dela é menor que a do fundo, não porque a
-  // cor da névoa muda.
-  fogColor = mix(fogColor, uDeep, clamp(sourceHalo(worldPos) * smoothstep(0.02, 0.12, depth01), 0.0, 1.0));
-  // **A Superfície: a névoa lê quente no topo** (DIRECTION.md §5). Não é uma
-  // cor nova na rampa, é a luz de fora espalhada pela névoa perto da tomada de
-  // ar: um volume de --peach em volta da abertura, amostrado no trecho do raio
-  // que mais passa perto dela. Longe dela a névoa continua a mesma da descida.
-  if (uOutside > 0.0) {
-    vec3 mid = mix(cameraPosition, worldPos, 0.6);
-    vec3 d = (mid - vec3(0.0, ${APERTURE_Y.toFixed(3)}, ${LOUVER_Z.toFixed(3)})) * vec3(0.16, 0.22, 0.13);
-    float glow = exp(-dot(d, d));
-    fogColor = mix(fogColor, uPeach * 0.07, clamp(uOutside * glow, 0.0, 1.0));
-  }
+  vec3 fogColor = fogColorAt(viewDepth, worldPos);
   return mix(color, fogColor, clamp(amount, 0.0, 1.0));
 }
 `;
