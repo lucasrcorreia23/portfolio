@@ -159,14 +159,23 @@ void main() {
  * As duas regras que a governam continuam valendo, e agora valem para a
  * fotografia também:
  *
- * 1. **Ela não pode passar do limiar de bloom.** O DIRECTION.md §5 reserva o
- *    bloom para "corpos emissivos e a fresta da tomada de ar" — o limiar do
- *    compositor é 1.05 em HDR linear, e a capa é escrita com pico em
- *    `uCoverGain`. Uma capa que floresce seria a segunda fonte de luz da câmara.
+ * 1. **Ela não pode passar do limiar de bloom — nem de L 0.2.** Desde a rodada
+ *    9 a capa não tem ganho próprio: ela é **placa fosca**, albedo iluminado
+ *    pelos aglomerados, com um teto de valor (ver `COVER_CEILING`). Uma capa
+ *    que acende sozinha seria a segunda fonte de luz da câmara.
  * 2. **Ela não gasta o orçamento de calor.** `--rose` e `--coral` são eventos do
  *    bando (§2), então a rampa procedural fica no lado frio: `--void` →
  *    `--deep` → o tom do card, que é uma mistura de `--teal` e `--cyan`.
  */
+/**
+ * O teto de valor da capa, em HDR linear, **antes** do tonemap.
+ *
+ * O composite faz `1 − exp(−c · 1.15)`; para o pixel entregue ficar em L ≤ 0.2
+ * a entrada precisa ficar em `−ln(0.8) / 1.15 ≈ 0.194`. A névoa e o grão vêm
+ * depois e podem mexer na última casa — a sonda mede no quadro entregue.
+ */
+export const COVER_CEILING = -Math.log(0.8) / 1.15;
+
 const COVER_GLSL = /* glsl */ `
 vec3 coverField(vec2 uv, vec3 world, vec3 tone, float seed) {
   vec3 grid = world + vec3(seed * 41.0, seed * 17.0, seed * 63.0);
@@ -203,7 +212,6 @@ ${LIGHTS_UNIFORMS_GLSL}
 uniform vec3  uSubstrate;
 uniform vec3  uCyan;
 uniform vec3  uMist;
-uniform float uCoverGain;
 
 /**
  * As capas dos cases, uma camada por card, na ordem da curadoria.
@@ -341,19 +349,37 @@ void main() {
   // ainda não chegou mas a imagem de entrega chegou, é ela que se vê.
   float shown = max(clamp(uCoverBlend[int(vIndex)], 0.0, 1.0), docked);
 
-  // **O ganho sobe com a atracagem, e ele é o que faz a entrega não piscar.**
-  // No corredor a capa é rebaixada a 0.38 de propósito, para ficar longe do
-  // limiar de bloom e não virar a segunda fonte de luz da câmara (ver
-  // uCoverGain). Na lente, ela **é** a imagem, e um <img> em DOM não tem ganho
-  // nenhum: entregar a 0.38 e trocar por 1.0 seria um degrau de luminância no
-  // quadro da troca. Um é o topo seguro — o pixel branco de uma captura de tela
-  // vale 1.0 em linear, e o limiar de bloom é 1.05.
-  // **E as peças vizinhas apagam quando a cena vira fundo de leitura.** A que
-  // virou a página vai para 1.0 (é a imagem); as outras caem para um décimo, e
-  // o que sobra delas é substrato e chanfro na névoa. Medido: com elas acesas,
-  // uma capa cruzando uma linha do case derruba o contraste para 3.01:1.
-  float coverGain = mix(uCoverGain * mix(1.0, 0.10, uCaseRecess), 1.0, docked);
-  field = mix(field, shot, shown) * coverGain;
+  // **A capa é uma placa fosca vista através da névoa, não uma tela acesa.**
+  //
+  // Até a rodada 9 ela era a fotografia com um ganho fixo de 0.38 — uma tela
+  // rebaixada, que acendia sozinha. Medido na folha do rio: capturas de site
+  // brancas liam como caixas de luz na câmara escura, e em 0.708 uma placa
+  // quase branca ocupava o terço de baixo do quadro — o "branco de
+  // laboratório" que o DIRECTION.md §6 proíbe pelo nome. A regra agora é
+  // física: a capa é **albedo**, iluminado pelo que passa perto dela (os
+  // mesmos aglomerados que acendem as paredes) mais um ambiente baixo, e um
+  // teto de valor impede que ela seja a coisa mais clara do quadro. Uma
+  // captura branca vira material claro no escuro — papel sob luz fraca —, que é
+  // uma coisa que existe no mundo.
+  //
+  // **Na lente o teto sai.** A peça atracada **é** a imagem do case, e um <img>
+  // em DOM não tem luz nem teto: entregar uma placa fosca e trocar pela
+  // fotografia seria um degrau de luminância no quadro da troca. Então a peça
+  // atracada volta a ser a fotografia crua, pela mesma rampa do voo.
+  //
+  // **E as peças vizinhas apagam quando a cena vira fundo de leitura** (medido:
+  // com elas acesas, uma capa cruzando uma linha do case derrubava o contraste
+  // para 3.01:1).
+  vec3 albedo = mix(field, shot, shown);
+  float coverLight = 0.16 + 1.1 * practicalLight(vWorld, vNormal, 0.3);
+  vec3 matte = albedo * coverLight * mix(1.0, 0.10, uCaseRecess);
+  float matteLum = dot(matte, vec3(0.2126, 0.7152, 0.0722));
+  // Teto suave: abaixo dele a placa responde linear à luz; perto dele ela
+  // satura sem degrau.
+  matte *= matteLum > 1e-5
+    ? ${COVER_CEILING.toFixed(4)} * (1.0 - exp(-matteLum / ${COVER_CEILING.toFixed(4)})) / matteLum
+    : 1.0;
+  field = mix(matte, shot, docked);
 
   // "Levemente recuada": a sombra do rebaixo, na borda de cima e na da
   // esquerda. É o que faz a capa ler como encaixada no substrato em vez de

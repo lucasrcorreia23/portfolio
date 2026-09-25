@@ -880,6 +880,14 @@ O rosa do bando depende de **densidade e** proximidade da aresta de ataque de
 uma peça (`nearLeadingEdge`, em `shaders/body.ts`, lendo `uCards`). Sem a
 segunda condição, qualquer aglomerado denso virava rosa e o teto de 15% caía.
 
+#### A capa é placa fosca
+
+Desde a rodada 9 a capa não tem ganho próprio: albedo × luz dos aglomerados, com
+teto suave `COVER_CEILING` (`shaders/cards.ts`). **Na peça atracada o teto sai** —
+a entrega ao `<img>` do case precisa dos mesmos bytes, sem luz nem teto; é a
+rampa `docked` que faz a troca. Mexer nesse `mix` é mexer na costura da
+travessia.
+
 #### O compositor
 
 Cena → DOF → **campo do véu** → composite, tudo sobre `WebGLRenderTarget`. Ele
@@ -1541,7 +1549,12 @@ Nesta ordem, porque cada uma depende da anterior:
    e as duas têm número medido ao lado — a Superfície, que é o beat que falta de
    verdade, está no item 5.
 
-   - **Duas capas leem como caixa de luz na câmara escura.** Prime8
+   - ~~**Duas capas leem como caixa de luz na câmara escura.**~~ **Resolvido
+     pela física na rodada 9**, não por troca de capa: a capa virou placa fosca
+     com teto de valor (L ≤ 0.2 entregue, medido em 0.115 no pior quadro). A
+     escolha entre as capas de hoje e as alternativas mais escuras continua
+     sendo do Lucas, agora vendo-as em `.screens/09-curadoria.png`. O texto
+     abaixo é o registro de antes. Prime8
      (`poster-prime8.png`) e ZOOMtecnologia (`zoomtech-hero.jpg`) entregam
      L = 0.286 e 0.236 depois do ganho da capa, contra ~0.03 das geradas e 0.059
      da Decision Suite. Elas passam o contraste e o calor, e são as imagens que

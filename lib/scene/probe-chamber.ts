@@ -8,6 +8,12 @@ import {
   type ShaderMaterial,
 } from "three";
 import { SCROLL_VH } from "@/components/beats/beats";
+import {
+  CARD_COVER_UV,
+  CARD_HALF_HEIGHT,
+  CARD_HALF_WIDTH,
+} from "./card-layout";
+import { stationProgress } from "./case-pose";
 import { RIB_CHAMFER, wallX, type ChamberPlan } from "./chamber-plan";
 
 /**
@@ -58,6 +64,9 @@ export type ChamberProbeDeps = {
     position: Vector3;
   };
   plan: ChamberPlan;
+  /** A corrente de cards como o shader a recebe (x, y, z, yaw). */
+  cards: readonly { x: number; y: number; z: number; w: number }[];
+  cardCount: { value: number };
   toLinear: Float32Array;
 };
 
@@ -101,6 +110,7 @@ function setVisible(meshes: readonly Mesh[], on: boolean): void {
 export function installChamberProbe(deps: ChamberProbeDeps) {
   const { canvas, gl, bindDefault, scene, step, settle, progressRef, camera, plan, toLinear } =
     deps;
+  const { cards, cardCount } = deps;
 
   const read = (into: Uint8Array) => {
     bindDefault();
@@ -112,6 +122,23 @@ export function installChamberProbe(deps: ChamberProbeDeps) {
     0.2126 * (toLinear[p[at] ?? 0] ?? 0) +
     0.7152 * (toLinear[p[at + 1] ?? 0] ?? 0) +
     0.0722 * (toLinear[p[at + 2] ?? 0] ?? 0);
+
+  /** Ponto em quad convexo, por sinal consistente dos produtos vetoriais. */
+  const insideQuad = (px: number, py: number, q: readonly number[]) => {
+    let sign = 0;
+    for (let i = 0; i < 4; i += 1) {
+      const ax = q[i * 2] ?? 0;
+      const ay = q[i * 2 + 1] ?? 0;
+      const bx = q[((i + 1) % 4) * 2] ?? 0;
+      const by = q[((i + 1) % 4) * 2 + 1] ?? 0;
+      const cross = (bx - ax) * (py - ay) - (by - ay) * (px - ax);
+      if (cross === 0) continue;
+      const next = cross > 0 ? 1 : -1;
+      if (sign === 0) sign = next;
+      else if (sign !== next) return false;
+    }
+    return true;
+  };
 
   /** Desce de `from` até `to` na taxa de uma pessoa, um quadro por vez. */
   const ramp = (from: number, to: number, rate = 1) => {
@@ -574,5 +601,264 @@ export function installChamberProbe(deps: ChamberProbeDeps) {
     };
   };
 
-  return { presence, parallax, engraving, findLayers: () => findLayers(scene) };
+  /**
+   * As capas na travessia do rio (rodada 9): a luminância máxima dentro do
+   * retângulo projetado de cada capa, **no quadro sem o bando** (um corpo na
+   * frente da capa não é a capa), contra o bando mais claro do mesmo quadro; e a
+   * distância até o próximo card à frente da câmera.
+   *
+   * Mesmos três quadros consecutivos da presença: A com tudo, B sem o bando.
+   */
+  const covers = (options: { from?: number; to?: number; samples?: number } = {}) => {
+    const { from = 0.45, to = 0.85, samples = 17 } = options;
+    const layers = findLayers(scene);
+    const n = canvas.width * canvas.height;
+    const A = new Uint8Array(n * 4);
+    const B = new Uint8Array(n * 4);
+    const [u0, v0, u1, v1] = CARD_COVER_UV;
+    const series: {
+      p: number;
+      z: number;
+      coverMax: number;
+      flockMax: number;
+      ahead: number | null;
+      /** O pixel mais claro das capas: card, x, y (de cima), r, g, b em sRGB. */
+      maxAt: number[];
+    }[] = [];
+
+    settle(0.3, 150);
+    ramp(0.3, from);
+    try {
+      for (let s = 0; s < samples; s += 1) {
+        const target = from + ((to - from) * s) / Math.max(1, samples - 1);
+        if (s > 0) ramp(progressRef.current, target);
+        setVisible(layers.flock, true);
+        step(1);
+        read(A);
+        setVisible(layers.flock, false);
+        step(1);
+        read(B);
+        setVisible(layers.flock, true);
+
+        // Os quads de cada card — o card inteiro e a capa dele —, em pixels de
+        // canvas (de baixo para cima, como o readPixels). **Um pixel é do card
+        // mais próximo que o contém**, e só conta se cair na capa dele: medido,
+        // a primeira versão atribuía à capa de um card do fundo o título
+        // gravado na placa de um card da frente, e acusava 0.25 numa capa que
+        // estava a 0.07.
+        const owned = new Uint8Array(n);
+        const order: { i: number; dist: number }[] = [];
+        let ahead: number | null = null;
+        for (let i = 0; i < cardCount.value; i += 1) {
+          const card = cards[i];
+          if (card === undefined) continue;
+          const gap = camera.position.z - card.z;
+          if (gap > 0.5 && (ahead === null || gap < ahead)) ahead = gap;
+          order.push({
+            i,
+            dist: Math.hypot(card.x - camera.position.x, card.y - camera.position.y, card.z - camera.position.z),
+          });
+        }
+        order.sort((a, b) => a.dist - b.dist);
+
+        let coverMax = 0;
+        let flockMax = 0;
+        let maxAt: number[] = [];
+        for (const { i } of order) {
+          const card = cards[i];
+          if (card === undefined) continue;
+          const c = Math.cos(card.w);
+          const sn = Math.sin(card.w);
+          const corner = (u: number, v: number) => {
+            const lx = (u * 2 - 1) * CARD_HALF_WIDTH;
+            const ly = (v * 2 - 1) * CARD_HALF_HEIGHT;
+            const at = projectLoose(new Vector3(card.x + c * lx, card.y + ly, card.z - sn * lx));
+            return at === null ? null : [at[0], canvas.height - at[1]];
+          };
+          const full = [corner(0, 0), corner(1, 0), corner(1, 1), corner(0, 1)];
+          const cov = [corner(u0, v0), corner(u1, v0), corner(u1, v1), corner(u0, v1)];
+          if (full.some((p) => p === null) || cov.some((p) => p === null)) continue;
+          const fq = (full as number[][]).flat();
+          const cq = (cov as number[][]).flat();
+          const xs = [fq[0], fq[2], fq[4], fq[6]] as number[];
+          const ys = [fq[1], fq[3], fq[5], fq[7]] as number[];
+          const x0 = Math.max(0, Math.floor(Math.min(...xs)));
+          const x1 = Math.min(canvas.width - 1, Math.ceil(Math.max(...xs)));
+          const y0 = Math.max(0, Math.floor(Math.min(...ys)));
+          const y1 = Math.min(canvas.height - 1, Math.ceil(Math.max(...ys)));
+          for (let y = y0; y <= y1; y += 1) {
+            for (let x = x0; x <= x1; x += 1) {
+              const index = y * canvas.width + x;
+              if (owned[index] === 1) continue;
+              if (!insideQuad(x + 0.5, y + 0.5, fq)) continue;
+              owned[index] = 1;
+              if (!insideQuad(x + 0.5, y + 0.5, cq)) continue;
+              const at = index * 4;
+              const l = lum(B, at);
+              if (l > coverMax) {
+                coverMax = l;
+                maxAt = [i, x, canvas.height - 1 - y, B[at] ?? 0, B[at + 1] ?? 0, B[at + 2] ?? 0];
+              }
+            }
+          }
+        }
+        for (let i = 0; i < n; i += 1) {
+          const a = lum(A, i * 4);
+          if (a - lum(B, i * 4) > 0.004 && a > flockMax) flockMax = a;
+        }
+        series.push({
+          p: Number(progressRef.current.toFixed(3)),
+          z: Number(camera.position.z.toFixed(1)),
+          coverMax: Number(coverMax.toFixed(4)),
+          flockMax: Number(flockMax.toFixed(4)),
+          ahead: ahead === null ? null : Number(ahead.toFixed(1)),
+          maxAt,
+        });
+      }
+    } finally {
+      setVisible(layers.flock, true);
+    }
+    const worst = series.reduce((a, b) => (b.coverMax > a.coverMax ? b : a));
+    return {
+      buffer: [canvas.width, canvas.height],
+      worstCover: worst,
+      coverAboveFlock: series.filter((r) => r.coverMax > r.flockMax).map((r) => r.p),
+      nothingAhead: series.filter((r) => r.ahead === null).map((r) => r.p),
+      series,
+    };
+  };
+
+  /**
+   * A folha da curadoria (rodada 9): os cards montados, cada um no progresso em
+   * que a câmera o tem à distância de leitura, **na mesma luz** (um aglomerado
+   * fixo quatro unidades à frente de cada peça, e só ele) e sem o bando na
+   * frente. Cada peça é recortada do quadro entregue e escalada para a mesma
+   * altura. Os rótulos vêm de quem chama — a sonda não conhece o conteúdo.
+   *
+   * Não decide nada: é a imagem que a curadoria precisa ver.
+   */
+  const lineup = async (options: {
+    labels: readonly string[];
+    footer?: string;
+    name?: string;
+    port?: number;
+    tileHeight?: number;
+  }) => {
+    const { labels, footer = "", name = "09-curadoria.png", port = 3131, tileHeight = 300 } = options;
+    const layers = findLayers(scene);
+    const host = window as unknown as { __probeClusters?: number[][] };
+    const frame = document.createElement("canvas");
+    frame.width = canvas.width;
+    frame.height = canvas.height;
+    const framePaper = frame.getContext("2d");
+    const crops: { canvas: HTMLCanvasElement; label: string }[] = [];
+    const pixels = new Uint8Array(canvas.width * canvas.height * 4);
+    if (framePaper === null) throw new Error("sem contexto 2D");
+
+    settle(0.3, 150);
+    try {
+      for (let i = 0; i < cardCount.value; i += 1) {
+        const card = cards[i];
+        if (card === undefined) continue;
+        const p = stationProgress(card.z);
+        host.__probeClusters = [[card.x * 0.6, card.y + 0.6, card.z + 4, 0.8]];
+        setVisible(layers.flock, false);
+        settle(p, 1);
+        step(2);
+        read(pixels);
+        const image = framePaper.createImageData(canvas.width, canvas.height);
+        for (let y = 0; y < canvas.height; y += 1) {
+          const source = (canvas.height - 1 - y) * canvas.width * 4;
+          image.data.set(pixels.subarray(source, source + canvas.width * 4), y * canvas.width * 4);
+        }
+        framePaper.putImageData(image, 0, 0);
+
+        const c = Math.cos(card.w);
+        const sn = Math.sin(card.w);
+        const pts = [
+          [-1, -1],
+          [1, -1],
+          [1, 1],
+          [-1, 1],
+        ].map(([u, v]) =>
+          projectLoose(
+            new Vector3(
+              card.x + c * (u ?? 0) * CARD_HALF_WIDTH,
+              card.y + (v ?? 0) * CARD_HALF_HEIGHT,
+              card.z - sn * (u ?? 0) * CARD_HALF_WIDTH,
+            ),
+          ),
+        );
+        if (pts.some((q) => q === null)) continue;
+        const xs = pts.map((q) => (q as [number, number])[0]);
+        const ys = pts.map((q) => (q as [number, number])[1]);
+        const pad = 10;
+        const x0 = Math.max(0, Math.floor(Math.min(...xs)) - pad);
+        const y0 = Math.max(0, Math.floor(Math.min(...ys)) - pad);
+        const x1 = Math.min(canvas.width, Math.ceil(Math.max(...xs)) + pad);
+        const y1 = Math.min(canvas.height, Math.ceil(Math.max(...ys)) + pad);
+        const crop = document.createElement("canvas");
+        const scale = tileHeight / Math.max(1, y1 - y0);
+        crop.width = Math.round((x1 - x0) * scale);
+        crop.height = tileHeight;
+        crop.getContext("2d")?.drawImage(frame, x0, y0, x1 - x0, y1 - y0, 0, 0, crop.width, crop.height);
+        crops.push({ canvas: crop, label: labels[i] ?? `card ${i}` });
+      }
+    } finally {
+      delete host.__probeClusters;
+      setVisible(layers.flock, true);
+    }
+
+    const gap = 16;
+    const header = 48;
+    const labelH = 44;
+    const perRow = 4;
+    const rows = Math.ceil(crops.length / perRow);
+    const tileW = Math.max(...crops.map((c) => c.canvas.width));
+    const sheet = document.createElement("canvas");
+    sheet.width = gap + perRow * (tileW + gap);
+    sheet.height = header + rows * (tileHeight + labelH + gap) + gap + 40;
+    const paper = sheet.getContext("2d");
+    if (paper === null) throw new Error("sem contexto 2D");
+    paper.fillStyle = "#030A12";
+    paper.fillRect(0, 0, sheet.width, sheet.height);
+    paper.fillStyle = "#DCE9EC";
+    paper.font = "16px ui-monospace, SFMono-Regular, Menlo, monospace";
+    paper.fillText(
+      `CURADORIA · ${crops.length} CARDS À DISTÂNCIA DE LEITURA · MESMA LUZ (UM AGLOMERADO FIXO À FRENTE) · SEM O BANDO · ORDEM ATUAL, PROVISÓRIA`,
+      gap,
+      30,
+    );
+    crops.forEach((crop, k) => {
+      const col = k % perRow;
+      const row = Math.floor(k / perRow);
+      const x = gap + col * (tileW + gap);
+      const y = header + row * (tileHeight + labelH + gap);
+      paper.drawImage(crop.canvas, x + (tileW - crop.canvas.width) / 2, y);
+      paper.fillStyle = "#DCE9EC";
+      paper.font = "13px ui-monospace, SFMono-Regular, Menlo, monospace";
+      const [first, second] = crop.label.split(" | ");
+      paper.fillText(first ?? "", x, y + tileHeight + 18);
+      paper.fillText(second ?? "", x, y + tileHeight + 36);
+    });
+    paper.font = "14px ui-monospace, SFMono-Regular, Menlo, monospace";
+    paper.fillText(footer, gap, sheet.height - 20);
+
+    const blob = await new Promise<Blob | null>((done) => sheet.toBlob(done, "image/png"));
+    if (blob === null) throw new Error("toBlob falhou");
+    const response = await fetch(
+      `http://${window.location.hostname}:${port}/shot?name=${encodeURIComponent(name)}`,
+      { method: "POST", body: blob },
+    );
+    return { name, cards: crops.length, sent: response.ok, size: [sheet.width, sheet.height] };
+  };
+
+  return {
+    presence,
+    parallax,
+    engraving,
+    covers,
+    lineup,
+    findLayers: () => findLayers(scene),
+  };
 }

@@ -353,14 +353,6 @@ export function Cards({ shared, river }: CardsProps) {
         uSubstrate: shared.abyss,
         uCyan: shared.cyan,
         uMist: shared.mist,
-        // Pico da capa em HDR linear. Abaixo do limiar de bloom do compositor
-        // (1.05) de propósito: o DIRECTION.md §5 reserva o transbordo para os
-        // corpos emissivos e a fresta da tomada de ar, e uma capa que floresce
-        // seria a segunda fonte de luz da câmara. Vale para a fotografia do
-        // case tanto quanto valia para o campo procedural — o pico de um pixel
-        // branco de captura de tela, convertido para linear, é 1.0, e este ganho
-        // é o que o mantém longe do limiar.
-        uCoverGain: { value: 0.38 },
         uCardMask: shared.cardMask,
         // A travessia para o case. Compartilhados porque quem os escreve é o
         // laço mestre (`lib/scene/case-drive.ts`) e quem os lê é este material —

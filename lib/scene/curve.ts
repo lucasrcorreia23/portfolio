@@ -115,8 +115,15 @@ const STOPS: readonly Stop[] = [
   { at: 0.51, position: [3.6, -0.15, -48.3], target: [0.9, 0.0, -61.0] },
   { at: 0.59, position: [-1.2, 0.2, -56.7], target: [-0.2, 0.05, -69.5] },
   { at: 0.68, position: [1.1, -0.2, -66.2], target: [0.3, 0.0, -79.0] },
-  { at: 0.77, position: [-1.0, 0.25, -75.6], target: [-0.2, 0.05, -88.0] },
-  { at: 0.85, position: [0.4, 0.35, -86.0], target: [0.0, 0.3, -98.0] },
+  // O fim do corredor: a câmera **não passa** o último card antes de 0.85. Ela
+  // desacelera e vira o olhar para ele — o último posto é a última coisa que o
+  // beat mostra. Antes, a câmera passava o card de −82 em ~0.81 e de lá até
+  // 0.85 não havia peça nenhuma à frente (medido na rodada 9: 0.83 e 0.85 sem
+  // card), o buraco que o DIRECTION.md §4 dizia querer evitar. Os dois cortes
+  // do rio (7 e 4 cards) terminam em −82 a bombordo, então a virada serve aos
+  // dois.
+  { at: 0.77, position: [-1.0, 0.25, -72.0], target: [-0.4, 0.05, -85.0] },
+  { at: 0.85, position: [-0.6, 0.2, -76.5], target: [-4.2, -0.8, -88.0] },
   // Daqui para baixo é provisório — ver o docblock.
   { at: 1.0, position: [0.0, 1.0, -93.0], target: [0.0, 0.6, -105.0] },
 ];

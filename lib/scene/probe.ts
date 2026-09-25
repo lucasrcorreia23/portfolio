@@ -109,6 +109,8 @@ export type ProbeDeps = {
    * outro lado da moeda de `cards`. Ver `probe-cards.ts`.
    */
   cardMask: { value: number };
+  /** Quantos cards a corrente deste aparelho tem. */
+  cardCount: { value: number };
   /**
    * A pose da câmera deste quadro. A sonda já tem a matriz da câmera, mas não o
    * **alvo** — e é a distância até ele que a profundidade de campo usa como
@@ -1115,6 +1117,8 @@ export function installProbe(deps: ProbeDeps): () => void {
     progressRef,
     camera,
     plan: deps.plan,
+    cards: deps.cards,
+    cardCount: deps.cardCount,
     toLinear: SRGB_TO_LINEAR,
   });
 
@@ -1174,6 +1178,8 @@ export function installProbe(deps: ProbeDeps): () => void {
     presence: chamber.presence,
     parallax: chamber.parallax,
     engraving: chamber.engraving,
+    covers: chamber.covers,
+    lineup: chamber.lineup,
   };
 
   const host = window as unknown as { __probe?: typeof api };

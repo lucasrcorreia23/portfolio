@@ -271,6 +271,19 @@ export function SceneWorld({
         cluster.energy,
       );
     }
+    // A sonda pode fixar a luz (só em desenvolvimento, e só com `?probe=1`):
+    // a folha da curadoria mostra os sete cards "na mesma luz", e a luz desta
+    // cena é o bando, que muda de card para card.
+    if (probe) {
+      const fixed = (window as unknown as { __probeClusters?: number[][] })
+        .__probeClusters;
+      if (fixed !== undefined) {
+        for (let i = 0; i < clusters.length; i += 1) {
+          const value = fixed[i] ?? [0, 0, 0, 0];
+          clusters[i]?.set(value[0] ?? 0, value[1] ?? 0, value[2] ?? 0, value[3] ?? 0);
+        }
+      }
+    }
 
     const ahead = proxy.densityAt(AHEAD_OF_SPECIMEN);
     shared.flockAhead.value =

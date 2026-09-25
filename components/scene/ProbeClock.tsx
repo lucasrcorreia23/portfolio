@@ -83,6 +83,7 @@ export function ProbeClock({
       veil: { box: shared.veilBox.value, f: shared.veilF.value },
       cards: shared.cards.value,
       cardMask: shared.cardMask,
+      cardCount: shared.cardCount,
       pose,
       roost,
       proxy,

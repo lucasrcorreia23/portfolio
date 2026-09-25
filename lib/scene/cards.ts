@@ -51,8 +51,10 @@ import { FLOCK_TUBE_HEIGHT, FLOCK_TUBE_WIDE } from "./world";
  *   em `z = −84` seria lido em 0.71 e a última décima do beat ficaria sem nada
  *   à frente. Foi o que a primeira contact sheet mostrou — dois quadros de doze,
  *   `p = 0.814` e `p = 0.850`, com a câmara vazia. Em `z = −82` o último card é
- *   lido em 0.69 e passado em 0.814, e o que sobra é a saída do rio, não um
- *   vazio.
+ *   lido em 0.69 e **não é mais passado dentro do beat**: desde a rodada 9 a
+ *   câmera desacelera no fim do corredor e chega a 0.85 com ele 5.5 unidades à
+ *   frente, virando o olhar para ele (`STOPS` em `curve.ts`). Medido: nenhum
+ *   quadro de 0.45 a 0.85 sem card à frente.
  *
  * Sobram 27 unidades para distribuir. Com o piso de 4.5 unidades entre centros
  * (§4, e ele não é negociável — abaixo dele dois cards se atropelam na

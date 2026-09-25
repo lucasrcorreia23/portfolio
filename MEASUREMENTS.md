@@ -37,6 +37,7 @@ medido, com que método, e por quê o número é esse".
 - [A travessia para o case, medida](#a-travessia-para-o-case-medida)
 - [A câmara, medida](#a-câmara-medida)
 - [O bando e o frame, medidos](#o-bando-e-o-frame-medidos)
+- [As capas e o fim do corredor, medidos](#as-capas-e-o-fim-do-corredor-medidos)
 - [Desempenho da cena, medido](#desempenho-da-cena-medido)
 
 ---
@@ -1478,6 +1479,85 @@ A leitura `DENS.` da HUD sai do proxy da CPU, que esta rodada não tocou.
   bando inteiro em série) media 8.6 ms; em dois estágios ela saiu da conta.
   O resto é o bando **no quadro**: sem a lâmina, a travessia não tem mais
   trechos com a população inteira fora da tela. **Remedir com a máquina quieta.**
+
+## As capas e o fim do corredor, medidos
+
+Rodada 9. A capa deixa de ter ganho próprio (0.38) e vira **placa fosca**:
+albedo × (0.16 + 1.1 × luz dos aglomerados), com teto suave de valor em
+`COVER_CEILING` = −ln(0.8)/1.15 ≈ 0.194 antes do tonemap, ou seja L ≤ 0.2
+entregue. Na peça atracada o teto sai (a entrega ao `<img>` continua casando).
+As paradas 0.77 e 0.85 da câmera mudaram para o rio não acabar antes do beat.
+
+### Nenhuma capa é a coisa mais clara do quadro
+
+`__probe.covers({from: 0.45, to: 0.85, samples: 21})`. Para cada quadro, a
+luminância máxima **dentro das capas** no quadro sem o bando, contra o bando
+mais claro do mesmo quadro. Cada pixel é atribuído ao card **mais próximo** cujo
+retângulo o contém, e só conta se cair na capa dele.
+
+| | pior capa | onde | bando no mesmo quadro | capa acima do bando |
+|---|---|---|---|---|
+| sem grão | **0.115** | 0.71 (ZOOMtecnologia) | 0.684 | nenhum quadro |
+| com grão | **0.127** | 0.71 | 0.707 | nenhum quadro |
+
+Teto de 0.2 ✅ em todo quadro, e a capa sempre abaixo do bando (que vai de 0.34
+a 0.85 na travessia). Não há número "antes" com este instrumento: a medida foi
+escrita nesta rodada; a evidência do antes é a folha `05b-rio.png`, com a placa
+quase branca no terço de baixo em 0.708.
+
+**Duas armadilhas desta medida.**
+
+1. **O máximo pega o pico do grão.** O grão soma ruído depois do tonemap, e o
+   máximo de milhares de pixels escolhe sempre o pico positivo: ~+0.04 neste
+   nível de luz. Por isso a tabela traz as duas colunas.
+2. **Um pixel dentro do quad de uma capa não é, necessariamente, dessa capa.** A
+   primeira versão acusou 0.25 na capa do card 3 — e o pixel era o título
+   gravado na **placa** do card 0, que na tela cai por cima da capa do card 3. O
+   pixel é do card mais próximo que o contém, e só depois se pergunta se ele cai
+   na capa.
+
+### O fim do corredor
+
+A mesma sonda devolve a distância até o próximo card à frente da câmera. Antes:
+**0.83 e 0.85 sem card nenhum à frente** (o último, em z −82, era passado em
+~0.81). Depois das paradas novas: nenhum quadro de 0.45 a 0.85 sem card à
+frente; em 0.85 a câmera está em z −76.5 com o último card 5.5 unidades adiante,
+virando o olhar para ele.
+
+### A folha da curadoria
+
+`__probe.lineup({labels, footer})` → `.screens/09-curadoria.png`. Cada card no
+progresso em que está à distância de leitura (`stationProgress`), **na mesma
+luz** (a sonda fixa um único aglomerado quatro unidades à frente de cada peça,
+por `window.__probeClusters`, que só existe com `?probe=1` em desenvolvimento),
+sem o bando, recortado do quadro entregue e escalado para a mesma altura.
+Rotulado com posto, slug, cliente e gerada/migrada. **Não decide nada.** O corte
+do mobile na ordem atual são Perfecting, Unifique Energia, Decision Suite e
+WeCann Atena: **três dos quatro com capa gerada**.
+
+### A separação em profundidade do corredor, e um instrumento que ficou ruidoso
+
+`corridor()` em 0.50, três chamadas seguidas, 1440×813:
+
+| | razões de largura entre vizinhos |
+|---|---|
+| rodada 9 | 4.24/0.62/1.37/1.14/0.80/1.20 · 1.57/1.22/0.62/0.88/1.16/1.20 · 3.12/0.63/0.96/1.10/1.16/1.20 |
+| controle (`b1ccf38`) | 0.98/2.29/0.69/1.21/1.02/1.34 · 1.61/2.24/0.74/1.17/1.01/1.28 · 1.55/1.70/1.00/1.08/1.11/1.33 |
+
+As duas versões devolvem razões abaixo de 1 e variam por chamada — a variação é
+**determinística** (se repete idêntica entre carregamentos) e segue a fase do
+bando: a pegada é uma diferença de médias com o bando andando, e o bando cobre as
+peças de formas diferentes a cada chamada. A geometria dos cards não mudou nesta
+sessão. Os números registrados antes (1.56 → 1.08) foram medidos a 2205×1254;
+**este instrumento precisa ser refeito antes de voltar a ser critério**.
+
+### Contraste, custo e pacote
+
+- Contraste 0.02 → 0.85: **5.15:1** (en) e **5.11:1** (pt), iguais aos da rodada 8.
+- Pacote: chunk da cena **318.5 kB** (+0.3).
+- GPU no rio (0.45–0.85), intercalado com o controle sob a mesma carga: 5.17–5.93
+  contra 3.97–4.38 ms — a mesma razão de ~1.3–1.4× da rodada 8. As capas foscas
+  não mudaram a conta.
 
 ## Desempenho da cena, medido
 
