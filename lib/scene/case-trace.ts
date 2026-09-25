@@ -167,6 +167,7 @@ export function installCaseTrace(deps: Deps): CaseTrace {
     const s = Math.sin(card.w);
     const halfW = ((CARD_COVER_UV[2] - CARD_COVER_UV[0]) * CARD_WIDTH) / 2;
     const halfH = ((CARD_COVER_UV[3] - CARD_COVER_UV[1]) * CARD_HEIGHT) / 2;
+    const canvasRect = gl.domElement.getBoundingClientRect();
 
     let minX = Infinity;
     let minY = Infinity;
@@ -184,8 +185,12 @@ export function installCaseTrace(deps: Deps): CaseTrace {
         )
         .applyMatrix4(matrix);
       if (point.z > 1) return null;
-      const px = (point.x * 0.5 + 0.5) * window.innerWidth;
-      const py = (0.5 - point.y * 0.5) * window.innerHeight;
+      // O retângulo do **canvas**, não a janela: com barra de rolagem clássica
+      // (15 px neste Chrome de bancada) `innerWidth` inclui a barra e o
+      // canvas não, e a projeção saía 13.8 px larga na borda direita — medido
+      // igual antes e depois da rodada 12, ou seja erro do instrumento.
+      const px = (point.x * 0.5 + 0.5) * canvasRect.width + canvasRect.left;
+      const py = (0.5 - point.y * 0.5) * canvasRect.height + canvasRect.top;
       minX = Math.min(minX, px);
       minY = Math.min(minY, py);
       maxX = Math.max(maxX, px);
@@ -356,7 +361,7 @@ export function installCaseTrace(deps: Deps): CaseTrace {
     );
 
     // O buffer do WebGL não é o da tela em CSS quando o DPR não é 1.
-    const scale = width / window.innerWidth;
+    const scale = width / gl.domElement.getBoundingClientRect().width;
     const rects = textRects();
     const out: LineReading[] = [];
 
