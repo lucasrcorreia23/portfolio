@@ -20,7 +20,7 @@ import {
   type DormantField,
   type SlatState,
 } from "./dormant-field";
-import { GateInvite, readInviteVariant, type InviteVariant } from "./GateInvite";
+import { GateInvite } from "./GateInvite";
 import { formatLevel, formatVelocity } from "./readout";
 
 /**
@@ -41,9 +41,10 @@ import { formatLevel, formatVelocity } from "./readout";
  * chegaram. Numa rede rápida o portão dura cerca de um segundo, que é o tempo
  * de a leitura assentar, e não um atraso plantado.
  *
- * **2. O convite.** Ao chegar a 100 o contador *vira* um caractere só: `↓`,
- * desenhado na casa que o número ocupava — mesma linha de base, mesma margem,
- * a altura dos algarismos (ver `GateInvite`). A palavra continua existindo como
+ * **2. O convite.** Ao chegar a 100 o contador *vira* uma marca só — uma seta
+ * no traço das gravações da câmara —, desenhada na casa que o número ocupava:
+ * mesma linha de base, mesma margem, a altura dos algarismos (ver
+ * `GateInvite`). A palavra continua existindo como
  * nome acessível do botão.
  *
  * **3. A abertura.** O clique destrava o áudio, libera a descida e dispara a
@@ -65,7 +66,7 @@ type GatePhase = "loading" | "ready" | "opening" | "gone";
 type GateOverlayProps = {
   /** Nome acessível do portão inteiro. */
   label: string;
-  /** Nome acessível do convite de entrada — a palavra por trás do `↓`. */
+  /** Nome acessível do convite de entrada — a palavra por trás da marca. */
   enter: string;
   /** `M/S`. */
   unit: string;
@@ -203,9 +204,6 @@ export function GateOverlay({
    * dela de fora — o deslize da cota termina depois, e é lá que a caixa
    * definitiva existe.
    */
-  // Lido uma vez no cliente. Só o convite o usa, e o convite só existe depois
-  // de `ready` — então o servidor nunca renderiza a variante.
-  const [invite] = useState<InviteVariant>(readInviteVariant);
   // `true` quando as frestas já mostram a câmara de verdade: o fundo opaco do
   // portão sai, senão ele cobriria exatamente o que a janela existe para
   // mostrar.
@@ -641,7 +639,7 @@ export function GateOverlay({
                 onClick={open}
                 className="gate-enter absolute inset-0 text-left"
               >
-                <GateInvite variant={invite} />
+                <GateInvite />
               </button>
             )}
           </div>

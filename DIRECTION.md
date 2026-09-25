@@ -53,6 +53,9 @@ linear de duas paradas.
 esteira, atrás do corpo de prova. Nunca mais de ~10% da população em coral ao
 mesmo tempo, o que mantém o teto de 15% de tela do `PROJECT.md`.
 
+> **Decisão do Lucas, 2026-09-25: o coral não entra nas esteiras dos cards, por
+> enquanto.** Continua só na esteira do corpo de prova.
+
 **Léxico da HUD** (mono, caixa alta, tracking positivo, opacidade baixa):
 `EST. 040` · `COTA +12.40` · `DENS. 0.62` · `V 14.6 M/S` · `Z −38`.
 Numérico por escolha: atravessa pt/en quase sem tradução.
@@ -327,11 +330,17 @@ a mono em corpo pequeno porque a descreve como HUD. No portão não há HUD nem
 display — "só mono, DOM, nítida" —, então ela é a única tipografia do quadro.
 Fora do portão a regra do §3.2 continua inteira.
 
-**Ao chegar a 100 o contador vira um caractere só: `↓`.** Não um botão com
-rótulo, não "entrar" escrito: o convite ocupa exatamente a casa que o número
-ocupava, e a palavra continua existindo como nome acessível do controle. A
-seta é a única coisa que o site pede — a §4 do `PROJECT.md` é uma descida
+**Ao chegar a 100 o contador vira uma marca só: uma seta gravada.** Não um
+botão com rótulo, não "entrar" escrito: o convite ocupa exatamente a casa que o
+número ocupava, e a palavra continua existindo como nome acessível do controle.
+A seta é a única coisa que o site pede — a §4 do `PROJECT.md` é uma descida
 vertical, e o gesto é esse.
+
+> **Decisão do Lucas, 2026-09-25: a marca gravada, não o glifo.** Das duas
+> variantes comparadas lado a lado (`.screens/065-convite.png`), fica a marca
+> desenhada no traço das gravações da câmara — haste de um fio, marca de
+> intervalo no topo, ponta aberta como a da seta de escala. O glifo `↓` da mono
+> saiu do código.
 
 > **Decisão do Lucas, 2026-09-25: pelas frestas aparece a câmara real, não o
 > campo 2D.** Quando a cena pinta o primeiro quadro, o que se vê entre as
@@ -564,6 +573,10 @@ Nenhum filtro devolve menos de dois cases, e nenhum esvazia o rio.
 >
 > A matriz cobre os sete cases e é a que os filtros do rio usam hoje.
 >
+> **Quando decidir, segundo o Lucas (2026-09-25): só depois de as três capas
+> geradas virarem material real.** Decidir antes seria ordenar três retângulos
+> de campo procedural contra quatro fotografias.
+>
 > **A garantia deixou de ser uma expectativa e virou uma guarda de build.**
 > `assertFilterFloor` (`lib/cases.ts`) confere os três eixos contra o corte
 > **mais apertado** que existe — os quatro primeiros postos, que é o rio do
@@ -623,19 +636,20 @@ lê quente no topo. O bando sai pela abertura e se dispersa.
 Contato em DOM: e-mail, perfis, seletor de idioma. Sem formulário, sem frase de
 convite. O último frame é a câmara vazia, com luz, e um número gravado.
 
-> **Como foi construída (rodada 11) — e o que nisso é proposta, não decisão.**
+> **Como foi construída (rodada 11), e o que o Lucas decidiu sobre ela em
+> 2026-09-25.**
 >
-> - **As venezianas são aletas verticais.** Com lâminas horizontais e a luz
->   vindo de cima, as oito lâminas de luz se empilhavam num cone só de névoa —
->   de frente, uma lâmina não se separa da outra. Aletas verticais com a luz
->   quase ao longo do duto ficam de perfil para a câmera, e as lâminas se leem
->   uma a uma. *Proposta minha, pendente do Lucas.*
-> - **O número gravado é `COTA ±00.000`**, no topo da soleira: o portão abre na
->   cota −38.402, e a descida termina na referência de nível, com as mesmas três
->   casas. *Proposta minha, pendente do Lucas.*
-> - **A frase de despedida** — "Cota −38.402 na entrada, ±00.000 na saída. O
->   resto não cabe num instrumento." — foi escrita por mim a pedido do Prompt 11.
->   *Pendente do Lucas*, como todo texto.
+> - **As venezianas são aletas verticais — aceito pelo Lucas.** Com lâminas
+>   horizontais e a luz vindo de cima, as oito lâminas de luz se empilhavam num
+>   cone só de névoa — de frente, uma lâmina não se separa da outra. Aletas
+>   verticais com a luz quase ao longo do duto ficam de perfil para a câmera, e
+>   as lâminas se leem uma a uma.
+> - **O número gravado é `COTA ±00.000` — aceito pelo Lucas**, no topo da
+>   soleira: o portão abre na cota −38.402, e a descida termina na referência de
+>   nível, com as mesmas três casas.
+> - **A frase de despedida é "Cota −38.402 na entrada, ±00.000 na saída." —
+>   decisão do Lucas**: a proposta tinha uma segunda metade ("O resto não cabe
+>   num instrumento."), cortada porque o número já diz o resto.
 > - **O enquadramento** põe a abertura na metade direita e a coluna de contato
 >   sobre concreto escuro na esquerda, com as lâminas descendo para longe dela:
 >   é a composição, e não o véu, que dá contraste ao texto aqui.

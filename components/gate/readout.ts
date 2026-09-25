@@ -46,16 +46,6 @@ export const DECIMALS = 3;
 const MINUS = "−";
 
 /**
- * O convite, quando a câmara chega ao regime: um caractere só.
- *
- * A seta para baixo é a única coisa que o site pede que você faça — o
- * PROJECT.md §4 é uma descida vertical contínua, e o gesto é esse. Ela não
- * precisa da palavra "entrar" ao lado; a palavra existe como nome acessível
- * do botão, para quem lê por leitor de tela.
- */
-export const ENTER_GLYPH = "↓";
-
-/**
  * Largura fixa da leitura, em caracteres — `14.617` e `07.284` ocupam o mesmo
  * espaço. Com `tabular-nums` na mono isso mantém a linha parada enquanto o
  * número sobe; sem isso o bloco inteiro tremeria a cada décimo.

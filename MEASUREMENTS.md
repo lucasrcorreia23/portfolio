@@ -1640,6 +1640,11 @@ passa do limiar de pixel de corpo.
 bando chegando como uma **massa finita** que atravessa as letras, e não como um
 rio infinito. É decisão do Lucas.
 
+> **Decidido pelo Lucas, 2026-09-25: o critério fica — 3:1 no pixel.** Ele não
+> baixa para o plano das letras. Com isso a massa finita deixa de ser uma
+> pergunta e vira o trabalho que falta para o 3B fechar (AGENTS.md, "O que
+> falta").
+
 ### O que o 3B e o calor viraram
 
 `__probe.measure()` em 0.18: compressão **1.01** (no limite do "maior"),

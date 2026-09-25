@@ -1044,8 +1044,7 @@ do horizonte delas, chanfro e sombra na fresta vizinha.
 
 **O convite ocupa a casa do número** (`GateInvite.tsx`): o número continua no
 layout, invisível, e o convite é desenhado por cima com a altura dos algarismos.
-Duas variantes (`glyph` padrão, `mark` só em dev com `?invite=mark`) — **a escolha
-é do Lucas**.
+É a **marca gravada** — decisão do Lucas, 2026-09-25; o glifo `↓` saiu do código.
 
 `components/gate/` — o beat "pré" do PROJECT.md §4. Ele **mora na home**
 (`app/[locale]/page.tsx`), não no layout: quem chega direto num case por link
@@ -1055,7 +1054,7 @@ não tem cena para carregar nem descida para destravar.
 Gate.tsx           servidor: resolve os rótulos, escreve a trava e o <noscript>
 GateOverlay.tsx    cliente: o relógio único — contador, veneziana, campo
 dormant-field.ts   o organismo dormente, canvas 2D sem dependência
-readout.ts         14.617 M/S, COTA −38.402, ↓ — e por que esses números
+readout.ts         14.617 M/S, COTA −38.402 — e por que esses números
 ```
 
 **O contador não é uma barra e não mente.** Ele conta o manifesto real
@@ -1617,10 +1616,10 @@ saída, não a entrada.
 
 **O convite ocupa a casa do número** (DIRECTION.md §4), com altura de
 algarismo, linha de base e margem idênticas às da leitura — medido: a seta
-reescalada ocupa de 65 a 190 px do recorte, os algarismos também. Há duas
-variantes, `glyph` (padrão) e `mark` (`?invite=mark`, só em dev), lado a lado em
-`.screens/065-convite.png`; **a escolha é do Lucas e está pendente**. A que
-perder sai do código.
+reescalada ocupa de 65 a 190 px do recorte, os algarismos também. As duas
+variantes, `glyph` e `mark`, foram comparadas lado a lado em
+`.screens/065-convite.png`; **o Lucas escolheu a marca** (2026-09-25) e o glifo
+saiu do código.
 
 Contraste sob a leitura remedido depois da mudança de casa, lendo os pixels do
 canvas 2D atrás de cada caixa, quadro a quadro (1440×813, `pt`):
@@ -1686,8 +1685,10 @@ Nesta ordem, porque cada uma depende da anterior:
    e as duas têm número medido ao lado — a Superfície, que é o beat que falta de
    verdade, está no item 5.
 
-   - ~~**Duas capas leem como caixa de luz na câmara escura.**~~ **Resolvido
-     pela física na rodada 9**, não por troca de capa: a capa virou placa fosca
+   - ~~**Duas capas leem como caixa de luz na câmara escura.**~~ **Capas
+     trocadas por decisão do Lucas, 2026-09-25**: Prime8 usa `fotocapa.png` e
+     ZOOMtecnologia usa `ZOOMtech-home.jpg`. Antes disso, resolvido
+     pela física na rodada 9, não por troca de capa: a capa virou placa fosca
      com teto de valor (L ≤ 0.2 entregue, medido em 0.115 no pior quadro). A
      escolha entre as capas de hoje e as alternativas mais escuras continua
      sendo do Lucas, agora vendo-as em `.screens/09-curadoria.png`. O texto
@@ -1700,10 +1701,9 @@ Nesta ordem, porque cada uma depende da anterior:
      (`prime8/fotocapa.png` a 0.063, `zoomtecnologia/ZOOMtech-home.jpg` a
      0.032), e a régua para comparar é a luminância da imagem **recortada na
      razão do card** — não a da imagem inteira, que é outra coisa.
-   - **`--coral` continua não acendendo no rio**, porque a janela de esteira da
-     rampa emissiva é ancorada ao corpo de prova, trinta unidades a jusante.
-     Estender o coral às esteiras dos cards é decisão de cor, e agora ela pode
-     ser tomada com capa de verdade atrás — o que a rodada anterior não podia.
+   - **`--coral` não acende no rio, e é decisão**: o Lucas decidiu
+     (2026-09-25) que ele não entra nas esteiras dos cards por enquanto. A
+     janela de esteira da rampa emissiva continua ancorada ao corpo de prova.
 
    **A capa da Nestlé já foi trocada, e essa não era curadoria: era bug.**
    `capa.jpg` é uma tira de 3840×500 (7.68:1), e recortada para a razão do card
@@ -1786,14 +1786,20 @@ Nesta ordem, porque cada uma depende da anterior:
    DIRECTION.md §5 pede ("a troca é corte, não movimento de câmera") —, mas
    ninguém **mediu** o quadro que ela produz. É uma pose a mais na tabela do §5,
    e `__calm.capture` já é o instrumento para ela.
-9. **O tempo de GPU na resolução certa e num celular.** O plano `descent`
+9. **A silhueta a 3:1 no pixel — o critério fica (decisão do Lucas,
+   2026-09-25).** O melhor medido é 1.02; chegar a 3 pede o bando atravessando
+   as letras como uma **massa finita**, e não como um rio infinito
+   (MEASUREMENTS.md, "O escuro e o ângulo, medidos"). É mudança de desenho do
+   bando na Identidade, e obriga a remedir o 3B, o calor e o véu da Identidade.
+   Rodada própria.
+10. **O tempo de GPU na resolução certa e num celular.** O plano `descent`
    (`?bench=1&plan=descent`) rodou no M5 a 1440×900 com DPR 1 — 1.3 Mpx, metade
    do buffer nativo —, então os 13–15% do quadro que ele deu são o mesmo débito
    de resolução do item 3. No telefone ele não rodou. E a linha 0 dos planos diz
    `flock: 16384`, que desde a rodada 11 **não** é o padrão do telefone (9.216):
    num celular, o passo 0 roda com 9.216 e reporta 16.384. Corrigir antes de
    medir lá.
-10. **A varredura de contraste em inglês.** O Chrome desta bancada negocia `pt`
+11. **A varredura de contraste em inglês.** O Chrome desta bancada negocia `pt`
    em `/`, e a varredura "em inglês" mediu o português. Precisa de
    `Accept-Language` emulado na mesma conexão.
 

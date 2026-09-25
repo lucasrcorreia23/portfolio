@@ -140,18 +140,14 @@
     outline: none;
   }
 
-  /* `line-height: 0`: o glifo é reescalado para a altura dos algarismos, e um
-     inline-block mais alto que a linha empurraria a linha de base para baixo —
-     medido, ~10 px abaixo da do número. Sem altura de linha própria, a linha
-     é a do número e o convite assenta nela. */
+  /* `line-height: 0`: a marca tem a altura dos algarismos, e um inline-block
+     mais alto que a linha empurraria a linha de base para baixo — medido, ~10
+     px abaixo da do número. Sem altura de linha própria, a linha é a do número
+     e o convite assenta nela. */
   .gate-invite {
     display: inline-block;
     line-height: 0;
     transition: transform var(--dur-aperture) var(--ease-strong);
-  }
-
-  .gate-invite-glyph {
-    display: inline-block;
   }
 
   .gate-invite-mark {
@@ -161,7 +157,7 @@
 
   /* O convite desce ao ser apontado. É a mesma direção que ele está
      propondo — e é também o foco visível do teclado: o contorno do navegador
-     seria uma caixa de 680 px em volta de um caractere. */
+     seria uma caixa de 680 px em volta de um traço. */
   .gate-enter:hover .gate-invite,
   .gate-enter:focus-visible .gate-invite {
     transform: translateY(0.06em);
