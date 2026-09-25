@@ -272,12 +272,13 @@ void main() {
   // **Rodada 12: o isolado quase apaga, e o reforço perto da lente saiu.** O
   // corpo perto da lente agora encolhe e some (vNear); o reforço de 7× que o
   // fazia um disco claro no portão não tem mais o que acender. Depois de o
-  // bando se formar, o corpo isolado cai para 0.2 (era 0.5) e o aglomerado
-  // sobe até 1.75 — a mesma faixa medida de vDensity (mediana 0.033 → ~0.31;
-  // p90 0.073 → ~1.2). Antes de se formar (Emergência, portão) o corpo sozinho
+  // bando se formar, o corpo isolado fica em 0.5 e o aglomerado sobe até
+  // 1.75 — a rampa da rodada 8, que a 12 tinha baixado para 0.2 e o bando
+  // sumiu (a rodada 13 a devolveu). Faixa medida de vDensity: mediana 0.033 →
+  // ~0.59; p90 0.073 → ~1.3. Antes de se formar (Emergência, portão) o corpo sozinho
   // continua sendo o assunto: 3.0, porque com o teto de tamanho ele é um grão
   // de 3.5 px, e um grão no brilho de cruzeiro some no escuro da Emergência.
-  float crowd = mix(3.0, 0.2 + 1.55 * smoothstep(0.02, 0.10, vDensity), smoothstep(0.15, 0.6, uFormingFrag));
+  float crowd = mix(3.0, 0.5 + 1.25 * smoothstep(0.02, 0.10, vDensity), smoothstep(0.15, 0.6, uFormingFrag));
   crowd *= vNear * vNear;
   float energy = uGain * (0.35 + 0.65 * tip) * (0.55 + 0.85 * vEnergy) * crowd;
 
@@ -298,5 +299,129 @@ void main() {
   lit = applyFog(lit, vViewDepth, vWorld);
 
   fragColor = vec4(lit, 1.0);
+}
+`;
+
+/**
+ * **O halo do corpo** (rodada 13) — a massa do bando, sem contorno.
+ *
+ * O núcleo acima é um grão (teto de 3.5 × 2 px) e escreve profundidade, então a
+ * oclusão das letras continua exata. O que a rodada 12 tirou junto com o
+ * losango foi a **presença**: o corpo da rodada 8 tinha o tamanho do mundo e,
+ * perto da lente, dezenas de pixels. O halo devolve esse tamanho como luz — uma
+ * gaussiana alongada na direção do voo, do tamanho que o corpo teria, somada
+ * por cima (aditiva, testando a profundidade, sem escrevê-la). Uma gaussiana
+ * não tem borda: é mancha de luz, nunca forma. Ele só existe quando o corpo
+ * seria maior que o núcleo (`GLOW_FROM` px), então o corpo distante continua
+ * um grão.
+ *
+ * Um quad por corpo, orientado na tela; o brilho vem da mesma rampa de
+ * densidade do núcleo, e cai com a área para a mancha grande perto da lente
+ * não virar uma parede de luz.
+ */
+export const GLOW_FROM = 3.5;
+export const GLOW_FULL = 9;
+/** O halo é maior que o corpo que ele substitui: a luz transborda. */
+export const GLOW_SCALE = 1.5;
+/** Teto do comprimento do halo na tela, em px de CSS. */
+export const GLOW_MAX_PX = 90;
+
+export const GLOW_VERT = /* glsl */ `
+uniform sampler2D uPos;
+uniform sampler2D uVel;
+uniform float uBodyScale;
+uniform float uForming;
+uniform float uFocalPx;
+uniform vec2  uViewportPx;
+
+in vec2 aRef;
+
+out vec2  vQuad;
+out float vGlow;
+out float vEnergy;
+out float vDensity;
+out float vViewDepth;
+out vec3  vWorld;
+
+void main() {
+  vec4 P = texture(uPos, aRef);
+  vec4 V = texture(uVel, aRef);
+  vec3 center = P.xyz;
+  vDensity = P.w;
+  vEnergy = V.w;
+  vWorld = center;
+
+  float lot = fract(sin(dot(aRef, vec2(12.9898, 78.233))) * 43758.5453);
+  float admit = step(lot, 0.035 + 0.965 * pow(uForming, 2.5));
+#ifdef PROBE_SUBSET
+  admit *= step(fract(lot * 97.13), 1.0 / float(PROBE_SUBSET));
+#endif
+  float lensGuard = smoothstep(0.0, 3.0, distance(cameraPosition, center));
+  float alive = step(-400.0, center.y);
+
+  vec4 viewCenter = viewMatrix * vec4(center, 1.0);
+  float depth = max(-viewCenter.z, 1e-3);
+  vViewDepth = depth;
+  float stretch = 1.0 + vEnergy * 0.6;
+  float bodyPx = 2.0 * uBodyScale * stretch * uFocalPx / depth;
+  float lengthPx = min(bodyPx * ${GLOW_SCALE.toFixed(2)}, ${GLOW_MAX_PX.toFixed(1)});
+  float widthPx = max(lengthPx * 0.45, 3.0);
+  vGlow = smoothstep(${GLOW_FROM.toFixed(1)}, ${GLOW_FULL.toFixed(1)}, bodyPx) * admit * lensGuard * alive;
+
+  // A direção do voo na tela: o centro e um passo à frente, projetados.
+  vec4 clipCenter = projectionMatrix * viewCenter;
+  vec3 forward = normalize(V.xyz + vec3(0.0, 1e-4, 1e-4));
+  vec4 clipAhead = projectionMatrix * (viewMatrix * vec4(center + forward * 0.05, 1.0));
+  vec2 a = clipCenter.xy / clipCenter.w;
+  vec2 b = clipAhead.xy / max(clipAhead.w, 1e-3);
+  vec2 dirPx = (b - a) * uViewportPx;
+  float dirLen = length(dirPx);
+  // Voo de frente para a lente: sem direção na tela, o halo fica redondo.
+  vec2 dir = dirLen > 1e-3 ? dirPx / dirLen : vec2(1.0, 0.0);
+  float round01 = 1.0 - smoothstep(0.5, 3.0, dirLen);
+  float along = mix(lengthPx, (lengthPx + widthPx) * 0.5, round01);
+  float across = mix(widthPx, (lengthPx + widthPx) * 0.5, round01);
+  vec2 perp = vec2(-dir.y, dir.x);
+
+  vQuad = position.xy;
+  vec2 offsetPx = dir * position.x * along * 0.5 + perp * position.y * across * 0.5;
+  // Pixels de CSS → NDC: 2 / tamanho da tela, vezes w para sair da divisão.
+  vec2 offset = offsetPx * 2.0 / uViewportPx * clipCenter.w;
+  gl_Position = clipCenter + vec4(offset * step(0.001, vGlow), 0.0, 0.0);
+  // A área do halo, contra a do grão: a mancha grande espalha a mesma luz, não
+  // multiplica. O teto em 1 deixa o halo pequeno com o brilho inteiro.
+  vGlow *= min(1.0, 60.0 / max(along * across, 1.0));
+}
+`;
+
+export const GLOW_FRAG = /* glsl */ `
+${FOG_UNIFORMS_GLSL}
+
+uniform vec3  uTeal;
+uniform vec3  uCyan;
+uniform float uGain;
+uniform float uFormingFrag;
+
+in vec2  vQuad;
+in float vGlow;
+in float vEnergy;
+in float vDensity;
+in float vViewDepth;
+in vec3  vWorld;
+
+out vec4 fragColor;
+
+${FOG_GLSL}
+
+void main() {
+  if (vGlow <= 0.0) discard;
+  // Gaussiana: 0.018 na borda do quad — sem aresta.
+  float g = exp(-4.0 * dot(vQuad, vQuad));
+  vec3 color = mix(uTeal, uCyan, smoothstep(0.18, 0.85, vEnergy));
+  float crowd = mix(1.0, 0.5 + 1.25 * smoothstep(0.02, 0.10, vDensity), smoothstep(0.15, 0.6, uFormingFrag));
+  float energy = uGain * (0.55 + 0.85 * vEnergy) * crowd * 0.75;
+  // Aditivo através da névoa: o que atravessa é a parte não velada.
+  float amount = 1.0 - exp(-uFogDensity * max(vViewDepth, 0.0));
+  fragColor = vec4(color * energy * g * vGlow * (1.0 - amount), 1.0);
 }
 `;

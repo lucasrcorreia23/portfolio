@@ -188,15 +188,11 @@ vec3 applyFog(vec3 color, float viewDepth, vec3 worldPos) {
 
   float density = uFogDensity * pocket * (0.55 + 0.9 * n);
   float amount = 1.0 - exp(-density * max(viewDepth, 0.0));
-  // **O fundo da câmara é névoa, sempre** (rodada 12). A 90 unidades a névoa
-  // da Emergência ainda deixava passar ~7% da superfície: o plano do céu atrás
-  // da abertura, com o brilho fraco da fonte, saía mais claro que a parede
-  // escura em volta, e lia como um retângulo atrás da palavra — achado
-  // escondendo uma malha de cada vez. Além de ~40 unidades tudo vai saturando
-  // em névoa, e céu, parede do fundo e abertura ficam a mesma cor. Nada que a
-  // descida precise ler fica tão longe: a tomada de ar é vista de ~20, e o
-  // card lido, de 6.
-  amount = max(amount, smoothstep(40.0, 70.0, viewDepth));
+  // A rodada 12 saturava tudo além de 40–70 unidades para o céu atrás da
+  // abertura não ler como retângulo. Isso apagava também todo corpo distante
+  // do bando (medido na rodada 13: um quarto dos corpos no quadro do
+  // descolamento). Saiu: céu e concreto têm a própria névoa como piso (ver
+  // fogColorAt em shaders/chamber.ts), então não há o que saturar.
   vec3 fogColor = fogColorAt(viewDepth, worldPos);
   return mix(color, fogColor, clamp(amount, 0.0, 1.0));
 }

@@ -1017,5 +1017,342 @@ export function installRound12(deps: Round12Deps) {
     };
   };
 
-  return { readings, covers, bodyExtent, wave, flatRegions, plate, pairDiff };
+  /**
+   * **Borda nítida** (rodada 13) — o critério que substituiu o de tamanho.
+   *
+   * Só o bando desenha, um corpo em `subset`. Para cada componente conexa acima
+   * de `floor` (luminância linear), os pixels de borda **nítida** são os que
+   * têm gradiente de luminância (diferença central, px a px) acima de
+   * G = máx(`sharpAbs`, `sharpRel` × pico da componente). O comprimento nítido
+   * da componente é a diagonal da caixa desses pixels, em px de CSS. Uma mancha
+   * grande e macia não tem pixel acima de G; um losango recortado tem.
+   */
+  const sharpEdges = (
+    options: {
+      subset?: number;
+      samples?: number;
+      from?: number;
+      to?: number;
+      floor?: number;
+      sharpAbs?: number;
+      sharpRel?: number;
+    } = {},
+  ) => {
+    requireNoGrain();
+    const {
+      subset = 64,
+      samples = 201,
+      from = 0,
+      to = 1,
+      floor = 0.01,
+      sharpAbs = 0.01,
+      sharpRel = 0.25,
+    } = options;
+    const flock = findFlock(scene);
+    const others: Mesh[] = [];
+    scene.traverse((object) => {
+      if (object instanceof Mesh && !flock.includes(object) && object.visible) others.push(object);
+    });
+    const width = canvas.width;
+    const height = canvas.height;
+    const dpr = width / Math.max(window.innerWidth, 1);
+    const frame = new Uint8Array(width * height * 4);
+    const L = new Float32Array(width * height);
+    const seen = new Uint8Array(width * height);
+    const stack = new Int32Array(width * height);
+    const members = new Int32Array(width * height);
+    const sharpMask = new Uint8Array(width * height);
+    const stack2 = new Int32Array(width * height);
+    const setSubset = (on: boolean) => {
+      for (const mesh of flock) {
+        const material = mesh.material as ShaderMaterial;
+        material.defines ??= {};
+        if (on) material.defines["PROBE_SUBSET"] = subset;
+        else delete material.defines["PROBE_SUBSET"];
+        material.needsUpdate = true;
+      }
+    };
+    const series: { p: number; sharpPx: number; extentPx: number; bodies: number }[] = [];
+    settle(from, 150);
+    setSubset(true);
+    for (const mesh of others) mesh.visible = false;
+    try {
+      for (let k = 0; k < samples; k += 1) {
+        const target = from + ((to - from) * k) / Math.max(samples - 1, 1);
+        if (k > 0) ramp(progressRef.current, target);
+        step(1);
+        read(frame);
+        for (let i = 0; i < width * height; i += 1) L[i] = lum(frame, i * 4);
+        seen.fill(0);
+        let sharpPx = 0;
+        let extentPx = 0;
+        let bodies = 0;
+        for (let start = 0; start < width * height; start += 1) {
+          if (seen[start] === 1 || (L[start] ?? 0) <= floor) continue;
+          let top = 0;
+          let count = 0;
+          let peak = 0;
+          stack[top++] = start;
+          seen[start] = 1;
+          let ex0 = width;
+          let ex1 = 0;
+          let ey0 = height;
+          let ey1 = 0;
+          while (top > 0) {
+            const index = stack[--top] ?? 0;
+            members[count++] = index;
+            const here = L[index] ?? 0;
+            if (here > peak) peak = here;
+            const x = index % width;
+            const y = (index - x) / width;
+            if (x < ex0) ex0 = x;
+            if (x > ex1) ex1 = x;
+            if (y < ey0) ey0 = y;
+            if (y > ey1) ey1 = y;
+            for (let dy = -1; dy <= 1; dy += 1) {
+              const ny = y + dy;
+              if (ny < 0 || ny >= height) continue;
+              for (let dx = -1; dx <= 1; dx += 1) {
+                const nx = x + dx;
+                if (nx < 0 || nx >= width) continue;
+                const next = ny * width + nx;
+                if (seen[next] === 1 || (L[next] ?? 0) <= floor) continue;
+                seen[next] = 1;
+                stack[top++] = next;
+              }
+            }
+          }
+          bodies += 1;
+          const extent = Math.hypot(ex1 - ex0 + 1, ey1 - ey0 + 1) / dpr;
+          if (extent > extentPx) extentPx = extent;
+          const G = Math.max(sharpAbs, sharpRel * peak);
+          // Os pixels nítidos da componente, marcados; depois agrupados **entre
+          // si** (vizinhança de 8, sem folga: com um pixel de folga dois núcleos
+          // vizinhos num trecho denso viravam um "corpo" de 10–13 px). O contorno de um
+          // losango é um laço conectado; dois núcleos de 2 px dentro de halos
+          // que se tocam não são — agrupar pela componente inteira media a
+          // distância entre dois corpos (19.6 px medidos assim, em 0.45).
+          for (let m = 0; m < count; m += 1) {
+            const index = members[m] ?? 0;
+            const x = index % width;
+            const y = (index - x) / width;
+            const gx = (L[y * width + Math.min(width - 1, x + 1)] ?? 0) - (L[y * width + Math.max(0, x - 1)] ?? 0);
+            const gy = (L[Math.min(height - 1, y + 1) * width + x] ?? 0) - (L[Math.max(0, y - 1) * width + x] ?? 0);
+            sharpMask[index] = Math.hypot(gx, gy) * 0.5 * dpr > G ? 1 : 0;
+          }
+          for (let m = 0; m < count; m += 1) {
+            const seed = members[m] ?? 0;
+            if (sharpMask[seed] !== 1) continue;
+            let top2 = 0;
+            stack2[top2++] = seed;
+            sharpMask[seed] = 2;
+            let sx0 = width;
+            let sx1 = -1;
+            let sy0 = height;
+            let sy1 = -1;
+            while (top2 > 0) {
+              const index = stack2[--top2] ?? 0;
+              const x = index % width;
+              const y = (index - x) / width;
+              if (x < sx0) sx0 = x;
+              if (x > sx1) sx1 = x;
+              if (y < sy0) sy0 = y;
+              if (y > sy1) sy1 = y;
+              for (let dy = -1; dy <= 1; dy += 1) {
+                const ny = y + dy;
+                if (ny < 0 || ny >= height) continue;
+                for (let dx = -1; dx <= 1; dx += 1) {
+                  const nx = x + dx;
+                  if (nx < 0 || nx >= width) continue;
+                  const next = ny * width + nx;
+                  if (sharpMask[next] !== 1) continue;
+                  sharpMask[next] = 2;
+                  stack2[top2++] = next;
+                }
+              }
+            }
+            const sharp = Math.hypot(sx1 - sx0 + 1, sy1 - sy0 + 1) / dpr;
+            if (sharp > sharpPx) sharpPx = sharp;
+          }
+          for (let m = 0; m < count; m += 1) sharpMask[members[m] ?? 0] = 0;
+        }
+        series.push({
+          p: Number(progressRef.current.toFixed(4)),
+          sharpPx: Number(sharpPx.toFixed(1)),
+          extentPx: Number(extentPx.toFixed(1)),
+          bodies,
+        });
+      }
+    } finally {
+      setSubset(false);
+      for (const mesh of others) mesh.visible = true;
+    }
+    const worst = series.reduce((a, b) => (b.sharpPx > a.sharpPx ? b : a));
+    const largest = series.reduce((a, b) => (b.extentPx > a.extentPx ? b : a));
+    return { buffer: [width, height], dpr, subset, floor, sharpAbs, sharpRel, worst, largest, series };
+  };
+
+  /** Um quadro só do bando (1 corpo em `subset`), postado — para olhar um corpo. */
+  const flockOnly = async (options: { progress: number; subset?: number; name?: string; port?: number }) => {
+    const { progress, subset = 1024, name = "13-bando-so.png", port = 3131 } = options;
+    const flock = findFlock(scene);
+    const others: Mesh[] = [];
+    scene.traverse((object) => {
+      if (object instanceof Mesh && !flock.includes(object) && object.visible) others.push(object);
+    });
+    const width = canvas.width;
+    const height = canvas.height;
+    const frame = new Uint8Array(width * height * 4);
+    settle(0.3 < progress ? 0.3 : 0, 150);
+    ramp(progressRef.current, progress);
+    for (const mesh of flock) {
+      const material = mesh.material as ShaderMaterial;
+      material.defines ??= {};
+      material.defines["PROBE_SUBSET"] = subset;
+      material.needsUpdate = true;
+    }
+    for (const mesh of others) mesh.visible = false;
+    step(1);
+    read(frame);
+    for (const mesh of others) mesh.visible = true;
+    for (const mesh of flock) {
+      const material = mesh.material as ShaderMaterial;
+      delete material.defines?.["PROBE_SUBSET"];
+      material.needsUpdate = true;
+    }
+    const out = document.createElement("canvas");
+    out.width = width;
+    out.height = height;
+    const paper = out.getContext("2d");
+    if (paper === null) throw new Error("sem contexto 2D");
+    const image = paper.createImageData(width, height);
+    for (let y = 0; y < height; y += 1) {
+      const source = (height - 1 - y) * width * 4;
+      image.data.set(frame.subarray(source, source + width * 4), y * width * 4);
+    }
+    paper.putImageData(image, 0, 0);
+    const blob = await new Promise<Blob | null>((done) => out.toBlob(done, "image/png"));
+    if (blob !== null) {
+      await fetch(`http://${window.location.hostname}:${port}/shot?name=${encodeURIComponent(name)}`, {
+        method: "POST",
+        body: blob,
+      });
+    }
+    return { buffer: [width, height] };
+  };
+
+  /**
+   * O bando passando pela peça (rodada 13): em cada quadro da descida, quantos
+   * corpos visíveis caem dentro da caixa da palavra na tela. A caixa sai do
+   * pixel (o quadro sem o bando com e sem a malha, no mesmo instante), e os
+   * corpos também (sem a malha, com e sem o bando): um corpo
+   * é uma componente conexa de pixels que o bando muda em mais de `threshold`.
+   */
+  const throughPiece = (
+    options: { from?: number; to?: number; samples?: number; threshold?: number } = {},
+  ) => {
+    requireNoGrain();
+    const { from = 0.14, to = 0.24, samples = 41, threshold = 0.02 } = options;
+    const flock = findFlock(scene);
+    let found: { visible: boolean } | null = null;
+    scene.traverse((object) => {
+      if (found === null && "textRenderInfo" in object) found = object as unknown as { visible: boolean };
+    });
+    if (found === null) throw new Error("corpo de prova não encontrado");
+    const piece: { visible: boolean } = found;
+    const width = canvas.width;
+    const height = canvas.height;
+    const A = new Uint8Array(width * height * 4);
+    const B = new Uint8Array(width * height * 4);
+    const C = new Uint8Array(width * height * 4);
+    const body = new Uint8Array(width * height);
+    const seen = new Uint8Array(width * height);
+    const stack = new Int32Array(width * height);
+    const series: { p: number; bodies: number; box: number[] }[] = [];
+    settle(0.1, 150);
+    ramp(0.1, from);
+    try {
+      for (let k = 0; k < samples; k += 1) {
+        const target = from + ((to - from) * k) / Math.max(samples - 1, 1);
+        if (k > 0) ramp(progressRef.current, target);
+        // A máscara da palavra sai de dois quadros **sem o bando** (D com a
+        // peça, C sem): o hold() satura a energia dos corpos e muda a cor
+        // deles, então compará-los entre leituras poluía a caixa inteira.
+        step(1);
+        setVisible(flock, false);
+        hold(1);
+        read(A);
+        piece.visible = false;
+        hold(1);
+        read(C);
+        setVisible(flock, true);
+        hold(1);
+        read(B);
+        piece.visible = true;
+        let x0 = width;
+        let x1 = -1;
+        let y0 = height;
+        let y1 = -1;
+        for (let y = 0; y < height; y += 2) {
+          for (let x = 0; x < width; x += 2) {
+            const at = (y * width + x) * 4;
+            if (Math.abs(lum(A, at) - lum(C, at)) <= 0.004) continue;
+            if (x < x0) x0 = x;
+            if (x > x1) x1 = x;
+            if (y < y0) y0 = y;
+            if (y > y1) y1 = y;
+          }
+        }
+        let bodies = 0;
+        if (x1 >= 0) {
+          for (let y = y0; y <= y1; y += 1) {
+            for (let x = x0; x <= x1; x += 1) {
+              const i = y * width + x;
+              body[i] = lum(B, i * 4) - lum(C, i * 4) > threshold ? 1 : 0;
+              seen[i] = 0;
+            }
+          }
+          for (let y = y0; y <= y1; y += 1) {
+            for (let x = x0; x <= x1; x += 1) {
+              const start = y * width + x;
+              if (body[start] !== 1 || seen[start] === 1) continue;
+              bodies += 1;
+              let top = 0;
+              stack[top++] = start;
+              seen[start] = 1;
+              while (top > 0) {
+                const i = stack[--top] ?? 0;
+                const ix = i % width;
+                const iy = (i - ix) / width;
+                for (let dy = -1; dy <= 1; dy += 1) {
+                  const ny = iy + dy;
+                  if (ny < y0 || ny > y1) continue;
+                  for (let dx = -1; dx <= 1; dx += 1) {
+                    const nx = ix + dx;
+                    if (nx < x0 || nx > x1) continue;
+                    const j = ny * width + nx;
+                    if (body[j] !== 1 || seen[j] === 1) continue;
+                    seen[j] = 1;
+                    stack[top++] = j;
+                  }
+                }
+              }
+            }
+          }
+        }
+        series.push({
+          p: Number(progressRef.current.toFixed(4)),
+          bodies,
+          box: x1 < 0 ? [] : [x0, height - 1 - y1, x1 - x0 + 1, y1 - y0 + 1],
+        });
+      }
+    } finally {
+      piece.visible = true;
+      setVisible(flock, true);
+    }
+    const least = series.reduce((a, b) => (b.bodies < a.bodies ? b : a));
+    return { buffer: [width, height], threshold, least, series };
+  };
+
+  return { readings, covers, bodyExtent, wave, flatRegions, plate, pairDiff, sharpEdges, flockOnly, throughPiece };
 }

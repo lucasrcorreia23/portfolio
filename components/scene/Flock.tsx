@@ -12,6 +12,7 @@ import {
   LinearFilter,
   NearestFilter,
   NoBlending,
+  AdditiveBlending,
   NoColorSpace,
   RGBAFormat,
   ShaderMaterial,
@@ -28,7 +29,12 @@ import {
   AHEAD_ROWS_FRAG,
   AHEAD_SUM_FRAG,
 } from "@/lib/scene/shaders/ahead";
-import { BODY_FRAG, BODY_VERT } from "@/lib/scene/shaders/body";
+import {
+  BODY_FRAG,
+  BODY_VERT,
+  GLOW_FRAG,
+  GLOW_VERT,
+} from "@/lib/scene/shaders/body";
 import {
   BOIDS_POSITION_FRAG,
   boidsVelocityFrag,
@@ -320,6 +326,47 @@ export function Flock({
     });
     bodyMaterial.glslVersion = GLSL3;
 
+    // O halo (rodada 13): um quad por corpo, as mesmas referências da textura.
+    // Ver GLOW_VERT em `shaders/body.ts`.
+    const glowGeometry = new InstancedBufferGeometry();
+    glowGeometry.setAttribute(
+      "position",
+      new BufferAttribute(
+        new Float32Array([-1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0]),
+        3,
+      ),
+    );
+    glowGeometry.setIndex([0, 1, 2, 0, 2, 3]);
+    glowGeometry.setAttribute("aRef", new InstancedBufferAttribute(refs, 2));
+    glowGeometry.instanceCount = count;
+    glowGeometry.boundingSphere = new Sphere(new Vector3(), 1e4);
+    const viewportPx = { value: new Vector2(1440, 900) };
+    const glowMaterial = new ShaderMaterial({
+      uniforms: {
+        ...fogUniforms(shared),
+        uPos: bodyPos,
+        uVel: bodyVel,
+        uBodyScale: bodyMaterial.uniforms["uBodyScale"] ?? { value: 0.085 },
+        uFocalPx: focalPx,
+        uViewportPx: viewportPx,
+        uForming: shared.forming,
+        uTeal: shared.teal,
+        uCyan: shared.cyan,
+        uGain: bodyMaterial.uniforms["uGain"] ?? { value: 2.4 },
+        uFormingFrag: shared.forming,
+      },
+      vertexShader: GLOW_VERT,
+      fragmentShader: GLOW_FRAG,
+      // Aditivo, testando a profundidade e sem escrevê-la: um halo atrás de uma
+      // letra é escondido por ela, e nenhum halo esconde nada.
+      transparent: true,
+      depthTest: true,
+      depthWrite: false,
+      blending: AdditiveBlending,
+      toneMapped: false,
+    });
+    glowMaterial.glslVersion = GLSL3;
+
     return {
       position,
       velocity,
@@ -330,6 +377,9 @@ export function Flock({
       seedUniforms,
       geometry,
       bodyMaterial,
+      glowGeometry,
+      glowMaterial,
+      viewportPx,
       focalPx,
       bodyPos,
       bodyVel,
@@ -351,6 +401,8 @@ export function Flock({
       held.positionMaterial.dispose();
       held.seedMaterial.dispose();
       held.bodyMaterial.dispose();
+      held.glowMaterial.dispose();
+      held.glowGeometry.dispose();
       held.geometry.dispose();
       held.aheadRows.dispose();
       held.aheadRowsMaterial.dispose();
@@ -487,6 +539,7 @@ export function Flock({
     // buffer: o critério é em pixels de tela, e o DPR não o muda.
     const fovCamera = state.camera as { fov?: number };
     const fov = MathUtils.degToRad(fovCamera.fov ?? 45);
+    rig.viewportPx.value.set(state.size.width, state.size.height);
     rig.focalPx.value = state.size.height / (2 * Math.tan(fov / 2));
 
     // O passo é clampado: o `lagSmoothing(0)` do driver é deliberado, então
@@ -503,10 +556,20 @@ export function Flock({
   }, -5);
 
   return (
-    <mesh
-      geometry={rig.geometry}
-      material={rig.bodyMaterial}
-      frustumCulled={false}
-    />
+    <>
+      <mesh
+        geometry={rig.geometry}
+        material={rig.bodyMaterial}
+        frustumCulled={false}
+      />
+      {/* O halo depois de tudo que é transparente (o corpo de prova incluído):
+          ele testa a profundidade que a letra escreveu. */}
+      <mesh
+        geometry={rig.glowGeometry}
+        material={rig.glowMaterial}
+        frustumCulled={false}
+        renderOrder={10}
+      />
+    </>
   );
 }
