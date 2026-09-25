@@ -121,8 +121,30 @@ export type DormantField = {
     right: number,
     bottom: number,
   ) => void;
+  /**
+   * Liga o modo janela: as frestas deixam de mostrar o campo dormente e passam
+   * a mostrar **o que está atrás do canvas** — a câmara de verdade, que já está
+   * montada e rodando embaixo do portão quando a tarefa `scene` do preload
+   * resolve e ela pinta o primeiro quadro.
+   *
+   * Nesse modo o canvas limpa as frestas para transparente e só desenha as
+   * lâminas, a sombra delas, o véu e o grão das faces. Não há fade: a troca é
+   * de um quadro para o outro. O campo dormente continua sendo o que se vê
+   * antes disso, e o caminho inteiro quando não há WebGL.
+   */
+  setWindow: (on: boolean) => void;
+  /** A linha de horizonte das lâminas, em fração da altura (perspectiva). */
+  setHorizon: (fraction: number) => void;
   destroy: () => void;
 };
+
+/** `#rrggbb` + alfa, para os degradês das lâminas. */
+function withAlpha(hex: string, alpha: number): string {
+  const a = Math.round(Math.max(0, Math.min(1, alpha)) * 255)
+    .toString(16)
+    .padStart(2, "0");
+  return /^#[0-9a-f]{6}$/i.test(hex) ? `${hex}${a}` : hex;
+}
 
 type Body = {
   x: number;
@@ -260,7 +282,10 @@ export function createDormantField(
   canvas: HTMLCanvasElement,
   palette: Palette,
 ): DormantField {
-  const context = canvas.getContext("2d", { alpha: false });
+  // Com alfa: no modo janela as frestas ficam transparentes e a câmara de
+  // verdade aparece por elas. Fora dele o primeiro passe pinta o quadro
+  // inteiro, então o alfa não muda nada.
+  const context = canvas.getContext("2d", { alpha: true });
   if (context === null) {
     return {
       resize: () => {},
@@ -268,6 +293,8 @@ export function createDormantField(
       sampleSeams: (_ys: readonly number[], outLight: number[]) =>
         outLight.fill(0),
       setVeil: () => {},
+      setWindow: () => {},
+      setHorizon: () => {},
       destroy: () => {},
     };
   }
@@ -297,6 +324,8 @@ export function createDormantField(
     veilCtx.fillRect(0, 0, 128, 128);
   }
 
+  let windowMode = false;
+  let horizon = 0.42;
   let veilLeft = 0;
   let veilTop = 0;
   let veilRight = 0;
@@ -475,13 +504,60 @@ export function createDormantField(
 
     // 1. As faces. Retângulos de --void que encolhem a partir do próprio
     //    centro; o que sobra entre elas é a fresta.
+    //
+    //    **E a lâmina tem corpo.** Uma face chapada de um valor só, com a fresta
+    //    quase do mesmo valor, lia como scanline sobre um campo uniforme — não
+    //    como uma veneziana fechada. Três coisas dão volume a ela, todas em
+    //    perspectiva a partir da linha de horizonte das lâminas:
+    //    - a **espessura**: acima do horizonte vê-se a face de baixo da lâmina,
+    //      abaixo dele a de cima, mais grossa quanto mais longe do horizonte;
+    //    - o **chanfro** na aresta dessa espessura, a única coisa clara dela;
+    //    - a **sombra** que a lâmina joga na fresta vizinha, que é o que faz a
+    //      fresta ser um vão entre dois sólidos e não uma listra.
     for (const slat of slats) {
       const bandTop = slat.top * height;
       const bandHeight = (slat.bottom - slat.top) * height;
       const painted = bandHeight * slat.shut;
       if (painted <= 0) continue;
-      ctx.fillRect(0, bandTop + (bandHeight - painted) * 0.5, width, painted);
+      const edgeTop = bandTop + (bandHeight - painted) * 0.5;
+      const edgeBottom = edgeTop + painted;
+      const gap = bandHeight - painted;
+      const center = (slat.top + slat.bottom) * 0.5;
+      const above = center < horizon;
+      const reach = Math.min(1, Math.abs(center - horizon) / 0.5);
+      const thick = Math.min(gap * 0.45, painted * 0.2 * reach + 1);
+
+      // sombra na fresta, do lado da espessura, antes de tudo
+      if (gap > 0.5) {
+        const from = above ? edgeBottom + thick : edgeTop - thick;
+        const to = above ? from + gap * 0.5 : from - gap * 0.5;
+        const shadow = ctx.createLinearGradient(0, from, 0, to);
+        shadow.addColorStop(0, withAlpha(palette.void, 0.72));
+        shadow.addColorStop(1, withAlpha(palette.void, 0));
+        ctx.fillStyle = shadow;
+        ctx.fillRect(0, Math.min(from, to), width, Math.abs(to - from));
+      }
+
+      // a face
+      ctx.fillStyle = palette.void;
+      ctx.fillRect(0, edgeTop, width, painted);
+
+      // a espessura, com o chanfro na aresta de fora
+      if (thick > 0.5) {
+        const y0 = above ? edgeBottom : edgeTop - thick;
+        const body = ctx.createLinearGradient(0, y0, 0, y0 + thick);
+        const far = withAlpha(palette.abyss, 1);
+        const near = withAlpha(palette.void, 1);
+        body.addColorStop(0, above ? near : far);
+        body.addColorStop(1, above ? far : near);
+        ctx.fillStyle = body;
+        ctx.fillRect(0, y0, width, thick);
+        const bevel = Math.max(1, Math.min(3, thick * 0.35));
+        ctx.fillStyle = withAlpha(palette.deep, 0.85);
+        ctx.fillRect(0, above ? y0 + thick - bevel : y0, width, bevel);
+      }
     }
+    ctx.fillStyle = palette.void;
 
     // 2. As quinas: a gravação, sempre, e o realce, só onde algo passa.
     ctx.globalCompositeOperation = "lighter";
@@ -722,6 +798,26 @@ export function createDormantField(
     const seconds = elapsedMs * 0.001;
 
     step(seconds, dt);
+    if (windowMode) {
+      // A câmara de verdade está atrás: as frestas ficam transparentes, e o grão
+      // e a névoa dela são dela — pintar os nossos por cima seria dobrar os dois.
+      ctx.clearRect(0, 0, width, height);
+      paintSlats(slats);
+      paintVeil();
+      ctx.save();
+      ctx.beginPath();
+      for (const slat of slats) {
+        const bandTop = slat.top * height;
+        const bandHeight = (slat.bottom - slat.top) * height;
+        const painted = bandHeight * slat.shut;
+        if (painted <= 0) continue;
+        ctx.rect(0, bandTop + (bandHeight - painted) * 0.5, width, painted);
+      }
+      ctx.clip();
+      paintGrain();
+      ctx.restore();
+      return;
+    }
     paintFog(dolly);
     paintBodies(seconds, dolly);
     paintSlats(slats);
@@ -790,6 +886,12 @@ export function createDormantField(
       veilTop = top;
       veilRight = right;
       veilBottom = bottom;
+    },
+    setWindow: (on) => {
+      windowMode = on;
+    },
+    setHorizon: (fraction) => {
+      horizon = fraction;
     },
     destroy: () => {
       bodies = [];

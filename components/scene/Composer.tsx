@@ -26,6 +26,7 @@ import {
   VEIL_SEED_FRAG,
   VEIL_SOLVE_FRAG,
 } from "@/lib/scene/shaders/post";
+import { markScenePainted } from "@/lib/scene/scene-painted";
 import { sceneSettings } from "@/lib/scene/settings";
 import { veilUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
 import { MAX_VEIL_BOXES, VEIL_CEILING } from "@/lib/scene/veil";
@@ -462,7 +463,11 @@ export function Composer({
     // PNG de ruído neste projeto.
     const time = shared.time.value;
     setUniform(rig.composite, "uGrainSeed", (time * 977) % 1000);
-    setUniform(rig.composite, "uGrain", 0.045 + 0.015 * Math.sin(time * 11.3));
+    setUniform(
+      rig.composite,
+      "uGrain",
+      settings.grain ? 0.045 + 0.015 * Math.sin(time * 11.3) : 0,
+    );
     setUniform(
       rig.composite,
       "uDofEnabled",
@@ -470,6 +475,8 @@ export function Composer({
     );
 
     blit(renderer, rig.composite, null);
+    // O portão espera por isto para abrir as frestas para a câmara.
+    markScenePainted();
 
     renderer.autoClear = previousAutoClear;
   }, 1);

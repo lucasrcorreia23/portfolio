@@ -9,6 +9,8 @@ import { SCROLL_VH, SEPARATION_PROGRESS } from "@/components/beats/beats";
 import { CARD_HALF_HEIGHT, CARD_HALF_WIDTH, resolveRiver } from "./cards";
 import { hoverLatency, resetHoverLatency } from "./card-pick";
 import { installCorridor } from "./probe-cards";
+import { installChamberProbe } from "./probe-chamber";
+import type { ChamberPlan } from "./chamber-plan";
 import { installContrast } from "./probe-contrast";
 import {
   measureComposed,
@@ -71,6 +73,8 @@ export type FlockRead = {
 
 export type ProbeDeps = {
   gl: WebGLRenderer;
+  /** A planta da câmara, para as medições de estrutura (`probe-chamber.ts`). */
+  plan: ChamberPlan;
   /** A cena do R3F, para a sonda achar o mesh do corpo de prova. */
   scene: { traverse: (visit: (object: object) => void) => void };
   advance: (timestamp: number) => void;
@@ -1097,6 +1101,23 @@ export function installProbe(deps: ProbeDeps): () => void {
     toLinear: SRGB_TO_LINEAR,
   });
 
+  const chamber = installChamberProbe({
+    canvas: gl.domElement,
+    gl: context,
+    bindDefault: () => {
+      gl.setRenderTarget(null);
+    },
+    scene: scene as unknown as import("three").Object3D,
+    step,
+    settle: (progress, steps) => {
+      settle(progress, steps);
+    },
+    progressRef,
+    camera,
+    plan: deps.plan,
+    toLinear: SRGB_TO_LINEAR,
+  });
+
   const { contrast, descend, veilFootprint, warmth, readTextRects } =
     installContrast({
       canvas: gl.domElement,
@@ -1138,6 +1159,9 @@ export function installProbe(deps: ProbeDeps): () => void {
     warmth,
     readTextRects,
     sheet,
+    presence: chamber.presence,
+    parallax: chamber.parallax,
+    engraving: chamber.engraving,
   };
 
   const host = window as unknown as { __probe?: typeof api };

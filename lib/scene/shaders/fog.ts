@@ -79,13 +79,44 @@ vec3 fogRamp(float depth01) {
   return mix(c, uDeep, smoothstep(0.42, 1.0, depth01));
 }
 
+/**
+ * Os bolsões ao longo do eixo — a névoa deixa de ser uma constante por quadro.
+ *
+ * Com a densidade vindo só do progresso, dois quadros distantes do mesmo beat
+ * tinham a mesma densidade média, e isso era metade do motivo de tudo ler
+ * chapado. Os bolsões são fixos na câmara (uma câmara real tem trechos em que o
+ * ar para), e a câmera atravessa cada um: na garganta a névoa engrossa, na
+ * clareira do corpo de prova ela afina, na boca do rio ela fecha de novo e
+ * dentro do corredor alterna.
+ *
+ * Continua sendo névoa, não fumaça (DIRECTION.md §6): densidade escalar por
+ * posição, sem campo de velocidade, sem advecção.
+ */
+float fogPocket(float z) {
+  float p = 1.0;
+  p += 0.55 * exp(-pow((z + 9.0) / 4.5, 2.0));
+  p -= 0.28 * exp(-pow((z + 25.0) / 5.0, 2.0));
+  p += 0.30 * exp(-pow((z + 47.0) / 3.5, 2.0));
+  p -= 0.18 * exp(-pow((z + 60.0) / 5.0, 2.0));
+  p += 0.20 * exp(-pow((z + 68.0) / 3.0, 2.0));
+  p -= 0.30 * exp(-pow((z + 80.0) / 6.0, 2.0));
+  return p;
+}
+
 vec3 applyFog(vec3 color, float viewDepth, vec3 worldPos) {
   // Duas oitavas: a grossa dá bolsões, a fina dá o pó. O tempo entra só na
   // grossa, e devagar — atmosfera respira, não escoa.
   float n = sceneNoise(worldPos * 0.055 + vec3(0.0, 0.0, uTime * 0.025));
   n = n * 0.72 + sceneNoise(worldPos * 0.21) * 0.28;
 
-  float density = uFogDensity * (0.55 + 0.9 * n);
+  // A densidade ao longo do raio, e não só no ponto: um bolsão entre a câmera e
+  // a parede vela a parede, um bolsão atrás dela não. Três amostras no eixo z
+  // do raio bastam para bolsões de quatro unidades de largura.
+  float zc = cameraPosition.z;
+  float pocket = (fogPocket(mix(zc, worldPos.z, 0.2)) + fogPocket(mix(zc, worldPos.z, 0.55))
+    + fogPocket(worldPos.z)) / 3.0;
+
+  float density = uFogDensity * pocket * (0.55 + 0.9 * n);
   float amount = 1.0 - exp(-density * max(viewDepth, 0.0));
   float depth01 = clamp(viewDepth / 88.0, 0.0, 1.0);
 

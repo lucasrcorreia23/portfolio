@@ -161,6 +161,16 @@ export type SceneSettings = {
    */
   veil: boolean;
   /**
+   * `?grain=0`: o grão de filme sai do composite — **só para medir**.
+   *
+   * O grão é redesenhado a cada quadro com semente nova, e toda medida que
+   * compara dois quadros consecutivos (a presença da estrutura em
+   * `probe-chamber.ts` é uma) passa a medir o grão em vez da cena: ele é a
+   * maior diferença por pixel entre dois quadros escuros. Medido: a densidade
+   * de bordas da estrutura saía ~95% na câmara nova e na caixa antiga, igual.
+   */
+  grain: boolean;
+  /**
    * `?probe=1`: a sonda de medição — **só em desenvolvimento**.
    *
    * Ao contrário do banco, que é medição de tempo e por isso precisa rodar na
@@ -187,6 +197,7 @@ const DEFAULTS: SceneSettings = {
   river: null,
   span: null,
   veil: true,
+  grain: true,
   probe: false,
 };
 
@@ -241,6 +252,7 @@ export function sceneSettings(): SceneSettings {
     river: readNumber(params, "river"),
     span: readNumber(params, "span"),
     veil: readFlag(params, "veil", DEFAULTS.veil),
+    grain: readFlag(params, "grain", DEFAULTS.grain),
     probe:
       process.env.NODE_ENV !== "production" &&
       readFlag(params, "probe", DEFAULTS.probe),

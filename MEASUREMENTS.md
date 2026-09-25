@@ -35,6 +35,7 @@ medido, com que método, e por quê o número é esse".
 - [O véu de legibilidade, e por que o mecanismo mudou](#o-véu-de-legibilidade-e-por-que-o-mecanismo-mudou)
 - [O rio, medido](#o-rio-medido)
 - [A travessia para o case, medida](#a-travessia-para-o-case-medida)
+- [A câmara, medida](#a-câmara-medida)
 - [Desempenho da cena, medido](#desempenho-da-cena-medido)
 
 ---
@@ -1228,6 +1229,153 @@ e o `next/image` do corpo. O gatilho de recuo previsto — trocar `next/image` p
 `<img>` com dimensões de build se a rota passasse de ~195 kB — **não foi
 acionado**.
 
+## A câmara, medida
+
+Rodada 7. A caixa (`boxGeometry` 24×14×108 com `BackSide`, mais ~60 segmentos
+aditivos) virou uma câmara com seção variável, quadros estruturais com chanfro,
+portais no rio, nichos nas estações, gravação recessada em campo de altura,
+números gravados em Geist Mono, uma parede de fundo com a abertura da fonte e
+bolsões de névoa ao longo do eixo. Método em `lib/scene/probe-chamber.ts`
+(`__probe.presence`, `__probe.parallax`, `__probe.engraving`).
+
+**Todo número desta seção foi medido nas duas versões com o mesmo
+instrumento**: a caixa antiga rodou num worktree do commit `b1ccf38` (fim da
+rodada 6.5), com a mesma sonda enxertada e o mesmo `PROBE_BLACK` nos shaders
+antigos. Descida de 0.10 a 0.85 a 1 vh/s, 1440×813, DPR 1, `?grain=0`.
+
+### Presença da estrutura — e por que a fração sozinha não serve
+
+"Acima da névoa" é definido pelo que a névoa esconde: o quadro com o concreto
+normal menos o quadro com o concreto preto antes da névoa é a contribuição da
+estrutura que chega à lente. Os dois quadros são consecutivos e sem o bando.
+
+| p | fração ≥1 nível (nova · antiga) | ≥3 níveis | **densidade de feições** | estrutura máx · bando máx |
+|---|---|---|---|---|
+| 0.100 | 0.90 · 0.89 | 0.60 · 0.59 | **0.030 · 0.002** | 0.018 · 0.27 |
+| 0.168 | 0.91 · 0.89 | 0.74 · 0.69 | **0.203 · 0.020** | 0.075 · 0.49 |
+| 0.236 | 0.94 · 0.93 | 0.73 · 0.72 | **0.215 · 0.054** | 0.085 · 0.72 |
+| 0.305 | 0.31 · 0.32 | 0.18 · 0.22 | **0.034 · 0.010** | 0.021 · 0.81 |
+| 0.373 | 0.78 · 0.80 | 0.52 · 0.58 | **0.090 · 0.054** | 0.052 · 0.79 |
+| 0.441 | 0.81 · 0.85 | 0.51 · 0.71 | **0.084 · 0.057** | 0.061 · 0.81 |
+| 0.509 | 0.47 · 0.55 | 0.11 · 0.21 | **0.015 · 0.005** | 0.007 · 0.51 |
+| 0.577 | 0.77 · 0.74 | 0.44 · 0.51 | **0.034 · 0.005** | 0.010 · 0.55 |
+| 0.645 | 0.75 · 0.62 | 0.63 · 0.50 | **0.045 · 0.009** | 0.019 · 0.51 |
+| 0.714 | 0.64 · 0.36 | 0.54 · 0.24 | **0.066 · 0.018** | 0.031 · 0.54 |
+| 0.782 | 0.90 · 0.16 | 0.81 · 0.15 | **0.024 · 0.012** | 0.021 · 0.39 |
+| 0.850 | 0.70 · **0.00** | 0.55 · **0.00** | **0.020 · 0.000** | 0.022 · 0.46 |
+
+- **A fração do quadro não discrimina câmara de caixa.** Uma parede lisa também
+  atravessa a névoa, e a caixa antiga pontua igual ou mais na maior parte da
+  descida. O critério do prompt ("hoje esse número é praticamente zero") estava
+  errado sobre a caixa: medida, ela ficava em 16–93%, exceto em 0.85, onde era
+  zero porque a tampa do fundo enchia o quadro inteiro.
+- **O que discrimina é a feição**: um degrau de contribuição em dois pixels
+  (`|∇S| > 0.0012` linear), que o grão do concreto — manchas de dezenas de
+  pixels — não produz, e que um chanfro, uma vala ou a boca de um portal
+  produzem. Ela sobe em **todos os doze pontos**, de 2× (0.305, 0.782) a 100×
+  (0.850), e na Identidade vai de 0.02–0.05 para 0.20–0.22.
+- **Nada na câmara emite**: a estrutura mais clara de cada quadro (0.007 a
+  0.085) fica sempre abaixo do bando mais claro do mesmo quadro (0.27 a 0.81).
+  Zero quadros furam a regra.
+- **O ponto fraco é o rio**: 0.509–0.645 têm as menores densidades de feição da
+  câmara nova depois de 0.10. A parede alargada está a 14 unidades, na névoa do
+  corredor, e os portais — que é o que o rio tem de estrutura perto — enquadram
+  a vista e saem do quadro a menos de ~15 unidades.
+
+### Paralaxe
+
+`__probe.parallax({progress, seconds: 0.5, rate: 1})`: três feições visíveis
+(raio de visibilidade contra a malha da câmara) projetadas em dois quadros
+separados por meio segundo de descida.
+
+| p | feição · distância · velocidade |
+|---|---|
+| 0.20 | quadro −36 · 23.0 · **73.9 px/s** — EST. 033 · 23.0 · **241.7** — COTA −01.60 · 29.5 · **28.1** |
+| 0.40 | quadro −52.5 · 17.6 · **31.3** — quadro −61.75 · 26.8 · **28.1** — quadro −66.25 · 36.9 · **160.0** |
+| **0.60** | quadro −75.25 · 18.1 · **112.3** — quadro −79.75 · 22.9 · **85.7** — quadro −89 · 31.8 · **57.6** |
+
+Em 0.60, dentro do Trabalho, a velocidade cai com a distância: é a paralaxe que
+uma caixa lisa não tem. As velocidades das outras linhas não são monotônicas
+porque dependem também de onde a feição está na tela (a periferia anda mais
+rápido que o centro).
+
+**Nichos não entram**: vistos do eixo, eles ficam atrás dos portais do rio na
+maior parte da travessia — é o que um nicho entre dois pórticos faz. Estão na
+geometria e na medida de feição, não nesta tabela.
+
+### Legibilidade da gravação
+
+`__probe.engraving()`. A máscara do número é a diferença entre a cena com e sem
+as placas gravadas (oito pares alternados, bando escondido); o contraste é do
+quadro entregue, glifo contra parede, dentro da caixa da placa.
+
+**No quadro de passagem mais rente (p = 0.44, câmera a 3.9 da parede de
+estibordo) a parede rente não está na tela**: a câmera olha para a frente e para
+bombordo, e todo o lado de estibordo a menos de ~11 unidades fica fora do
+enquadramento. O critério, lido ao pé da letra, não tem pixel para medir. O
+número da parede foi gravado onde ela **entra no quadro** (EST. 050, caixa alta
+de 0.8, em z −50):
+
+| p | caixa alta | Weber | WCAG |
+|---|---|---|---|
+| 0.36 | 45.6 px | 0.19 | 1.08 |
+| 0.39 | 61.6 px | 0.38 | 1.10 |
+| 0.42 | 82.3 px | 1.00 | 1.17 |
+| 0.44 (mais rente) | 98.2 px (aparado pela borda) | 0.53 | 1.39 |
+
+A razão WCAG fica perto de 1 porque a parede inteira está a L ≈ 0.01: não é a
+métrica para gravação em concreto no escuro. O Weber diz que a vala difere da
+parede em 19% a 100%, e o recorte ampliado (`.screens/07-gravacao-0.36.png`) lê
+`EST. 050` e `COTA +03.10` com vala escura e chanfro. Os números distantes
+(8–16 px) somem no bando e na névoa, que é o "de relance" do DIRECTION.md §2.
+
+### Contraste do texto, remedido
+
+`__probe.contrast({from: 0.02, to: 0.85, rate: 0.6})`, 1747 quadros, 1440×813:
+
+| condição | pior quadro | onde | p5 | mediana | p95 |
+|---|---|---|---|---|---|
+| en | **5.58** | 0.830, rótulo da Superfície | 5.88 | 7.64 | 13.47 |
+| pt | **5.58** | 0.830, rótulo da Superfície | 5.87 | 7.59 | 13.37 |
+
+Piso de 4.5 ✅, e acima do alvo de 5.5 do véu. É a primeira varredura que desce
+desde 0.02 — as anteriores começavam em 0.26 ou 0.45 —, e ela achou **duas
+falhas do instrumento**, não da página (ver abaixo).
+
+### Custo
+
+Banco de prova, build de produção, M5, **buffer 1440×813 a DPR 1** (não o
+canônico de 2160×1254 — o débito de resolução do AGENTS.md continua), as duas
+versões no mesmo buffer, uma aba por vez, duas repetições:
+
+| faixa | caixa antiga | câmara nova | Δ |
+|---|---|---|---|
+| 0.00–0.28 | 1.55 ms (p95 1.70) | 1.91–1.93 ms (p95 2.51–2.56) | +0.37 ms |
+| 0.45–0.85 | 1.59–1.62 ms (p95 1.71–1.72) | 1.88–1.97 ms (p95 2.51) | +0.32 ms |
+
+Fração dos 16.7 ms: **11.5–11.8%**, de 9.3–9.7%. Pacote: chunk da cena
+**315.9 kB** (+5.1), rota inicial 184.4 kB (+0.5, o sinal "a cena pintou" e a
+janela do portão).
+
+### Três armadilhas do método
+
+1. **O grão de filme mede a si mesmo.** A presença compara dois quadros
+   consecutivos, e o grão é redesenhado a cada quadro com semente nova: com ele,
+   a densidade de feições dava ~95% na câmara nova **e** na caixa antiga, e o
+   último ponto saía idêntico nas duas até a quarta casa. `?grain=0` tira o grão
+   do composite (`lib/scene/settings.ts`).
+2. **O `/json/new` do Chrome corta a URL no primeiro `&`.** Abrir
+   `?bench=1&chain=0&plan=cards` por ali abre `?bench=1` — o plano inteiro,
+   encadeado — e cada aba nova se somava às anteriores rodando ao mesmo tempo.
+   Os primeiros números do banco desta rodada foram medidos com até dez abas
+   concorrendo e foram descartados. A URL vai com `encodeURIComponent`, e a aba é
+   fechada depois do relatório.
+3. **A varredura de contraste media texto que não é pintado.** `Range.getClientRects`
+   devolve os retângulos do texto sem aplicar opacidade nem `clip-path`: o link
+   invisível do card entrava com 1.35:1 e o corpo de prova em DOM (caixa de um
+   pixel, `clip-path: inset(50%)`) com 2.46:1. `readTextRects` agora pula o que
+   não pinta (`isPainted`, em `probe-contrast.ts`).
+
 ## Desempenho da cena, medido
 
 Varredura sintética de 0.00 a 0.28, passo de relógio fixo em 1/60 s, DPR travado
@@ -1335,6 +1483,7 @@ As chaves de URL que a medição usa, todas em `lib/scene/settings.ts`:
 | `?flock=N` | a contagem do bando, dentro da faixa de 4k a 16k |
 | `?river=N` | força a contagem de cards, para medir a corrente do mobile num desktop |
 | `?span=N` | o comprimento do corredor em unidades — `?span=3` é o controle "parede" |
+| `?grain=0` | tira o grão de filme do composite — para medidas que comparam quadros consecutivos (ver "A câmara, medida") |
 | `?bench=1` | o banco de prova; `?probe=1` a sonda |
 
 **Duas armadilhas de ambiente, e as duas custam uma hora se não estiverem

@@ -21,6 +21,8 @@ import {
   specimenAttackAngle,
 } from "@/lib/scene/curve";
 import type { FlockRead } from "@/lib/scene/probe";
+import { resolveRiver } from "@/lib/scene/cards";
+import { createChamberPlan } from "@/lib/scene/chamber-plan";
 import { createProxySim } from "@/lib/scene/proxy-sim";
 import type { RiverCard } from "@/lib/scene/river-content";
 import { clearReadout, publishReadout } from "@/lib/scene/readout-store";
@@ -88,7 +90,10 @@ export function SceneWorld({
   const { ref: scrollRef } = useScrollProgress();
 
   const shared = useMemo(() => createSharedUniforms(), []);
-  const proxy = useMemo(() => createProxySim(), []);
+  // A planta da câmara: uma por sessão, pelo mesmo motivo da corrente do rio
+  // (`resolveRiver`) — os nichos ficam onde os cards deste aparelho estão.
+  const plan = useMemo(() => createChamberPlan(resolveRiver()), []);
+  const proxy = useMemo(() => createProxySim(plan.section), [plan]);
   const pose = useMemo(() => createCameraPose(), []);
   const roost = useMemo(() => createRoost(), []);
   const caseDrive = useMemo(() => createCaseDrive(), []);
@@ -341,6 +346,7 @@ export function SceneWorld({
           pose={pose}
           roost={roost}
           proxy={proxy}
+          plan={plan}
         />
       ) : bench ? (
         <BenchClock progressRef={benchRef} />
@@ -353,8 +359,8 @@ export function SceneWorld({
       ) : (
         <SceneClock />
       )}
-      <Chamber shared={shared} />
-      <Structure shared={shared} />
+      <Chamber shared={shared} plan={plan} />
+      <Structure shared={shared} plan={plan} />
       {/* O rio. `?cards=0` tira as malhas **e** as esteiras do shader dos
           boids — é o A/B de desempenho e, ao mesmo tempo, o controle da medida
           de esteira (ver `lib/scene/settings.ts`). */}

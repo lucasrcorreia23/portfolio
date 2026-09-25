@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useThree } from "@react-three/fiber";
 import { installProbe, type FlockRead } from "@/lib/scene/probe";
 import type { CameraPose, Roost } from "@/lib/scene/curve";
+import type { ChamberPlan } from "@/lib/scene/chamber-plan";
 import type { ProxySim } from "@/lib/scene/proxy-sim";
 import type { SharedUniforms } from "@/lib/scene/uniforms";
 
@@ -16,6 +17,7 @@ type ProbeClockProps = {
   pose: CameraPose;
   roost: Roost;
   proxy: ProxySim;
+  plan: ChamberPlan;
 };
 
 /**
@@ -39,6 +41,7 @@ export function ProbeClock({
   pose,
   roost,
   proxy,
+  plan,
 }: ProbeClockProps) {
   const advance = useThree((state) => state.advance);
   const clock = useThree((state) => state.clock);
@@ -69,6 +72,7 @@ export function ProbeClock({
 
     const uninstall = installProbe({
       gl,
+      plan,
       scene,
       advance,
       camera,
@@ -109,6 +113,7 @@ export function ProbeClock({
     pose,
     roost,
     proxy,
+    plan,
   ]);
 
   return null;

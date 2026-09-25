@@ -156,6 +156,16 @@ só na cena e não tinha `href` nenhum. Ele nasceu como uma lista de estações
 visível e foi **retirado da tela** na rodada seguinte (6.5): hoje são links
 invisíveis, e o foco é mostrado pelo próprio card. Ver "Beats".
 
+**E a câmara deixou de ser uma caixa (rodadas 6.5 e 7).** A 6.5 só tirou: a
+lista de estações visível (os links dos cards ficaram, invisíveis, com o foco
+mostrado pela peça), o controle de áudio da HUD, e a afirmação de que a
+curadoria tinha sido decidida olhando os cards — ela está **pendente**. A 7
+construiu a câmara: seção que varia ao longo do eixo, quadros com chanfro,
+portais no rio, nichos nas estações, gravação recessada, números gravados, uma
+parede de fundo com a abertura da fonte, bolsões de névoa, e o portão mostrando a
+câmara de verdade pelas frestas. Ver "A câmara" abaixo e MEASUREMENTS.md, "A
+câmara, medida".
+
 **Não entraram nesta rodada, e é deliberado:** o corpo dos três cases
 placeholder e a tradução de `summary_en` (hoje cópia do português nos quatro
 migrados). A Superfície continua sem conteúdo e os pontos de controle da câmera
@@ -338,9 +348,9 @@ Estado medido, com o portão, a HUD e a cena dos quatro primeiros beats:
 
 | Rota / chunk | gz | contra |
 |---|---|---|
-| `/` e `/pt` — a descida, com portão, preloader, HUD e os links dos cards | **183.9 kB** | 200 kB ✅ |
+| `/` e `/pt` — a descida, com portão, preloader, HUD e os links dos cards | **184.4 kB** | 200 kB ✅ |
 | `/work/[slug]` — o case, sem portão, **com a cena em chunk dinâmico** | **182.3 kB** | 200 kB ✅ |
-| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, campo de distância, descolamento, poleiro, véu medido, o corredor do rio, o conteúdo dele e **a travessia para o case** | **310.8 kB** | 350 kB ✅ |
+| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, campo de distância, descolamento, poleiro, véu medido, o corredor do rio, o conteúdo dele e **a travessia para o case** e **a câmara** (planta, loft, quadros, gravação, números) | **315.9 kB** | 350 kB ✅ |
 | chunk do driver de scroll (gsap + ScrollTrigger + lenis) | 48.0 kB | fora da rota inicial |
 
 `/work` não entra na tabela e não é esquecimento: ele lê `searchParams`, então é
@@ -371,10 +381,12 @@ camadas e o desenho da placa (`card-atlas.ts`), a geometria das duas regiões
 lateral do filtro (`river-flow.ts`) e o material novo.
 
 **A travessia para o case custou 3.2 kB**, de 307.3 para 310.5 (a retirada da
-rodada 6.5 — foco de teclado no card, `projectCard` — levou a 310.8): as duas poses e
+rodada 6.5 — foco de teclado no card, `projectCard` — levou a 310.8, e **a câmara
+da rodada 7 a 315.9**, +5.1 kB, sem arquivo de modelo: a geometria é gerada da
+planta): as duas poses e
 a inversão da curva (`case-pose.ts`), a máquina de estados por quadro
 (`case-drive.ts`), a textura de entrega com o recorte e as quatro passagens
-novas no material dos cards. **Sobram 39.5 kB do teto** para a Superfície.
+novas no material dos cards. Sobravam 39.5 kB do teto; com a câmara da rodada 7, **sobram 34.1 kB** para a Superfície.
 
 Na rota inicial ela custou 1.6 kB na home (a lista de estações — hoje os links
 invisíveis dos cards — e o store da travessia) e 7.4 kB no case, que ganhou três coisas que não tinha: a montagem da
@@ -596,6 +608,12 @@ lib/scene/probe-measure.ts as quatro medidas de aceite e seus controles
 lib/scene/probe-cards.ts   a separação em profundidade e a esteira por card
 lib/scene/curve.ts         a coreografia: câmera, ângulo de ataque, abertura,
                            névoa, fonte a montante, esteiras do rio
+lib/scene/chamber-plan.ts  a planta da câmara: seção por z, quadros, nichos,
+                           números gravados — a fonte única da geometria
+lib/scene/chamber-geometry.ts a malha da câmara, lofteada da planta
+lib/scene/engraving-atlas.ts o campo de altura dos números gravados (Geist Mono)
+lib/scene/probe-chamber.ts presença, paralaxe e gravação — a sonda da câmara
+lib/scene/scene-painted.ts "a cena pintou" — o fio do compositor para o portão
 lib/scene/proxy-sim.ts     64 macro-partículas a 15 Hz — luz, estrutura, véu
 lib/scene/veil.ts          lê do DOM as caixas de texto que o véu protege
 lib/scene/readout-store.ts o fio da cena para a HUD (DENS., Z) — sem three
@@ -805,6 +823,42 @@ Quatro coisas que decidem se ela funciona, e todas custaram uma medição:
   frontmatter baixaria uma segunda imagem, em outro tamanho, e as duas deixariam
   de ser a mesma imagem justamente no quadro em que uma substitui a outra.
 
+#### A câmara
+
+`lib/scene/chamber-plan.ts` é a planta, e tudo que tem forma lê dela: a malha
+(`chamber-geometry.ts` → `Chamber.tsx`), os números gravados (`Structure.tsx`),
+o proxy da CPU (que prende as luzes **dentro** das paredes de verdade) e a sonda.
+Mexer numa medida da câmara é mexer num lugar só.
+
+- **Seção variável**: garganta antes do corpo de prova (±8.8, teto 5), paredes a
+  ±12 até o rio, alargamento assimétrico no rio (14.2 a bombordo, 13.8 a
+  estibordo — mais largo que isso a parede some na névoa), piso descendo para
+  −7.6. A parede de estibordo fica em 12 de −15 a −51: é a que o poleiro e a
+  câmera de Quem sou raspam.
+- **Quadros** a intervalo irregular; no rio eles são **portais** (avançam 2.2,
+  0.8 de espessura). Um quadro nunca cai dentro de um nicho — o filtro está na
+  planta, e **já derrubou os portais uma vez em silêncio** quando a espessura
+  subiu e a folga não: confira `plan.ribs` depois de mudar nicho ou quadro.
+- **Nichos** alinhados aos cards **deste aparelho** (`resolveRiver()`): no mobile
+  eles ficam em outros z.
+- **Um material, três papéis**, pela normal: piso com luz direta, parede de
+  raspão, teto quase sem luz. Nada emite; o ambiente é baixo e proporcional ao
+  albedo.
+- **Gravação** é campo de altura com a normal derivada dele (`ENGRAVING_GLSL`):
+  réguas, marcas 7/11, cota do piso e a seta de escala da peça são analíticas no
+  shader; os números são placas instanciadas com um atlas em Geist Mono, que
+  **descartam fora da vala** e usam o mesmo `shadeConcrete` da parede — por isso
+  não há borda de decalque.
+- **A fonte do fundo é a abertura, não a parede.** A luz a montante tem termo de
+  incidência (com raspão só a mais de ~10 unidades da abertura). Sem ele a
+  parede do fundo, coplanar à abertura, saía mais clara que a própria fonte.
+- **Bolsões de névoa** (`fogPocket`, em `shaders/fog.ts`) são fixos em z e
+  amostrados ao longo do raio, não só no ponto: um bolsão entre a câmera e a
+  parede vela a parede, um atrás dela não.
+
+`PROBE_BLACK` é um `#define` que só a sonda liga (o concreto sai preto antes da
+névoa); em produção o bloco não existe no programa compilado.
+
 #### O compositor
 
 Cena → DOF → **campo do véu** → composite, tudo sobre `WebGLRenderTarget`. Ele
@@ -815,6 +869,28 @@ O alvo da cena é multiamostrado **e** tem `DepthTexture`: o three inclui
 geométrico e círculo de confusão por pixel ao mesmo tempo.
 
 ### O portão de entrada
+
+**As frestas mostram a câmara de verdade** desde a rodada 7. Quando o compositor
+pinta o primeiro quadro (`lib/scene/scene-painted.ts` — o `import()` resolver não
+basta: o código chegou, os shaders não), o `GateOverlay` tira o próprio fundo e
+o canvas 2D passa a limpar as frestas e desenhar só lâminas, sombra, véu e o grão
+das faces (`setWindow`, em `dormant-field.ts`). A troca é de um quadro para o
+seguinte. Antes disso, e sempre sem WebGL, é o campo dormente. **Enquanto
+`data-gate` é `closed` ou `opening`, a HUD e a descida ficam `visibility:
+hidden`** (`globals.css`), senão apareceriam pelas frestas; sem JS o atributo não
+existe e o site aparece inteiro. As lâminas têm espessura em perspectiva a partir
+do horizonte delas, chanfro e sombra na fresta vizinha.
+
+> ⚠️ **Pendente, decisão do Lucas**: em p = 0 a câmara real é quase preta (névoa
+> espessa da Emergência, os ~330 corpos do piso de população ficam dentro dela),
+> então o portão em modo janela perdeu a vida que o campo dormente dava. O
+> DIRECTION.md pede as duas coisas — a câmara verdadeira pela fresta e "o portão
+> precisa ter alguma coisa viva nele". Não resolvido mexendo no bando.
+
+**O convite ocupa a casa do número** (`GateInvite.tsx`): o número continua no
+layout, invisível, e o convite é desenhado por cima com a altura dos algarismos.
+Duas variantes (`glyph` padrão, `mark` só em dev com `?invite=mark`) — **a escolha
+é do Lucas**.
 
 `components/gate/` — o beat "pré" do PROJECT.md §4. Ele **mora na home**
 (`app/[locale]/page.tsx`), não no layout: quem chega direto num case por link

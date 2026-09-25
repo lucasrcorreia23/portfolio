@@ -64,6 +64,22 @@ export type TextRect = {
  * sobre o conteúdo, então um parágrafo de quatro linhas devolve quatro caixas,
  * cada uma do tamanho dos glifos e não da coluna.
  */
+/** O elemento chega a pintar pixel? Opacidade, visibilidade e `display`. */
+function isPainted(element: HTMLElement): boolean {
+  for (let node: HTMLElement | null = element; node !== null; node = node.parentElement) {
+    const style = getComputedStyle(node);
+    if (style.display === "none" || style.visibility === "hidden") return false;
+    if (Number.parseFloat(style.opacity) < 0.02) return false;
+    // O padrão "só para leitor de tela" (`.sr-only`, `.beat-specimen` com a
+    // cena viva): caixa de um pixel recortada. O `Range` devolve os retângulos
+    // do texto **sem** o recorte, então sem este teste o corpo de prova em DOM
+    // entrava na varredura com 2.46:1 — medido, a primeira vez que ela desceu
+    // desde 0.02.
+    if (style.clipPath.includes("inset(50%)")) return false;
+  }
+  return true;
+}
+
 export function readTextRects(): TextRect[] {
   const rects: TextRect[] = [];
   const range = document.createRange();
@@ -80,6 +96,11 @@ export function readTextRects(): TextRect[] {
           (node.textContent ?? "").trim() !== "",
       );
       if (!hasText) continue;
+      // Texto que não é pintado não tem contraste para medir: os links dos
+      // cards (`StationList`) ficam no DOM com opacidade zero, e o foco deles é
+      // mostrado pela peça na cena. Medi-los pôs o pior quadro da descida em
+      // 1.35:1 numa caixa que ninguém vê.
+      if (!isPainted(element)) continue;
 
       const beat = element.closest("[data-beat]")?.getAttribute("data-beat");
       const label = (element.textContent ?? "").trim().slice(0, 20);

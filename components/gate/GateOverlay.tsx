@@ -12,6 +12,10 @@ import { clamp01, damp, DURATION, easeStrong } from "@/lib/motion";
 import { readPalette } from "@/lib/palette";
 import { runPreload } from "@/lib/preload/manifest";
 import {
+  isScenePainted,
+  subscribeScenePainted,
+} from "@/lib/scene/scene-painted";
+import {
   createDormantField,
   type DormantField,
   type SlatState,
@@ -202,6 +206,10 @@ export function GateOverlay({
   // Lido uma vez no cliente. Só o convite o usa, e o convite só existe depois
   // de `ready` — então o servidor nunca renderiza a variante.
   const [invite] = useState<InviteVariant>(readInviteVariant);
+  // `true` quando as frestas já mostram a câmara de verdade: o fundo opaco do
+  // portão sai, senão ele cobriria exatamente o que a janela existe para
+  // mostrar.
+  const [windowMode, setWindowMode] = useState(false);
 
   /** Progresso real do carregamento, 0 a 1. */
   const targetRef = useRef(0);
@@ -277,11 +285,31 @@ export function GateOverlay({
     if (canvas !== null) {
       try {
         field = createDormantField(canvas, readPalette());
+        field.setHorizon(SLAT_HORIZON);
       } catch {
         // Um portão preto e legível é melhor que um portão que não abre.
         field = null;
       }
     }
+
+    // **As frestas passam a mostrar a câmara de verdade** quando ela pinta o
+    // primeiro quadro — ela já está montada embaixo do portão desde que a
+    // tarefa `scene` do preload resolveu. A troca é de um quadro para o
+    // seguinte, sem fade (DIRECTION.md §4: "nada esmaece para revelar o que
+    // está atrás"). O campo dormente cobre o intervalo antes disso e é o
+    // caminho inteiro sem WebGL, porque sem WebGL a cena nunca pinta.
+    let windowed = false;
+    const enterWindow = () => {
+      if (windowed || field === null) return;
+      windowed = true;
+      field.setWindow(true);
+      setWindowMode(true);
+      if (reducedMotion) {
+        lightSeams(Infinity, 0);
+        field.render(0, 0, slats);
+      }
+    };
+    const stopWatchingScene = subscribeScenePainted(enterWindow);
 
     // A caixa da **coluna de texto**, medida uma vez por layout e não por
     // quadro: ler `getBoundingClientRect()` a 60 Hz força recálculo de layout
@@ -324,6 +352,15 @@ export function GateOverlay({
     /** Resolve o realce de cada quina a partir de quem está passando perto. */
     const lightSeams = (lambda: number, dt: number) => {
       if (field === null) return;
+      // Na janela os corpos dormentes não são mais desenhados, então não
+      // acendem quina nenhuma: a gravação fica no fio, e quem vive atrás da
+      // fresta é o bando de verdade.
+      if (windowed) {
+        for (const slat of slats) {
+          slat.light = lambda === Infinity ? 0 : damp(slat.light, 0, lambda, dt);
+        }
+        return;
+      }
       const canvasHeight = canvas === null ? 0 : canvas.clientHeight;
       for (let i = 0; i <= SLATS; i += 1) {
         seamYs[i] = slatEdge(i) * canvasHeight;
@@ -462,10 +499,15 @@ export function GateOverlay({
 
     raf = requestAnimationFrame(frame);
 
+    // A cena pode ter pintado antes de este efeito montar (um reload com o
+    // chunk em cache, por exemplo) — aí a assinatura não dispara mais.
+    if (isScenePainted()) enterWindow();
+
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", onResize);
       observer.disconnect();
+      stopWatchingScene();
       field?.destroy();
     };
   }, [reducedMotion, setPhase, writeVelocity]);
@@ -547,9 +589,9 @@ export function GateOverlay({
       aria-label={label}
       tabIndex={-1}
       onClick={open}
-      className={`fixed inset-0 z-[100] overflow-hidden bg-void ${
-        cutting ? "gate-cut" : ""
-      }`}
+      className={`fixed inset-0 z-[100] overflow-hidden ${
+        windowMode ? "" : "bg-void"
+      } ${cutting ? "gate-cut" : ""}`}
     >
       {/* O organismo dormente. Decorativo: tudo que precisa ser lido está no
           DOM ao lado (PROJECT.md §5). */}

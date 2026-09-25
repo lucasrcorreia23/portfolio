@@ -53,6 +53,22 @@
     overscroll-behavior: none;
   }
 
+  /* Enquanto o portão está na tela, o DOM do site não aparece pelas frestas.
+     Com o fundo opaco do portão isto era de graça; desde que as frestas passaram
+     a mostrar a câmara de verdade (o portão fica transparente entre as
+     lâminas), a HUD e o texto da descida ficariam visíveis por elas — e o
+     DIRECTION.md §4 quer a primeira onda atravessando o quadro "antes de
+     qualquer texto aparecer". Só `visibility`, que não muda layout: a medida
+     da página, a trava de rolagem e o foco continuam os de antes.
+     Pelo contrato `data-gate` e não pela presença do portão: sem JavaScript o
+     script que escreve o atributo não roda, e o site aparece inteiro. */
+  html[data-gate="closed"] body > aside,
+  html[data-gate="closed"] body > main,
+  html[data-gate="opening"] body > aside,
+  html[data-gate="opening"] body > main {
+    visibility: hidden;
+  }
+
   ::selection {
     background-color: var(--deep);
     color: var(--mist);

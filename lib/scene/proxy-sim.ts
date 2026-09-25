@@ -116,7 +116,16 @@ function smoothstep(edge0: number, edge1: number, x: number): number {
   return t * t * (3 - 2 * t);
 }
 
-export function createProxySim(): ProxySim {
+/**
+ * @param bounds a seção da câmara em cada `z` (`chamber-plan.ts`). As
+ *   macro-partículas são presas **dentro das paredes de verdade**: com a caixa
+ *   antiga isso era ±12 × ±7 constante, e agora a câmara aperta na garganta —
+ *   uma luz presa a ±12 ali estaria dentro do concreto, acendendo a parede por
+ *   trás.
+ */
+export function createProxySim(
+  bounds?: (z: number) => { left: number; right: number; floor: number; ceiling: number },
+): ProxySim {
   const px = new Float32Array(PARTICLES);
   const py = new Float32Array(PARTICLES);
   const pz = new Float32Array(PARTICLES);
@@ -311,8 +320,13 @@ export function createProxySim(): ProxySim {
         pz[i] = spawnAt;
       }
       if ((pz[i] as number) < spawnAt - 24) pz[i] = recycleAt - 8;
-      px[i] = Math.max(-CHAMBER_HALF_WIDTH, Math.min(CHAMBER_HALF_WIDTH, px[i] as number));
-      py[i] = Math.max(-CHAMBER_HALF_HEIGHT, Math.min(CHAMBER_HALF_HEIGHT, py[i] as number));
+      const wall = bounds?.(pz[i] as number);
+      const left = wall?.left ?? CHAMBER_HALF_WIDTH;
+      const right = wall?.right ?? CHAMBER_HALF_WIDTH;
+      const floor = wall?.floor ?? CHAMBER_HALF_HEIGHT;
+      const ceiling = wall?.ceiling ?? CHAMBER_HALF_HEIGHT;
+      px[i] = Math.max(-left, Math.min(right, px[i] as number));
+      py[i] = Math.max(-floor, Math.min(ceiling, py[i] as number));
     }
 
     // Quatro médias, duas iterações. Semeadas nos centroides anteriores, então
