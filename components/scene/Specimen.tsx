@@ -65,6 +65,8 @@ export function Specimen({ shared, text, attackRef }: SpecimenProps) {
         uFlockAhead: shared.flockAhead,
         uAheadField: shared.flockAheadField,
         uAheadReady: shared.flockAheadReady,
+        uSpecimenFogDepth: shared.specimenFogDepth,
+        uSpecimenFogFlat: shared.specimenFogFlat,
       },
       vertexShader: SPECIMEN_VERT,
       fragmentShader: SPECIMEN_FRAG,

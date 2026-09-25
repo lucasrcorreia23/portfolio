@@ -77,11 +77,41 @@ float sceneNoise(vec3 q) {
   );
 }
 
-/** A rampa de três paradas. Depois de 0.85 ela esquenta perto da tomada de ar
-    — ver o fim de applyFog. */
+/**
+ * A rampa perto da lente: --void a --abyss, e ela **satura cedo**, em ~14
+ * unidades.
+ *
+ * Até a rodada 11 a rampa ia a --deep pela profundidade, até 88 unidades, e a
+ * cor da névoa de uma superfície dependia só de quão longe ela estava. Olhando
+ * pelo eixo do duto, as linhas de mesma profundidade nas paredes **são** as
+ * seções da câmara: o fundo virava retângulos concêntricos, com o plano do céu
+ * atrás da abertura, a ~110 unidades, como um retângulo chapado de --deep por
+ * cima da palavra da Emergência (diagnosticado na rodada 12 escondendo uma
+ * malha de cada vez). A terceira parada agora não é profundidade: é a luz da
+ * fonte espalhada pela névoa, na direção dela — ver sourceHalo.
+ */
 vec3 fogRamp(float depth01) {
-  vec3 c = mix(uVoid, uAbyss, smoothstep(0.0, 0.42, depth01));
-  return mix(c, uDeep, smoothstep(0.42, 1.0, depth01));
+  return mix(uVoid, uAbyss, smoothstep(0.0, 0.16, depth01));
+}
+
+/**
+ * A fonte a montante vista **através da névoa**: um brilho em volta da
+ * direção dela, com ruído e sem borda — é a "luz distante" da Emergência, e é
+ * o que a cor da névoa tem de --deep. Depende da direção do raio, não da
+ * superfície que ele acerta: a parede do fundo, o céu atrás da abertura e a
+ * garganta caem na mesma cor quando estão na mesma direção, e nenhuma aresta
+ * de geometria vira aresta de cor.
+ */
+float sourceHalo(vec3 worldPos) {
+  vec3 ray = normalize(worldPos - cameraPosition);
+  vec3 toSource = normalize(vec3(0.0, ${APERTURE_Y.toFixed(3)}, ${LOUVER_Z.toFixed(3)}) - cameraPosition);
+  float c = clamp(dot(ray, toSource), -1.0, 1.0);
+  float angle = sqrt(max(2.0 * (1.0 - c), 0.0));
+  float core = exp(-pow(angle / 0.12, 2.0));
+  float wide = exp(-pow(angle / 0.42, 2.0));
+  float n = sceneNoise(ray * 6.5 + vec3(0.0, 0.0, uTime * 0.03));
+  n = n * 0.7 + sceneNoise(ray * 17.0) * 0.3;
+  return (0.8 * core + 0.3 * wide) * (0.45 + 1.1 * n);
 }
 
 /**
@@ -130,6 +160,10 @@ vec3 applyFog(vec3 color, float viewDepth, vec3 worldPos) {
   float depth01 = clamp(viewDepth / 88.0, 0.0, 1.0);
 
   vec3 fogColor = fogRamp(depth01);
+  // A luz da fonte só tinge o que está fundo o bastante na névoa para ser
+  // névoa: uma superfície perto continua com a cor dela, e uma letra na frente
+  // do brilho continua silhueta.
+  fogColor = mix(fogColor, uDeep, clamp(sourceHalo(worldPos) * smoothstep(0.22, 0.75, depth01), 0.0, 1.0));
   // **A Superfície: a névoa lê quente no topo** (DIRECTION.md §5). Não é uma
   // cor nova na rampa, é a luz de fora espalhada pela névoa perto da tomada de
   // ar: um volume de --peach em volta da abertura, amostrado no trecho do raio

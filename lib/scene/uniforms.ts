@@ -95,6 +95,16 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
 
     /** Onde a peça está montada, para a rampa de esteira dos corpos. */
     specimenZ: { value: SPECIMEN_Z },
+    /**
+     * A névoa da palavra, **uma só para a palavra inteira** na Emergência
+     * (rodada 12). A peça entra girada 78° e cobre quinze unidades de
+     * profundidade: com a névoa por fragmento, "CORR" a 26 unidades lia como
+     * silhueta e "EIA" a 41 sumia. `specimenFogFlat` (0 a 1) mistura a
+     * profundidade do fragmento com `specimenFogDepth`, a distância da câmera
+     * ao centro da peça — e a palavra inteira recebe o mesmo tratamento.
+     */
+    specimenFogDepth: { value: 0 },
+    specimenFogFlat: { value: 0 },
 
     /**
      * Densidade do bando logo a montante da peça, 0 a 1, vinda do proxy.

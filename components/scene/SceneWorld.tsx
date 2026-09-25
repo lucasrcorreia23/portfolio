@@ -48,6 +48,16 @@ import { Structure } from "./Structure";
 
 /** Ponto a montante da peça onde se mede a densidade que acende o rim. */
 const AHEAD_OF_SPECIMEN = new Vector3(0, 0, SPECIMEN_Z - 6);
+const SPECIMEN_CENTER = new Vector3(0, 0, SPECIMEN_Z);
+
+/** A deriva da Emergência, em unidades de mundo — ver o laço mestre. */
+const EMERGENCE_DRIFT_X = 0.22;
+const EMERGENCE_DRIFT_Y = 0.1;
+
+function smoothstep01(x: number): number {
+  const t = Math.min(1, Math.max(0, x));
+  return t * t * (3 - 2 * t);
+}
 
 type SceneWorldProps = {
   /** A string do corpo de prova, resolvida no servidor. */
@@ -186,6 +196,27 @@ export function SceneWorld({
     caseAmountRef.current = inCase;
     shared.caseRecess.value = inCase;
 
+    // --- a deriva da Emergência (rodada 12) ----------------------------------
+    // Com a câmera no eixo e quase parada, qualquer borda que aparecesse ficava
+    // imóvel na tela, como moldura de interface. Uma deriva lateral mínima faz
+    // o que está perto e o que está longe se moverem em velocidades diferentes
+    // — espaço, não quadro. Ela corre no **tempo**, porque o que ela resolve é
+    // justamente a câmera parada: é a exceção declarada à "variável única"
+    // (PROJECT.md §3.3), do mesmo tipo do bando, que também anda sem scroll.
+    // Some até 0.11 e não existe no modo calmo.
+    if (!instant) {
+      const weight = 1 - smoothstep01((progress - 0.06) / 0.05);
+      if (weight > 0) {
+        const t = state.clock.elapsedTime;
+        const dx = weight * EMERGENCE_DRIFT_X * Math.sin(t * 0.19);
+        const dy = weight * EMERGENCE_DRIFT_Y * Math.sin(t * 0.13 + 1.1);
+        pose.position.x += dx;
+        pose.position.y += dy;
+        pose.target.x += dx * 0.4;
+        pose.target.y += dy * 0.4;
+      }
+    }
+
     camera.position.copy(pose.position);
     camera.lookAt(pose.target);
     focusRef.current = pose.position.distanceTo(pose.target);
@@ -201,6 +232,11 @@ export function SceneWorld({
     // O ângulo de ataque é amortecido por cima do progresso já amortecido: é a
     // haste girando, e uma haste tem inércia.
     const attack = specimenAttackAngle(progress);
+    // A névoa da palavra, uma só enquanto ela está girada de perfil (ver
+    // `specimenFogFlat` em `uniforms.ts`). Solta até 0.14, quando a peça já
+    // abriu de face e a profundidade por fragmento volta a ser a certa.
+    shared.specimenFogDepth.value = pose.position.distanceTo(SPECIMEN_CENTER);
+    shared.specimenFogFlat.value = 1 - smoothstep01((progress - 0.09) / 0.05);
     attackRef.current =
       instant || probe ? attack : damp(attackRef.current, attack, 5, dt);
 

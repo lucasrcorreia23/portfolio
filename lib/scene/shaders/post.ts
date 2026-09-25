@@ -53,6 +53,7 @@ float viewDepthAt(vec2 uv) {
 uniform float uFocus;
 uniform float uFocusRange;
 uniform float uAperture;
+uniform float uNearBlur;
 
 float cocAt(vec2 uv) {
   float depth = viewDepthAt(uv);
@@ -62,7 +63,7 @@ float cocAt(vec2 uv) {
   // Com a abertura em zero de 0.155 a ~0.44, um corpo perto da lente saía
   // nítido na Identidade e em Quem sou. Nada mais chega tão perto da câmera
   // nesta descida: a parede graduada de Quem sou fica a 3.2 unidades.
-  float near = 0.3 * (1.0 - smoothstep(0.6, 2.5, depth));
+  float near = 0.3 * uNearBlur * (1.0 - smoothstep(0.6, 2.5, depth));
   return max(far, near);
 }
 `;

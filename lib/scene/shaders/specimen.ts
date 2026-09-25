@@ -55,6 +55,9 @@ uniform float uFlockAhead;
 /** Corpos diante da face, por coluna, contados na GPU (shaders/ahead.ts). */
 uniform sampler2D uAheadField;
 uniform float uAheadReady;
+/** A névoa da palavra inteira na Emergência — ver specimenFogFlat em uniforms.ts. */
+uniform float uSpecimenFogDepth;
+uniform float uSpecimenFogFlat;
 
 varying vec3  vWorld;
 varying vec3  vNormal;
@@ -106,7 +109,7 @@ void main() {
 
   base += uSourceColor * upstreamLight(vWorld) * 0.35;
 
-  base = applyFog(base, vViewDepth, vWorld);
+  base = applyFog(base, mix(vViewDepth, uSpecimenFogDepth, uSpecimenFogFlat), vWorld);
 
   // Alfa 1.0: quem o multiplica pela borda macia do glifo é o troika, no
   // trecho que ele injeta depois desta linha.

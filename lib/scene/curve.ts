@@ -99,7 +99,11 @@ type Stop = {
 const DIRECTED: readonly Stop[] = [
   // Emergência: ar parado, longe de tudo. Não dá para saber o tamanho do
   // espaço, e a câmera mal se move.
-  { at: 0.0, position: [0.0, 0.9, 8.0], target: [0.0, 0.3, -14.0] },
+  // O alvo fica no **centro da palavra** (z −26), na mesma direção de antes:
+  // a distância até ele é o plano de foco da DOF, e com o alvo em −14 "CORR"
+  // ficava na navalha e "EIA", quinze unidades atrás, no borrão cheio. No meio,
+  // as duas pontas recebem o mesmo desfoque (rodada 12).
+  { at: 0.0, position: [0.0, 0.9, 8.0], target: [0.0, -0.03, -26.0] },
   { at: 0.1, position: [1.6, 0.5, -6.0], target: [0.2, 0.1, -24.0] },
   // A aproximação continua no eixo: a peça entra de perfil e o bando vem contra
   // a câmera.

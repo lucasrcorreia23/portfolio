@@ -129,6 +129,7 @@ export function Composer({
       uFocus: { value: 20 },
       uFocusRange: { value: 26 },
       uAperture: { value: 0 },
+      uNearBlur: { value: 1 },
     };
 
     const dof = createPassMaterial(
@@ -358,6 +359,9 @@ export function Composer({
 
     const aperture = apertureRef.current;
     rig.depthUniforms.uAperture.value = settings.dof ? aperture : 0;
+    // O campo próximo sai dentro do case, com a mesma rampa do voo: o
+    // DIRECTION.md §3 desliga a DOF nas rotas de case, e isso vale para ele.
+    rig.depthUniforms.uNearBlur.value = settings.dof ? 1 - shared.caseRecess.value : 0;
     rig.depthUniforms.uFocus.value = focusRef.current;
     rig.depthUniforms.uFocusRange.value = focusRangeRef.current;
 
