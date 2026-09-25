@@ -1159,6 +1159,18 @@ export function installProbe(deps: ProbeDeps): () => void {
     warmth,
     readTextRects,
     sheet,
+    /**
+     * Esconde (ou mostra) a malha do corpo de prova **do quadro**, sem tirá-la
+     * da simulação: o campo de distância continua assado e o bando continua
+     * desviando dele. É a condição da prova de silhueta da rodada 8 — as letras
+     * têm que ser inferíveis só pela ausência de corpos.
+     */
+    specimenVisible: (on: boolean) => {
+      const mesh = specimen();
+      if (mesh === null) throw new Error("corpo de prova não encontrado na cena");
+      mesh.visible = on;
+      return on;
+    },
     presence: chamber.presence,
     parallax: chamber.parallax,
     engraving: chamber.engraving,

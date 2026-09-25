@@ -769,7 +769,21 @@ void main() {
   // Planeio longo: o alvo de velocidade axial se aproxima do arrasto do eixo,
   // sem chegar nele — ver ROOST_HOLD em world.ts. Um poleiro que segurasse tudo
   // acumularia a população inteira; este desacelera e deixa passar.
-  float vzTarget = mix(drive, uRoostDrift, ROOST_HOLD * roost * band);
+  // **A onda de densidade.** Uma frente de pressão que viaja pelo duto: onde a
+  // fase está baixa o escoamento freia, onde está alta ele acelera, e pela
+  // continuidade quem freia se acumula — densidade é o inverso da velocidade
+  // num escoamento. A frente é oblíqua (tem componente em x), então as faixas
+  // atravessam o quadro de lado, "como sombra atravessando trigo"
+  // (DIRECTION.md §2), em vez de chegarem de frente como anéis.
+  //
+  // Baixa frequência de propósito, e é o oposto da corrente ambiente acima: lá
+  // a fase precisa variar entre vizinhos para agitar sem transladar; aqui ela
+  // precisa ser **coerente** por vários metros, senão não há faixa, há ruído.
+  // Período de ~15 unidades no eixo, frente andando a ~2.6 u/s contra o
+  // escoamento de ~6: a faixa passa pela câmera a cada ~1.7 s.
+  float pressure = sin(pos.z * 0.42 + pos.x * 0.19 - uTime * 1.1);
+  float surge = 1.0 + 0.3 * pressure * forming * (1.0 - roost);
+  float vzTarget = mix(drive * surge, uRoostDrift, ROOST_HOLD * roost * band);
   force.z += (vzTarget - vel.z) * 1.7;
 ${detach || cards ? TURB_SAMPLE : ""}
 ${detach ? FIELD_FORCE : ""}
@@ -834,10 +848,19 @@ void main() {
 
   // Quem passou pela lente volta a montante, num anel novo. O bando é
   // contínuo: nada aparece nem some no meio do quadro.
+  //
+  // **E o anel não é um plano.** Todo corpo renascia exatamente em spawnZ(), e
+  // como todos andam na mesma velocidade relativa à câmera, a população virava
+  // uma lâmina que atravessava o duto em bloco: um terço do bando num bin de
+  // quatro unidades, e o corredor do rio vazio entre as passagens (ver
+  // MEASUREMENTS.md, "Três armadilhas do método"). Espalhar o renascimento por
+  // 28 unidades de profundidade, todas a mais de 36 da lente — onde a névoa já
+  // comeu o corpo —, desmancha a lâmina sem ninguém ver alguém nascer.
   if (pos.z > recycleZ()) {
     float a = boidHash(self + floor(uTime * 7.0)) * 6.2831853;
     float r = sqrt(boidHash(self + 5.0 + floor(uTime * 7.0)));
-    pos = vec3(cos(a) * r * uTube.x, sin(a) * r * uTube.y, spawnZ());
+    float depth = boidHash(self * 1.37 + 11.0 + floor(uTime * 7.0)) * 28.0;
+    pos = vec3(cos(a) * r * uTube.x, sin(a) * r * uTube.y, spawnZ() + depth);
   }
   // E o contrário também: se a câmera passou por eles (um salto de scroll para
   // trás), eles voltam para o começo do tubo em vez de ficarem órfãos atrás.

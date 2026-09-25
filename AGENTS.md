@@ -166,6 +166,12 @@ parede de fundo com a abertura da fonte, bolsões de névoa, e o portão mostran
 câmara de verdade pelas frestas. Ver "A câmara" abaixo e MEASUREMENTS.md, "A
 câmara, medida".
 
+**E o bando mudou na rodada 8.** O rim da peça acende pela contagem de corpos
+diante da face, por coluna, na GPU; o brilho dos corpos segue a densidade; uma
+onda de pressão atravessa o duto; o renascimento se espalha em z (a lâmina saiu);
+o rosa só aparece na compressão diante de uma peça. Ver MEASUREMENTS.md, "O
+bando e o frame, medidos".
+
 **Não entraram nesta rodada, e é deliberado:** o corpo dos três cases
 placeholder e a tradução de `summary_en` (hoje cópia do português nos quatro
 migrados). A Superfície continua sem conteúdo e os pontos de controle da câmera
@@ -350,7 +356,7 @@ Estado medido, com o portão, a HUD e a cena dos quatro primeiros beats:
 |---|---|---|
 | `/` e `/pt` — a descida, com portão, preloader, HUD e os links dos cards | **184.4 kB** | 200 kB ✅ |
 | `/work/[slug]` — o case, sem portão, **com a cena em chunk dinâmico** | **182.3 kB** | 200 kB ✅ |
-| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, campo de distância, descolamento, poleiro, véu medido, o corredor do rio, o conteúdo dele e **a travessia para o case** e **a câmara** (planta, loft, quadros, gravação, números) | **315.9 kB** | 350 kB ✅ |
+| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, campo de distância, descolamento, poleiro, véu medido, o corredor do rio, o conteúdo dele e **a travessia para o case** e **a câmara** (planta, loft, quadros, gravação, números) | **318.2 kB** | 350 kB ✅ |
 | chunk do driver de scroll (gsap + ScrollTrigger + lenis) | 48.0 kB | fora da rota inicial |
 
 `/work` não entra na tabela e não é esquecimento: ele lê `searchParams`, então é
@@ -386,7 +392,7 @@ da rodada 7 a 315.9**, +5.1 kB, sem arquivo de modelo: a geometria é gerada da
 planta): as duas poses e
 a inversão da curva (`case-pose.ts`), a máquina de estados por quadro
 (`case-drive.ts`), a textura de entrega com o recorte e as quatro passagens
-novas no material dos cards. Sobravam 39.5 kB do teto; com a câmara da rodada 7, **sobram 34.1 kB** para a Superfície.
+novas no material dos cards. Sobravam 39.5 kB do teto; com a câmara da rodada 7 e o bando da 8, **sobram 31.8 kB** para a Superfície.
 
 Na rota inicial ela custou 1.6 kB na home (a lista de estações — hoje os links
 invisíveis dos cards — e o store da travessia) e 7.4 kB no case, que ganhou três coisas que não tinha: a montagem da
@@ -614,6 +620,7 @@ lib/scene/chamber-geometry.ts a malha da câmara, lofteada da planta
 lib/scene/engraving-atlas.ts o campo de altura dos números gravados (Geist Mono)
 lib/scene/probe-chamber.ts presença, paralaxe e gravação — a sonda da câmara
 lib/scene/scene-painted.ts "a cena pintou" — o fio do compositor para o portão
+lib/scene/shaders/ahead.ts corpos diante da face da peça, por coluna, na GPU
 lib/scene/proxy-sim.ts     64 macro-partículas a 15 Hz — luz, estrutura, véu
 lib/scene/veil.ts          lê do DOM as caixas de texto que o véu protege
 lib/scene/readout-store.ts o fio da cena para a HUD (DENS., Z) — sem three
@@ -858,6 +865,20 @@ Mexer numa medida da câmara é mexer num lugar só.
 
 `PROBE_BLACK` é um `#define` que só a sonda liga (o concreto sai preto antes da
 névoa); em produção o bloco não existe no programa compilado.
+
+#### O rim da peça, e o bando que o acende
+
+O rim do corpo de prova lê `flockAheadField`: uma textura 32×1 com a contagem
+ponderada de corpos entre a face e a câmera, por coluna ao longo da largura da
+peça, feita em **dois estágios** no `Flock` (32 × 128 somas parciais, depois 32
+somas). Um estágio só — 32 fragmentos lendo o bando inteiro em série — custou
+8.6 ms no M5: sem fragmentos o bastante, a GPU não esconde a latência. **Nada
+volta para a CPU**; `flockAhead` (o do proxy) ficou como fallback enquanto o
+campo não existe.
+
+O rosa do bando depende de **densidade e** proximidade da aresta de ataque de
+uma peça (`nearLeadingEdge`, em `shaders/body.ts`, lendo `uCards`). Sem a
+segunda condição, qualquer aglomerado denso virava rosa e o teto de 15% caía.
 
 #### O compositor
 
@@ -1572,7 +1593,10 @@ Nesta ordem, porque cada uma depende da anterior:
    > que não depende de foco — ver a tabela e a investigação em "O rio, medido".
    > O tempo de GPU continua pendente, e `?bench=1&plan=debts` é o caminho: ele
    > mede isto junto com as outras duas dívidas, na mesma janela.
-4. **A lâmina do bando.** Não é acabamento: é o bando atravessando o corredor em
+4. ~~**A lâmina do bando.**~~ **Consertada na rodada 8** (renascimento
+   espalhado por 28 unidades de z, todas a mais de 36 da lente), com o 3B e o
+   poleiro remedidos no mesmo lote — ver MEASUREMENTS.md, "O bando e o frame,
+   medidos". O texto abaixo é o registro de antes. Não é acabamento: é o bando atravessando o corredor em
    bloco e deixando trechos do rio sem tecido conjuntivo — ver a nota corrigida em
    MEASUREMENTS.md, "Três armadilhas do método, e é aqui que elas ficam
    registradas". O conserto é espalhar o renascimento em `z`, e

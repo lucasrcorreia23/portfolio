@@ -1,3 +1,4 @@
+import { MAX_CARDS } from "../cards";
 import { FOG_GLSL, FOG_UNIFORMS_GLSL } from "./fog";
 
 /**
@@ -99,6 +100,35 @@ uniform vec3  uRose;
 uniform vec3  uCoral;
 uniform float uSpecimenZ;
 uniform float uGain;
+uniform vec4  uCards[${MAX_CARDS}];
+uniform float uCardCount;
+uniform float uCardAmount;
+
+/**
+ * Quão perto o corpo está da **aresta de ataque** de uma peça montada: a laje a
+ * montante do corpo de prova, ou a caixa a montante de um card.
+ *
+ * É o que o rosa passou a exigir junto com a densidade. Com a densidade
+ * sozinha, todo aglomerado denso virava rosa — o poleiro de Quem sou e o bando
+ * cruzando o rio pintavam o quadro de rosa de borda a borda (medido: 0.815 na
+ * folha do rio). O DIRECTION.md §2 diz "rose só onde o bando comprime", e o
+ * bando comprime **contra alguma coisa**.
+ */
+float nearLeadingEdge(vec3 p) {
+  float dz = p.z - uSpecimenZ;
+  float specimen = smoothstep(-5.0, -1.5, dz) * (1.0 - smoothstep(0.2, 0.8, dz))
+    * (1.0 - smoothstep(8.0, 9.5, abs(p.x))) * (1.0 - smoothstep(1.6, 2.6, abs(p.y)));
+  float cards = 0.0;
+  for (int i = 0; i < ${MAX_CARDS}; i++) {
+    if (float(i) >= uCardCount || uCardAmount <= 0.0) break;
+    vec3 c = uCards[i].xyz;
+    float cz = p.z - c.z;
+    float near = smoothstep(-3.2, -0.8, cz) * (1.0 - smoothstep(0.1, 0.6, cz))
+      * (1.0 - smoothstep(2.2, 3.2, abs(p.x - c.x))) * (1.0 - smoothstep(1.4, 2.2, abs(p.y - c.y)));
+    cards = max(cards, near * uCardAmount);
+  }
+  return max(specimen, cards);
+}
 
 in vec3  vWorld;
 in float vViewDepth;
@@ -136,7 +166,7 @@ void main() {
   // francamente cyan: é o "cyan em aceleração" do §5 e não um bando cyan.
   vec3 color = uTeal;
   color = mix(color, uCyan, smoothstep(0.18, 0.85, vEnergy));
-  color = mix(color, uRose, smoothstep(0.07, 0.13, vDensity) * 0.75);
+  color = mix(color, uRose, smoothstep(0.07, 0.13, vDensity) * 0.75 * nearLeadingEdge(vWorld));
 
   // Coral: **a jusante e quente**, e só isso.
   //
@@ -162,7 +192,14 @@ void main() {
 
   // A ponta do corpo é mais quente que a cauda: dá direção sem desenhar nada.
   float tip = smoothstep(-1.0, 1.0, vAlong);
-  float energy = uGain * (0.35 + 0.65 * tip) * (0.55 + 0.85 * vEnergy);
+  // **O brilho segue também a densidade**, e é daí que sai a onda. Um corpo
+  // isolado é uma lasca apagada; uma lâmina densa é uma faixa clara — e uma
+  // faixa clara correndo pelo bando é a "sombra atravessando trigo" do
+  // DIRECTION.md §2, legível de longe, onde nenhum corpo individual é. A faixa
+  // sai da distribuição medida de vDensity (mediana 0.033, p90 0.073): a
+  // mediana fica em ~0.6, o p90 em ~1.6.
+  float crowd = 0.5 + 1.25 * smoothstep(0.02, 0.10, vDensity);
+  float energy = uGain * (0.35 + 0.65 * tip) * (0.55 + 0.85 * vEnergy) * crowd;
 
   vec3 lit = color * energy;
   lit = applyFog(lit, vViewDepth, vWorld);

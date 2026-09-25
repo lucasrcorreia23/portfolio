@@ -36,6 +36,7 @@ medido, com que método, e por quê o número é esse".
 - [O rio, medido](#o-rio-medido)
 - [A travessia para o case, medida](#a-travessia-para-o-case-medida)
 - [A câmara, medida](#a-câmara-medida)
+- [O bando e o frame, medidos](#o-bando-e-o-frame-medidos)
 - [Desempenho da cena, medido](#desempenho-da-cena-medido)
 
 ---
@@ -1375,6 +1376,108 @@ janela do portão).
    invisível do card entrava com 1.35:1 e o corpo de prova em DOM (caixa de um
    pixel, `clip-path: inset(50%)`) com 2.46:1. `readTextRects` agora pula o que
    não pinta (`isPainted`, em `probe-contrast.ts`).
+
+## O bando e o frame, medidos
+
+Rodada 8. Quatro mudanças, todas no bando ou na peça (a câmara não foi tocada):
+o rim da peça aceso pela **contagem de corpos diante da face, por coluna, na
+GPU** (`shaders/ahead.ts`); o brilho dos corpos seguindo também a **densidade**;
+uma **onda de pressão** oblíqua viajando pelo duto; e o **renascimento espalhado
+em z**, que desmancha a lâmina. Mais o rosa restrito à compressão diante de uma
+peça, e o bolsão de névoa da garganta tirado da linha de visada da Identidade.
+Controle: o worktree de `b1ccf38` com o mesmo roteiro de medição (ele só usa o
+que a sonda antiga também expõe).
+
+### A peça clareia com o bando
+
+Luminância média da face (pixels da tinta sem corpo na frente) contra o anel de
+névoa em volta das letras, 20 quadros por ponto:
+
+| p | face | névoa em volta | razão | controle (b1ccf38) |
+|---|---|---|---|---|
+| 0.14 | 0.0182 | 0.0164 | **1.11** | 2.43 |
+| 0.18 | 0.0265 | 0.0169 | **1.57** | 1.34 |
+| 0.24 | 0.0313 | 0.0218 | **1.44** | 3.15 |
+
+A face sobe com o bando (0.018 → 0.027 → 0.031) e em 0.18 fica 57% acima da
+névoa. **O controle já era mais claro que o anel** — o "buraco" da folha antiga
+era a face contra a névoa **distante** e contra o bando, não contra o anel
+imediato. A primeira versão desta rodada piorou a face (0.78 / 1.15 / 0.99) por
+dois motivos medidos: o bolsão de névoa da garganta, em z −9, ficava entre a
+câmera e a peça; e a contagem por coluna, em 0.18, é de 0 a 10 corpos — o rim
+estava calibrado para densidades cinco vezes maiores. As pontas (C e A) têm
+contagem **zero** sempre: estão fora do tubo do bando.
+
+### A onda existe
+
+Dispersão da contagem de pixels de corpo entre 24 faixas verticais do quadro,
+120 quadros em 0.24:
+
+| | média | mín | máx | amplitude | desvio no tempo |
+|---|---|---|---|---|---|
+| **rodada 8** | 0.894 | 0.689 | 1.004 | **0.315** | **0.099** |
+| controle | 0.501 | 0.480 | 0.512 | 0.032 | 0.006 |
+
+Dez vezes a amplitude e dezesseis vezes o desvio: a série deixou de ser plana.
+
+### A silhueta sem a malha — o critério falha no pixel, e passa no plano
+
+Com a malha escondida (`__probe.specimenVisible(false)`), em 0.18, 60 quadros:
+
+- **no pixel entregue**: 58.9 corpos por mil sobre a tinta contra 50.9 no anel —
+  **0.86:1**, contra o alvo de 3:1. As letras **não** são inferíveis na tela.
+- **no plano da peça** (laje de ±0.3 e ±0.6 em volta dela, na simulação): o anel
+  tem **12×** a densidade da tinta; a ±1.2 cai para 3.9×. As contra-formas têm
+  2–3× **mais** corpos que o anel: é onde a turbulência acumula.
+
+A diferença é geométrica. O raio da câmera atravessa 14 unidades de esteira e o
+escoamento inteiro atrás das letras; quase todo corpo visível sobre a tinta não
+está no plano dela. Passar de 3:1 no pixel pediria uma esteira longa que não
+fecha, e isso contradiz o critério de recolamento do 3B. Fica como decisão.
+
+### O calor
+
+Pixels quentes (`__probe.warmth`, teto 15%), descida de 0.05 a 0.85:
+
+| | pior | onde |
+|---|---|---|
+| **rodada 8** | **8.83%** | 0.70 |
+| controle | **37.93%** | 0.70 (e 29.4% em 0.475) |
+
+O controle estourava o teto — é o "confete rosa de borda a borda" da auditoria.
+Agora o rosa aparece na aresta de ataque da peça (0.2–0.7% em 0.20–0.25) e na
+dos cards; o poleiro e o bando cruzando o rio deixam de ser rosa.
+
+### O que o 3B e Quem sou viraram
+
+`__probe.measure()` em 0.18, mesmo método de sempre:
+
+| | antes | rodada 8 |
+|---|---|---|
+| compressão na aresta | 1.23 | **1.08** |
+| turbulência nas contra-formas / fluxo livre | 11× | **6.8×** |
+| recolamento a 1 / 2 / 4 larguras | 0.57 / 0.91 / 1.04 | **0.59 / 1.13 / 1.42** |
+
+Os três continuam passando (maior, maior, monotônico), e os três ficaram mais
+fracos pelo mesmo motivo: a onda também agita o fluxo livre de referência, e as
+faixas densas dela atravessam as lajes a 2 e 4 larguras (daí passar de 1).
+
+Poleiro, na **GPU** (fração do bando dentro de 1.5 raio do eixo, descendo 0.28
+→ 0.45 a 0.6 vh/s): mediana **0.50**, p90 0.59, contra 0.44 / 0.54 do controle.
+A leitura `DENS.` da HUD sai do proxy da CPU, que esta rodada não tocou.
+
+### Contraste, custo e pacote
+
+- Contraste, 0.02 → 0.85: **5.15:1** (en) e **5.11:1** (pt). Passa o piso;
+  ficou abaixo do alvo de 5.5 do véu, que antes da rodada estava em 5.58.
+- Pacote: chunk da cena **318.2 kB** (+2.3).
+- GPU: **a máquina estava sob carga de outros processos** e o controle, que
+  medira 1.55 ms uma hora antes, passou a medir 3.3–4.7. Intercalando as duas
+  builds, três vezes cada: rodada 8 **5.70–5.83 ms**, controle **3.33–4.73** —
+  razão ~1.4×. A primeira versão da contagem por coluna (32 fragmentos lendo o
+  bando inteiro em série) media 8.6 ms; em dois estágios ela saiu da conta.
+  O resto é o bando **no quadro**: sem a lâmina, a travessia não tem mais
+  trechos com a população inteira fora da tela. **Remedir com a máquina quieta.**
 
 ## Desempenho da cena, medido
 

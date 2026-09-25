@@ -94,7 +94,11 @@ vec3 fogRamp(float depth01) {
  */
 float fogPocket(float z) {
   float p = 1.0;
-  p += 0.55 * exp(-pow((z + 9.0) / 4.5, 2.0));
+  // A garganta engrossa **antes** de a câmera chegar nela, na Emergência — e
+  // não entre a câmera e o título: em z −9 o bolsão ficava exatamente na linha
+  // de visada da Identidade e escurecia a face das letras (medido na rodada 8:
+  // a face caiu abaixo da névoa em volta).
+  p += 0.55 * exp(-pow((z - 2.0) / 4.5, 2.0));
   p -= 0.28 * exp(-pow((z + 25.0) / 5.0, 2.0));
   p += 0.30 * exp(-pow((z + 47.0) / 3.5, 2.0));
   p -= 0.18 * exp(-pow((z + 60.0) / 5.0, 2.0));

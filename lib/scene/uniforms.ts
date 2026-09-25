@@ -95,6 +95,14 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
      * porque é o mesmo número que decide a altura do véu.
      */
     flockAhead: { value: 0 },
+    /**
+     * A mesma pergunta, contada na GPU e por coluna: quantos corpos estão entre
+     * a face da peça e a câmera, ao longo da largura dela (`shaders/ahead.ts`).
+     * É o que acende o rim **letra por letra**; `flockAhead` fica como leitura
+     * agregada do proxy.
+     */
+    flockAheadField: { value: null as Texture | null },
+    flockAheadReady: { value: 0 },
 
     /**
      * O campo de distância assado do corpo de prova, e o retângulo dele.

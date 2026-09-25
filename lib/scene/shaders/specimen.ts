@@ -1,4 +1,5 @@
 import { FOG_GLSL, FOG_UNIFORMS_GLSL } from "./fog";
+import { AHEAD_HALF_WIDTH } from "./ahead";
 import { LIGHTS_GLSL, LIGHTS_UNIFORMS_GLSL } from "./lights";
 
 /**
@@ -51,6 +52,9 @@ ${LIGHTS_UNIFORMS_GLSL}
 uniform vec3  uCyan;
 /** Densidade do bando imediatamente a montante da peça, 0 a 1, vinda do proxy. */
 uniform float uFlockAhead;
+/** Corpos diante da face, por coluna, contados na GPU (shaders/ahead.ts). */
+uniform sampler2D uAheadField;
+uniform float uAheadReady;
 
 varying vec3  vWorld;
 varying vec3  vNormal;
@@ -68,7 +72,10 @@ void main() {
 
   // Fosca: quase toda a resposta é difusa e fraca, sem realce especular.
   float diffuse = practicalLight(vWorld, normal, 0.15);
-  vec3 base = uDeep * (0.85 + 1.4 * diffuse);
+  // "Um passo só acima do valor da névoa" (DIRECTION.md §5): a névoa perto da
+  // lente escurece para --void, então a base precisa passar de --deep para a
+  // face não ler como buraco contra o fundo, que é névoa clara.
+  vec3 base = uDeep * (1.1 + 1.4 * diffuse);
 
   // O rim, e por que ele não pode ser **só** fresnel.
   //
@@ -83,7 +90,19 @@ void main() {
   // que faz as letras clarearem **porque o bando está perto** — que é como o
   // DIRECTION.md §5 quer que a luz nasça de dentro da cena.
   float fresnel = pow(1.0 - clamp(abs(dot(normal, normalize(vView))), 0.0, 1.0), 3.0);
-  base += uCyan * (fresnel * 1.1 + 0.14) * (0.08 + 1.7 * uFlockAhead);
+
+  // **Por letra, e da GPU.** A contagem de corpos diante da face, na coluna
+  // desta letra (shaders/ahead.ts). Satura suave: dez corpos encostados já são
+  // "o bando está aqui". Sem o campo pronto, cai para a leitura agregada do
+  // proxy, que era a única até a rodada 8.
+  float u = clamp((vWorld.x + ${AHEAD_HALF_WIDTH.toFixed(3)}) / ${(2 * AHEAD_HALF_WIDTH).toFixed(3)}, 0.0, 1.0);
+  float column = texture2D(uAheadField, vec2(u, 0.5)).r;
+  // Medido na rodada 8, por coluna: 0 a 10 corpos diante da face em 0.18, 20 a
+  // 100 em 0.24, zero nas pontas (C e A ficam fora do tubo do bando). Cinco
+  // corpos já acendem dois terços do rim.
+  float ahead = mix(uFlockAhead, 1.0 - exp(-column / 5.0), uAheadReady);
+
+  base += uCyan * (fresnel * 1.1 + 0.18) * (0.14 + 1.9 * ahead);
 
   base += uSourceColor * upstreamLight(vWorld) * 0.35;
 

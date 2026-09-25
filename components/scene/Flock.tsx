@@ -7,14 +7,26 @@ import {
   GLSL3,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
+  HalfFloatType,
+  LinearFilter,
+  NearestFilter,
   NoBlending,
+  NoColorSpace,
+  RGBAFormat,
   ShaderMaterial,
   Sphere,
   Vector2,
   Vector3,
+  WebGLRenderTarget,
 } from "three";
 import type { Roost } from "@/lib/scene/curve";
 import { blit, createDataTarget, createPassMaterial } from "@/lib/scene/gpu";
+import {
+  AHEAD_COLUMNS,
+  AHEAD_HALF_WIDTH,
+  AHEAD_ROWS_FRAG,
+  AHEAD_SUM_FRAG,
+} from "@/lib/scene/shaders/ahead";
 import { BODY_FRAG, BODY_VERT } from "@/lib/scene/shaders/body";
 import {
   BOIDS_POSITION_FRAG,
@@ -172,6 +184,46 @@ export function Flock({
       GLSL3,
     );
 
+    // A contagem diante da face da peça — ver `shaders/ahead.ts`. Dois alvos:
+    // as somas parciais por linha do bando, e a soma final por coluna.
+    const aheadRows = new WebGLRenderTarget(AHEAD_COLUMNS, size, {
+      type: HalfFloatType,
+      format: RGBAFormat,
+      minFilter: NearestFilter,
+      magFilter: NearestFilter,
+      depthBuffer: false,
+      stencilBuffer: false,
+      colorSpace: NoColorSpace,
+    });
+    const aheadTarget = new WebGLRenderTarget(AHEAD_COLUMNS, 1, {
+      type: HalfFloatType,
+      format: RGBAFormat,
+      minFilter: LinearFilter,
+      magFilter: LinearFilter,
+      depthBuffer: false,
+      stencilBuffer: false,
+      colorSpace: NoColorSpace,
+    });
+    const aheadUniforms = {
+      uPos: { value: position[0].texture },
+      uTexSize: { value: texSize },
+      uSpecimenZ: { value: SPECIMEN_Z },
+      uHalfWidth: { value: AHEAD_HALF_WIDTH },
+      uHalfHeight: { value: TYPE_ARTICLE.capHeight * 0.8 },
+      uDepth: { value: 4.5 },
+    };
+    const aheadRowsMaterial = createPassMaterial(
+      AHEAD_ROWS_FRAG,
+      aheadUniforms,
+      GLSL3,
+    );
+    const aheadMaterial = createPassMaterial(
+      AHEAD_SUM_FRAG,
+      { uRows: { value: aheadRows.texture }, uRowCount: { value: size } },
+      GLSL3,
+    );
+    shared.flockAheadField.value = aheadTarget.texture;
+
     const seedUniforms = {
       uTexSize: { value: texSize },
       // O mesmo objeto do passo de simulação: a semeadura acontece no primeiro
@@ -246,6 +298,9 @@ export function Flock({
         uCoral: shared.coral,
         uSpecimenZ: shared.specimenZ,
         uGain: { value: 2.4 },
+        uCards: shared.cards,
+        uCardCount: shared.cardCount,
+        uCardAmount: shared.cardAmount,
       },
       vertexShader: BODY_VERT,
       fragmentShader: BODY_FRAG,
@@ -272,6 +327,11 @@ export function Flock({
       bodyMaterial,
       bodyPos,
       bodyVel,
+      aheadRows,
+      aheadRowsMaterial,
+      aheadTarget,
+      aheadUniforms,
+      aheadMaterial,
     };
   }, [shared]);
 
@@ -286,6 +346,10 @@ export function Flock({
       held.seedMaterial.dispose();
       held.bodyMaterial.dispose();
       held.geometry.dispose();
+      held.aheadRows.dispose();
+      held.aheadRowsMaterial.dispose();
+      held.aheadTarget.dispose();
+      held.aheadMaterial.dispose();
     };
   }, [rig]);
 
@@ -356,8 +420,21 @@ export function Flock({
       swap.current = write;
       rig.bodyPos.value = writePos.texture;
       rig.bodyVel.value = writeVel.texture;
+
+      rig.aheadUniforms.uPos.value = writePos.texture;
+      blit(gl, rig.aheadRowsMaterial, rig.aheadRows);
+      blit(gl, rig.aheadMaterial, rig.aheadTarget);
+      shared.flockAheadReady.value = 1;
+      if (process.env.NODE_ENV !== "production") {
+        // Só para a sonda ler a contagem por coluna (`readRenderTargetPixels`
+        // é leitura síncrona, que o caminho de render nunca faz).
+        (window as unknown as { __ahead?: unknown }).__ahead = {
+          gl,
+          target: rig.aheadTarget,
+        };
+      }
     },
-    [gl, rig],
+    [gl, rig, shared],
   );
 
   useEffect(() => {
