@@ -162,5 +162,34 @@ export function caseComponents({
       }
       return <p {...props} className="measure mb-6 text-body" />;
     },
+
+    /**
+     * **Os títulos descem um nível.** A página já tem o `h1` (o título do case,
+     * em `page.tsx`); o `#` do MDX é a manchete do texto, não o nome da peça.
+     * Os papéis, do maior para o menor:
+     *
+     * - `#` manchete, e os números grandes de "Em números" — corpo display-3 na
+ *   família de leitura (a display Expanded é do nome da peça, não de frase);
+     * - `##` afirmação longa, no corpo grande com peso;
+     * - `###` subtítulo de item e parágrafo de destaque, no corpo grande;
+     * - `####` rótulo de seção, em mono caixa alta — o léxico da HUD, que é o
+     *   do site inteiro para "onde você está".
+     *
+     * Nenhum carrega `data-veil`, pelo mesmo motivo do `p` acima: quem protege a
+     * coluna é a âncora `.case-veil`.
+     */
+    h1: (props) => (
+      <h2 {...props} className="case-headline text-display-3" />
+    ),
+    h2: (props) => (
+      <h3 {...props} className="case-statement text-body-lg measure" />
+    ),
+    h3: (props) => <h4 {...props} className="case-subhead text-body-lg measure" />,
+    h4: (props) => (
+      <h5 {...props} className="case-label type-mono text-label measure" />
+    ),
+    hr: () => <hr className="case-rule" />,
+    strong: (props) => <strong {...props} className="case-strong" />,
+    a: (props) => <a {...props} className="case-link" />,
   };
 }

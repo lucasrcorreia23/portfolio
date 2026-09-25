@@ -1047,7 +1047,14 @@ como **placeholder**: `perfecting.mdx`, `unifique-energia.mdx`,
 §6, disciplinas da matriz do DIRECTION.md §4, acento, posto) e **corpo por
 escrever**, com capa gerada marcada `generated: true`. O que falta neles é
 conteúdo, não estrutura: o rio já os monta, a rota já existe e o acervo já os
-lista. A migração dos quatro não passou pelo `resgatar-midia.sh` que
+lista. **Perfecting já tem corpo**: o texto é do Lucas, colado verbatim em
+`perfecting.mdx` (com duas linhas que chegaram truncadas marcadas num
+comentário MDX, e o espaço do reteste da FIESC reservado em outro), e o
+frontmatter foi corrigido pelo próprio texto — `year` 2026, `role` "Sócio,
+Design Engineer", `stack` só com as ferramentas que o texto cita. A capa segue
+gerada. A hierarquia do texto (manchete, afirmações, subtítulos, rótulos em
+mono, números) é o mapa de títulos de `lib/work/mdx-case.tsx`, que vale para
+todo case. A migração dos quatro não passou pelo `resgatar-midia.sh` que
 esta seção descrevia: o arquivo nunca existiu no repositório. Como a tag
 `template-legado` já está local, o resgate saiu direto dela — `git checkout
 template-legado -- <caminho>` para os diretórios que não mudaram de nome
@@ -1494,12 +1501,13 @@ preenchimento irredutível.
 
 Nesta ordem, porque cada uma depende da anterior:
 
-1. **O corpo dos três cases placeholder** — Perfecting, WeCann Atena e Unifique
-   Energia existem em `content/cases/` com frontmatter real, curadoria e capa
-   gerada, e o que falta neles é o texto. O material de origem de Unifique é
-   `estudionakama.com.br/projetos/unifique-energia`; Perfecting e WeCann têm só
-   a linha do PROJECT.md §6, então precisam de briefing ou de mídia do Lucas.
-   Com o texto vêm as capas reais, e com elas o `generated: false`.
+1. **O corpo dos dois cases placeholder que sobraram** — WeCann Atena e
+   Unifique Energia existem em `content/cases/` com frontmatter real, curadoria e
+   capa gerada, e o que falta neles é o texto. O material de origem de Unifique é
+   `estudionakama.com.br/projetos/unifique-energia`; WeCann tem só a linha do
+   PROJECT.md §6, então precisa de briefing ou de mídia do Lucas. **Perfecting
+   já tem o texto**; faltam nele a mídia e a capa real (e com ela o
+   `generated: false`), as duas linhas truncadas e o resultado do reteste.
 
    Ao lado, e independente: **`summary_en` dos quatro migrados é cópia literal
    do português**, porque a rodada de migração foi só de PT. São 1.314 palavras

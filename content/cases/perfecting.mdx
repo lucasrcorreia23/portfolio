@@ -1,9 +1,12 @@
 export const frontmatter = {
   title: "Perfecting",
   client: "Perfecting",
-  year: 2025,
-  role: "Product Designer",
-  stack: ["Figma", "Design System", "Fluxo de produto", "Analytics"],
+  // "2026 até hoje" — o schema guarda um ano só; o período por extenso está no
+  // corpo, no bloco de papel.
+  year: 2026,
+  role: "Sócio, Design Engineer",
+  // Ferramentas citadas no texto do case, e só elas.
+  stack: ["PostHog", "Figma", "Python", "Design tokens W3C"],
   summary_pt:
     "Produto B2B SaaS de roleplay e treino de vendas com IA: fluxo de produto ponta a ponta, sistema de marca e camada de analytics numa entrega só.",
   summary_en:
@@ -12,19 +15,201 @@ export const frontmatter = {
   cover: "/generated/perfecting.webp",
   media: [],
   disciplines: ["produto", "marca"],
-  // Provisório (Prompt 5A) — a curadoria de verdade sai olhando os cards
-  // montados na cena. Ordem editorial: profundidade → alcance.
+  // PENDENTE — decisão do Lucas. A ordem do rio foi escrita pelo agente em
+  // 0061582 e não foi decidida olhando os cards montados (DIRECTION.md §4).
   river_rank: 1,
   generated: true,
 };
 
-## Placeholder
+2026 até hoje
 
-Este case ainda não foi escrito. O frontmatter acima é real — título, cliente,
-resumo (PROJECT.md §6) e disciplinas (matriz do DIRECTION.md §4) —, mas o corpo,
-a mídia e a capa são provisórios: a capa é gerada (`generated: true`) e será
-trocada por material real quando o case for escrito.
+Sócio e Design Engineer @ Perfecting
 
-O que ele precisa provar, e nenhum outro do acervo prova: produto, sistema de
-marca e medição construídos **juntos**, numa entrega só, no domínio mais atual
-(treino de vendas com IA).
+# Uma salestech de IA que aprendeu a se enxergar antes de crescer, e um design que vai do dado ao código.
+
+### Um treino de vendas só funciona se parecer uma ligação de verdade. Todo o resto é consequência disso.
+
+**Meu papel**\
+Sócio, Design Engineer. Produto, interface, frontend, dados e marca.
+
+**Período**\
+2026 até hoje
+
+**Time**\
+Startup enxuta, com CEO, engenharia, pesquisa e operações
+
+**Clientes**\
+FIESC, RD Station e outras empresas B2B
+
+**Link**\
+[perfecting.com.br](https://perfecting.com.br)
+
+A Perfecting é uma startup brasileira de salestech. Na plataforma, o vendedor pratica ligações por voz com compradores simulados por inteligência artificial antes de encarar o cliente de verdade, e o gestor acompanha a evolução do time. Quando entrei como sócio, o produto já funcionava. O que ainda não existia era uma forma de saber se ele funcionava bem.
+
+---
+
+#### Se você ler só uma parte
+
+## A Perfecting tinha um produto no ar e nenhuma forma confiável de saber como ele era usado. Toda decisão de produto terminava em opinião.
+
+## O que eu liderei foi transformar o produto em algo que se deixa observar, e usar essa leitura para decidir o que construir e, principalmente, o que recusar.
+
+## A instrumentação, o princípio de realismo acima de didatismo e o sistema de marca são hoje a base sobre a qual o produto é construído.
+
+---
+
+#### O problema
+
+Não faltava ideia. Faltava evidência.
+
+Com um time pequeno, cada semana de trabalho na direção errada custa caro. E sem dado, toda direção parece certa para quem a defende.
+
+#### Nenhuma leitura confiável de onde o vendedor travava ou desistia.
+
+#### Um terço dos eventos que a gente precisava medir sem nenhum endpoint no backend para existir.
+
+#### Usuários internos contaminando os dashboards mesmo depois de filtrados. Só o meu perfil acumulava mais de dezessete identidades anônimas fundidas.
+
+#### 47 segundos de espera entre o fim da ligação e o feedback.
+
+{/* ⚠️ Linha incompleta no texto recebido ("Personassa e quebravam a imersão."), mantida como veio — falta o trecho do meio. Confirmar com o Lucas. */}
+
+#### Personassa e quebravam a imersão.
+
+#### Um uso ainda longe da frequência que um treino precisa para virar hábito.
+
+Cada um desses problemas pedia uma tela nova. A tentação era sair desenhando. O que o produto precisava primeiro era aprender a se enxergar.
+
+---
+
+#### Por onde comecei
+
+Não dava para resolver tudo ao mesmo tempo, então o trabalho começou com perguntas, e não com respostas.
+
+#### 01.
+### Como a gente decide com evidência, e não com opinião?
+
+#### 02.
+### Onde exatamente o vendedor desiste?
+
+#### 03.
+### O que faz um treino com IA parecer real?
+
+#### 04.
+### Como priorizar com um time pequeno e backend escasso?
+
+#### 05.
+### Como o design chega antes da decisão, e não depois dela?
+
+---
+
+#### O que eu fiz nos dados
+
+### Instrumentei a jornada inteira antes de mexer em qualquer tela.
+
+{/* ⚠️ Trecho truncado no texto recebido ("empresa com empolhar uma média"), mantido como veio. Confirmar com o Lucas. */}
+
+Desenhei o plano de tracking no PostHog do cadastro ao fim de cada roleplay, com atributos de plano, organização, papel e tamanho do time. Assim a gente passou a comparar vendedor com gestor e empresa com empolhar uma média que não representava ninguém.
+
+### Renegociei o escopo em vez de esperar o backend.
+
+Cruzei cada evento com a API e descobri que um terço deles não tinha de onde vir. Esperar significaria meses sem dado nenhum. Tirei cobrança e chat dessa fase, enviei valores padrão onde faltava informação, derivei no frontend tudo que ele já sabia e deixei marcado no código o que dependia de endpoint novo. Um plano de tracking que espera a API perfeita nunca entra em produção.
+
+### Descobri que os dados mentiam, e corrigi no código.
+
+Os usuários internos continuavam nos dashboards mesmo filtrados. A causa estava na forma como as sessões anônimas eram fundidas depois do login, levando eventos sem email nem organização. Implementei eu mesmo a correção no frontend, com exclusão direta no SDK, uma camada que só dispara eventos com usuário identificado e um identificador único em todo o app. Dado só serve para decidir quando dá para confiar nele, e confiança em dado é trabalho de engenharia, não de dashboard.
+
+---
+
+#### O que eu fiz no produto
+
+### Transformei doze entrevistas em cinco problemas e uma sprint.
+
+A pesquisadora do time conduziu doze entrevistas com vendedores e gestores. Estruturei o discovery no Figma em sete fases, das evidências à instrumentação, e segurei o time para não pular para features antes de ter hipóteses escritas. Saíram três perfis de vendedor, três indicadores para a sprint e cinco macroproblemas.
+
+### Usei o RICE como ferramenta, e não como oráculo.
+
+Corrigi estimativas de esforço infladas, porque sabia que parte do trabalho era de frontend e eu mesmo conseguia fazer. Isso mudou o ranking. Mas o ranking sozinho mentia de outro jeito, porque tratava os problemas como independentes. Criar um motivo para voltar num produto que quebra a imersão só acelera o abandono. A sprint combinou três frentes em paralelo, com o backend na imersão e o frontend no pós-call e no onboarding. Das 86 soluções geradas, só ficou o que fazia sentido na matriz de impacto por esforço.
+
+### Tirei da ligação tudo que parecia aula.
+
+Transcrição ao vivo, dicas na tela, indicadores em tempo real. Rejeitei tudo isso de propósito. O valor do produto está na pressão de uma conversa de verdade, e cada ajuda durante a chamada tira o vendedor desse estado. A regra virou estrutura. Antes da ligação vem o contexto, durante existe só a conversa, e depois vem todo o aprendizado, com feedback e um convite claro para tentar de novo.
+
+### Tratei a persona como interface.
+
+Numa plataforma de roleplay, o comprador simulado é a tela mais importante do produto. Desenhei o comportamento das personas com base em metodologias de vendas reais, escrevi os prompts dos agentes de voz e revisei as rubricas que geram o feedback. Uma persona que cede fácil demais ensina o vendedor a vender errado.
+
+### Reorganizei o treino para o jeito como vendas consultivas acontecem.
+
+Para clientes com playbook próprio, o treino passou a seguir as etapas desse playbook. A lista de roleplays, que era agrupada por oferta, está migrando para um agrupamento por estágio da conversa, porque em venda consultiva a oferta muitas vezes ainda nem existe na hora do diagnóstico.
+
+---
+
+#### O que eu fiz com os clientes
+
+### Fui a campo na RD Station.
+
+Fiz uma visita de pesquisa com entrevistas gravadas e conversas com o time comercial. Descobri que um vendedor gastava entre 10 e 40 minutos preparando cada lead, e que essa preparação era simplesmente pulada em parte dos casos. O problema do vendedor não começava na ligação, começava antes dela. Estar perto de quem compra o produto mudou a forma como eu desenho para quem usa.
+
+### Auditei o produto antes de colocar 120 vendedores nele.
+
+A FIESC fechou com a Perfecting para colocar 120 vendedores praticando entre setembro e novembro. Antes de liberar, conduzi uma auditoria dos roleplays em homologação, com testes manuais e uma simulação ponta a ponta de 22 etapas.
+
+O resultado foi duro. Em 6 das 22 chamadas o feedback nunca chegava, por uma condição de corrida no pipeline. O checklist ao vivo levava 10,5 segundos no p90, contra uma meta de 3. Um terço das marcações era disparado pela fala do comprador, e não pela do vendedor. E o comprador desligava sozinho, porque a instrução de encerrar a chamada estava em 21 dos 22 prompts. No total, saíram 23 problemas críticos e 97 graves.
+
+A conclusão foi que os roleplays ainda não estavam prontos para vendedores. Descobrir isso internamente, antes do lançamento, é exatamente para que serve uma auditoria. Cada achado virou um critério de aceite mensurável, e o lançamento passou a depender de números, e não de impressão.
+
+---
+
+#### O que eu fiz na engenharia e na marca
+
+### Coloquei a mão na infraestrutura e nos modelos.
+
+Participei dos testes de carga para entender quantas ligações simultâneas o produto aguentava antes de degradar a experiência. Construí em Python um pipeline de dados sintéticos para o fine-tuning dos modelos, com conversas geradas entre agentes e uma etapa de pontuação de qualidade.
+
+### Construí uma marca que o código entende.
+
+Índigo como cor principal, âmbar como acento, terracota para os enquadramentos estruturais e o gradiente reservado para superfícies grandes. Tudo documentado em design tokens no padrão W3C, alimentando o Figma e o código a partir da mesma fonte. Uma marca que só existe no Figma se desfaz no primeiro deploy.
+
+### Escrevi o site a partir do produto que existe.
+
+Desenvolvi a página de produto usando como fonte de verdade um inventário de features que levantei direto do app. O site fala do produto real, e não do produto que a gente gostaria de ter.
+
+---
+
+#### Em números
+
+# 12
+entrevistas com vendedores e gestores transformadas em cinco macroproblemas
+
+# 86
+soluções geradas e filtradas numa matriz de impacto por esforço
+
+# 13
+personas de IA prontas para produção num único pacote de cliente
+
+# 22
+etapas simuladas ponta a ponta na auditoria antes do lançamento para a FIESC
+
+# 120
+problemas mapeados antes que um único vendedor visse o produto, 23 deles críticos
+
+{/* Espaço para o resultado do reteste das 22 etapas depois das correções, como chamadas com nota (meta 22 de 22) e p90 do checklist ao vivo (meta de 3 segundos). */}
+
+---
+
+#### Hoje
+
+### Abra uma sessão na Perfecting hoje. O contexto antes da ligação, a conversa sem nenhuma interferência, o aprendizado todo concentrado no final, as cores, os tokens e os eventos que medem cada passo. São as definições que eu escrevi, e elas continuam orientando cada decisão nova do produto.
+
+As telas nunca foram a entrega principal. A entrega foi um produto que se deixa observar e um conjunto de princípios claros o bastante para que qualquer pessoa do time consiga decidir sem me perguntar.
+
+---
+
+#### Em retrospecto
+
+### Quando cheguei, eu quis redesenhar tudo logo de cara, e segurar isso pareceu lento. Olhando agora, as semanas gastas instrumentando e corrigindo dados foram as mais importantes do projeto. Sem elas, cada tela nova seria só mais uma opinião bem desenhada.
+
+### Num time pequeno, é fácil virar a pessoa que executa tudo. Demorei para entender que a minha contribuição mais valiosa não estava na execução, e sim nas decisões que vinham antes dela. Hoje eu brigo pela autoria dessas decisões com a mesma energia que dedico às telas.
+
+### Na Perfecting, meu meio deixou de ser só o Figma. Virou o PostHog, o prompt da persona, o repositório e a conversa com o cliente. Uma decisão de design que não chega no dado e no código não existe de verdade.

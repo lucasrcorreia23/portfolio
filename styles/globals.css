@@ -429,6 +429,60 @@
     pointer-events: none;
   }
 
+  /* A hierarquia do texto de um case — ver `caseComponents`. Espaçamento
+     desigual de propósito: o rótulo de seção abre muito e fecha perto do que
+     ele nomeia; o subtítulo abre médio e cola no parágrafo. */
+  /* A manchete é uma frase, e frase é leitura: família de leitura em corpo
+     grande, peso médio, caixa normal. A display (Expanded, caixa alta) fica
+     com o nome da peça — o `h1` do case —, como o PROJECT.md §3.2 separa. */
+  .case-headline {
+    margin: 4.5rem 0 2rem;
+    max-width: min(var(--case-wide), 22em);
+    font-weight: 500;
+    line-height: 1.08;
+    text-wrap: balance;
+    color: var(--mist);
+  }
+
+  .case-statement {
+    margin: 0 0 1.75rem;
+    font-weight: 600;
+    color: var(--mist);
+  }
+
+  .case-subhead {
+    margin: 2.75rem 0 0.75rem;
+    font-weight: 500;
+    color: var(--mist);
+  }
+
+  .case-label {
+    margin: 5.5rem 0 1.25rem;
+    text-transform: uppercase;
+    color: var(--mist);
+  }
+
+  .case-rule {
+    margin: 5rem 0 0;
+    max-width: var(--case-wide);
+    border: 0;
+    border-top: 1px solid var(--deep);
+  }
+
+  .case-strong {
+    font-weight: 600;
+  }
+
+  .case-link {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    transition: color var(--dur-snap) var(--ease-strong);
+  }
+
+  .case-link:hover {
+    color: var(--cyan);
+  }
+
   .case-figure {
     margin: 3rem 0;
     max-width: var(--case-wide);
