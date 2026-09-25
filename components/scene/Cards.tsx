@@ -585,7 +585,12 @@ export function Cards({ shared, river }: CardsProps) {
     // quando o rio existe.
     const pick = pickRef.current;
     if (pick !== null) {
-      const active = shared.cardAmount.value > 0.001;
+      // E só fora de um case: com a rota de case aberta o progresso fica
+      // congelado no rio, então `cardAmount` continua ligado — e um clique no
+      // vazio em volta do artigo, que é a saída do case (`CaseExit`),
+      // acertaria a projeção de um card atrás dele e abriria outro case.
+      const active =
+        shared.cardAmount.value > 0.001 && shared.caseRecess.value < 0.001;
       const hovered = pick.resolve(camera, shared.cards.value, count, active);
 
       // O foco do teclado ganha do ponteiro: é a mesma marcação (chanfro no

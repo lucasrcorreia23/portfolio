@@ -1,13 +1,7 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { localeOf, localizePath } from "@/lib/i18n/config";
-import {
-  getCaseState,
-  getIdleCaseState,
-  subscribeToCase,
-} from "@/lib/work/case-transition";
+import { leaveCase } from "@/lib/work/leave-case";
 
 type CaseReturnProps = {
   /** `work.case.back` — o rótulo curto, do léxico da HUD. */
@@ -35,17 +29,14 @@ type CaseReturnProps = {
  *
  * Quem faz a câmera voltar também é a mudança de `pathname` — ver `SceneGate`.
  * Este componente não fala com a cena.
+ *
+ * **A escolha mora em `leaveCase`** (`lib/work/leave-case.ts`), porque o case
+ * tem outras duas saídas — o clique fora da coluna e o `Esc`, em `CaseExit` —
+ * e as três precisam cair no mesmo lugar do mesmo jeito.
  */
 export function CaseReturn({ label, title, className = "" }: CaseReturnProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const state = useSyncExternalStore(
-    subscribeToCase,
-    getCaseState,
-    getIdleCaseState,
-  );
-
-  const home = localizePath("/", localeOf(pathname));
 
   return (
     <button
@@ -54,11 +45,7 @@ export function CaseReturn({ label, title, className = "" }: CaseReturnProps) {
       aria-label={title}
       className={className}
       onClick={() => {
-        if (state.fromRiver) {
-          router.back();
-          return;
-        }
-        router.push(home, { scroll: false });
+        leaveCase(router, pathname);
       }}
     >
       <span aria-hidden="true">← </span>

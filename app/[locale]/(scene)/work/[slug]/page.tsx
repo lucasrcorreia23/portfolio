@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CaseReturn } from "@/components/work/CaseReturn";
+import { CaseExit } from "@/components/work/CaseExit";
 import { CaseReveal } from "@/components/work/CaseReveal";
 import { caseSummary, getCaseSlugs, getRiverCases, loadCase } from "@/lib/cases";
 import { alternatesFor, localizePath } from "@/lib/i18n/config";
@@ -99,6 +100,7 @@ export default async function CasePage({
 
   return (
     <main className="case px-6 pb-32 pt-24 md:pl-56 md:pr-12">
+      <CaseExit />
       <CaseReveal>
         <figure
           data-case-cover

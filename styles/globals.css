@@ -423,6 +423,22 @@
     color: var(--mist);
   }
 
+  /* Listas e citações do MDX não passam pelo mapa de componentes, e sem isto
+     um item ocuparia a largura inteira do artigo: o vazio à direita dele
+     deixaria de ser vazio para o clique de saída (`CaseExit`). */
+  .case-body ul,
+  .case-body ol,
+  .case-body blockquote {
+    max-width: var(--measure);
+  }
+
+  /* O cursor da saída pelo vazio. Quem decide é o mesmo teste do clique, em
+     `CaseExit`, escrito no <html>; o valor é herdado por quem não
+     declara cursor próprio, e o atributo só existe com o ponteiro no vazio. */
+  html[data-case-exit="on"] {
+    cursor: pointer;
+  }
+
   /* A âncora do véu da coluna de leitura. Não desenha nada: ela existe para
      `readVeilBoxes` ter uma caixa da largura da medida e da altura do artigo. */
   .case-veil {
