@@ -1136,6 +1136,7 @@ export function installProbe(deps: ProbeDeps): () => void {
     },
     scene: scene as unknown as import("three").Object3D,
     step,
+    hold,
     settle: (progress, steps) => {
       settle(progress, steps);
     },

@@ -41,6 +41,8 @@ export type Round12Deps = {
   bindDefault: () => void;
   scene: Object3D;
   step: (frames?: number) => void;
+  /** Redesenha sem avançar o relógio — ver `hold` em `probe.ts`. */
+  hold: (frames?: number) => void;
   settle: (progress: number, steps?: number) => void;
   progressRef: { current: number };
   camera: {
@@ -86,6 +88,7 @@ export function installRound12(deps: Round12Deps) {
     bindDefault,
     scene,
     step,
+    hold,
     settle,
     progressRef,
     camera,
@@ -165,6 +168,8 @@ export function installRound12(deps: Round12Deps) {
       total: number;
       center: number;
       depth: number;
+      /** Primeira e última coluna (px de canvas) em que a peça muda o quadro. */
+      span: [number, number];
     }[] = [];
 
     settle(warmFrom, 150);
@@ -179,8 +184,12 @@ export function installRound12(deps: Round12Deps) {
         cardMask.value = 0;
         step(1);
         read(A);
+        // **O mesmo instante**, redesenhado: entre dois quadros seguidos o
+        // tempo anda, e a névoa (o halo da fonte tem ruído no tempo) muda
+        // sozinha — medido, a diferença "da peça" do card 5 começava 200 px
+        // antes da borda dela. Com `hold` só a máscara muda.
         cardMask.value = 2 ** i;
-        step(1);
+        hold(1);
         read(B);
         cardMask.value = 0;
         setVisible(flock, true);
@@ -221,6 +230,7 @@ export function installRound12(deps: Round12Deps) {
           total: Number(total.toFixed(3)),
           center: Number(center.toFixed(3)),
           depth: Number((-view.z).toFixed(2)),
+          span: [x0, x1],
         });
       }
     } finally {
@@ -737,7 +747,7 @@ export function installRound12(deps: Round12Deps) {
         step(1);
         read(A);
         setBlack(true);
-        step(1);
+        hold(1);
         read(F);
         setBlack(false);
         setVisible(flock, true);
