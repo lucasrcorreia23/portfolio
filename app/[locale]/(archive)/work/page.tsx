@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { caseSummary, getAllCases } from "@/lib/cases";
 import { DISCIPLINES, isDiscipline } from "@/lib/disciplines";
-import { localizePath } from "@/lib/i18n/config";
+import { alternatesFor, localizePath } from "@/lib/i18n/config";
 import { requireLocale } from "@/lib/i18n/locale";
 
 /**
@@ -30,7 +30,10 @@ export async function generateMetadata({
     namespace: "work",
   });
 
-  return { title: t("archive.title") };
+  return {
+    title: t("archive.title"),
+    alternates: alternatesFor("/work", requireLocale(locale)),
+  };
 }
 
 export default async function ArchivePage({

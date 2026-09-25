@@ -1,4 +1,4 @@
-import { CatmullRomCurve3, MathUtils, Vector3 } from "three";
+import { CatmullRomCurve3, type Color, MathUtils, Vector3 } from "three";
 import { clamp01, damp, easeStrong } from "@/lib/motion";
 import {
   CAMERA_FOV,
@@ -49,9 +49,8 @@ type Stop = {
  *
  * De 0.00 a 0.85 eles são dirigidos: a aproximação, o quadro do descolamento em
  * 0.18, a passagem raspando a peça no fim da Identidade, a **derivada para a
- * parede graduada** em Quem sou e o **corredor do rio**. De 0.85 em diante
- * continua **provisório** — existe para a curva ser uma curva só quando a
- * Superfície entrar, e para a câmera não parar no meio do duto.
+ * parede graduada** em Quem sou, o **corredor do rio** e, de 0.85 a 1.00, a
+ * **chegada à tomada de ar** — a Superfície.
  *
  * ## O corredor do rio
  *
@@ -134,8 +133,17 @@ const STOPS: readonly Stop[] = [
   // dois.
   { at: 0.77, position: [-1.0, 0.25, -72.0], target: [-0.4, 0.05, -85.0] },
   { at: 0.85, position: [-0.6, 0.2, -76.5], target: [-4.2, -0.8, -88.0] },
-  // Daqui para baixo é provisório — ver o docblock.
-  { at: 1.0, position: [0.0, 1.0, -93.0], target: [0.0, 0.6, -105.0] },
+  // **A Superfície.** A câmera deixa o último card a bombordo e vira para a
+  // tomada de ar. Ela passa o card do corte do mobile (−3.4, 2.0, −82) pelo
+  // eixo, e só depois dele sobe e sai para bombordo: é de cima e de lado que a
+  // soleira se lê e que as lâminas de luz se separam uma da outra — de frente
+  // elas se empilhariam num véu só. A abertura cai à direita do centro, e a
+  // coluna do contato em DOM fica à esquerda, sobre o concreto escuro.
+  { at: 0.9, position: [-0.5, 0.9, -80.5], target: [0.8, -0.3, -96.0] },
+  { at: 0.95, position: [-2.6, 1.6, -83.0], target: [-1.8, -1.0, -96.0] },
+  // O último quadro (DIRECTION.md §4): parado, e é aqui que ele fica no
+  // viewport terminal, depois de o progresso travar em 1.00.
+  { at: 1.0, position: [-4.0, 1.8, -83.6], target: [-2.9, -1.2, -96.0] },
 ];
 
 const toVectors = (key: "position" | "target") =>
@@ -500,9 +508,63 @@ export function apertureAt(progress: number): number {
     // O corte de navalha.
     return APERTURE_WIDE * 0.75 * (1 - easeStrong(clamp01((progress - 0.11) / 0.045)));
   }
-  // Parcial no rio, e fechada de novo na saída: a Superfície reabre "só na
-  // fresta de luz" (DIRECTION.md §3), e esse beat ainda não existe.
-  return RIVER_APERTURE * riverAmount(progress);
+  // Parcial no rio, fechada na saída dele, e **reaberta na Superfície** — "só
+  // na fresta de luz; o fora ainda não tem foco" (DIRECTION.md §3). O plano de
+  // foco é o da soleira e das venezianas; o céu fica cinco unidades atrás delas
+  // e é ele que desmancha.
+  return RIVER_APERTURE * riverAmount(progress) + SURFACE_APERTURE * surfaceAmount(progress);
+}
+
+/** A abertura da Superfície. Menor que a do rio: é só o fora que borra. */
+const SURFACE_APERTURE = 0.22;
+
+/**
+ * Quanto a Superfície está ligada, 0 a 1 — a mesma curva para a abertura e a
+ * profundidade do plano nítido, pelo mesmo motivo de `riverAmount`.
+ */
+function surfaceAmount(progress: number): number {
+  return easeStrong(clamp01((progress - 0.88) / 0.08));
+}
+
+/**
+ * A luz de fora, 0 a 1 (`uOutside`). Começa depois da virada para a tomada de
+ * ar e chega ao topo antes do último quadro: quem para em 0.97 já vê a câmara
+ * como ela fica.
+ */
+export function outsideAt(progress: number): number {
+  return easeStrong(clamp01((progress - 0.86) / 0.11));
+}
+
+/**
+ * Quanto o bando já está saindo, 0 a 1 (`uExit` nos boids e no proxy).
+ *
+ * "O bando sai pela abertura e se dispersa" (DIRECTION.md §4). A inversão
+ * começa em 0.87 — com a câmera já virada para a tomada de ar, então quem vê
+ * o bando dar a volta vê para onde ele vai — e fica completa em 0.93. Sair leva
+ * tempo de voo, não progresso: o bando precisa de um a dois segundos para
+ * atravessar as venezianas, e é isso que deixa o último quadro vazio sem
+ * ninguém ver o bando sumir.
+ */
+export function exitAt(progress: number): number {
+  return easeStrong(clamp01((progress - 0.87) / 0.06));
+}
+
+/**
+ * A cor da fonte a montante, que viaja `--teal` → `--cyan` → `--peach`
+ * (DIRECTION.md §5). A primeira troca é lenta e mora no rio, onde a fonte
+ * ainda é um brilho fraco no fundo; a segunda é a luz de fora chegando.
+ */
+export function sourceColorAt(
+  progress: number,
+  teal: Color,
+  cyan: Color,
+  peach: Color,
+  out: Color,
+): Color {
+  const toCyan = easeStrong(clamp01((progress - 0.45) / 0.35));
+  const toPeach = easeStrong(clamp01((progress - 0.85) / 0.1));
+  out.copy(teal).lerp(cyan, toCyan).lerp(peach, toPeach);
+  return out;
 }
 
 /**
@@ -545,10 +607,10 @@ export function fogDensityAt(progress: number): number {
  * é antigo.
  *
  * O platô fica baixo pela descida inteira e a subida mora onde o documento a
- * põe. O valor de topo é **provisório**, como os pontos de controle de 0.85 em
- * diante: quem o resolve é o beat da Superfície, que ainda não existe.
+ * põe. O valor de topo foi resolvido pela Superfície — ver MEASUREMENTS.md,
+ * "A Superfície, medida".
  */
-const SOURCE_SURFACE = 0.55;
+const SOURCE_SURFACE = 0.06;
 
 /**
  * Quanto as esteiras dos cards agem no escoamento, 0 a 1.
@@ -592,6 +654,9 @@ export function cardAmount(progress: number): number {
 }
 
 export function sourceStrengthAt(progress: number): number {
+  // O topo, agora que a Superfície existe: é a luz de fora descendo o duto,
+  // de raspão pelas paredes — o termo `upstreamLight` do concreto. A abertura
+  // em si (o céu e as lâminas) é `outsideAt`, e não passa por aqui.
   const early = 0.05 + 0.05 * clamp01(progress / 0.28);
   const surface = easeStrong(clamp01((progress - 0.85) / 0.15));
   return early + (SOURCE_SURFACE - early) * surface;
@@ -615,9 +680,10 @@ export function sourceStrengthAt(progress: number): number {
 const FOCUS_RANGE_WIDE = 26;
 const FOCUS_RANGE_RIVER = 12;
 
+const FOCUS_RANGE_SURFACE = 9;
+
 export function focusRangeAt(progress: number): number {
-  return (
-    FOCUS_RANGE_WIDE +
-    (FOCUS_RANGE_RIVER - FOCUS_RANGE_WIDE) * riverAmount(progress)
-  );
+  const river =
+    FOCUS_RANGE_WIDE + (FOCUS_RANGE_RIVER - FOCUS_RANGE_WIDE) * riverAmount(progress);
+  return river + (FOCUS_RANGE_SURFACE - river) * surfaceAmount(progress);
 }

@@ -47,7 +47,7 @@ export function riverCardsFromCases(cases: readonly CaseEntry[]): RiverCard[] {
     year: frontmatter.year,
     accent: frontmatter.accent,
     disciplines: frontmatter.disciplines,
-    cover: frontmatter.cover,
+    cover: frontmatter.coverSrc,
     generated: frontmatter.generated,
   }));
 }

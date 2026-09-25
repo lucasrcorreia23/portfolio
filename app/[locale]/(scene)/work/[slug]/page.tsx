@@ -5,7 +5,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CaseReturn } from "@/components/work/CaseReturn";
 import { CaseReveal } from "@/components/work/CaseReveal";
 import { caseSummary, getCaseSlugs, getRiverCases, loadCase } from "@/lib/cases";
-import { localizePath } from "@/lib/i18n/config";
+import { alternatesFor, localizePath } from "@/lib/i18n/config";
 import { requireLocale } from "@/lib/i18n/locale";
 import { CARD_COVER_ASPECT } from "@/lib/scene/card-layout";
 import { caseComponents } from "@/lib/work/mdx-case";
@@ -36,10 +36,11 @@ export async function generateMetadata({
   return {
     title: t("workTitle", { title: frontmatter.title }),
     description: caseSummary(frontmatter, locale),
+    alternates: alternatesFor(`/work/${slug}`, requireLocale(locale)),
     openGraph: {
       title: t("workTitle", { title: frontmatter.title }),
       description: caseSummary(frontmatter, locale),
-      images: [frontmatter.cover],
+      images: [frontmatter.coverSrc],
     },
   };
 }
@@ -83,7 +84,7 @@ export default async function CasePage({
   const t = await getTranslations("work");
   const tHud = await getTranslations("hud");
 
-  const cover = sizes[frontmatter.cover];
+  const cover = sizes[frontmatter.coverSrc];
   const coverAlt =
     frontmatter.media.find((item) => item.src === frontmatter.cover)?.[
       typed === "pt" ? "alt_pt" : "alt_en"
@@ -106,7 +107,7 @@ export default async function CasePage({
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={frontmatter.cover}
+            src={frontmatter.coverSrc}
             alt={coverAlt}
             {...(cover === undefined
               ? {}

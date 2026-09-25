@@ -3,8 +3,17 @@ import {
   APERTURE_HALF_HEIGHT,
   APERTURE_HALF_WIDTH,
   APERTURE_Y,
+  LOUVER_COUNT,
+  LOUVER_SLOPE,
+  LOUVER_THICKNESS,
+  LOUVER_WIDTH,
+  LOUVER_Z,
+  louverX,
   PLAN_FAR,
   RIB_CHAMFER,
+  SILL_DEPTH,
+  SILL_HALF_WIDTH,
+  SILL_TOP,
   type ChamberPlan,
 } from "./chamber-plan";
 
@@ -230,6 +239,45 @@ export function buildChamberGeometry(plan: ChamberPlan): BufferGeometry {
     b.quad([x0, y0, z], [x1, y0, z], [x1, y0, z - depth], [x0, y0, z - depth], mid, KIND_RIB);
     b.quad([x0, y0, z], [x0, y1, z], [x0, y1, z - depth], [x0, y0, z - depth], mid, KIND_RIB);
     b.quad([x1, y0, z], [x1, y1, z], [x1, y1, z - depth], [x1, y0, z - depth], mid, KIND_RIB);
+
+    // As venezianas: aletas verticais de cima a baixo do requadro, giradas
+    // em torno do próprio eixo (ver `LOUVER_SLOPE`). Quatro faces cada — as
+    // pontas encostam no requadro e ninguém as vê.
+    const dLength = Math.hypot(LOUVER_SLOPE, 1);
+    const dx = LOUVER_SLOPE / dLength;
+    const dz = 1 / dLength;
+    // A normal da aleta, no plano xz.
+    const nx = dz;
+    const nz = -dx;
+    const hw = LOUVER_WIDTH / 2;
+    const ht = LOUVER_THICKNESS / 2;
+    for (let k = 0; k < LOUVER_COUNT; k += 1) {
+      const cx = louverX(k);
+      const corner = (along: number, across: number, y: number): V3 => [
+        cx + dx * along + nx * across,
+        y,
+        LOUVER_Z + dz * along + nz * across,
+      ];
+      const plus: V3 = [cx + nx * 10, APERTURE_Y, LOUVER_Z + nz * 10];
+      const minus: V3 = [cx - nx * 10, APERTURE_Y, LOUVER_Z - nz * 10];
+      const inward: V3 = [cx + dx * 10, APERTURE_Y, LOUVER_Z + dz * 10];
+      const outward: V3 = [cx - dx * 10, APERTURE_Y, LOUVER_Z - dz * 10];
+      b.quad(corner(-hw, ht, y0), corner(hw, ht, y0), corner(hw, ht, y1), corner(-hw, ht, y1), plus, KIND_RIB);
+      b.quad(corner(-hw, -ht, y0), corner(hw, -ht, y0), corner(hw, -ht, y1), corner(-hw, -ht, y1), minus, KIND_RIB);
+      b.quad(corner(hw, -ht, y0), corner(hw, ht, y0), corner(hw, ht, y1), corner(hw, -ht, y1), inward, KIND_RIB);
+      b.quad(corner(-hw, -ht, y0), corner(-hw, ht, y0), corner(-hw, ht, y1), corner(-hw, -ht, y1), outward, KIND_RIB);
+    }
+
+    // A soleira: do piso até a borda de baixo da abertura, avançando
+    // `SILL_DEPTH` para dentro. Topo, frente e os dois lados.
+    const sx = SILL_HALF_WIDTH;
+    const sf = z + SILL_DEPTH;
+    const bottom = -s.floor;
+    const inside: V3 = [0, 0, z + 50];
+    b.quad([-sx, SILL_TOP, z], [sx, SILL_TOP, z], [sx, SILL_TOP, sf], [-sx, SILL_TOP, sf], [0, SILL_TOP + 10, sf], KIND_SURFACE);
+    b.quad([-sx, bottom, sf], [sx, bottom, sf], [sx, SILL_TOP, sf], [-sx, SILL_TOP, sf], inside, KIND_SURFACE);
+    b.quad([-sx, bottom, z], [-sx, bottom, sf], [-sx, SILL_TOP, sf], [-sx, SILL_TOP, z], [-sx - 10, 0, sf], KIND_SURFACE);
+    b.quad([sx, bottom, z], [sx, bottom, sf], [sx, SILL_TOP, sf], [sx, SILL_TOP, z], [sx + 10, 0, sf], KIND_SURFACE);
   }
 
   return b.build();

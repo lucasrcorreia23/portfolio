@@ -59,3 +59,21 @@ export function localizePath(pathname: string, locale: Locale): string {
   if (locale === DEFAULT_LOCALE) return bare;
   return bare === "/" ? `/${locale}` : `/${locale}${bare}`;
 }
+
+/** O domínio de produção — PROJECT.md §0. O sitemap e o `metadataBase` leem daqui. */
+export const SITE_URL = "https://www.lucasrc.com.br";
+
+/**
+ * Os `hreflang` de uma rota: o canônico no idioma dela, e a mesma rota nos
+ * dois idiomas. `x-default` é o inglês, que é o idioma sem prefixo.
+ */
+export function alternatesFor(pathname: string, locale: Locale) {
+  return {
+    canonical: localizePath(pathname, locale),
+    languages: {
+      en: localizePath(pathname, "en"),
+      pt: localizePath(pathname, "pt"),
+      "x-default": localizePath(pathname, "en"),
+    },
+  };
+}

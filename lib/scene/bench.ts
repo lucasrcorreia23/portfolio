@@ -383,9 +383,24 @@ export const DEBTS_PLAN: readonly BenchConfig[] = [
   { dof: true, flock: 16384, detach: true, cards: true, veil: false, sweep: [0.28, 0.45] },
 ];
 
-export type BenchPlanId = "grid" | "detach" | "cards" | "debts";
+/**
+ * A descida inteira, na configuração que vai para produção, em quatro faixas —
+ * o custo de cada trecho, e não a média de todos. Existe desde a Superfície:
+ * ela é o único beat com uma passada nova de fragmento (as lâminas de luz, um
+ * prisma por fresta resolvido analiticamente) e nenhum plano anterior passava
+ * de 0.85.
+ */
+export const DESCENT_PLAN: readonly BenchConfig[] = [
+  { dof: true, flock: 16384, detach: true, cards: true, veil: true, sweep: [0, 0.28] },
+  { dof: true, flock: 16384, detach: true, cards: true, veil: true, sweep: [0.28, 0.45] },
+  { dof: true, flock: 16384, detach: true, cards: true, veil: true, sweep: [0.45, 0.85] },
+  { dof: true, flock: 16384, detach: true, cards: true, veil: true, sweep: [0.85, 1] },
+];
+
+export type BenchPlanId = "grid" | "detach" | "cards" | "debts" | "descent";
 
 export function benchPlan(id: BenchPlanId): readonly BenchConfig[] {
+  if (id === "descent") return DESCENT_PLAN;
   if (id === "detach") return DETACH_PLAN;
   if (id === "cards") return CARDS_PLAN;
   if (id === "debts") return DEBTS_PLAN;
@@ -458,7 +473,9 @@ export function readBenchParams(): BenchParams {
           ? "cards"
           : params.get("plan") === "debts"
             ? "debts"
-            : "grid",
+            : params.get("plan") === "descent"
+              ? "descent"
+              : "grid",
     port: Number.isFinite(port) && port > 0 ? port : 3131,
   };
 }

@@ -23,6 +23,9 @@
  * continua **dentro do canvas**: o DOM nunca ganha `background`, `scrim` nem
  * `text-shadow` para compensar.
  */
+
+import { APERTURE_Y, LOUVER_Z } from "../chamber-plan";
+
 export const FOG_UNIFORMS_GLSL = /* glsl */ `
 uniform vec3  uVoid;
 uniform vec3  uAbyss;
@@ -30,6 +33,8 @@ uniform vec3  uDeep;
 uniform float uFogDensity;
 uniform float uTime;
 uniform vec2  uResolution;
+uniform vec3  uPeach;
+uniform float uOutside;
 `;
 
 export const FOG_GLSL = /* glsl */ `
@@ -72,8 +77,8 @@ float sceneNoise(vec3 q) {
   );
 }
 
-/** A rampa de três paradas. Depois de 0.85 da descida ela migra para --peach,
-    mas esse beat ainda não existe e o termo não está aqui. */
+/** A rampa de três paradas. Depois de 0.85 ela esquenta perto da tomada de ar
+    — ver o fim de applyFog. */
 vec3 fogRamp(float depth01) {
   vec3 c = mix(uVoid, uAbyss, smoothstep(0.0, 0.42, depth01));
   return mix(c, uDeep, smoothstep(0.42, 1.0, depth01));
@@ -124,6 +129,17 @@ vec3 applyFog(vec3 color, float viewDepth, vec3 worldPos) {
   float amount = 1.0 - exp(-density * max(viewDepth, 0.0));
   float depth01 = clamp(viewDepth / 88.0, 0.0, 1.0);
 
-  return mix(color, fogRamp(depth01), clamp(amount, 0.0, 1.0));
+  vec3 fogColor = fogRamp(depth01);
+  // **A Superfície: a névoa lê quente no topo** (DIRECTION.md §5). Não é uma
+  // cor nova na rampa, é a luz de fora espalhada pela névoa perto da tomada de
+  // ar: um volume de --peach em volta da abertura, amostrado no trecho do raio
+  // que mais passa perto dela. Longe dela a névoa continua a mesma da descida.
+  if (uOutside > 0.0) {
+    vec3 mid = mix(cameraPosition, worldPos, 0.6);
+    vec3 d = (mid - vec3(0.0, ${APERTURE_Y.toFixed(3)}, ${LOUVER_Z.toFixed(3)})) * vec3(0.16, 0.22, 0.13);
+    float glow = exp(-dot(d, d));
+    fogColor = mix(fogColor, uPeach * 0.07, clamp(uOutside * glow, 0.0, 1.0));
+  }
+  return mix(color, fogColor, clamp(amount, 0.0, 1.0));
 }
 `;

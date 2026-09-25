@@ -17,6 +17,8 @@ import {
   focusRangeAt,
   fogDensityAt,
   resolveRoost,
+  outsideAt,
+  sourceColorAt,
   sourceStrengthAt,
   specimenAttackAngle,
 } from "@/lib/scene/curve";
@@ -312,6 +314,17 @@ export function SceneWorld({
       instant || probe
         ? source
         : damp(shared.sourceStrength.value, source, 3, dt);
+    // A cor da fonte viaja com a descida, e a luz de fora chega na Superfície.
+    // Dentro do case as duas recuam junto com a fonte: a leitura longa não
+    // tem céu atrás.
+    sourceColorAt(
+      progress,
+      shared.teal.value,
+      shared.cyan.value,
+      shared.peach.value,
+      shared.sourceColor.value,
+    );
+    shared.outside.value = outsideAt(progress) * (1 - inCase);
 
     // --- véu de legibilidade ------------------------------------------------
     // **Por quadro, e não a cada quatro.** A versão anterior relia as caixas a

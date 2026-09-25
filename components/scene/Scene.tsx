@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import type { RiverCard } from "@/lib/scene/river-content";
-import { DPR_CAP } from "@/lib/scene/settings";
+import { sceneSettings } from "@/lib/scene/settings";
 import { CAMERA_FOV } from "@/lib/scene/world";
 import { SceneWorld } from "./SceneWorld";
 
@@ -53,7 +53,7 @@ export default function Scene({ specimen, river, composed }: SceneProps) {
     <Canvas
       ref={canvasRef}
       frameloop="never"
-      dpr={[1, DPR_CAP]}
+      dpr={[1, sceneSettings().dprCap]}
       flat
       linear
       gl={{

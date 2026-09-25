@@ -7,6 +7,7 @@ import { stripLocale } from "@/lib/i18n/config";
 import { loadScene, type SceneComponent } from "@/lib/scene/load-scene";
 import type { RiverCard } from "@/lib/scene/river-content";
 import { setCaseRoute } from "@/lib/work/case-transition";
+import { ScenePoster } from "./ScenePoster";
 
 type SceneGateProps = {
   specimen: string;
@@ -77,6 +78,9 @@ export function SceneGate({ specimen, river }: SceneGateProps) {
       data-scene-mode={mode}
       className="pointer-events-none fixed inset-0 -z-10 bg-void"
     >
+      {/* Sem WebGL, o poster da composição do beat — só na descida: dentro de
+          um case a cena é névoa parada nos dois modos, e ali o fundo é o void. */}
+      {mode === "poster" && stripLocale(pathname) === "/" ? <ScenePoster /> : null}
       {Scene === null ? null : (
         <Scene
           specimen={specimen}

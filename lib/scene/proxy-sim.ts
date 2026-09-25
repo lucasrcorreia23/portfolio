@@ -4,7 +4,14 @@ import {
   flockTubeHalfHeight,
   flockTubeHalfWidth,
   type Roost,
+  exitAt,
 } from "./curve";
+import {
+  APERTURE_HALF_HEIGHT,
+  APERTURE_HALF_WIDTH,
+  APERTURE_Y,
+  PLAN_FAR,
+} from "./chamber-plan";
 import {
   CHAMBER_HALF_HEIGHT,
   CHAMBER_HALF_WIDTH,
@@ -170,11 +177,18 @@ export function createProxySim(
 
   let accumulator = 0;
   let seeded = false;
+  /** 1 = saiu pela tomada de ar e está fora da simulação (Superfície). */
+  const parked = new Uint8Array(PARTICLES);
 
   const step = (progress: number, cameraZ: number, roost: Roost) => {
     const recycleAt = cameraZ + 2;
     const spawnAt = cameraZ - 64;
     const dt = STEP_MS / 1000;
+    // A Superfície: o proxy sai pela tomada de ar junto com o bando da GPU, pelo
+    // mesmo `exitAt`. Sem isto a luz prática continuaria seguindo aglomerados
+    // que já não existem, e a câmara vazia do último quadro teria quatro luzes
+    // acesas sem ninguém.
+    const exit = exitAt(progress);
 
     // O escoamento acelera conforme a descida avança: ar parado na Emergência,
     // bando formado e vindo contra você na Identidade (DIRECTION.md §4).
@@ -182,6 +196,17 @@ export function createProxySim(
     const cohesion = 0.35 + 0.9 * Math.min(progress / 0.2, 1);
 
     for (let i = 0; i < PARTICLES; i += 1) {
+      if (parked[i] === 1) {
+        if (exit >= 0.02) continue;
+        // De volta para dentro da descida: renasce a montante.
+        parked[i] = 0;
+        px[i] = 0;
+        py[i] = 0;
+        pz[i] = spawnAt;
+        vx[i] = 0;
+        vy[i] = 0;
+        vz[i] = 0;
+      }
       let cx = 0;
       let cy = 0;
       let cz = 0;
@@ -292,10 +317,30 @@ export function createProxySim(
       // para concordar sobre onde está a massa. Com a luz e o véu lendo dele,
       // discordar aqui é apontar o holofote para o lugar errado.
       const pull = -0.35 * (1 - grip * band);
-      const axialTarget = drive + (roost.drift - drive) * ROOST_HOLD * grip * band;
+      let axialTarget = drive + (roost.drift - drive) * ROOST_HOLD * grip * band;
+      // A saída: o escoamento vira para o fundo, e perto da parede o proxy mira
+      // a abertura — o mesmo funil do shader, em velocidade.
+      let funnelX = 0;
+      let funnelY = 0;
+      if (exit > 0) {
+        const ahead = 1 - smoothstep(cameraZ - 7, cameraZ - 2, pz[i] as number);
+        axialTarget += (-drive * 0.9 - axialTarget) * smoothstep(0, 0.3, exit) * ahead;
+        const near = 1 - smoothstep(PLAN_FAR + 2, PLAN_FAR + 16, pz[i] as number);
+        const ax0 = Math.max(-APERTURE_HALF_WIDTH * 0.8, Math.min(APERTURE_HALF_WIDTH * 0.8, px[i] as number));
+        const ay0 =
+          APERTURE_Y +
+          Math.max(
+            -APERTURE_HALF_HEIGHT * 0.75,
+            Math.min(APERTURE_HALF_HEIGHT * 0.75, (py[i] as number) - APERTURE_Y),
+          );
+        funnelX = (ax0 - (px[i] as number)) * 2.5 * near * exit;
+        funnelY = (ay0 - (py[i] as number)) * 2.5 * near * exit;
+      }
       const nvx =
-        (vx[i] as number) + (cx + ax + sx * 1.4 + (px[i] as number) * pull + rx) * dt;
-      const nvy = (vy[i] as number) + (cy + ay + sy * 1.4 + (py[i] as number) * pull) * dt;
+        (vx[i] as number) +
+        (cx + ax + sx * 1.4 + (px[i] as number) * pull + rx + funnelX) * dt;
+      const nvy =
+        (vy[i] as number) + (cy + ay + sy * 1.4 + (py[i] as number) * pull + funnelY) * dt;
       const nvz =
         (vz[i] as number) +
         (cz + az + sz * 1.4 + rz + (axialTarget - (vz[i] as number)) * 1.6) * dt;
@@ -308,8 +353,14 @@ export function createProxySim(
       py[i] = (py[i] as number) + nvy * dt;
       pz[i] = (pz[i] as number) + nvz * dt;
 
+      // Com o bando saindo, ninguém renasce: quem passou pela tomada de ar ou
+      // pela lente estaciona — como no shader.
+      if (exit > 0.6 && ((pz[i] as number) > recycleAt || (pz[i] as number) < PLAN_FAR - 1)) {
+        parked[i] = 1;
+        continue;
+      }
       // Reciclagem: quem passou pela lente volta a montante.
-      if ((pz[i] as number) > recycleAt) {
+      if (exit <= 0.6 && (pz[i] as number) > recycleAt) {
         const a = hash(i * 3 + Math.floor(pz[i] as number)) * Math.PI * 2;
         // O proxy renasce no mesmo tubo elíptico que a simulação da GPU: ele
         // só serve se concordar com ela sobre **onde está a massa**, e uma
@@ -350,6 +401,7 @@ export function createProxySim(
       sumSpeed.fill(0);
 
       for (let i = 0; i < PARTICLES; i += 1) {
+        if (parked[i] === 1) continue;
         let best = 0;
         let bestD = Infinity;
         for (let c = 0; c < CLUSTERS; c += 1) {
@@ -372,7 +424,11 @@ export function createProxySim(
 
       for (let c = 0; c < CLUSTERS; c += 1) {
         const n = counts[c] as number;
-        if (n === 0) continue;
+        if (n === 0) {
+          // Um aglomerado sem ninguém não ilumina nada.
+          if (iter === 1) rawEnergy[c] = 0;
+          continue;
+        }
         rawX[c] = (sumX[c] as number) / n;
         rawY[c] = (sumY[c] as number) / n;
         rawZ[c] = (sumZ[c] as number) / n;

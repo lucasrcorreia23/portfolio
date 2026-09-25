@@ -1,3 +1,11 @@
 {
-  "label": "Superfície"
+  "label": "Superfície",
+  "farewell": "Cota −38.402 na entrada, ±00.000 na saída. O resto não cabe num instrumento.",
+  "email": "E-MAIL",
+  "profiles": "PERFIS",
+  "language": "IDIOMA",
+  "locales": {
+    "en": "English",
+    "pt": "Português"
+  }
 }

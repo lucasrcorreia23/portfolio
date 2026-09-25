@@ -1,6 +1,13 @@
 import {
+  APERTURE_HALF_HEIGHT,
+  APERTURE_HALF_WIDTH,
   APERTURE_Y,
   LONE_MARK_Z,
+  LOUVER_Z,
+  louverPitch,
+  louverShadowHalf,
+  OUTSIDE_LIGHT,
+  PLAN_FAR,
   RULE_FROM,
   RULE_TO,
   RULES,
@@ -44,8 +51,58 @@ import { LIGHTS_GLSL, LIGHTS_UNIFORMS_GLSL } from "./lights";
 
 const f = (n: number) => n.toFixed(4);
 
+/**
+ * A luz de fora — a Superfície (DIRECTION.md §4). Dois termos, e os dois só
+ * existem com `uOutside` acima de zero:
+ *
+ * - **a lâmina**: luz direta, entrando pelas frestas das venezianas. Um ponto
+ *   é aceso se, voltando ao longo da luz até o plano das lâminas, ele cai numa
+ *   fresta — as mesmas bordas de `louverGaps()`, então a faixa acesa na soleira
+ *   e o feixe no ar (`BEAM_*` abaixo) saem do mesmo recorte;
+ * - **o céu**: a abertura inteira como luz de área, fraca e difusa. É o que faz
+ *   a câmara do último quadro ser "vazia, com luz" e não um recorte aceso numa
+ *   parede preta.
+ */
+export const OUTSIDE_GLSL = /* glsl */ `
+const vec3 OUTSIDE_L = vec3(${f(OUTSIDE_LIGHT[0])}, ${f(OUTSIDE_LIGHT[1])}, ${f(OUTSIDE_LIGHT[2])});
+
+float louverOpen(vec3 p) {
+  // No requadro a própria aleta decide: quem está virado para a luz a recebe.
+  if (p.z < ${f(PLAN_FAR + 0.02)}) return 1.0;
+  float t = (p.z - ${f(LOUVER_Z)}) / OUTSIDE_L.z;
+  vec3 back = p - OUTSIDE_L * t;
+  // A penumbra cresce com a distância: a fresta projetada a oito unidades não
+  // tem a borda que tem na soleira.
+  float soft = 0.015 + 0.012 * t;
+  float x0 = ${f(-APERTURE_HALF_WIDTH)};
+  float inX = smoothstep(x0 - soft, x0 + soft, back.x) * (1.0 - smoothstep(-x0 - soft, -x0 + soft, back.x));
+  float y0 = ${f(APERTURE_Y - APERTURE_HALF_HEIGHT)};
+  float y1 = ${f(APERTURE_Y + APERTURE_HALF_HEIGHT)};
+  float inY = smoothstep(y0 - soft, y0 + soft, back.y) * (1.0 - smoothstep(y1 - soft, y1 + soft, back.y));
+  float pitch = ${f(louverPitch())};
+  float k = clamp(floor((back.x - x0) / pitch), 0.0, ${f(Math.round((APERTURE_HALF_WIDTH * 2) / louverPitch()) - 1)});
+  float d = abs(back.x - (x0 + pitch * (k + 0.5)));
+  float open = smoothstep(${f(louverShadowHalf())} - soft, ${f(louverShadowHalf())} + soft, d);
+  return inX * inY * open;
+}
+
+/** Luz de fora que chega a um ponto, já com incidência. */
+float outsideLight(vec3 p, vec3 n) {
+  if (uOutside <= 0.0) return 0.0;
+  float direct = louverOpen(p) * max(dot(n, -OUTSIDE_L), 0.0);
+  vec3 toSky = vec3(0.0, ${f(APERTURE_Y)}, ${f(LOUVER_Z)}) - p;
+  float d2 = dot(toSky, toSky);
+  vec3 dir = toSky * inversesqrt(max(d2, 1e-4));
+  // A abertura olha para dentro (+z); a área é a das frestas, não a do
+  // requadro inteiro.
+  float sky = max(dot(n, dir), 0.0) * max(-dir.z, 0.0) * 18.0 / (3.14159 * d2 + 18.0);
+  return uOutside * (direct * 1.6 + sky * 0.45);
+}
+`;
+
 /** O concreto: papel da superfície, ambiente, luz do bando, fonte, névoa. */
 export const CONCRETE_GLSL = /* glsl */ `
+${OUTSIDE_GLSL}
 uniform vec3 uWallColor;
 uniform vec3 uCyan;
 
@@ -108,6 +165,13 @@ vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity
   float facing = 0.15 + 0.85 * max(along, 0.0) + 0.75 * rake;
   // Fraquíssima, como o DIRECTION.md §4 pede da Emergência até 0.85.
   color += uSourceColor * upstreamLight(world) * 0.3 * facing * mix(1.0, 0.4, ceilingness);
+
+  // A luz de fora (Superfície). Mesmo albedo, cor dela, e um piso que não é
+  // ambiente: é o concreto claro de uma soleira ao sol, que continua concreto.
+  // A vala sob a luz de fora escurece mais que sob a do bando: é luz de cima,
+  // e o fundo de um sulco não a vê. É o que torna a cota da soleira legível
+  // atravessada pelas faixas das frestas.
+  color += uPeach * (albedo * 6.0 + 0.012) * outsideLight(world, shadingNormal) * (1.0 - 0.75 * cavity);
 
   // O fundo da vala não recebe nada de ninguém.
   color *= 1.0 - 0.62 * cavity;
@@ -304,14 +368,133 @@ ${FOG_GLSL}
 ${LIGHTS_GLSL}
 
 void main() {
-  float radial = 1.0 - smoothstep(0.0, 7.5, length(vWorld.xy));
+  // **Na descida, um brilho que não chega à borda da abertura.** A versão
+  // anterior caía a zero a 7.5 unidades do eixo, num requadro de 4.2 × 2.6: a
+  // borda da abertura ficava acesa e, vista de longe através do título, lia
+  // como um quadrilátero translúcido — o crítico da rodada 9.5 apontou em
+  // 0.14–0.167. Agora a elipse morre antes do requadro, e o que se vê de longe
+  // é névoa acesa sem aresta.
+  vec2 q = (vWorld.xy - vec2(0.0, ${f(APERTURE_Y)})) / vec2(1.5, 1.0);
+  float radial = 1.0 - smoothstep(0.0, 2.8, length(q));
   // Duas oitavas de ruído para a fonte não ser um disco perfeito: o que se vê
   // a essa distância é névoa acesa, não uma lâmpada.
   float broken = 0.55 + 0.45 * sceneNoise(vWorld * 0.09 + vec3(0.0, 0.0, uTime * 0.04));
+  vec3 glow = uSourceColor * radial * radial * broken * (0.05 + uSourceStrength);
 
-  vec3 color = uSourceColor * radial * radial * broken * (0.05 + uSourceStrength);
+  // **Na Superfície, o céu.** O que está do lado de fora da tomada de ar não
+  // tem foco (DIRECTION.md §3: "o fora ainda não tem foco") — é por isso que
+  // este plano fica cinco unidades atrás das venezianas, onde a abertura da DOF
+  // o desmancha. Mais claro em cima, como um céu visto de baixo, e acima de 1.0
+  // para o bloom pegar a fresta: é a outra coisa, além dos corpos, que o
+  // DIRECTION.md §5 deixa florescer.
+  float up = smoothstep(-4.0, 7.0, vWorld.y);
+  vec3 sky = uPeach * (1.3 + 1.6 * up) * (0.85 + 0.3 * broken);
+  vec3 color = mix(glow, sky, uOutside);
   color = applyFog(color, vViewDepth, vWorld);
 
   fragColor = vec4(color, 1.0);
+}
+`;
+
+/**
+ * As lâminas de luz no ar — "luz de fora entrando em lâminas, com `--peach`
+ * atravessando a névoa" (DIRECTION.md §4).
+ *
+ * Uma por fresta, e cada uma é um **prisma**: a fresta extrudada ao longo da
+ * luz até onde ela bate (piso ou soleira, resolvido na montagem). O fragmento
+ * não pinta a face do prisma: ele resolve analiticamente quanto do raio de
+ * visão atravessa o prisma e acende proporcional a isso. É o que faz uma
+ * lâmina vista de lado ser um fio claro e vista de frente um véu fraco — que é
+ * como luz em névoa se comporta, e o oposto de um quad aditivo, que teria o
+ * mesmo brilho de qualquer ângulo.
+ *
+ * Não é fumaça (DIRECTION.md §6): nada aqui é advectado, a lâmina não se move,
+ * e o grão dela é o mesmo ruído parado da névoa.
+ */
+export const BEAM_VERT = /* glsl */ `
+in vec3 aOrigin;
+in float aWidth;
+in float aLength;
+
+out vec3 vWorld;
+out float vViewDepth;
+flat out vec3 vOrigin;
+flat out float vWidth;
+flat out float vLength;
+
+uniform float uOutside;
+
+const vec3 OUTSIDE_L = vec3(${f(OUTSIDE_LIGHT[0])}, ${f(OUTSIDE_LIGHT[1])}, ${f(OUTSIDE_LIGHT[2])});
+const float BEAM_HEIGHT = ${f(APERTURE_HALF_HEIGHT * 2)};
+
+void main() {
+  vOrigin = aOrigin;
+  vWidth = aWidth;
+  vLength = aLength;
+  // position é o cubo unitário: x através da fresta, y ao longo dela (a
+  // altura da abertura), z ao longo da luz.
+  vec3 world = aOrigin
+    + vec3(position.x * aWidth, position.y * BEAM_HEIGHT, 0.0)
+    + OUTSIDE_L * (position.z * aLength);
+  vWorld = world;
+  vec4 view = viewMatrix * vec4(world, 1.0);
+  vViewDepth = -view.z;
+  gl_Position = projectionMatrix * view;
+  // Sem luz de fora, nenhum fragmento: o prisma colapsa fora do volume de recorte.
+  if (uOutside <= 0.0) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+}
+`;
+
+export const BEAM_FRAG = /* glsl */ `
+${FOG_UNIFORMS_GLSL}
+
+in vec3 vWorld;
+in float vViewDepth;
+flat in vec3 vOrigin;
+flat in float vWidth;
+flat in float vLength;
+
+out vec4 fragColor;
+
+${FOG_GLSL}
+
+const vec3 OUTSIDE_L = vec3(${f(OUTSIDE_LIGHT[0])}, ${f(OUTSIDE_LIGHT[1])}, ${f(OUTSIDE_LIGHT[2])});
+const float BEAM_HEIGHT = ${f(APERTURE_HALF_HEIGHT * 2)};
+
+/** Mundo → coordenadas do prisma, em que ele é o cubo [0, 1]³. Afim. */
+vec3 toLocal(vec3 d) {
+  float w = d.z / (OUTSIDE_L.z * vLength);
+  float u = (d.x - w * vLength * OUTSIDE_L.x) / vWidth;
+  float v = (d.y - w * vLength * OUTSIDE_L.y) / BEAM_HEIGHT;
+  return vec3(u, v, w);
+}
+
+void main() {
+  vec3 ro = toLocal(cameraPosition - vOrigin);
+  vec3 rdWorld = normalize(vWorld - cameraPosition);
+  vec3 rd = toLocal(rdWorld);
+  vec3 inv = 1.0 / rd;
+  vec3 a = (vec3(0.0) - ro) * inv;
+  vec3 b = (vec3(1.0) - ro) * inv;
+  vec3 lo = min(a, b);
+  vec3 hi = max(a, b);
+  float t0 = max(max(max(lo.x, lo.y), lo.z), 0.0);
+  float t1 = min(min(hi.x, hi.y), hi.z);
+  // t está em unidades de mundo: a transformação é afim e rdWorld é unitário.
+  float path = max(t1 - t0, 0.0);
+  vec3 mid = ro + rd * (0.5 * (t0 + t1));
+
+  // Bordas macias nas quatro faces longas, e a lâmina se apagando ao longo do
+  // caminho: ela espalha luz na névoa conforme avança.
+  float edge = smoothstep(0.0, 0.3, mid.x) * smoothstep(1.0, 0.7, mid.x)
+             * smoothstep(0.1, 0.55, mid.y) * smoothstep(1.0, 0.85, mid.y);
+  float fall = exp(-mid.z * 2.4) * smoothstep(0.0, 0.05, mid.z);
+  vec3 midWorld = cameraPosition + rdWorld * (0.5 * (t0 + t1));
+  float dust = 0.6 + 0.8 * sceneNoise(midWorld * 0.9);
+
+  float lit = (1.0 - exp(-path * 0.9)) * edge * fall * dust * uOutside;
+  // O caminho entre a lente e a lâmina também tem névoa.
+  float seen = exp(-uFogDensity * 0.5 * t0);
+  fragColor = vec4(uPeach * lit * 0.32 * seen, 1.0);
 }
 `;

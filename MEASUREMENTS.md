@@ -40,6 +40,7 @@ medido, com que método, e por quê o número é esse".
 - [As capas e o fim do corredor, medidos](#as-capas-e-o-fim-do-corredor-medidos)
 - [O escuro e o ângulo, medidos](#o-escuro-e-o-ângulo-medidos)
 - [O som, medido](#o-som-medido)
+- [A Superfície e a robustez, medidas](#a-superfície-e-a-robustez-medidas)
 - [Desempenho da cena, medido](#desempenho-da-cena-medido)
 
 ---
@@ -1690,6 +1691,94 @@ controle ligado, descendo e parando 2.5 s em cada ponto:
   tinha o que abrir. Entrou uma parcela de branco.
 - **O que a medição não diz**: se soa como vento genérico. Isso só se decide
   ouvindo, e o controle começa desligado.
+
+## A Superfície e a robustez, medidas
+
+Rodada 11. Folhas: `.screens/11-superficie.png` (0.84 → 1.00, descendo desde
+0.30), `.screens/11-ultimo-quadro.png` (1.00, parado 600 passos),
+`.screens/11-calmo.png` (as cinco composições do modo calmo),
+`.screens/11-real-*.png` (DOM e cena juntos, rolagem de verdade).
+
+### A saída do bando, e as três medições que deram zero corpo no quadro
+
+Contado com `__probe.readSim()` ao longo de uma descida a 0.8 vh/s:
+
+| versão | o que a contagem mostrou |
+|---|---|
+| estacionar quem cruzasse a lente com a saída ligada | 14 mil de 16.4 mil estacionados em **0.88**, antes de a câmera encarar a abertura |
+| virar o bando inteiro | a virada em volta da lente acendeu uma tempestade de lascas `--cyan` de borda a borda |
+| sair a −0.4 × drive (2.4 u/s) | a câmera (≈3 u/s) ultrapassava o bando: 15.7 mil estacionados em 0.92 |
+| **virada decisiva, só à frente da lente, a −0.9 × drive** | ~7 mil corpos entre a lente e as aletas em 0.90, saindo em ~3 s; zero em 1.00 |
+
+**A folha só mostra o bando se o assentamento for longo.** Com 150 passos
+depois de um salto de 0.00 para 0.83, o bando ainda estava atrás da parede do
+fundo quando a saída começou, e a folha saía vazia — um artefato da sonda que
+parecia um defeito da cena. As folhas desta rodada descem desde 0.30.
+
+### Contraste, com o véu novo (compressão da luz, não sombra)
+
+`__probe.contrast()` a 0.6 vh/s, 1440×900, pt:
+
+| faixa | pior | onde | p50 |
+|---|---|---|---|
+| 0.00–0.10 | 13.25 | nome da Emergência | 13.86 |
+| 0.10–0.28 | 5.67 | manifesto, na virada para Quem sou | 5.90 |
+| 0.28–0.45 | 5.69 | manifesto | 5.93 |
+| 0.45–0.85 | **5.34** | `Áudio ON`, HUD, em 0.813 | 5.83 |
+| 0.85–1.00 | 5.64 | rótulo `IDIOMA` | 5.84 |
+
+Todas acima do piso de 4.5. O rio continua abaixo do alvo de 5.5, como já
+estava com o véu antigo (5.16). **Em inglês não foi medido**: a bancada negocia
+`pt` em `/`.
+
+**Modo sem WebGL**, medido no canvas 2D do poster com `getContext("webgl2")`
+anulado, debaixo de cada caixa `[data-veil]` no quadro:
+
+| beat | sem o véu 2D | com o véu 2D |
+|---|---|---|
+| Emergência | — | 10.73 |
+| Identidade | 2.17 | 8.97 |
+| Quem sou | 3.22 | 8.68 |
+| Trabalho | 5.14 | 7.13 |
+| Superfície | **0.88** | 12.69 |
+
+### LCP, em 4G simulado
+
+150 ms de RTT, 1.6 Mbps, CPU 4×, cache desligado, build de produção, três
+cargas cada:
+
+| rota | antes | depois | elemento |
+|---|---|---|---|
+| `/pt` | 0.63–0.65 s | 0.65–0.68 s | o texto do portão |
+| `/work/perfecting` | 0.81 s | — | capa (gerada, 6 kB) |
+| `/pt/work/nestle` | 3.6 s | **1.48–1.50 s** | capa |
+| `/pt/work/prime8` | **10.8–11.0 s** | 1.10–1.12 s | capa |
+| `/pt/work/zoomtecnologia` | — | 1.26–1.27 s | capa |
+| `/pt/work/decision-suite` | — | 1.69–1.70 s | capa |
+
+O "antes" é a capa original servida crua; o "depois" é a capa de entrega
+(`public/covers/`, 31–57 kB). Teto: 2.5 s.
+
+### GPU, como fração dos 16.7 ms
+
+Plano `descent`, M5, **1440×900 a DPR 1 (1.3 Mpx — não o buffer nativo de 2.71
+Mpx)**, cronômetro de extensão:
+
+| faixa | média | mediana | p95 | do quadro |
+|---|---|---|---|---|
+| 0.00–0.28 | 2.23 ms | 2.50 | 2.54 | 13% |
+| 0.28–0.45 | 2.24 ms | 2.50 | 2.56 | 13% |
+| 0.45–0.85 | 2.26 ms | 2.50 | 2.54 | 14% |
+| 0.85–1.00 | 2.17 ms | 2.49 | 2.54 | 13% |
+
+A Superfície não custa mais que os outros trechos. **Na resolução nativa e no
+telefone isto não foi medido** — é o mesmo débito de resolução do AGENTS.md, "O
+que falta", item 3.
+
+### Pacote
+
+Rota inicial 186.6 kB (home) e 184.9 kB (case) de 200; chunk da cena 325.9 kB
+de 350. Nenhuma instrumentação vazou, incluindo `__calm`.
 
 ## Desempenho da cena, medido
 

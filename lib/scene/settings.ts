@@ -52,6 +52,21 @@ export const DPR_CAP = 1.5;
 export const FLOCK_TEXTURE_SIZE = 128;
 export const FLOCK_COUNT = FLOCK_TEXTURE_SIZE * FLOCK_TEXTURE_SIZE;
 
+/**
+ * **No telefone, menos corpos e menos pixels** — PROJECT.md §5, "Mobile": "DPR
+ * e contagem de partículas reduzidos". O iPhone fecha o quadro sem isto (4.62
+ * ms, ver acima), então não é conserto de desempenho: é a folha térmica que
+ * ninguém mediu (a cena aberta por dez minutos), comprada nas duas alavancas
+ * que a medição mostrou serem reais no aparelho. 96² = 9.216 corpos, dentro da
+ * faixa do DIRECTION.md §5; DPR 1.25 é 69% dos pixels do teto de 1.5.
+ *
+ * "Telefone" é a viewport estreita, a mesma fronteira `md` do CSS que colapsa a
+ * HUD e encurta o rio — um critério só para as três coisas.
+ */
+export const MOBILE_TEXTURE_SIZE = 96;
+export const MOBILE_DPR_CAP = 1.25;
+const COMPACT_QUERY = "(max-width: 767px)";
+
 /** Faixa do DIRECTION.md §5: de 4k a 16k corpos, ou seja lado 64 a 128. */
 const MIN_TEXTURE_SIZE = 64;
 const MAX_TEXTURE_SIZE = 128;
@@ -67,6 +82,8 @@ export type SceneSettings = {
    * duas builds diferentes não é comparar contagens.
    */
   flockTextureSize: number;
+  /** Teto do DPR do canvas: `DPR_CAP`, ou `MOBILE_DPR_CAP` numa viewport estreita. */
+  dprCap: number;
   /**
    * `?bench=1`: o relógio da cena vira o banco de prova (`BenchClock`).
    *
@@ -191,6 +208,7 @@ export type SceneSettings = {
 const DEFAULTS: SceneSettings = {
   dof: true,
   flockTextureSize: FLOCK_TEXTURE_SIZE,
+  dprCap: DPR_CAP,
   bench: false,
   detach: true,
   cards: true,
@@ -243,9 +261,14 @@ export function sceneSettings(): SceneSettings {
   }
 
   const params = new URLSearchParams(window.location.search);
+  const compact = window.matchMedia(COMPACT_QUERY).matches;
   resolved = {
     dof: readFlag(params, "dof", DEFAULTS.dof),
-    flockTextureSize: readTextureSize(params, DEFAULTS.flockTextureSize),
+    flockTextureSize: readTextureSize(
+      params,
+      compact ? MOBILE_TEXTURE_SIZE : DEFAULTS.flockTextureSize,
+    ),
+    dprCap: compact ? MOBILE_DPR_CAP : DPR_CAP,
     bench: readFlag(params, "bench", DEFAULTS.bench),
     detach: readFlag(params, "detach", DEFAULTS.detach),
     cards: readFlag(params, "cards", DEFAULTS.cards),

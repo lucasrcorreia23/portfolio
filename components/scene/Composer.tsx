@@ -263,6 +263,7 @@ export function Composer({
         // O véu de legibilidade mora aqui, e não nos materiais: é a única
         // passada em que o bloom já pousou. Ver `shaders/post.ts`.
         ...veilUniforms(shared),
+        uVeilCeiling: { value: VEIL_CEILING },
         ...depthUniforms,
       },
       GLSL3,

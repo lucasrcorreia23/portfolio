@@ -67,12 +67,21 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
     },
 
     /**
-     * A fonte distante a montante. `--teal` no começo; a cor viaja para
-     * `--cyan` e `--peach` nos beats que ainda não existem.
+     * A fonte distante a montante. A cor viaja `--teal` → `--cyan` →
+     * `--peach` com a descida (`sourceColorAt` em `curve.ts`).
      */
     sourceColor: { value: new Color(palette.teal) },
     sourceStrength: { value: 0 },
     sourceZ: { value: CHAMBER_FAR },
+
+    /**
+     * A luz de fora, 0 a 1 — a Superfície (DIRECTION.md §4). Zero pela descida
+     * inteira: até 0.85 o bando é a única luz prática, e a fonte a montante é
+     * um brilho fraquíssimo **dentro** da abertura. Daqui em diante a abertura
+     * vira céu, a névoa perto dela esquenta para `--peach`, e a luz entra pelas
+     * frestas das venezianas (ver `outsideAt` em `curve.ts`).
+     */
+    outside: { value: 0 },
 
     /**
      * As caixas de texto que o véu de legibilidade protege, em UV de tela, e a
@@ -237,6 +246,8 @@ export function fogUniforms(shared: SharedUniforms) {
     uFogDensity: shared.fogDensity,
     uTime: shared.time,
     uResolution: shared.resolution,
+    uPeach: shared.peach,
+    uOutside: shared.outside,
   };
 }
 

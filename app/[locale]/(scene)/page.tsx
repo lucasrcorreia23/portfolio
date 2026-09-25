@@ -5,10 +5,19 @@ import { BEATS } from "@/components/beats/beats";
 import { EmergenceBeat } from "@/components/beats/EmergenceBeat";
 import { IdentityBeat } from "@/components/beats/IdentityBeat";
 import { Gate } from "@/components/gate/Gate";
+import { SurfaceBeat } from "@/components/beats/SurfaceBeat";
 import { WorkBeat } from "@/components/beats/WorkBeat";
 import { getRiverCases } from "@/lib/cases";
-import { localizePath } from "@/lib/i18n/config";
+import type { Metadata } from "next";
+import { alternatesFor, localizePath } from "@/lib/i18n/config";
 import { requireLocale } from "@/lib/i18n/locale";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/[locale]">): Promise<Metadata> {
+  const { locale } = await params;
+  return { alternates: alternatesFor("/", requireLocale(locale)) };
+}
 
 export default async function HomePage({ params }: PageProps<"/[locale]">) {
   const { locale } = await params;
@@ -84,6 +93,27 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
                 river={river}
                 stationLabel={t("hud.lexicon.station")}
                 enterLabel={t("work.enter")}
+              />
+            ) : null}
+            {beat.id === "surface" ? (
+              <SurfaceBeat
+                beat={beat}
+                locale={typed}
+                farewell={t("surface.farewell")}
+                labels={{
+                  email: t("surface.email"),
+                  profiles: t("surface.profiles"),
+                  language: t("surface.language"),
+                }}
+                profileNames={{
+                  linkedin: t("hud.profiles.linkedin"),
+                  github: t("hud.profiles.github"),
+                  x: t("hud.profiles.x"),
+                }}
+                localeNames={{
+                  en: t("surface.locales.en"),
+                  pt: t("surface.locales.pt"),
+                }}
               />
             ) : null}
           </BeatSection>

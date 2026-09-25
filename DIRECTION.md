@@ -623,6 +623,25 @@ lê quente no topo. O bando sai pela abertura e se dispersa.
 Contato em DOM: e-mail, perfis, seletor de idioma. Sem formulário, sem frase de
 convite. O último frame é a câmara vazia, com luz, e um número gravado.
 
+> **Como foi construída (rodada 11) — e o que nisso é proposta, não decisão.**
+>
+> - **As venezianas são aletas verticais.** Com lâminas horizontais e a luz
+>   vindo de cima, as oito lâminas de luz se empilhavam num cone só de névoa —
+>   de frente, uma lâmina não se separa da outra. Aletas verticais com a luz
+>   quase ao longo do duto ficam de perfil para a câmera, e as lâminas se leem
+>   uma a uma. *Proposta minha, pendente do Lucas.*
+> - **O número gravado é `COTA ±00.000`**, no topo da soleira: o portão abre na
+>   cota −38.402, e a descida termina na referência de nível, com as mesmas três
+>   casas. *Proposta minha, pendente do Lucas.*
+> - **A frase de despedida** — "Cota −38.402 na entrada, ±00.000 na saída. O
+>   resto não cabe num instrumento." — foi escrita por mim a pedido do Prompt 11.
+>   *Pendente do Lucas*, como todo texto.
+> - **O enquadramento** põe a abertura na metade direita e a coluna de contato
+>   sobre concreto escuro na esquerda, com as lâminas descendo para longe dela:
+>   é a composição, e não o véu, que dá contraste ao texto aqui.
+> - **O bando dá a volta** e sai pelas frestas; quem cruza uma lâmina acende em
+>   `--peach`. O último quadro não tem corpo nenhum.
+
 ### HUD lateral fixa
 
 Coluna estreita permanente, mono pequena, em uma das laterais. Contato, acervo,
@@ -680,6 +699,17 @@ sobre luz variável".
   da tomada de ar. Bloom não é o efeito, é o transbordo dele.
 
 ### Legibilidade sobre luz variável
+
+> **O véu comprime a luz; ele não pinta sombra — pedido do Lucas, 2026-09-25.**
+> O mecanismo abaixo misturava a caixa do texto para `--void` na força que o
+> pixel mais claro atrás dela exigia; na tela, isso era um retângulo preto de
+> borda borrada atrás de todo texto sobre luz, e ele o apontou como uma forma
+> amadora de resolver. Desde a rodada 11 cada pixel é comprimido pela própria
+> luminância — o escuro fica como está, o claro cede até o teto —, e o teto do
+> §5 continua valendo pixel a pixel. O resto desta seção descreve o problema e o
+> teto, que não mudaram; o "mix em direção à névoa" é o mecanismo antigo. E a
+> regra que ganha peso: **texto mora onde a cena já é escura** — o véu é a
+> garantia, não a composição.
 
 Se o bando é a única luz prática até 0.85, a luminância atrás de todo texto em
 DOM muda a cada frame. Contraste médio não vale nada aqui; o que vale é o pior

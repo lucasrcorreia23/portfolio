@@ -151,12 +151,14 @@ export function Structure({
       let u: Vector3;
       let v: Vector3;
       let n: Vector3;
-      if (label.surface === "floor") {
+      if (label.surface === "floor" || label.surface === "sill") {
         const s = plan.section(label.z);
         n = new Vector3(0, 1, 0);
         u = new Vector3(1, 0, 0);
         v = new Vector3(0, 0, -1);
-        center = new Vector3(label.x, -s.floor + LIFT, label.z);
+        // A soleira é horizontal como o piso, mas mora na altura dela.
+        const y = label.surface === "sill" ? label.y : -s.floor;
+        center = new Vector3(label.x, y + LIFT, label.z);
       } else {
         const s = plan.section(label.z);
         const x = wallX(s, label.side);

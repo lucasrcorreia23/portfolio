@@ -4,6 +4,7 @@ import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Hud } from "@/components/hud/Hud";
 import { fontVariables } from "@/lib/fonts";
+import { SITE_URL } from "@/lib/i18n/config";
 import { routing } from "@/lib/i18n/routing";
 import { ScrollProvider } from "@/lib/scroll/ScrollProvider";
 import "@/styles/globals.css";
@@ -30,9 +31,22 @@ export async function generateMetadata({
     // Sem isto, a capa que a rota de case declara como imagem de Open Graph
     // sai como caminho relativo e o Next resolve contra `localhost:3000` — o
     // aviso da build é literal sobre isso. O domínio é o do PROJECT.md §0.
-    metadataBase: new URL("https://www.lucasrc.com.br"),
+    metadataBase: new URL(SITE_URL),
     title: t("title"),
     description: t("description"),
+    // A imagem de Open Graph **é a cena**: o último quadro da descida — a
+    // câmara vazia, a luz de fora em lâminas e a cota ±00.000 gravada na
+    // soleira —, lido do buffer do WebGL pela sonda e recortado em 1200×630.
+    // Um case troca por a capa dele (ver `work/[slug]/page.tsx`).
+    openGraph: {
+      type: "website",
+      siteName: t("title"),
+      title: t("title"),
+      description: t("description"),
+      locale: locale === "pt" ? "pt_BR" : "en_US",
+      images: [{ url: "/og.jpg", width: 1200, height: 630, alt: t("ogAlt") }],
+    },
+    twitter: { card: "summary_large_image" },
   };
 }
 

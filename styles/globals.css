@@ -274,6 +274,13 @@
     background-color: var(--cyan);
   }
 
+  /* Superfície: o bloco é recortado de baixo para cima — a linha d'água de
+     quem emerge. É a entrada inversa da lâmina de Quem sou, e pelo mesmo
+     motivo não esmaece: cada pixel visível já está em --mist cheio. */
+  .beat-surface {
+    clip-path: inset(calc((1 - var(--reveal)) * 100%) 0 0 0);
+  }
+
   /* ---------------------------------------------------------------------
    * O corpo de prova.
    *

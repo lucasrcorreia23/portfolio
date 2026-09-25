@@ -283,6 +283,9 @@ const probeMarkers = [
   "__cardPick",
   "hoverLatency",
   "pickDiagnostic",
+  // A captura das composições do modo calmo (`ComposedClock`): posters, Open
+  // Graph e a folha `11-calmo.png` saem dela, e ela só existe em dev.
+  "__calm",
 ];
 const probeLeak = files.filter((path) => {
   const source = readFileSync(path, "utf8");

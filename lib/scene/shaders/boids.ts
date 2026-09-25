@@ -84,6 +84,12 @@
 
 import { MAX_CARDS } from "../cards";
 import {
+  APERTURE_HALF_HEIGHT,
+  APERTURE_HALF_WIDTH,
+  APERTURE_Y,
+  PLAN_FAR,
+} from "../chamber-plan";
+import {
   ROOST_CAPTURE,
   ROOST_HOLD,
   ROOST_PULL,
@@ -134,8 +140,24 @@ uniform float uCameraZ;
 uniform vec3  uRoost;
 uniform float uRoostAmount;
 uniform float uRoostDrift;
+/**
+ * A Superfície: quanto o bando já está saindo pela tomada de ar, 0 a 1 (ver
+ * exitAt em lib/scene/curve.ts). Com ele acima de zero o escoamento vira, os
+ * corpos são afunilados para a abertura, se dispersam do lado de fora e
+ * **estacionam** — ficam fora do quadro, sem renascer, até o progresso voltar.
+ */
+uniform float uExit;
 
 const int NEIGHBORS = 24;
+
+/** O lugar dos corpos que saíram. Longe de tudo e fora de qualquer quadro. */
+const vec3 PARKED = vec3(0.0, -500.0, -500.0);
+bool isParked(vec3 p) { return p.y < -400.0; }
+
+const float EXIT_WALL = ${PLAN_FAR.toFixed(3)};
+const vec2  EXIT_CENTER = vec2(0.0, ${APERTURE_Y.toFixed(3)});
+/** O funil mira dentro da abertura, com folga do requadro. */
+const vec2  EXIT_BOX = vec2(${(APERTURE_HALF_WIDTH * 0.8).toFixed(3)}, ${(APERTURE_HALF_HEIGHT * 0.75).toFixed(3)});
 
 /**
  * O bando é reciclado em relação à câmera, não a coordenadas fixas do duto.
@@ -641,6 +663,12 @@ void main() {
   vec3 pos = posSample.xyz;
   vec3 vel = velSample.xyz;
 
+  // Quem saiu não voa: fica parado no estacionamento, sem energia.
+  if (isParked(pos)) {
+    fragColor = vec4(0.0);
+    return;
+  }
+
   float count  = float(uTexSize.x * uTexSize.y);
   float stride = max(1.0, floor(uStride));
 
@@ -702,12 +730,15 @@ void main() {
   float roostGate = 1.0 - smoothstep(ROOST_Z_IN, ROOST_Z_OUT, abs(pos.z - uRoost.z));
   float roost = uRoostAmount * roostGate;
 
+  // Do lado de fora da tomada de ar não há duto, e portanto não há tubo.
+  float beyond = 1.0 - smoothstep(EXIT_WALL - 3.0, EXIT_WALL - 0.5, pos.z);
+
   vec2  q = pos.xy / uTube;
   float r = length(q);
   if (r > 1.0) {
     vec2 wallOut = normalize(q / uTube);
     float outside = (r - 1.0) * length(pos.xy) / max(r, 1e-4);
-    force.xy -= wallOut * outside * (3.4 * (1.0 - 0.85 * roost));
+    force.xy -= wallOut * outside * (3.4 * (1.0 - 0.85 * roost)) * (1.0 - beyond * uExit);
   }
 
   // Corrente ambiente, para o tubo não virar um cano.
@@ -784,6 +815,44 @@ void main() {
   float pressure = sin(pos.z * 0.42 + pos.x * 0.19 - uTime * 1.1);
   float surge = 1.0 + 0.3 * pressure * forming * (1.0 - roost);
   float vzTarget = mix(drive * surge, uRoostDrift, ROOST_HOLD * roost * band);
+
+  // --- a saída pela tomada de ar (Superfície) -----------------------------
+  //
+  // "O bando sai pela abertura e se dispersa" (DIRECTION.md §4). Três termos:
+  // o escoamento **vira** — o alvo axial passa a apontar para o fundo do duto
+  // —; perto da
+  // parede do fundo os corpos são afunilados para dentro da abertura, senão
+  // atravessariam concreto; e do lado de fora não há mais tubo, então eles se
+  // abrem e sobem, para o céu que a câmara nunca mostra inteiro.
+  if (uExit > 0.0) {
+    // **Só vira quem está à frente da lente.** Virando o bando inteiro, os
+    // corpos em volta da câmera davam a volta em cima dela, a aceleração da
+    // virada acendia todos, e o quadro de 0.89 virou uma tempestade de lascas
+    // --cyan de borda a borda. Quem está passando pela câmera segue e estaciona
+    // atrás dela; quem está adiante dá a volta longe, e é esse que se vê sair.
+    //
+    //
+    // **A velocidade da saída tem piso e teto, e os dois são medidos.** A
+    // −1.25 × drive o bando atravessava as frestas em um segundo, antes de a
+    // câmera terminar de virar para a abertura. A −0.4 × drive (2.4 u/s) a
+    // câmera, que anda para a abertura a ~3 u/s numa rolagem de 0.8 vh/s,
+    // **ultrapassava** o bando, e quem ficava atrás da lente estacionava: 15.7
+    // mil de 16.4 mil estacionados em 0.92, nenhum no quadro. A −0.9 × drive
+    // (~5.4 u/s) ele anda à frente da câmera e leva ~3 s para sair.
+    float ahead = 1.0 - smoothstep(uCameraZ - 7.0, uCameraZ - 2.0, pos.z);
+    // A virada é **decisiva**, não proporcional: misturada linearmente pela
+    // rampa, com uExit a 0.4 o alvo ainda apontava para a câmera, e o bando
+    // passava pela lente (e estacionava) antes de virar — medido, 14 mil de
+    // 16 mil estacionados em 0.88, antes de a câmera encarar a abertura.
+    float turn = smoothstep(0.0, 0.3, uExit);
+    vzTarget = mix(vzTarget, -drive * 0.9, turn * ahead);
+    float nearWall = 1.0 - smoothstep(EXIT_WALL + 2.0, EXIT_WALL + 16.0, pos.z);
+    vec2 aim = clamp(pos.xy - EXIT_CENTER, -EXIT_BOX, EXIT_BOX) + EXIT_CENTER;
+    force.xy += (aim - pos.xy) * 2.5 * nearWall * (1.0 - beyond) * uExit;
+    vec2 away = pos.xy - EXIT_CENTER;
+    force.xy += away / (length(away) + 0.5) * 6.0 * beyond * uExit;
+    force.y += 4.0 * beyond * uExit;
+  }
   force.z += (vzTarget - vel.z) * 1.7;
 ${detach || cards ? TURB_SAMPLE : ""}
 ${detach ? FIELD_FORCE : ""}
@@ -811,6 +880,9 @@ ${cards ? CARD_FORCE : ""}
   // poética: é a diferença entre "o brilho segue a aceleração" e "o brilho
   // pisca na aceleração".
   float energy = clamp(length(next - vel) / (uDt * 9.0 + 1e-5), 0.0, 1.0);
+  // A virada da saída é uma aceleração enorme e coordenada; sem este freio ela
+  // acendia o bando inteiro de uma vez, que é o oposto de ir embora.
+  energy *= 1.0 - 0.7 * uExit;
   float cooling = velSample.w;
   energy = energy > cooling ? mix(cooling, energy, 0.5) : mix(cooling, energy, 0.03);
 
@@ -832,6 +904,21 @@ void main() {
   vec4 posSample = texture(uPos, uv);
   vec3 pos = posSample.xyz;
   vec3 vel = texture(uVel, uv).xyz;
+
+  // O estacionamento: quem saiu fica lá enquanto a Superfície durar, e renasce
+  // a montante quando o progresso volta para dentro da descida.
+  if (isParked(pos)) {
+    if (uExit < 0.02) {
+      float a = boidHash(self + floor(uTime * 7.0)) * 6.2831853;
+      float r = sqrt(boidHash(self + 5.0 + floor(uTime * 7.0)));
+      float depth = boidHash(self * 1.37 + 11.0 + floor(uTime * 7.0)) * 28.0;
+      pos = vec3(cos(a) * r * uTube.x, sin(a) * r * uTube.y, spawnZ() + depth);
+      fragColor = vec4(pos, 0.0);
+    } else {
+      fragColor = vec4(PARKED, 0.0);
+    }
+    return;
+  }
 
   pos += vel * uDt;
 
@@ -856,7 +943,18 @@ void main() {
   // MEASUREMENTS.md, "Três armadilhas do método"). Espalhar o renascimento por
   // 28 unidades de profundidade, todas a mais de 36 da lente — onde a névoa já
   // comeu o corpo —, desmancha a lâmina sem ninguém ver alguém nascer.
-  if (pos.z > recycleZ()) {
+  // Com o bando saindo, ninguém renasce: quem já está do lado de fora da
+  // tomada de ar estaciona. É isso que deixa o último quadro vazio
+  // (DIRECTION.md §4).
+  //
+  // Quem passou pela lente também estaciona — mas só depois de a virada
+  // (abaixo, só para quem está à frente dela) ter deixado os de longe
+  // voltando para a abertura.
+  if (uExit > 0.6 && (pos.z > recycleZ() || pos.z < EXIT_WALL - 5.0 || pos.y > 14.0)) {
+    fragColor = vec4(PARKED, 0.0);
+    return;
+  }
+  if (uExit <= 0.6 && pos.z > recycleZ()) {
     float a = boidHash(self + floor(uTime * 7.0)) * 6.2831853;
     float r = sqrt(boidHash(self + 5.0 + floor(uTime * 7.0)));
     float depth = boidHash(self * 1.37 + 11.0 + floor(uTime * 7.0)) * 28.0;

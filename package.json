@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "collect": "node scripts/collector.mjs",
     "measure": "node scripts/measure-bundle.mjs",
-    "covers": "node scripts/generate-covers.mjs"
+    "covers": "node scripts/generate-covers.mjs",
+    "covers:derive": "node scripts/derive-covers.mjs"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.1.1",

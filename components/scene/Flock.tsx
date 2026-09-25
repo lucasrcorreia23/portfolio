@@ -19,7 +19,7 @@ import {
   Vector3,
   WebGLRenderTarget,
 } from "three";
-import type { Roost } from "@/lib/scene/curve";
+import { exitAt, type Roost } from "@/lib/scene/curve";
 import { blit, createDataTarget, createPassMaterial } from "@/lib/scene/gpu";
 import {
   AHEAD_COLUMNS,
@@ -150,6 +150,7 @@ export function Flock({
       uRoost: { value: new Vector3(0, 0, SPECIMEN_Z) },
       uRoostAmount: { value: 0 },
       uRoostDrift: { value: 0 },
+      uExit: { value: 0 },
 
       // O campo de distância assado da peça. Os três primeiros são **os mesmos
       // objetos** que o `Specimen` escreve depois do assado (ver
@@ -385,6 +386,9 @@ export function Flock({
 
       rig.simUniforms.uDt.value = dt;
       rig.simUniforms.uProgress.value = progress;
+      // A saída pela tomada de ar é função do progresso, como tudo o mais que o
+      // bando faz de coreografado — ver `exitAt` em `curve.ts`.
+      rig.simUniforms.uExit.value = exitAt(progress);
       rig.simUniforms.uSpecimenYaw.value = attack;
       rig.simUniforms.uCameraZ.value = cameraZ;
 

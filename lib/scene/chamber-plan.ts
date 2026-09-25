@@ -122,6 +122,107 @@ export const APERTURE_HALF_WIDTH = 4.2;
 export const APERTURE_HALF_HEIGHT = 2.6;
 export const APERTURE_Y = 0.4;
 
+/* ---------------------------------------------------------------------------
+ * A tomada de ar — o fim da descida (DIRECTION.md §4, Superfície)
+ *
+ * "A câmera chega à tomada de ar. Venezianas, a última cota gravada na soleira,
+ * e luz de fora entrando em lâminas." Três peças, e as três moram aqui porque a
+ * malha, o concreto, as lâminas de luz e o bando precisam concordar sobre onde
+ * elas estão: uma lâmina que não saísse de uma fresta de verdade seria um
+ * feixe desenhado, e um corpo que saísse por onde não há fresta atravessaria
+ * concreto.
+ * ------------------------------------------------------------------------ */
+
+/**
+ * A direção da luz de fora, **para dentro** do duto: quase ao longo do eixo,
+ * descendo 0.55 por unidade que avança e com um desvio lateral pequeno. Quase
+ * axial de propósito: as lâminas de luz são planos verticais, e só uma luz que
+ * corre quase paralela ao olhar da câmera deixa esses planos **de perfil** para
+ * ela — de frente eles se empilhariam num cone só de névoa acesa, que foi o que
+ * a primeira versão (venezianas horizontais) entregou.
+ */
+export const OUTSIDE_LIGHT: readonly [number, number, number] = (() => {
+  const x = 0.22;
+  const y = -0.55;
+  const z = 1;
+  const length = Math.hypot(x, y, z);
+  return [x / length, y / length, z / length] as const;
+})();
+
+/**
+ * As venezianas: aletas **verticais** no requadro da abertura, giradas em torno
+ * do próprio eixo — nem alinhadas com a luz (sombra de espessura zero, a
+ * abertura viraria um retângulo aceso) nem atravessadas a ela (fechariam a
+ * tomada). Com este giro cada aleta come 48% do passo e deixa uma fresta de
+ * 52%: é a luz em lâminas, e não em bloco.
+ */
+export const LOUVER_COUNT = 9;
+/** O plano médio das aletas, no meio do requadro de uma unidade. */
+export const LOUVER_Z = PLAN_FAR - 0.5;
+/** Largura da aleta ao longo do próprio giro. */
+export const LOUVER_WIDTH = 0.8;
+export const LOUVER_THICKNESS = 0.05;
+/** O giro da aleta: avança 0.8 em x por unidade que entra no duto. */
+export const LOUVER_SLOPE = 0.8;
+
+export function louverPitch(): number {
+  return (APERTURE_HALF_WIDTH * 2) / LOUVER_COUNT;
+}
+
+/** Posição em x do centro da aleta `k`, contada de bombordo. */
+export function louverX(k: number): number {
+  return -APERTURE_HALF_WIDTH + louverPitch() * (k + 0.5);
+}
+
+/**
+ * Meia-largura da faixa que uma aleta bloqueia, projetada **ao longo da luz**
+ * no plano médio. É o que decide a fresta: a faixa acesa na soleira e o feixe
+ * no ar saem das mesmas duas bordas.
+ */
+export function louverShadowHalf(): number {
+  const dLength = Math.hypot(LOUVER_SLOPE, 1);
+  const dx = LOUVER_SLOPE / dLength;
+  const dz = 1 / dLength;
+  const [lx, , lz] = OUTSIDE_LIGHT;
+  return (LOUVER_WIDTH / 2) * Math.abs(dx - (dz * lx) / lz) + LOUVER_THICKNESS;
+}
+
+/**
+ * As frestas, de bombordo para estibordo, como faixas `[x0, x1]` no plano
+ * médio das aletas: oito entre aletas e as duas das pontas.
+ */
+export function louverGaps(): readonly (readonly [number, number])[] {
+  const half = louverShadowHalf();
+  const gaps: [number, number][] = [];
+  let from = -APERTURE_HALF_WIDTH;
+  for (let k = 0; k < LOUVER_COUNT; k += 1) {
+    const x = louverX(k);
+    if (x - half > from + 0.02) gaps.push([from, x - half]);
+    from = x + half;
+  }
+  if (APERTURE_HALF_WIDTH > from + 0.02) gaps.push([from, APERTURE_HALF_WIDTH]);
+  return gaps;
+}
+
+/**
+ * A soleira: um bloco de concreto que sobe do piso até a borda de baixo da
+ * abertura e avança para dentro do duto. É nele que a última cota fica
+ * gravada — no topo, virada para cima, onde a luz de fora bate.
+ */
+export const SILL_DEPTH = 2.2;
+export const SILL_HALF_WIDTH = APERTURE_HALF_WIDTH + 0.6;
+export const SILL_TOP = APERTURE_Y - APERTURE_HALF_HEIGHT;
+
+/**
+ * **A cota da superfície.** O portão abre na cota −38.402 — "a cota da
+ * soleira, onde se está antes de entrar" (`components/gate/readout.ts`) —, e a
+ * descida termina aqui, na referência de nível: o ±0 que todo desenho de
+ * arquitetura grava no térreo. Com as mesmas três casas do portão, para as duas
+ * leituras serem do mesmo instrumento. É o número gravado do último quadro
+ * (DIRECTION.md §4).
+ */
+export const SURFACE_COTA = "COTA ±00.000";
+
 /** Quanto o nicho recua, e o comprimento dele ao longo do eixo. */
 export const NICHE_DEPTH = 2;
 const NICHE_HALF_LENGTH = 1.2;
@@ -188,8 +289,11 @@ export type Niche = {
 };
 
 export type EngravingLabel = {
-  /** `wall` é parede lateral; `floor` é o piso. */
-  surface: "wall" | "floor";
+  /**
+   * `wall` é parede lateral; `floor` é o piso; `sill` é o topo da soleira —
+   * horizontal como o piso, mas na altura `y` do próprio label.
+   */
+  surface: "wall" | "floor" | "sill";
   /** Para parede: −1 bombordo, +1 estibordo. Para piso, ignorado. */
   side: -1 | 1;
   /** Centro do texto, em mundo. Para parede, `x` é resolvido da seção. */
@@ -333,6 +437,19 @@ export function createChamberPlan(river: RiverLayout | null): ChamberPlan {
     { surface: "floor", side: 1, x: -3.4, y: 0, z: -30, cap: 0.5, text: cotaLabel(-7) },
     // O fim do duto, no trecho reto depois do estreitamento.
     { surface: "wall", side: -1, x: 0, y: 1.2, z: -93.5, cap: 0.5, text: stationLabel(-93.5) },
+    // A última cota, na soleira — perto da borda da frente, onde a câmera do
+    // último quadro a lê de cima, e à direita do centro: a coluna do contato
+    // em DOM ocupa a metade esquerda do quadro, e a cota não pode ficar embaixo
+    // dela.
+    {
+      surface: "sill",
+      side: 1,
+      x: 1.5,
+      y: SILL_TOP,
+      z: PLAN_FAR + SILL_DEPTH - 0.85,
+      cap: 0.85,
+      text: SURFACE_COTA,
+    },
   ];
   // Cada nicho é uma estação do rio, e o número dela fica gravado no fundo da
   // baia, acima do card.

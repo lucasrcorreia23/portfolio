@@ -1,4 +1,5 @@
 import { MAX_CARDS } from "../cards";
+import { OUTSIDE_GLSL } from "./chamber";
 import { FOG_GLSL, FOG_UNIFORMS_GLSL } from "./fog";
 
 /**
@@ -80,6 +81,9 @@ void main() {
   // Corpos quase encostados na lente viram lascas do tamanho da tela. Encolhem
   // nos últimos três metros: o bando passa pela câmera, não por cima dela.
   float lensGuard = smoothstep(0.0, 3.0, distance(cameraPosition, center));
+  // Quem saiu pela tomada de ar está estacionado longe de tudo (ver PARKED em
+  // shaders/boids.ts): não desenha nada.
+  lensGuard *= step(-400.0, center.y);
 
   float stretch = 1.0 + vEnergy * 0.6;
   vec3 local = right * position.x + up * position.y + forward * position.z * stretch;
@@ -143,6 +147,7 @@ in float vAlong;
 out vec4 fragColor;
 
 ${FOG_GLSL}
+${OUTSIDE_GLSL}
 
 void main() {
   // A rampa do DIRECTION.md §5, nesta ordem: teal em cruzeiro, cyan em
@@ -217,7 +222,20 @@ void main() {
   float crowd = mix(mix(1.0, 7.0, lensNear), 0.5 + 1.25 * smoothstep(0.02, 0.10, vDensity), smoothstep(0.15, 0.6, uFormingFrag));
   float energy = uGain * (0.35 + 0.65 * tip) * (0.55 + 0.85 * vEnergy) * crowd;
 
-  vec3 lit = color * energy;
+  // Na Superfície a câmara ganha luz, e o bando no brilho da descida some
+  // contra ela — medido: dez mil corpos entre a lente e a tomada de ar em 0.875
+  // e nenhum legível no quadro. O ganho sobe com a luz de fora. (A primeira
+  // tentativa disto acendeu uma tempestade em volta da lente; o motivo era a
+  // virada do bando em cima da câmera, não o ganho — ver uExit nos boids.)
+  vec3 lit = color * energy * (1.0 + 1.4 * uOutside);
+  // **A Superfície: o corpo que atravessa uma lâmina de luz acende.** É a
+  // mesma conta da faixa na soleira (louverOpen), então um corpo só brilha
+  // --peach onde a luz de fora de fato passa — poeira contra o sol, e o jeito
+  // de o bando saindo ser visto contra a câmara iluminada, onde o --teal dele
+  // sumiria. Fora das frestas, e antes de 0.86, o termo é zero.
+  if (uOutside > 0.0) {
+    lit += uPeach * louverOpen(vWorld) * uOutside * (1.2 + 1.6 * tip);
+  }
   lit = applyFog(lit, vViewDepth, vWorld);
 
   fragColor = vec4(lit, 1.0);

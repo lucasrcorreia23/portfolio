@@ -85,6 +85,20 @@ dois divergirem, o `PROJECT.md` ganha. Este arquivo é só o mapa do código.
 
 ## Estado atual
 
+**A descida existe de ponta a ponta (rodada 11).** A Superfície fecha 0.85–1.00:
+a câmera vira do último card para a tomada de ar — aletas verticais na
+abertura, a luz de fora entrando em lâminas pela névoa, a cota ±00.000 gravada
+na soleira —, o bando dá a volta e sai pelas frestas, e o último quadro fica
+parado no viewport terminal com a câmara vazia e a luz. Contato em DOM (e-mail
+por extenso, perfis, idioma) e uma frase de despedida. Com ela vieram a passada
+de robustez — modo calmo verificado **na imagem** (`.screens/11-calmo.png`),
+posters para o modo sem WebGL, teclado de ponta a ponta, `hreflang`, Open Graph
+com imagem da cena, `sitemap.xml`, telefone com menos corpos e menos pixels,
+LCP de todas as rotas abaixo de 2.5 s — e **o véu trocou de mecanismo**: ele
+comprime a luz atrás do texto em vez de pintar uma sombra (ver "O véu de
+legibilidade"). Números em MEASUREMENTS.md, "A Superfície e a robustez,
+medidas".
+
 **Fundação, portão, e a cena com os quatro primeiros beats — com o descolamento,
 o poleiro e o corredor do rio.** Sobre o esqueleto — rotas, idiomas, tokens,
 escala tipográfica, driver de scroll, hooks de capacidade, pipeline de MDX —
@@ -251,6 +265,7 @@ npm run typecheck  # tsc --noEmit
 npm run collect    # o coletor de medições, em :3131 (ver "Desempenho da cena")
 npm run measure    # o orçamento de JS, lido do prerender desta build (ver abaixo)
 npm run covers     # regera as capas provisórias dos cases sem mídia real
+npm run covers:derive # a capa de entrega de cada case (public/covers/) — rode ao trocar uma capa
 ```
 
 Node 24 (`.nvmrc`); o mínimo do Next 16 é 20.9. Não há suíte de testes.
@@ -360,10 +375,18 @@ Estado medido, com o portão, a HUD e a cena dos quatro primeiros beats:
 
 | Rota / chunk | gz | contra |
 |---|---|---|
-| `/` e `/pt` — a descida, com portão, preloader, HUD e os links dos cards | **184.4 kB** | 200 kB ✅ |
-| `/work/[slug]` — o case, sem portão, **com a cena em chunk dinâmico** | **182.3 kB** | 200 kB ✅ |
-| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, campo de distância, descolamento, poleiro, véu medido, o corredor do rio, o conteúdo dele e **a travessia para o case** e **a câmara** (planta, loft, quadros, gravação, números) | **319.9 kB** | 350 kB ✅ |
+| `/` e `/pt` — a descida, com portão, preloader, HUD, os links dos cards, o controle de áudio, a Superfície e o poster sem WebGL | **186.6 kB** | 200 kB ✅ |
+| `/work/[slug]` — o case, sem portão, **com a cena em chunk dinâmico** | **184.9 kB** | 200 kB ✅ |
+| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, campo de distância, descolamento, poleiro, véu medido, o corredor do rio, o conteúdo dele e **a travessia para o case** e **a câmara** (planta, loft, quadros, gravação, números) e **a Superfície** (aletas, soleira, lâminas de luz, saída do bando) | **325.9 kB** | 350 kB ✅ |
 | chunk do driver de scroll (gsap + ScrollTrigger + lenis) | 48.0 kB | fora da rota inicial |
+
+**Rodadas 10 e 11.** O som custou 0.9 kB na rota inicial (o controle e os dois
+stores; o leito é um `import()` depois do gesto, num chunk à parte) e 0.2 kB no
+chunk da cena. A Superfície custou **5.8 kB** no chunk da cena (319.9 → 325.9 com
+o som): aletas e soleira na malha, o céu, as lâminas, a luz de fora no concreto
+e nos corpos, e a saída do bando nos boids e no proxy. Na rota inicial, 1.3 kB:
+o `ScenePoster` com o véu em 2D e o DOM da Superfície. **Sobram 24.1 kB do teto
+da cena** e 13.4 da rota inicial.
 
 `/work` não entra na tabela e não é esquecimento: ele lê `searchParams`, então é
 renderizado sob demanda e não há HTML pré-renderizado no disco para o
@@ -788,6 +811,20 @@ testados (4.5 a 7.5:1) estão em **MEASUREMENTS.md, "O véu de legibilidade"**.
 depois que o rio existisse (ver "O rio, medido" abaixo: já reavaliado, e o
 alvo ficou curto).
 
+**Rodada 11: o véu comprime a luz; ele não pinta sombra.** Até aqui ele
+misturava a caixa inteira para `--void` na força que o pixel mais claro atrás
+dela exigia, e um corpo aceso atrás de uma palavra escurecia a caixa toda —
+inclusive o que já era escuro. Na tela isso era um retângulo preto de borda
+borrada atrás do texto, e o Lucas o apontou como amador, em todo beat. Agora
+cada pixel é dobrado pela **própria** luminância: abaixo de 55% do teto nada
+muda, acima disso um joelho exponencial o aproxima do teto sem cruzá-lo, com a
+cor escalada (o matiz fica). O escuro continua escuro, então não existe caixa;
+o que cede é só o que é claro. O `f` resolvido virou o **portão** do véu (liga
+quando algo passa do teto, desliga devagar), não a força. Ver `applyVeil` em
+`shaders/post.ts`. A regra que sobra é de composição: **texto mora onde a cena
+já é escura** — a Superfície foi enquadrada assim, e é o que faz a compressão
+quase não aparecer.
+
 #### O rio, medido
 
 O beat de 0.45 a 0.85. Sete cards, esteira própria por SDF analítico, critério
@@ -904,6 +941,78 @@ teto suave `COVER_CEILING` (`shaders/cards.ts`). **Na peça atracada o teto sai*
 a entrega ao `<img>` do case precisa dos mesmos bytes, sem luz nem teto; é a
 rampa `docked` que faz a troca. Mexer nesse `mix` é mexer na costura da
 travessia.
+
+#### A Superfície
+
+O beat de 0.85 a 1.00, e o último quadro depois dele. Tudo que a tomada de ar
+tem mora em `chamber-plan.ts`, porque a malha, o concreto, as lâminas de luz e o
+bando precisam concordar sobre onde ela está:
+
+- **`OUTSIDE_LIGHT`** — a direção da luz de fora, quase axial (desce 0.55 por
+  unidade, desvio lateral de 0.22). Quase axial de propósito: as lâminas são
+  planos verticais, e só vistas de perfil elas se separam. A primeira versão
+  (venezianas horizontais, luz de cima) empilhava as oito lâminas num cone só
+  de névoa acesa.
+- **As aletas** (`LOUVER_*`, `louverGaps()`) — nove, verticais, giradas em
+  torno do próprio eixo: comem 48% do passo. A faixa acesa na soleira
+  (`louverOpen` no concreto) e o feixe no ar saem das mesmas bordas.
+- **As lâminas no ar** (`BEAM_*` em `shaders/chamber.ts`) — um prisma por
+  fresta, e o fragmento resolve analiticamente quanto do raio de visão
+  atravessa o prisma. De perfil, um fio claro; de frente, um véu fraco.
+  Aditivas, sem escrever profundidade, e colapsadas fora do volume de recorte
+  enquanto `uOutside` é zero.
+- **`uOutside`** (`outsideAt` em `curve.ts`) — mora nos uniforms da névoa, então
+  todo material o vê: o céu atrás das aletas, a névoa esquentando para
+  `--peach` perto da abertura, a luz de fora no concreto e nos corpos que
+  cruzam uma lâmina.
+- **A saída do bando** (`exitAt`, `uExit` nos boids e no proxy). Três lições,
+  cada uma de uma medição que deu zero corpo no quadro: a virada é
+  **decisiva** (um `smoothstep` até 0.3 da rampa, não proporcional), só vira
+  **quem está à frente da lente** (virar o bando em volta da câmera acende uma
+  tempestade de lascas), e sai **mais rápido que a câmera anda** (a −0.4 × drive
+  a câmera ultrapassava o bando e ele estacionava inteiro atrás dela). Quem
+  passa pela abertura, ou fica atrás da lente, **estaciona** em `PARKED` e não
+  renasce enquanto a saída durar — é isso que deixa o último quadro vazio.
+- **A última cota** — `SURFACE_COTA`, `COTA ±00.000`, gravada no topo da
+  soleira. O portão abre na cota −38.402, "onde se está antes de entrar"; a
+  descida termina na referência de nível, com as mesmas três casas.
+
+**O enquadramento serve ao texto.** A abertura fica na metade direita e a
+coluna de contato na esquerda, sobre concreto escuro; as lâminas descem para a
+direita, para longe dela. É o que dispensa o véu ali — medido com `?veil=0`.
+
+#### O modo calmo, e a armadilha que ele tinha
+
+`ComposedClock` assentava o bando **antes** de o laço mestre aplicar a pose da
+composição nova — o bando assentava com a câmera, o poleiro e a saída da
+anterior. O poleiro de Quem sou nunca ligava (a composição saía sem coluna) e
+o rio assentava com a câmera da Identidade. Só apareceu quando a verificação
+passou a ser **na imagem**. Agora há um quadro antes do assentamento, como a
+sonda já fazia. O rio assenta 240 passos (700 represam o bando contra as
+peças) e a Superfície 45 (700 levariam o bando inteiro embora).
+
+**`window.__calm.capture(beat)`** (só em dev, no `ComposedClock`) devolve o
+quadro composto lido do buffer do WebGL. É a fonte da folha `11-calmo.png`, dos
+posters e da imagem de Open Graph — `npm run measure` confere que ele não
+existe em produção.
+
+#### Os posters e o véu em 2D
+
+Sem WebGL, `ScenePoster` desenha `public/posters/<beat>.webp` num canvas 2D e
+troca por beat. **O véu vem junto, em 2D**: sem compositor, o texto ficava
+direto sobre as frestas (0.88:1); debaixo de cada `[data-veil]` o poster é
+escurecido só o quanto a luminância máxima dele ali exige, contra o mesmo
+`VEIL_CEILING`. **Regerar a cena é regerar os posters** — mexer num beat e não
+recapturar deixa este modo mostrando outro site.
+
+#### A capa de entrega
+
+`cover` no frontmatter diz qual é a capa; `coverSrc` é o que viaja —
+`public/covers/<slug>.webp`, derivado por `npm run covers:derive`. O case, a
+cena e o Open Graph leem o mesmo arquivo, então a entrega da travessia continua
+sendo os mesmos bytes. O original do Prime8 (PNG de 3840 px, 698 kB) punha o
+LCP do case em 10.8 s. **A build cai se a capa de entrega faltar**
+(`deliveryCover` em `lib/cases.ts`).
 
 #### O compositor
 
@@ -1661,33 +1770,32 @@ Nesta ordem, porque cada uma depende da anterior:
    `z` corrige isto de graça; até lá, `corridor()` precisa de várias chamadas e
    da mediana entre elas para não reportar a fase da lâmina como se fosse a peça.
    Ver o docblock de `footprint` em `lib/scene/probe-cards.ts`.
-5. A Superfície, e com ela os pontos de controle definitivos da curva da câmera
-   de 0.85 em diante (hoje provisórios, em `lib/scene/curve.ts`), a migração da
-   cor da fonte a montante para `--cyan` e `--peach`, e o valor de topo de
-   `sourceStrengthAt`, que hoje é um palpite documentado.
-
-   **E, por regra do PROJECT.md §7, a faixa medida de toda entrada que dispara
-   um portão visual sai junto.** O `L_cena` do véu já está feito, e o resultado
-   foi trocar o mecanismo — ver "O véu de legibilidade": o `f` não é mais
-   estimado nem clampado, ele é resolvido da luminância medida do próprio
-   quadro, e a faixa está registrada por caixa.
-6. Os posters do modo `poster`. O DIRECTION.md §5 manda renderizá-los "destas
-   mesmas composições", e três das cinco existem — gerar três agora garantiria
-   regerar as cinco depois.
+5. ~~A Superfície~~ — **feita na rodada 11**, com a curva de 0.85 em diante
+   resolvida, a cor da fonte viajando `--teal` → `--cyan` → `--peach`
+   (`sourceColorAt`) e o topo de `sourceStrengthAt` resolvido em 0.06 — a luz de
+   fora é `outsideAt`, não esta rampa. Ver "A Superfície".
+6. ~~Os posters do modo `poster`~~ — **feitos**, das cinco composições, com o
+   véu em 2D. Ver "Os posters e o véu em 2D".
 7. A rolagem sintética a 0.6 vh/s até o quadro de separação (DIRECTION.md §4),
-   cronometrada — o outro teste de portão. **A varredura de contraste está
-   feita** e mora em `__probe.contrast()`: ela desce na mesma taxa de 0.6 vh/s,
-   mede cada quadro e cada linha de texto, e passou em quatro condições (ver "O
-   véu de legibilidade"). O que falta dela é rodá-la na Superfície quando ela
-   existir — **no rio ela já rodou**, e o resultado está em MEASUREMENTS.md, "A
-   legibilidade, com capa de card atrás do texto". **Na rota de case também**,
-   em três condições: ver "A travessia para o case, medida".
+   cronometrada — o outro teste de portão. A varredura de contraste, que desce
+   na mesma taxa, **rodou na descida inteira** com o véu novo (rodada 11). O que
+   falta é a cronometragem do quadro de separação em si.
 8. **A composição do case no modo calmo.** O `ComposedClock` corta entre cinco
    composições fixas, uma por beat; a rota de case entra hoje pelo mesmo caminho
    da travessia, com o corte instantâneo em vez do voo — que é o que o
    DIRECTION.md §5 pede ("a troca é corte, não movimento de câmera") —, mas
    ninguém **mediu** o quadro que ela produz. É uma pose a mais na tabela do §5,
-   e ela cabe na mesma sessão que gerar os posters do item 6.
+   e `__calm.capture` já é o instrumento para ela.
+9. **O tempo de GPU na resolução certa e num celular.** O plano `descent`
+   (`?bench=1&plan=descent`) rodou no M5 a 1440×900 com DPR 1 — 1.3 Mpx, metade
+   do buffer nativo —, então os 13–15% do quadro que ele deu são o mesmo débito
+   de resolução do item 3. No telefone ele não rodou. E a linha 0 dos planos diz
+   `flock: 16384`, que desde a rodada 11 **não** é o padrão do telefone (9.216):
+   num celular, o passo 0 roda com 9.216 e reporta 16.384. Corrigir antes de
+   medir lá.
+10. **A varredura de contraste em inglês.** O Chrome desta bancada negocia `pt`
+   em `/`, e a varredura "em inglês" mediu o português. Precisa de
+   `Accept-Language` emulado na mesma conexão.
 
 O item que era o sétimo — verificar a cena num iPhone contra o piso de 30 fps —
 **está feito**: 4.62 ms de GPU por quadro, 55.6 fps, ver "Desempenho da cena,

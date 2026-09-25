@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 import type { ComponentType } from "react";
@@ -101,6 +102,14 @@ export type CaseFrontmatter = {
   summary_en: string;
   accent: AccentToken;
   cover: string;
+  /**
+   * A versão de **entrega** da capa — `public/covers/<slug>.webp`, derivada de
+   * `cover` por `npm run covers:derive`. Não é autoria: `cover` diz qual é a
+   * capa, e é isto que viaja pela rede, para o case, para a cena e para o Open
+   * Graph (ver `scripts/derive-covers.mjs` para o LCP que o arquivo original
+   * custava).
+   */
+  coverSrc: string;
   media: readonly CaseMedia[];
   disciplines: readonly Discipline[];
   river_rank: number;
@@ -149,7 +158,7 @@ export async function loadCase(slug: string): Promise<LoadedCase> {
   // que a travessia entrega, e a única que **precisa** de dimensão para o
   // retângulo existir antes de a imagem chegar.
   const wanted = new Set<string>([
-    frontmatter.cover,
+    frontmatter.coverSrc,
     ...frontmatter.media.map((item) => item.src),
   ]);
 
@@ -360,11 +369,27 @@ export function parseFrontmatter(
     summary_en: requireString(slug, record, "summary_en"),
     accent: requireOneOf(slug, record, "accent", ACCENT_TOKENS),
     cover: requireString(slug, record, "cover"),
+    coverSrc: deliveryCover(slug),
     media: parseMedia(slug, record["media"]),
     disciplines: disciplines as Discipline[],
     river_rank: requirePositiveInteger(slug, record, "river_rank"),
     generated: record["generated"] === true,
   };
+}
+
+/**
+ * A capa de entrega, e a build cai se ela faltar: sem esta checagem, esquecer
+ * de derivar devolveria em silêncio o arquivo original — o PNG de 698 kB que
+ * punha o LCP do case em 10.8 s.
+ */
+function deliveryCover(slug: string): string {
+  const src = `/covers/${slug}.webp`;
+  if (!existsSync(path.join(process.cwd(), "public", src))) {
+    throw new Error(
+      `content/cases/${slug}.mdx: falta a capa de entrega ${src}. Rode \`npm run covers:derive\`.`,
+    );
+  }
+  return src;
 }
 
 function requirePositiveInteger(

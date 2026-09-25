@@ -393,6 +393,7 @@ uniform vec4      uVeilBox[${MAX_VEIL_BOXES}];
 uniform float     uVeilF[${MAX_VEIL_BOXES}];
 uniform sampler2D uVeilSolved;
 uniform vec3      uVoid;
+uniform float     uVeilCeiling;
 
 ${DEPTH_GLSL}
 ${HASH_GLSL}
@@ -417,12 +418,11 @@ vec3 sampleFocused(vec2 uv, float blend) {
 }
 
 /**
- * O véu: o f resolvido da caixa, com queda suave para fora dela.
- *
- * A queda é larga de propósito — uma borda dura leria como caixa escura
- * acendendo, e o que ela precisa parecer é um banco de névoa. Ela é medida em
- * UV, então é mais larga em pixels na horizontal que na vertical; isso é o que
- * se quer, porque as caixas de texto também são.
+ * Onde o véu age: 1 dentro de uma caixa que precisa dele, caindo suave para
+ * fora dela. O f resolvido deixou de ser a **força** do véu e passou a ser só
+ * o portão dele — ele é zero quando nada atrás da caixa passa do teto, sobe no
+ * quadro em que alguma coisa passa, e desce devagar (o amortecimento
+ * assimétrico continua na passada de resolução).
  */
 float veilAmount(vec2 uv) {
   float total = 0.0;
@@ -432,14 +432,43 @@ float veilAmount(vec2 uv) {
     if (f <= 0.0) continue;
     vec2 d = max(uVeilBox[i].xy - uv, uv - uVeilBox[i].zw);
     float fall = 1.0 - smoothstep(0.0, ${VEIL_FALLOFF.toFixed(3)}, length(max(d, vec2(0.0))));
-    total = max(total, f * fall);
+    total = max(total, smoothstep(0.0, 0.05, f) * fall);
   }
   return total;
 }
 
-/* O termo do §5: mix em direção à cor da névoa. */
+/**
+ * **O véu comprime a luz; ele não pinta sombra.**
+ *
+ * A versão anterior misturava o quadro inteiro para --void dentro da caixa, na
+ * força que a luminância mais alta atrás dela exigia. Um único corpo aceso
+ * atrás de uma palavra escurecia a caixa **inteira** — inclusive a névoa e o
+ * concreto que já estavam escuros —, e o resultado era um retângulo preto de
+ * borda borrada atrás do texto: uma sombra projetada, e com cara de sombra
+ * projetada. O Lucas apontou na Superfície, e a mesma coisa acontecia em todo
+ * beat com texto sobre luz.
+ *
+ * Agora cada pixel é comprimido **pela própria luminância**: abaixo de 55% do
+ * teto nada muda, e acima disso a luz é dobrada por um joelho exponencial que
+ * se aproxima do teto sem cruzá-lo. O escuro continua exatamente o que era, então
+ * não existe caixa para ver; o que cede é só o que é claro — o corpo que passa
+ * atrás da coluna fica mais baixo enquanto passa, a fresta acesa atrás da
+ * frase perde o brilho, e a textura inteira continua lá. A cor é escalada, não
+ * substituída: o matiz não muda.
+ *
+ * O critério do DIRECTION.md §5 ("nenhum pixel sob a caixa passa de L")
+ * continua garantido, e agora **por construção** em cada pixel, e não pela
+ * estimativa do pior deles.
+ */
 vec3 applyVeil(vec3 color, vec2 uv) {
-  return mix(color, uVoid, veilAmount(uv));
+  float amount = veilAmount(uv);
+  if (amount <= 0.0) return color;
+  float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
+  float knee = uVeilCeiling * 0.55;
+  if (luma <= knee) return color;
+  float room = uVeilCeiling - knee;
+  float folded = knee + room * (1.0 - exp(-(luma - knee) / room));
+  return mix(color, color * (folded / luma), amount);
 }
 
 void main() {
