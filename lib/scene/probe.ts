@@ -10,6 +10,7 @@ import { CARD_HALF_HEIGHT, CARD_HALF_WIDTH, resolveRiver } from "./cards";
 import { hoverLatency, resetHoverLatency } from "./card-pick";
 import { installCorridor } from "./probe-cards";
 import { installChamberProbe } from "./probe-chamber";
+import { installRound12 } from "./probe-round12";
 import type { ChamberPlan } from "./chamber-plan";
 import { installContrast } from "./probe-contrast";
 import {
@@ -69,6 +70,8 @@ export type FlockRead = {
   size: number;
   position: () => WebGLRenderTarget | undefined;
   velocity: () => WebGLRenderTarget | undefined;
+  /** O material da passada de velocidade, para a sonda compilar um controle. */
+  velocityMaterial: { defines?: Record<string, unknown>; needsUpdate: boolean };
 };
 
 export type ProbeDeps = {
@@ -1125,6 +1128,26 @@ export function installProbe(deps: ProbeDeps): () => void {
     toLinear: SRGB_TO_LINEAR,
   });
 
+  const round12 = installRound12({
+    canvas: gl.domElement,
+    gl: context,
+    bindDefault: () => {
+      gl.setRenderTarget(null);
+    },
+    scene: scene as unknown as import("three").Object3D,
+    step,
+    settle: (progress, steps) => {
+      settle(progress, steps);
+    },
+    progressRef,
+    camera,
+    cards: deps.cards,
+    cardCount: deps.cardCount,
+    cardMask: deps.cardMask,
+    toLinear: SRGB_TO_LINEAR,
+    grain: sceneSettings().grain,
+  });
+
   const { contrast, descend, veilFootprint, warmth, readTextRects } =
     installContrast({
       canvas: gl.domElement,
@@ -1178,6 +1201,62 @@ export function installProbe(deps: ProbeDeps): () => void {
       mesh.visible = on;
       return on;
     },
+    /**
+     * Lista os objetos desenháveis da cena, com índice, tipo e contagem de
+     * vértices — e `objectVisible(i, on)` esconde um deles do quadro. É o
+     * instrumento de diagnóstico da rodada 12: para saber **qual** malha forma
+     * um retângulo na tela, tira-se uma de cada vez e olha-se o pixel.
+     */
+    objects: () => {
+      const rows: { index: number; type: string; vertices: number; visible: boolean }[] = [];
+      let index = 0;
+      scene.traverse((object) => {
+        const item = object as {
+          type?: string;
+          geometry?: { attributes?: { position?: { count: number } } };
+          visible?: boolean;
+        };
+        if (item.geometry === undefined) return;
+        rows.push({
+          index,
+          type: `${item.type ?? "?"}${"textRenderInfo" in object ? ":text" : ""}`,
+          vertices: item.geometry.attributes?.position?.count ?? 0,
+          visible: item.visible ?? true,
+        });
+        index += 1;
+      });
+      return rows;
+    },
+    objectVisible: (target: number, on: boolean) => {
+      let index = 0;
+      let hit = false;
+      scene.traverse((object) => {
+        const item = object as { geometry?: unknown; visible?: boolean };
+        if (item.geometry === undefined) return;
+        if (index === target) {
+          item.visible = on;
+          hit = true;
+        }
+        index += 1;
+      });
+      return hit;
+    },
+    readings: round12.readings,
+    /** O controle da onda: `true` compila a passada de velocidade sem ela. */
+    waveOff: (on: boolean) => {
+      const material = flockRef.current?.velocityMaterial;
+      if (material === undefined) throw new Error("bando não publicado");
+      material.defines ??= {};
+      if (on) material.defines["PROBE_NO_WAVE"] = 1;
+      else delete material.defines["PROBE_NO_WAVE"];
+      material.needsUpdate = true;
+      return on;
+    },
+    coverStats: round12.covers,
+    bodyExtent: round12.bodyExtent,
+    wave: round12.wave,
+    flatRegions: round12.flatRegions,
+    plate: round12.plate,
     presence: chamber.presence,
     parallax: chamber.parallax,
     engraving: chamber.engraving,
