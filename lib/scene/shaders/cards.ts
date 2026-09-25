@@ -480,6 +480,11 @@ void main() {
     color += mix(uMist, uCyan, clamp(glazing, 0.0, 1.0)) * clamp(glint, -0.2, 0.6);
   }
 
+#ifdef PROBE_BLACK
+  // Só a sonda define isto (probe-round12.ts, flatRegions): a peça sai preta
+  // antes da névoa. Em produção o bloco não existe no programa compilado.
+  color = vec3(0.0);
+#endif
   color = applyFog(color, vViewDepth, vWorld);
 
   fragColor = vec4(color, 1.0);

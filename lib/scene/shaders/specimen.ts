@@ -109,6 +109,11 @@ void main() {
 
   base += uSourceColor * upstreamLight(vWorld) * 0.35;
 
+#ifdef PROBE_BLACK
+  // Só a sonda define isto (probe-round12.ts, flatRegions): a face sai preta
+  // antes da névoa. Em produção o bloco não existe no programa compilado.
+  base = vec3(0.0);
+#endif
   base = applyFog(base, mix(vViewDepth, uSpecimenFogDepth, uSpecimenFogFlat), vWorld);
 
   // Alfa 1.0: quem o multiplica pela borda macia do glifo é o troika, no

@@ -118,8 +118,14 @@ const DIRECTED: readonly Stop[] = [
   { at: 0.175, position: [7.2, 0.4, SPECIMEN_Z + 12.1], target: [0.2, 0.0, SPECIMEN_Z] },
   { at: 0.21, position: [7.62, 0.35, SPECIMEN_Z + 11.74], target: [0.3, 0.0, SPECIMEN_Z - 0.3] },
   { at: 0.235, position: [6.2, 0.2, SPECIMEN_Z + 9.5], target: [0.0, 0.0, SPECIMEN_Z - 1.0] },
-  // Fim da Identidade: quase encostando, as letras varrendo o quadro.
-  { at: 0.28, position: [-0.7, -0.2, SPECIMEN_Z + 4], target: [0.0, 0.0, SPECIMEN_Z - 2] },
+  // Fim da Identidade: as letras varrendo o quadro **de lado**, pela ponta da
+  // palavra — e não por dentro dela. Até a rodada 11 a câmera atravessava o
+  // plano da peça em 0.32 dentro do contorno das letras, e em 0.31 uma face lisa
+  // de letra cobria 59–64% do quadro (medido, `__probe.flatRegions`). Agora ela
+  // desliza para estibordo com o olhar na palavra e cruza o plano depois do
+  // "A", fora do contorno de ±7.8, onde a peça é uma lâmina vista de perfil.
+  { at: 0.28, position: [8.0, 0.0, SPECIMEN_Z + 5], target: [-1.0, 0.0, SPECIMEN_Z - 2] },
+  { at: 0.31, position: [9.6, -0.1, SPECIMEN_Z + 0.5], target: [3.0, 0.0, SPECIMEN_Z - 10] },
   // Quem sou: a câmera deriva para a parede de estibordo e vira o olhar de
   // volta para o eixo. A régua fica no quadro o beat inteiro.
   { at: 0.34, position: [5.0, -0.2, -28.5], target: [1.8, 0.0, -42.0] },
