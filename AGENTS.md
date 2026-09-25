@@ -104,7 +104,7 @@ gravadas da `Structure`.
 **Quem sou está feito e medido** (ver "Quem sou, medido" e "O véu de
 legibilidade"): manifesto em coluna na margem esquerda com a lâmina de medida
 descendo por ela, poleiro colunar do bando contra a parede de estibordo, HUD
-permanente com contato, acervo, filtros, régua, áudio e idioma — e o véu de
+permanente com contato, acervo, filtros, régua e idioma — e o véu de
 legibilidade **refeito**, porque a varredura de contraste reprovou o mecanismo
 antigo com 1.21:1.
 
@@ -145,14 +145,16 @@ O clique num card leva a câmera até ele, a peça casa com o retângulo da capa
 DOM — **0.0024 px** de desencontro contra 212 px de controle — e entrega o pixel
 com 252 ms de sobreposição, sem nenhum quadro em que nenhuma das duas desenhe.
 Sair devolve a câmera ao progresso exato de onde saiu (Δ = 0.00000), pelos três
-caminhos: o controle da HUD, a lista de estações e o botão voltar do navegador.
+caminhos: o controle da HUD, a lista de estações (hoje os links invisíveis dos
+cards) e o botão voltar do navegador.
 Ver "A travessia para o case, medida" no MEASUREMENTS.md.
 
 Com ela vieram **a rota de case de verdade** (capa, metadados em mono, corpo com
-a mídia intercalada e medida de leitura conferida no pixel) e **a lista de
-estações do beat de Trabalho**, que é o caminho de teclado, de sem-JS e de
-indexação para os sete cases — até aqui o rio existia só na cena e não tinha
-`href` nenhum.
+a mídia intercalada e medida de leitura conferida no pixel) e **o caminho de
+teclado, de sem-JS e de indexação para os sete cases** — até aqui o rio existia
+só na cena e não tinha `href` nenhum. Ele nasceu como uma lista de estações
+visível e foi **retirado da tela** na rodada seguinte (6.5): hoje são links
+invisíveis, e o foco é mostrado pelo próprio card. Ver "Beats".
 
 **Não entraram nesta rodada, e é deliberado:** o corpo dos três cases
 placeholder e a tradução de `summary_en` (hoje cópia do português nos quatro
@@ -246,7 +248,7 @@ components/scene/      a cena 3D e o portão que escolhe qual versão roda
 components/work/       o DOM da rota de case: chegada e volta ao rio
 components/hud/        a HUD lateral fixa (substitui o rodapé; não há rodapé)
                        Hud (servidor) → HudPanel (colapso no mobile) → régua,
-                       leitura por beat, filtros do rio, áudio, idioma, acervo
+                       leitura por beat, filtros do rio, idioma, acervo
 components/beats/      as cinco seções da descida
 components/type/       DisplayLine — a linha de display que se auto-dimensiona
 content/cases/         os cases, em .mdx
@@ -336,9 +338,9 @@ Estado medido, com o portão, a HUD e a cena dos quatro primeiros beats:
 
 | Rota / chunk | gz | contra |
 |---|---|---|
-| `/` e `/pt` — a descida, com portão, preloader, HUD e a lista de estações | **184.0 kB** | 200 kB ✅ |
-| `/work/[slug]` — o case, sem portão, **com a cena em chunk dinâmico** | **183.0 kB** | 200 kB ✅ |
-| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, campo de distância, descolamento, poleiro, véu medido, o corredor do rio, o conteúdo dele e **a travessia para o case** | **310.5 kB** | 350 kB ✅ |
+| `/` e `/pt` — a descida, com portão, preloader, HUD e os links dos cards | **183.9 kB** | 200 kB ✅ |
+| `/work/[slug]` — o case, sem portão, **com a cena em chunk dinâmico** | **182.3 kB** | 200 kB ✅ |
+| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, campo de distância, descolamento, poleiro, véu medido, o corredor do rio, o conteúdo dele e **a travessia para o case** | **310.8 kB** | 350 kB ✅ |
 | chunk do driver de scroll (gsap + ScrollTrigger + lenis) | 48.0 kB | fora da rota inicial |
 
 `/work` não entra na tabela e não é esquecimento: ele lê `searchParams`, então é
@@ -368,13 +370,14 @@ camadas e o desenho da placa (`card-atlas.ts`), a geometria das duas regiões
 (`card-layout.ts`), o raycast analítico do ponteiro (`card-pick.ts`), o desvio
 lateral do filtro (`river-flow.ts`) e o material novo.
 
-**A travessia para o case custou 3.2 kB**, de 307.3 para 310.5: as duas poses e
+**A travessia para o case custou 3.2 kB**, de 307.3 para 310.5 (a retirada da
+rodada 6.5 — foco de teclado no card, `projectCard` — levou a 310.8): as duas poses e
 a inversão da curva (`case-pose.ts`), a máquina de estados por quadro
 (`case-drive.ts`), a textura de entrega com o recorte e as quatro passagens
 novas no material dos cards. **Sobram 39.5 kB do teto** para a Superfície.
 
-Na rota inicial ela custou 1.6 kB na home (a lista de estações e o store da
-travessia) e 7.4 kB no case, que ganhou três coisas que não tinha: a montagem da
+Na rota inicial ela custou 1.6 kB na home (a lista de estações — hoje os links
+invisíveis dos cards — e o store da travessia) e 7.4 kB no case, que ganhou três coisas que não tinha: a montagem da
 cena, o mesmo store e o `next/image` do corpo do artigo.
 
 As **texturas** não entram nesta conta e não deveriam: sete camadas de capa a
@@ -861,7 +864,9 @@ mais 1.45 s comeria da regra dos oito segundos sem nada em troca.
 **O áudio é sintetizado, não é arquivo.** `lib/audio/audio-context.ts` monta o
 baque de pressão com um oscilador grave caindo de tom mais um estouro de ruído
 filtrado — ~1 kB de código contra dezenas de kB de mp3. O módulo já expõe
-`getAudioContext()` e `setAudioMuted()` para o controle de áudio da HUD.
+`getAudioContext()` e `setAudioMuted()` para o controle de áudio da HUD — que
+**não existe hoje, de propósito**: saiu na rodada 6.5, porque um controle que
+liga e desliga o silêncio é pior que nenhum. Volta com a camada sonora.
 
 ### Tipografia e a regra dos 80%
 
@@ -992,10 +997,14 @@ antigo não tinha alt text nenhum, só placeholders como `"image-here"` — ent�
 escrever os dois idiomas ali não fere a regra de não traduzir conteúdo do
 Lucas, porque não é conteúdo dele.
 
-**`disciplines` e `river_rank` dos sete são curadoria, e `accent` continua
-sendo escolha de cor.** O DIRECTION.md §4 adiava a classificação por disciplina
-e o ranking do rio até ver os cards montados na cena; eles foram vistos (contact
-sheet em `.screens/05b-rio.png`) e a decisão está gravada:
+**`disciplines` e `river_rank` dos sete são curadoria, e a curadoria está
+PENDENTE.** O DIRECTION.md §4 adiava a classificação por disciplina e o ranking
+do rio até ver os cards montados na cena. A tabela abaixo **não** saiu disso: foi
+escrita pelo agente no commit `0061582`, lendo a lista de projetos, e registrada
+como decisão do Lucas sem ser. É **provisória** — o rio a monta porque precisa
+de uma ordem, mas nenhum agente a trata como fechada nem mexe nela; o que se
+entrega é a contact sheet dos sete cards montados, para o Lucas decidir (ver a
+pendência no DIRECTION.md §4, depois da matriz de disciplinas):
 
 | # | case | disciplinas | acento |
 |--:|---|---|---|
@@ -1008,9 +1017,10 @@ sheet em `.screens/05b-rio.png`) e a decisão está gravada:
 | 7 | Nestlé | produto · marca | coral |
 
 O corte do mobile são os quatro primeiros; 5, 6 e 7 continuam com rota
-`/work/[slug]` e na lista de acervo, em qualquer aparelho. A ordem é editorial —
-profundidade primeiro, alcance em seguida, ofício de marca fechando — e a
-justificativa de cada posto está na mensagem de commit desta rodada.
+`/work/[slug]` e na lista de acervo, em qualquer aparelho. A lógica que o
+agente deu à ordem ("profundidade primeiro, alcance em seguida, ofício de marca
+fechando") está na mensagem do commit `0061582` — é argumento dele, não decisão
+do Lucas.
 
 **A garantia "nenhum filtro devolve menos de dois cases" virou guarda de
 build**: `assertFilterFloor`, em `lib/cases.ts`, confere os três eixos contra o
@@ -1027,8 +1037,8 @@ não existem.
 
 **Estar no repositório não é estar no rio.** A curadoria é um ranking único
 obrigatório no frontmatter, `river_rank` — não um booleano, e não duas listas
-por aparelho —, decidido olhando os cards montados na cena, não lendo a lista
-de projetos. É obrigatório e único de propósito: um padrão implícito
+por aparelho —, a ser decidido olhando os cards montados na cena, não lendo a
+lista de projetos (a ordem de hoje é provisória, ver acima). É obrigatório e único de propósito: um padrão implícito
 decidiria a curadoria em silêncio, e dois cases no mesmo posto não formam uma
 ordem.
 
@@ -1063,24 +1073,32 @@ varre cada linha de cima para baixo, escalonada; **Quem sou é uma lâmina de
 medida que desce pela coluna** — recorte do bloco inteiro, com um fio de um pixel
 e uma marca de intervalo na ponta correndo na fronteira do recorte. A lâmina é
 ornamento e por isso pode ter alpha; o texto atrás dela não tem nenhum.
-**Trabalho é a lista de estações varrida da esquerda**, escalonada pelo índice,
-como a corrente de cotas que ela descreve.
+**Trabalho não tem texto em DOM visível** além da HUD e do rótulo do beat —
+quem fala ali é o rio.
 
-**E o beat de Trabalho ganhou DOM, que é o que torna o rio navegável.**
-`components/beats/WorkBeat.tsx` monta uma lista mono — uma linha por case curado,
-`EST. NNN · cliente · título · ano —, e **cada linha é um `<a>` de verdade**. Até
-aqui os sete cards viviam só na cena e `card-pick.ts` só escutava `pointermove`:
-não havia clique, não havia `href`, e o rio inteiro era inalcançável por teclado,
-sem JavaScript e para um indexador. É também a metade em DOM de "placas e títulos
-de card", que o DIRECTION.md §5 já contava entre os beats com texto sob luz
-variável.
+**O DOM do beat de Trabalho são sete links invisíveis, e é isso que torna o rio
+navegável.** `components/beats/StationList.tsx` monta um `<a>` de verdade por case
+curado, na ordem do `river_rank`, no HTML servido: é o caminho de teclado, de
+leitor de tela e de indexação, e funciona sem JavaScript. **Nenhum deles é
+visto.** Com a cena viva o foco é mostrado pela peça:
 
-O destaque da linha sai do **mesmo progresso** (o beat dividido em tantas faixas
-quantos são os cards), sem mecanismo novo e sem ler nada da cena — então ele
-continua funcionando em modo `poster`. E o clique daqui e o clique no card 3D são
-o mesmo clique: os dois chamam `enterCase()` com o mesmo slug, o mesmo posto e o
-mesmo progresso antes de navegar, que é o que garante que a volta caia no mesmo
-lugar pelas duas portas.
+- o link publica o índice em `lib/work/card-focus.ts` (fora do React, desenho do
+  `filter-store`);
+- `Cards.tsx` troca `uHoverCard` pelo card focado — a mesma marcação da passagem
+  do ponteiro: chanfro no acento, placa revelada —, pede `requestScrollTo` para o
+  `stationProgress` daquele card, e escreve o `transform` do link sobre a
+  projeção dele (`projectCard`, exportado de `card-pick.ts`, é a mesma conta do
+  teste de acerto);
+- sem cena (`poster`) não há peça para acender, e o link focado aparece em DOM
+  (`.card-link` em `globals.css`).
+
+**Por que não há lista visível.** A primeira versão era uma lista mono fixa na
+margem durante o beat inteiro. Nenhum documento a pedia, e ela pôs um índice de
+projetos por cima de um rio de projetos — onde texto sempre ganha de peça escura.
+O índice em DOM do site é o acervo, `/work`. **Não reintroduza.**
+
+O clique do link e o clique no card 3D continuam sendo o mesmo clique: os dois
+chamam `enterCase()` com o mesmo slug, posto e progresso antes de navegar.
 
 ### A HUD
 
@@ -1106,9 +1124,10 @@ Três coisas que parecem detalhe e não são:
 - **A leitura da cena não existe sem cena.** `readout-store.ts` publica
   `live: false` no poster, antes do chunk e depois dele; a HUD esconde a linha
   em vez de mostrar `0.00`, que seria um instrumento inventado.
-- **A preferência de áudio mora no módulo de áudio**, não no componente: o
-  controle existe antes do `AudioContext`, e "mudo antes de entrar" tem que
-  continuar mudo no clique de entrada.
+- **Não há controle de áudio, e é regra.** Controle não existe antes da coisa
+  controlada: o único som é o baque do portão. A preferência de mudo continua
+  morando no módulo de áudio, não num componente, para quando o controle voltar
+  com a camada sonora — "mudo antes de entrar" tem que continuar mudo no clique.
 - **O filtro do rio move o rio e o acervo.** Na descida ele promove as peças que
   casam e recua as outras; na HUD ele viaja como `?d=` para a entrada de acervo,
   e `/work` filtra a lista. Mesmo eixo, dois efeitos, nenhum botão morto.
@@ -1337,38 +1356,43 @@ saída, não a entrada.
    97.7–118.9 antes. E verificado que não é acaso: instrumentando o construtor
    de `AudioContext` antes do clique, **zero construções** no caminho do gesto.
 
-2. **O véu não se ancora à coluna de texto no mobile.** A 390×844 a casa da
-   leitura é item de flex em `flex-col`, e `align-items: stretch` faz a caixa
-   dela **não mudar** na virada do contador (342 → 342 px); quem encolhe é o
-   filho (342 → 29.8). O `ResizeObserver` observa a casa, então nunca dispara,
-   e o véu entregue fica em 718 px numa viewport de 390 — 184% da tela, com
-   luminância plana nos três terços (46.8 / 46.7 / 46.9 ×10⁻⁴), ou seja um
-   scrim de sangria total, que é o que o DIRECTION.md §5 veta pelo nome. No
-   desktop o mesmo código entrega erro de largura 0.0 px, porque ali o layout
-   resolve sozinho. Correção mínima: `w-fit` (ou `self-start`) na casa da
-   leitura e na `<p>` da cota — no-op em `md:flex-row`, e em `flex-col` faz a
-   caixa observada voltar a mudar. **Não invente um segundo caminho de
-   medição para o mobile.**
-3. **O véu salta em vez de acompanhar.** O comentário no código diz que
-   durante o deslize da cota "o véu acompanha o texto". Não acompanha: fica
-   congelado na caixa pré-deslize os 600 ms inteiros e vira de uma vez no
-   `transitionend` — 1723 → 520 px em 17 ms, degrau de +14.6% de luminância
-   sem curva, contra o PROJECT.md §3.3. E se a pessoa clicar *durante* os
-   600 ms — o instante mais provável, porque a seta acabou de aparecer — o
-   cleanup do efeito remove o `transitionend` e o véu nunca reancora.
-   Correção: reancorar por quadro enquanto o FLIP roda, em vez de esperar o
-   fim. São dois `getBoundingClientRect()` num DOM de seis nós por 600 ms.
+2. ~~**O véu não se ancora à coluna de texto no mobile.**~~ **Corrigido na
+   rodada 6.5**, com o `w-fit` que este item prescrevia, na casa da leitura e na
+   `<p>` da cota. Medido a 390×844: caixa do véu com **216 px** (a largura do
+   número) numa viewport de 390, contra os 342 px esticados de antes.
+3. ~~**O véu salta em vez de acompanhar.**~~ **Deixou de existir na rodada 6.5**,
+   pela raiz: a casa da leitura não desaba mais quando o contador vira o convite
+   (o número continua ocupando o layout, invisível, e o convite é desenhado por
+   cima dele — ver `GateInvite.tsx`). Sem desabamento a cota não se move, o FLIP
+   foi removido, e a caixa do véu é a mesma do carregamento à abertura.
 
-> **Os itens 2 e 3 precisam estar corrigidos antes do beat de manifesto**, e a
-> ordem não é arbitrária: o `w-fit` do item 2 **muda a caixa do véu**, e a
-> caixa do véu é justamente o que a varredura de contraste em 600 passos do
-> DIRECTION.md §5 vai medir. Corrigir depois de escrever a varredura invalida
-> a varredura; corrigir antes custa uma linha de CSS.
+**O convite ocupa a casa do número** (DIRECTION.md §4), com altura de
+algarismo, linha de base e margem idênticas às da leitura — medido: a seta
+reescalada ocupa de 65 a 190 px do recorte, os algarismos também. Há duas
+variantes, `glyph` (padrão) e `mark` (`?invite=mark`, só em dev), lado a lado em
+`.screens/065-convite.png`; **a escolha é do Lucas e está pendente**. A que
+perder sai do código.
+
+Contraste sob a leitura remedido depois da mudança de casa, lendo os pixels do
+canvas 2D atrás de cada caixa, quadro a quadro (1440×813, `pt`):
+
+| fase / caixa | `glyph` | `mark` |
+|---|---|---|
+| carregamento / número | 9.44:1 | 6.60:1 |
+| carregamento, pronta / cota | 14.79:1 | 14.79:1 |
+| pronta / convite | 12.56:1 | 12.66:1 |
+| abertura / convite | 10.97:1 | 9.08:1 |
+| abertura / cota | 10.40:1 | 10.13:1 |
+
+A diferença no carregamento entre as duas colunas não é do convite (que ainda
+não existe nessa fase): é o campo dormente, que é aleatório por carga. O piso de
+4.5:1 passa com folga nas duas.
 
 ### O que já está verificado e não precisa ser refeito
 
 Contraste sob a leitura, pior caso em quatro fases: carregamento 7.75:1,
-pronta 12.15:1, deslize 13.12:1, abertura 8.71:1 — piso de 4.5:1 do
+pronta 12.15:1, deslize 13.12:1, abertura 8.71:1 (antes da rodada 6.5; os
+números de agora estão na tabela acima) — piso de 4.5:1 do
 PROJECT.md §5, com folga em 1440×900, 1200, 1024, 800, 768, 390×844 e nos dois
 idiomas. Grão como pós sobre 100% do quadro (tripleto modal 5.5–6.6%, contra
 78.8% quando as lâminas eram DOM). Geometria da veneziana com ponto de fuga:

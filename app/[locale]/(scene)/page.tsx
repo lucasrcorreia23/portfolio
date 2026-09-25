@@ -19,7 +19,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
 
   // A curadoria do rio, em ordem de `river_rank`. Quem desce a mesma lista para
   // a **cena** é o layout do grupo (`(scene)/layout.tsx`); aqui ela serve à
-  // lista de estações em DOM, que é o caminho de teclado, de sem-JS e de
+  // links invisíveis dos cards em DOM, que são o caminho de teclado, de sem-JS e de
   // indexação para os mesmos cases.
   const river = (await getRiverCases()).map((entry) => ({
     rank: entry.frontmatter.river_rank,

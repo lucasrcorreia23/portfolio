@@ -3,7 +3,6 @@
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -17,7 +16,8 @@ import {
   type DormantField,
   type SlatState,
 } from "./dormant-field";
-import { ENTER_GLYPH, formatLevel, formatVelocity } from "./readout";
+import { GateInvite, readInviteVariant, type InviteVariant } from "./GateInvite";
+import { formatLevel, formatVelocity } from "./readout";
 
 /**
  * O portão — PROJECT.md §4 ("pré"), DIRECTION.md §4 ("pré — Portão").
@@ -37,8 +37,10 @@ import { ENTER_GLYPH, formatLevel, formatVelocity } from "./readout";
  * chegaram. Numa rede rápida o portão dura cerca de um segundo, que é o tempo
  * de a leitura assentar, e não um atraso plantado.
  *
- * **2. O convite.** Ao chegar a 100 o contador *vira* um caractere só: `↓`.
- * A palavra continua existindo como nome acessível do botão.
+ * **2. O convite.** Ao chegar a 100 o contador *vira* um caractere só: `↓`,
+ * desenhado na casa que o número ocupava — mesma linha de base, mesma margem,
+ * a altura dos algarismos (ver `GateInvite`). A palavra continua existindo como
+ * nome acessível do botão.
  *
  * **3. A abertura.** O clique destrava o áudio, libera a descida e dispara a
  * veneziana — as três, síncronas, no mesmo handler. A transição não é um
@@ -171,17 +173,6 @@ const READOUT_AIM = 1.03;
 const OPEN_MS = DURATION.gate * 1000;
 const CUT_MS = DURATION.cut * 1000;
 
-/**
- * `useLayoutEffect` no cliente, `useEffect` no servidor.
- *
- * O deslocamento da cota é medido entre a mutação do DOM e o quadro seguinte —
- * é layout, não efeito passivo. Mas o portão renderiza no servidor, e chamar
- * `useLayoutEffect` lá gera aviso. O React não roda efeito nenhum no servidor,
- * então a troca não muda comportamento: só cala um aviso que não tem conteúdo.
- */
-const useIsomorphicLayoutEffect =
-  typeof window === "undefined" ? useEffect : useLayoutEffect;
-
 export function GateOverlay({
   label,
   enter,
@@ -208,7 +199,9 @@ export function GateOverlay({
    * dela de fora — o deslize da cota termina depois, e é lá que a caixa
    * definitiva existe.
    */
-  const anchorVeilRef = useRef<() => void>(() => {});
+  // Lido uma vez no cliente. Só o convite o usa, e o convite só existe depois
+  // de `ready` — então o servidor nunca renderiza a variante.
+  const [invite] = useState<InviteVariant>(readInviteVariant);
 
   /** Progresso real do carregamento, 0 a 1. */
   const targetRef = useRef(0);
@@ -364,22 +357,16 @@ export function GateOverlay({
       }
     };
     window.addEventListener("resize", onResize);
-    anchorVeilRef.current = anchorVeil;
     anchorVeil();
 
-    // **O véu tem que reagir ao desabamento da leitura.**
+    // **O véu se reancora quando a casa da leitura muda de tamanho.**
     //
-    // Ancorar uma vez na montagem não basta, e o erro é silencioso: quando o
-    // contador vira a seta, a casa desaba de ~680 px para ~107 px, e um véu
-    // ancorado antes disso continua entregando a caixa antiga — 57% da
-    // largura da tela para proteger uma coluna de 17%. O cálculo estava
-    // certo; faltava o fio de ciclo de vida, e medir o que o código *calcula*
-    // em vez do que ele *entrega* não pega isso.
-    //
-    // Um `ResizeObserver` cobre as três causas de uma vez: a virada de fase, a
-    // troca de fonte (a mono é `display: swap` e pode chegar depois da
-    // hidratação, deixando a única medição com métrica de fallback) e o modo
-    // calmo, onde o quadro é um só e não haveria segunda chance.
+    // A casa não desaba mais na virada do contador (o convite é desenhado por
+    // cima do número), mas ela ainda muda em dois casos: a troca de fonte (a
+    // mono é `display: swap` e pode chegar depois da hidratação, deixando a
+    // única medição com métrica de fallback) e o modo calmo, onde o quadro é
+    // um só e não haveria segunda chance. Medir o que o código *calcula* em vez
+    // do que ele *entrega* não pega nenhum dos dois — daí o observador.
     const observer = new ResizeObserver(() => {
       anchorVeil();
       if (reducedMotion) {
@@ -483,62 +470,6 @@ export function GateOverlay({
     };
   }, [reducedMotion, setPhase, writeVelocity]);
 
-  /* --- O desabamento da leitura ------------------------------------------
-   * Quando o contador vira a seta, a casa da leitura encolhe ~570 px e a cota
-   * vem junto. Sem isto ela **salta** a distância inteira num quadro, e o
-   * PROJECT.md §3.3 não abre exceção: "nada é linear, toda transformação passa
-   * por amortecimento ou easing de saída forte". É o instante mais olhado do
-   * portão para se ter um corte seco.
-   *
-   * A técnica é FLIP: mede onde a cota estava, deixa o layout novo acontecer,
-   * devolve ela para o lugar antigo com um `transform` e solta a curva. O
-   * layout nunca é disputado — só a pintura. Reservar a largura do número
-   * também tiraria o salto, mas devolveria os 690 px de nada entre a seta e a
-   * cota, e travaria a caixa do véu na largura antiga.
-   */
-  const levelXRef = useRef<number | null>(null);
-
-  useIsomorphicLayoutEffect(() => {
-    const level = levelRef.current;
-    if (level === null) return;
-
-    const next = level.getBoundingClientRect().left;
-    const previous = levelXRef.current;
-    levelXRef.current = next;
-
-    // Primeira medição, ou nada se moveu.
-    if (previous === null || Math.abs(previous - next) < 1) return;
-    // O modo calmo corta; ele não desliza (DIRECTION.md §5).
-    if (reducedMotion === true) {
-      anchorVeilRef.current();
-      return;
-    }
-
-    level.style.transition = "none";
-    level.style.transform = `translateX(${(previous - next).toFixed(1)}px)`;
-
-    // `getBoundingClientRect()` inclui transform, e o véu se ancora nele: com
-    // a cota deslocada, a caixa medida é a antiga. Isso é o certo *durante* o
-    // deslize — o véu acompanha o texto —, mas no fim ele precisa reancorar,
-    // e nada mais dispara isso: o `ResizeObserver` observa a casa da leitura,
-    // que já parou de mudar de tamanho. Sem esta reancoragem o véu fica preso
-    // na largura de carregamento para sempre.
-    const settle = () => {
-      anchorVeilRef.current();
-    };
-    level.addEventListener("transitionend", settle, { once: true });
-
-    const raf = requestAnimationFrame(() => {
-      level.style.transition = `transform var(--dur-aperture) var(--ease-strong)`;
-      level.style.transform = "translateX(0)";
-    });
-
-    return () => {
-      cancelAnimationFrame(raf);
-      level.removeEventListener("transitionend", settle);
-    };
-  }, [phase, reducedMotion]);
-
   /* --- O corte do modo calmo --------------------------------------------- */
   useEffect(() => {
     if (phase !== "opening" || reducedMotion !== true) return;
@@ -641,32 +572,34 @@ export function GateOverlay({
         className="gate-readout absolute inset-x-0 bottom-0 px-6 pb-10 md:px-12 md:pb-12"
       >
         <div className="flex flex-col gap-2 md:flex-row md:items-baseline md:gap-10">
-          {/* A casa da leitura **não** tem largura fixa.
-              Reservar a largura do contador impedia a cota de dar um pulo
-              quando o número virava a seta — mas deixava 690px de nada entre
-              os dois únicos elementos do quadro, e o quadro pronto é o que a
-              pessoa olha e clica. A linha fechar quando a leitura acaba é a
-              troca certa: o instrumento se recolhe, sobra o convite. */}
-          <div ref={slotRef} className="type-mono text-readout text-mist">
-            {phase === "loading" ? (
-              <p aria-hidden="true">
-                {/* O conteúdo é escrito pelo laço, não pelo React: sessenta
-                    renders por segundo para trocar seis dígitos seria caro e
-                    desnecessário. Como o componente não re-renderiza durante
-                    o carregamento, o valor inicial do JSX e o laço nunca
-                    brigam pelo mesmo nó. */}
-                <span ref={velocityRef}>{formatVelocity(0)}</span>
-                <span className="text-hud ml-3">{unit}</span>
-              </p>
-            ) : (
+          {/* A casa da leitura **não desaba**. O número continua ocupando o
+              layout depois de chegar a 100 — invisível — e o convite é
+              desenhado por cima dele, na mesma linha de base e na mesma margem
+              (DIRECTION.md §4: "o convite ocupa exatamente a casa que o número
+              ocupava"). A cota não se move, então não há deslize para
+              amortecer, e a caixa do véu é a mesma do começo ao fim. */}
+          <div ref={slotRef} className="relative w-fit type-mono text-readout text-mist">
+            <p
+              aria-hidden="true"
+              className={phase === "loading" ? "" : "invisible"}
+            >
+              {/* O conteúdo é escrito pelo laço, não pelo React: sessenta
+                  renders por segundo para trocar seis dígitos seria caro e
+                  desnecessário. Como o componente não re-renderiza durante
+                  o carregamento, o valor inicial do JSX e o laço nunca
+                  brigam pelo mesmo nó. */}
+              <span ref={velocityRef}>{formatVelocity(0)}</span>
+              <span className="text-hud ml-3">{unit}</span>
+            </p>
+            {phase === "loading" ? null : (
               <button
                 ref={buttonRef}
                 type="button"
                 aria-label={enter}
                 onClick={open}
-                className="gate-enter"
+                className="gate-enter absolute inset-0 text-left"
               >
-                {ENTER_GLYPH}
+                <GateInvite variant={invite} />
               </button>
             )}
           </div>
@@ -674,7 +607,7 @@ export function GateOverlay({
           <p
             ref={levelRef}
             aria-hidden="true"
-            className="type-mono text-hud text-mist"
+            className="w-fit type-mono text-hud text-mist"
           >
             {levelLabel} {formatLevel()}
           </p>

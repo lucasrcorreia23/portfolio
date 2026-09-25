@@ -9,11 +9,6 @@
     "github": "GitHub",
     "x": "X"
   },
-  "audio": {
-    "label": "Audio",
-    "on": "ON",
-    "off": "MUTED"
-  },
   "filters": "Filters",
   "language": "Language",
   "progress": "Progress",

@@ -117,15 +117,37 @@
     will-change: transform;
   }
 
+  /* O botão cobre a casa inteira do número (ver `GateInvite`); quem se move
+     é só o convite dentro dela. */
   .gate-enter {
     cursor: pointer;
+    outline: none;
+  }
+
+  /* `line-height: 0`: o glifo é reescalado para a altura dos algarismos, e um
+     inline-block mais alto que a linha empurraria a linha de base para baixo —
+     medido, ~10 px abaixo da do número. Sem altura de linha própria, a linha
+     é a do número e o convite assenta nela. */
+  .gate-invite {
+    display: inline-block;
+    line-height: 0;
     transition: transform var(--dur-aperture) var(--ease-strong);
   }
 
-  /* O convite desce dois pixels ao ser apontado. É a mesma direção que ele
-     está propondo. */
-  .gate-enter:hover,
-  .gate-enter:focus-visible {
+  .gate-invite-glyph {
+    display: inline-block;
+  }
+
+  .gate-invite-mark {
+    display: inline-block;
+    vertical-align: baseline;
+  }
+
+  /* O convite desce ao ser apontado. É a mesma direção que ele está
+     propondo — e é também o foco visível do teclado: o contorno do navegador
+     seria uma caixa de 680 px em volta de um caractere. */
+  .gate-enter:hover .gate-invite,
+  .gate-enter:focus-visible .gate-invite {
     transform: translateY(0.06em);
   }
 
@@ -276,64 +298,47 @@
   }
 
   /* ---------------------------------------------------------------------
-   * Trabalho: a lista de estações.
+   * Trabalho: os links dos cards.
    *
-   * A entrada é a mesma família das outras — varredura de recorte, escalonada
-   * pelo índice —, e pelo mesmo motivo de contraste: o piso de 4.5:1 vale
-   * durante a entrada, e uma rampa de opacidade mostraria a lista inteira em
-   * contraste reduzido.
-   *
-   * O acento entra só como uma marca de intervalo à esquerda, e só sob filtro:
-   * o DIRECTION.md §4 diz que o filtro **promove** em vez de remover, e uma
-   * lista que reordenasse seria o "cards trocando de lugar" que ele veta pelo
-   * nome. A linha da peça que a câmera está passando ganha a marca em `--cyan`,
-   * que é a mesma leitura da régua da HUD: onde você está.
+   * Um link por card curado, no HTML servido e na ordem da curadoria, e
+   * **invisível**. Com a cena viva quem mostra o foco é a própria peça — o laço
+   * dos cards acende o chanfro, revela a placa e escreve o `transform` deste
+   * link sobre a projeção do card —, então o contorno do navegador sai. Sem
+   * cena (`poster`, ou antes de ela montar) não há peça para acender, e o link
+   * focado aparece em DOM, na margem, com a marca de intervalo em `--cyan`.
    * ------------------------------------------------------------------- */
-  .station-row {
-    --station-mark: transparent;
-    position: relative;
-    padding-left: 0.875rem;
-    clip-path: inset(0 calc((1 - var(--reveal)) * 100%) 0 0);
+  .card-links {
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
-  .station-row::before {
-    content: "";
-    position: absolute;
+  .card-link {
+    position: fixed;
+    top: 0;
     left: 0;
-    top: 0.15em;
-    width: 1px;
-    height: 1.1em;
-    background-color: var(--station-mark);
-    transition: background-color var(--dur-snap) var(--ease-strong);
-  }
-
-  .station-row[data-promoted="true"] {
-    --station-mark: var(--station-accent);
-  }
-
-  .station-row[data-near="true"] {
-    --station-mark: var(--cyan);
-  }
-
-  .station-link {
-    display: grid;
-    gap: 0.15rem;
-  }
-
-  .station-cota,
-  .station-meta {
     display: block;
+    opacity: 0;
+    pointer-events: none;
+    overflow: hidden;
+    white-space: nowrap;
+    outline: none;
+    transform-origin: 0 0;
   }
 
-  .station-title {
-    display: block;
-    color: var(--mist);
-    transition: color var(--dur-snap) var(--ease-strong);
-  }
-
-  .station-link:hover .station-title,
-  .station-row[data-near="true"] .station-title {
+  html:not([data-scene-mode="driven"]):not([data-scene-mode="composed"])
+    .card-link:focus-visible,
+  .card-link[data-card-link-off-river="true"]:focus-visible {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: auto;
+    height: auto;
+    transform: none;
+    opacity: 1;
+    padding-left: 0.875rem;
     color: var(--cyan);
+    box-shadow: inset 1px 0 0 var(--cyan);
   }
 
   /* O ponteiro sobre uma peça do rio. A camada da cena é `pointer-events-none`

@@ -172,6 +172,41 @@ export function pickDiagnostic(): PickDiagnostic {
  */
 let resolved = -1;
 
+/**
+ * Projeta os quatro cantos de um card em pixels de CSS da viewport.
+ *
+ * Escreve em `out` na ordem (−x−y, +x−y, +x+y, −x+y) e devolve `false` quando
+ * algum canto está atrás da lente — a projeção espelha, e o quad vira um laço.
+ * É a mesma conta que o teste de acerto usa, exportada para o foco de teclado
+ * (`Cards.tsx`) posicionar o link sobre a peça sem uma segunda descrição dela.
+ */
+export function projectCard(
+  card: Vector4,
+  viewProjection: Matrix4,
+  width: number,
+  height: number,
+  out: Float64Array,
+  scratch: Vector3,
+): boolean {
+  const c = Math.cos(card.w);
+  const s = Math.sin(card.w);
+  for (let k = 0; k < 4; k += 1) {
+    const sx = k === 0 || k === 3 ? -1 : 1;
+    const sy = k < 2 ? -1 : 1;
+    scratch
+      .set(
+        card.x + c * sx * CARD_HALF_WIDTH,
+        card.y + sy * CARD_HALF_HEIGHT,
+        card.z - s * sx * CARD_HALF_WIDTH,
+      )
+      .applyMatrix4(viewProjection);
+    if (scratch.z > 1) return false;
+    out[k * 2] = (scratch.x * 0.5 + 0.5) * width;
+    out[k * 2 + 1] = (0.5 - scratch.y * 0.5) * height;
+  }
+  return true;
+}
+
 /** Ponto em quad convexo, por sinal consistente dos produtos vetoriais. */
 function inside(px: number, py: number, quad: ArrayLike<number>): boolean {
   let sign = 0;
@@ -229,13 +264,13 @@ export function installCardPick(options: CardPickOptions = {}): CardPick {
    * O clique na peça.
    *
    * **Ele é ouvido, e não capturado.** Um `capture: true` chegaria antes do
-   * `onClick` do link da lista de estações e navegaria duas vezes; ouvindo na
+   * `onClick` do link do card e navegaria duas vezes; ouvindo na
    * fase de bolha, quem tem dono trata primeiro e este teste sai fora.
    *
    * Modificadores passam batido de propósito: `cmd+clique` num card não tem o
-   * que abrir em aba nova, porque o card não é um `href` — quem quer isso usa a
-   * lista de estações, que é um link de verdade. Fingir a semântica de um link
-   * aqui seria pior que não tê-la.
+   * que abrir em aba nova, porque o card não é um `href` — quem quer isso usa o
+   * link invisível do card (`StationList`), que é um link de verdade. Fingir a
+   * semântica de um link aqui seria pior que não tê-la.
    */
   const onClick = (event: MouseEvent) => {
     if (options.onActivate === undefined) return;
@@ -280,8 +315,6 @@ export function installCardPick(options: CardPickOptions = {}): CardPick {
     for (let i = 0; i < limit; i += 1) {
       const card = chain[i];
       if (card === undefined) continue;
-      const c = Math.cos(card.w);
-      const s = Math.sin(card.w);
       const depth = point
         .set(card.x, card.y, card.z)
         .distanceTo(camera.position);
@@ -301,25 +334,7 @@ export function installCardPick(options: CardPickOptions = {}): CardPick {
         continue;
       }
 
-      let behind = false;
-      for (let k = 0; k < 4; k += 1) {
-        const sx = k === 0 || k === 3 ? -1 : 1;
-        const sy = k < 2 ? -1 : 1;
-        point
-          .set(
-            card.x + c * sx * CARD_HALF_WIDTH,
-            card.y + sy * CARD_HALF_HEIGHT,
-            card.z - s * sx * CARD_HALF_WIDTH,
-          )
-          .applyMatrix4(matrix);
-        // Atrás da lente: a projeção espelha e o quad vira um laço.
-        if (point.z > 1) {
-          behind = true;
-          break;
-        }
-        quad[k * 2] = (point.x * 0.5 + 0.5) * width;
-        quad[k * 2 + 1] = (0.5 - point.y * 0.5) * height;
-      }
+      const behind = !projectCard(card, matrix, width, height, quad, point);
       if (process.env.NODE_ENV !== "production") {
         const xs = [quad[0] ?? 0, quad[2] ?? 0, quad[4] ?? 0, quad[6] ?? 0];
         const ys = [quad[1] ?? 0, quad[3] ?? 0, quad[5] ?? 0, quad[7] ?? 0];

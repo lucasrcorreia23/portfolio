@@ -52,6 +52,7 @@ import { request } from "node:http";
  *                                               --emulate= --reduced= --click=
  *                                               --sleep= --shot=]
  *   node scripts/cdp.mjs sweep '{"points":[[x,y],...],"gapMs":70}'
+ *   node scripts/cdp.mjs key Tab|Enter [--times= --gap=]
  *   node scripts/cdp.mjs targets
  */
 
@@ -156,6 +157,17 @@ if (command === "targets") {
 
 const cdp = connect(target.webSocketDebuggerUrl);
 await cdp.ready;
+
+/**
+ * A página acredita ter o foco de sistema, enquanto esta conexão viver.
+ *
+ * Sem isto, com a janela atrás de outro aplicativo (o estado normal de uma
+ * sessão dirigida por ferramenta), `Tab` move `activeElement` mas os eventos
+ * `focus`/`blur` e `:focus-visible` não disparam — e um teste de teclado mede
+ * uma página que não recebeu teclado nenhum. Ligado sempre: nenhuma medição
+ * deste repositório quer o comportamento de janela desfocada.
+ */
+await cdp.send("Emulation.setFocusEmulationEnabled", { enabled: true });
 
 /* --- os pré-ajustes, na mesma conexão do comando ------------------------- */
 
@@ -302,6 +314,34 @@ if (command === "click") {
     });
   }
   console.log(JSON.stringify({ clicked: [x, y] }));
+  cdp.close();
+  process.exit(0);
+}
+
+/**
+ * Teclas de verdade — `key Tab`, `key Enter`, `key Tab --times=3`.
+ *
+ * Um `element.focus()` avaliado na página **não** é o mesmo que `Tab`: sem a
+ * janela com foco de sistema o Chrome move `activeElement` e adia o evento
+ * `focus`, e nenhum ouvinte de foco dispara. Medido aqui — o link dizia ser o
+ * elemento ativo e o store de foco continuava em −1. O evento de teclado por
+ * CDP passa pelo mesmo caminho que a pessoa, então é ele que prova teclado.
+ */
+const KEYS = {
+  Tab: { key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 },
+  Enter: { key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r" },
+};
+
+if (command === "key") {
+  const spec = KEYS[payload];
+  if (spec === undefined) throw new Error(`tecla desconhecida: ${payload}`);
+  const times = Number.parseInt(flag("times") ?? "1", 10);
+  for (let i = 0; i < times; i += 1) {
+    await cdp.send("Input.dispatchKeyEvent", { type: "keyDown", ...spec });
+    await cdp.send("Input.dispatchKeyEvent", { type: "keyUp", ...spec });
+    await new Promise((done) => setTimeout(done, Number.parseInt(flag("gap") ?? "60", 10)));
+  }
+  console.log(JSON.stringify({ key: payload, times }));
   cdp.close();
   process.exit(0);
 }

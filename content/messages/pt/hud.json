@@ -9,11 +9,6 @@
     "github": "GitHub",
     "x": "X"
   },
-  "audio": {
-    "label": "Áudio",
-    "on": "ON",
-    "off": "MUDO"
-  },
   "filters": "Filtros",
   "language": "Idioma",
   "progress": "Progresso",

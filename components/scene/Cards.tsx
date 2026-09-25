@@ -6,6 +6,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import {
   BufferAttribute,
   Color,
+  Matrix4,
   GLSL3,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
@@ -16,19 +17,29 @@ import {
 } from "three";
 import { localeOf, localizePath } from "@/lib/i18n/config";
 import { damp } from "@/lib/motion";
+import { getCardFocus, subscribeToCardFocus } from "@/lib/work/card-focus";
 import { enterCase } from "@/lib/work/case-transition";
 import {
   getRiverFilter,
   subscribeToRiverFilter,
   type RiverFilter,
 } from "@/lib/work/filter-store";
-import { getScrollProgress } from "@/lib/scroll/scroll-store";
+import {
+  getScrollProgress,
+  getScrollRole,
+  requestScrollTo,
+} from "@/lib/scroll/scroll-store";
 import { createCardAtlas } from "@/lib/scene/card-atlas";
 import {
   PLATE_LAYER_HEIGHT,
   PLATE_LAYER_WIDTH,
 } from "@/lib/scene/card-layout";
-import { installCardPick, type CardPick } from "@/lib/scene/card-pick";
+import {
+  installCardPick,
+  projectCard,
+  type CardPick,
+} from "@/lib/scene/card-pick";
+import { stationProgress } from "@/lib/scene/case-pose";
 import {
   CARD_HALF_HEIGHT,
   CARD_HALF_WIDTH,
@@ -196,7 +207,7 @@ export function Cards({ shared, river }: CardsProps) {
   }, [shown, pathname]);
 
   /**
-   * O clique numa peça — e ele é o **mesmo** clique da lista de estações.
+   * O clique numa peça — e ele é o **mesmo** clique do link do card.
    *
    * Os dois chamam `enterCase` com o mesmo slug, o mesmo posto e o mesmo
    * progresso, e só então navegam. É isso que faz a travessia ser idêntica pelas
@@ -383,6 +394,12 @@ export function Cards({ shared, river }: CardsProps) {
   const settled = useRef(true);
   /** Último card sob o ponteiro, para o atributo e o prefetch não repetirem. */
   const lastHover = useRef(-1);
+  /** Rascunho da projeção do card focado — alocado uma vez. */
+  const focusScratch = useRef({
+    matrix: new Matrix4(),
+    point: new Vector3(),
+    quad: new Float64Array(8),
+  });
 
   useEffect(() => {
     return () => {
@@ -407,6 +424,45 @@ export function Cards({ shared, river }: CardsProps) {
       settled.current = false;
     });
   }, []);
+
+  /**
+   * O foco do teclado leva a câmera até a peça.
+   *
+   * O link é invisível e o foco é mostrado pelo card, então um card focado fora
+   * da tela seria um foco que ninguém vê. Ao receber o foco, a descida é levada
+   * ao progresso em que aquele card está à distância de leitura — o mesmo
+   * `stationProgress` que a volta do case usa. Só na descida: num case o
+   * progresso está congelado e rolar seria mover a página errada.
+   */
+  /**
+   * Link de case sem peça na cena: o foco dele aparece em DOM.
+   *
+   * O HTML serve os sete links em qualquer aparelho, mas o mobile monta só os
+   * quatro primeiros postos. Um link além do corte não tem card para acender, e
+   * foco invisível é foco nenhum — então ele ganha o mesmo tratamento do modo
+   * `poster` (`.card-link` em `globals.css`).
+   */
+  useEffect(() => {
+    const links = document.querySelectorAll<HTMLElement>("[data-card-link]");
+    for (const link of links) {
+      const index = Number(link.getAttribute("data-card-link"));
+      if (index >= layout.count) link.setAttribute("data-card-link-off-river", "true");
+      else link.removeAttribute("data-card-link-off-river");
+    }
+    return () => {
+      for (const link of links) link.removeAttribute("data-card-link-off-river");
+    };
+  }, [layout]);
+
+  useEffect(() => {
+    return subscribeToCardFocus((focus) => {
+      if (focus.index < 0) return;
+      if (getScrollRole() !== "descent") return;
+      const card = layout.cards[focus.index];
+      if (card === undefined) return;
+      requestScrollTo(stationProgress(card.z));
+    });
+  }, [layout]);
 
   useEffect(() => {
     return () => {
@@ -517,13 +573,51 @@ export function Cards({ shared, river }: CardsProps) {
     if (pick !== null) {
       const active = shared.cardAmount.value > 0.001;
       const hovered = pick.resolve(camera, shared.cards.value, count, active);
-      uniforms.uHoverCard.value = hovered;
+
+      // O foco do teclado ganha do ponteiro: é a mesma marcação (chanfro no
+      // acento, placa revelada), e o link focado é invisível — sem a peça acesa
+      // não haveria foco visível nenhum.
+      const focus = getCardFocus();
+      const focused = focus.index >= 0 && focus.index < count ? focus.index : -1;
+      const marked = focused >= 0 ? focused : hovered;
+      uniforms.uHoverCard.value = marked;
       uniforms.uHoverAmount.value = damp(
         uniforms.uHoverAmount.value,
-        hovered >= 0 ? 1 : 0,
+        marked >= 0 ? 1 : 0,
         HOVER_DAMP,
         dt,
       );
+
+      // E o link focado vai para cima da projeção da peça: é o retângulo que
+      // uma lupa de tela, um leitor de tela com realce e o próprio navegador
+      // (`scrollIntoView` do foco) usam para saber onde o foco está.
+      const slot = focused >= 0 ? shared.cards.value[focused] : undefined;
+      if (focus.element !== null && slot !== undefined) {
+        const scratch = focusScratch.current;
+        scratch.matrix.multiplyMatrices(
+          camera.projectionMatrix,
+          camera.matrixWorldInverse,
+        );
+        const q = scratch.quad;
+        const visible = projectCard(
+          slot,
+          scratch.matrix,
+          window.innerWidth,
+          window.innerHeight,
+          q,
+          scratch.point,
+        );
+        if (visible) {
+          const left = Math.min(q[0] ?? 0, q[2] ?? 0, q[4] ?? 0, q[6] ?? 0);
+          const top = Math.min(q[1] ?? 0, q[3] ?? 0, q[5] ?? 0, q[7] ?? 0);
+          const right = Math.max(q[0] ?? 0, q[2] ?? 0, q[4] ?? 0, q[6] ?? 0);
+          const bottom = Math.max(q[1] ?? 0, q[3] ?? 0, q[5] ?? 0, q[7] ?? 0);
+          const style = focus.element.style;
+          style.transform = `translate(${left.toFixed(1)}px, ${top.toFixed(1)}px)`;
+          style.width = `${Math.max(1, right - left).toFixed(1)}px`;
+          style.height = `${Math.max(1, bottom - top).toFixed(1)}px`;
+        }
+      }
       pick.markApplied();
 
       // A peça sob o ponteiro é clicável, então o ponteiro tem que dizer isso —

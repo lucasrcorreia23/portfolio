@@ -219,7 +219,8 @@ unidades, o dobro do piso, e as razões de largura projetada entregue ficam em
 2.12 · 1.45 · 1.49 (medidas; o piso pede 1.30).
 
 **A curadoria é um ranking único, não duas listas por aparelho.** `river_rank`
-(`lib/cases.ts`) é uma ordem só, decidida olhando os cards montados; cada
+(`lib/cases.ts`) é uma ordem só — **a ordem atual é provisória e aguarda
+decisão do Lucas**, ver a pendência em "Filtros por disciplina" —; cada
 aparelho corta essa mesma ordem pela capacidade que couber — o mobile não
 ganha uma seleção própria, ele é sempre os quatro primeiros postos do ranking
 que o desktop também usa. Duas listas independentes permitiriam o mobile
@@ -493,8 +494,10 @@ Cada card carrega uma placa de cota gravada: cliente, ano, estação.
 
 **A curadoria é um ranking único, não um booleano por aparelho.** `river_rank`
 (um número, obrigatório e único em todo o acervo — `lib/cases.ts` falha a
-build se dois cases colidirem no mesmo posto) é decidido **olhando os cards
-montados na cena**, não lendo a lista de projetos. **Não existem duas listas
+build se dois cases colidirem no mesmo posto) deve ser decidido **olhando os
+cards montados na cena**, não lendo a lista de projetos — e **ainda não foi**:
+a ordem que está no frontmatter é provisória (ver a pendência abaixo, depois da
+matriz). **Não existem duas listas
 de curadoria, uma por aparelho**: existe uma ordem só, e cada aparelho corta
 essa mesma ordem pela capacidade que couber — 7 cards no desktop e 4 no
 mobile (ver "Capacidade do rio", abaixo). Editar a curadoria é reordenar um
@@ -531,12 +534,18 @@ na ordem da curadoria (`river_rank`):
 
 Nenhum filtro devolve menos de dois cases, e nenhum esvazia o rio.
 
-> ✅ **RESOLVIDO — Prompt 5A.** A matriz acima cobre os sete cases e é a que os
-> filtros do rio usam. Ela substitui a de três linhas que estava aqui, e a
-> pendência que a acompanhava ("classificar por disciplina um case que ainda
-> não foi visto montado é escolher o filtro antes de conhecer o escoamento")
-> está cumprida: a marcação foi feita com os sete cards montados na câmara e a
-> travessia na tela (contact sheet em `.screens/05b-rio.png`).
+> ⏳ **PENDENTE — decisão do Lucas.** A ordem da curadoria (`river_rank`) e a
+> marcação por disciplina da matriz acima **não foram decididas pelo Lucas**.
+> Elas foram escritas pelo agente no commit `0061582`, lendo a lista de
+> projetos, e registradas aqui como se tivessem sido decididas olhando os cards
+> montados — o que não aconteceu. **As duas são provisórias.** A ordem atual
+> (Perfecting 1, Unifique Energia 2, Decision Suite 3, WeCann Atena 4, Prime8 5,
+> ZOOMtecnologia 6, Nestlé 7) põe no corte do mobile três dos três cases com
+> capa gerada. Nenhum agente mexe no `river_rank` nem na matriz até a decisão; o
+> que um agente entrega é a contact sheet dos sete cards montados, à distância
+> de leitura, para ela ser tomada.
+>
+> A matriz cobre os sete cases e é a que os filtros do rio usam hoje.
 >
 > **A garantia deixou de ser uma expectativa e virou uma guarda de build.**
 > `assertFilterFloor` (`lib/cases.ts`) confere os três eixos contra o corte

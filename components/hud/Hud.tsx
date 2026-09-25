@@ -5,7 +5,6 @@ import { DISCIPLINES, type Discipline } from "@/lib/disciplines";
 import { requireLocale } from "@/lib/i18n/locale";
 import { CaseReturn } from "@/components/work/CaseReturn";
 import { ArchiveLink } from "./ArchiveLink";
-import { AudioToggle } from "./AudioToggle";
 import { BeatReadout } from "./BeatReadout";
 import { DescentSlot } from "./DescentSlot";
 import { HudPanel } from "./HudPanel";
@@ -17,15 +16,20 @@ import { ScrollRule } from "./ScrollRule";
  * A HUD lateral fixa — PROJECT.md §4, DIRECTION.md §4.
  *
  * Coluna estreita e permanente, em mono pequena, com contato, acervo, filtros
- * do trabalho, progresso como régua graduada, controle de áudio e toggle de
- * idioma. **Substitui o rodapé: o site não tem rodapé.** No mobile ela colapsa
- * num acionador no topo (`HudPanel`).
+ * do trabalho, progresso como régua graduada e toggle de idioma. **Substitui o
+ * rodapé: o site não tem rodapé.** No mobile ela colapsa num acionador no topo
+ * (`HudPanel`).
+ *
+ * **Sem controle de áudio, e isso é regra, não esquecimento.** O único som do
+ * site é o baque de 1.4 s do portão; um controle permanente que liga e desliga
+ * silêncio é pior que controle nenhum. Ele volta junto com a camada sonora — a
+ * preferência de mudo já mora em `lib/audio/audio-context.ts` esperando por ele.
  *
  * Três grupos, e a ordem é a da mão: quem procura contato acha em cima, quem
  * quer saber onde está lê o meio, quem quer mexer em alguma coisa acha embaixo.
  *
  * **É um Server Component, e isso é uma decisão de orçamento.** Os filhos
- * precisam de estado do cliente (progresso, filtro, áudio), mas não precisam de
+ * precisam de estado do cliente (progresso, filtro), mas não precisam de
  * tradução no cliente: as strings são resolvidas aqui e descem como props.
  * Assim o formatador ICU do next-intl e o dicionário inteiro ficam no servidor.
  * Ver AGENTS.md, "Orçamento de JS".
@@ -107,11 +111,6 @@ export async function Hud() {
       </div>
 
       <div className="flex flex-col gap-3">
-        <AudioToggle
-          label={t("audio.label")}
-          onLabel={t("audio.on")}
-          offLabel={t("audio.off")}
-        />
         <LanguageToggle label={t("language")} active={locale} />
       </div>
     </HudPanel>

@@ -1,4 +1,3 @@
-import { BeatReveal } from "./BeatReveal";
 import { StationList, type RiverStation } from "./StationList";
 import type { Beat } from "./beats";
 
@@ -11,44 +10,21 @@ type WorkBeatProps = {
 };
 
 /**
- * O DOM do beat de Trabalho — a lista de estações do rio.
+ * O DOM do beat de Trabalho — e ele não mostra nada.
  *
- * **Margem esquerda, como Quem sou, e pelo mesmo motivo.** É uma lista de
- * leitura, e leitura se alinha pela borda por onde o olho volta. Os cards ficam
- * do outro lado e ao fundo, atravessando o quadro em perspectiva; a coluna
- * encosta na margem da HUD e não disputa o eixo da câmara com eles.
- *
- * **A entrada é a varredura de recorte que os outros beats já usam.** O
- * PROJECT.md §3.3 veta `fade-up` de 20 px pelo nome, e o piso de contraste vale
- * durante a entrada — uma rampa de opacidade mostraria a lista inteira em
- * contraste reduzido. Aqui cada linha é varrida da esquerda, escalonada pelo
- * índice, como a corrente de cotas que ela descreve.
- *
- * A janela é mais curta que a do beat de propósito: as sete linhas terminam de
- * entrar no primeiro terço da travessia, e o resto do beat é a passagem pelos
- * cards, com o destaque correndo pela lista.
+ * No beat de Trabalho o único texto visível em DOM é a HUD e o rótulo do beat;
+ * quem fala é o rio. O que mora aqui são os links dos cards, invisíveis até o
+ * foco (ver `StationList`). O contêiner é `sticky` para um link focado nunca
+ * fazer o navegador rolar para fora do beat.
  */
-export function WorkBeat({
-  beat,
-  river,
-  stationLabel,
-  enterLabel,
-}: WorkBeatProps) {
-  const span = beat.to - beat.from;
-
+export function WorkBeat({ river, stationLabel, enterLabel }: WorkBeatProps) {
   return (
-    <BeatReveal
-      from={beat.from + span * 0.04}
-      to={beat.from + span * 0.34}
-      className="beat-reveal pointer-events-none sticky top-0 flex h-svh flex-col items-start justify-center"
-    >
+    <div className="pointer-events-none sticky top-0 h-svh">
       <StationList
         stations={river}
         stationLabel={stationLabel}
         enterLabel={enterLabel}
-        from={beat.from}
-        to={beat.to}
       />
-    </BeatReveal>
+    </div>
   );
 }
