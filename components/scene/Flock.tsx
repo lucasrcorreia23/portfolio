@@ -8,6 +8,7 @@ import {
   InstancedBufferAttribute,
   InstancedBufferGeometry,
   HalfFloatType,
+  MathUtils,
   LinearFilter,
   NearestFilter,
   NoBlending,
@@ -286,12 +287,14 @@ export function Flock({
     const bodyPos = { value: position[0].texture };
     const bodyVel = { value: velocity[0].texture };
 
+    const focalPx = { value: 1086 };
     const bodyMaterial = new ShaderMaterial({
       uniforms: {
         ...fogUniforms(shared),
         uPos: bodyPos,
         uVel: bodyVel,
         uBodyScale: { value: 0.085 },
+        uFocalPx: focalPx,
         uForming: shared.forming,
         uTeal: shared.teal,
         uCyan: shared.cyan,
@@ -327,6 +330,7 @@ export function Flock({
       seedUniforms,
       geometry,
       bodyMaterial,
+      focalPx,
       bodyPos,
       bodyVel,
       aheadRows,
@@ -470,13 +474,21 @@ export function Flock({
       // quadro de simulação diferente do quadro composto que ela acabou de ler.
       position: () => rig.position[swap.current],
       velocity: () => rig.velocity[swap.current],
+      velocityMaterial: rig.velocityMaterial,
     };
     return () => {
       readRef.current = null;
     };
   }, [readRef, rig]);
 
-  useFrame((_state, delta) => {
+  useFrame((state, delta) => {
+    // A focal em pixels de CSS, para o teto de tamanho dos corpos
+    // (`BODY_MAX_PX` em `shaders/body.ts`). Da altura da janela, não do
+    // buffer: o critério é em pixels de tela, e o DPR não o muda.
+    const fovCamera = state.camera as { fov?: number };
+    const fov = MathUtils.degToRad(fovCamera.fov ?? 45);
+    rig.focalPx.value = state.size.height / (2 * Math.tan(fov / 2));
+
     // O passo é clampado: o `lagSmoothing(0)` do driver é deliberado, então
     // voltar de uma aba em segundo plano entrega vários segundos de uma vez, e
     // um passo desse tamanho explode a integração.

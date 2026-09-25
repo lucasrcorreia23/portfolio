@@ -24,11 +24,34 @@ import { FOG_GLSL, FOG_UNIFORMS_GLSL } from "./fog";
  * quer dizer com "bloom apertado e com threshold alto" — bloom é o transbordo,
  * não o efeito.
  */
+/**
+ * **Nenhum indivíduo é legível** (DIRECTION.md §2) — o teto de tamanho na tela.
+ *
+ * Até a rodada 11 o corpo tinha tamanho fixo em mundo e só encolhia nos
+ * últimos três metros (`lensGuard`), e o comprimento projetado crescia com
+ * 1/d: ~18 px a dez unidades, ~69 px a 2.25 (~110 px esticado), num 1440×900.
+ * Perto da lente cada corpo virava um losango nítido, e o bando lia como
+ * confete. Agora o comprimento na tela tem teto, em **pixels de CSS**: o corpo
+ * é encolhido para caber nele a qualquer distância, e além disso apaga e some
+ * perto da lente (`BODY_NEAR_GONE` a `BODY_NEAR_FULL`). 3.5 × 2 e não 6: o
+ * critério do Lucas é "nenhum corpo acima de 6 px", e o que a medição lê é o
+ * corpo **mais** o antisserrilhado, o desfoque e o halo de bloom de um corpo
+ * denso — com 5 px de comprimento ela deu 6.3, com 4 × 2.5 deu 8.6 no poleiro.
+ */
+export const BODY_MAX_PX = 3.5;
+/** A largura na tela, em pixels de CSS — o grão tem corpo, não é um fio. */
+export const BODY_MAX_WIDTH_PX = 2;
+/** Abaixo disto o corpo não existe; acima de FULL ele tem o brilho inteiro. */
+export const BODY_NEAR_GONE = 1;
+export const BODY_NEAR_FULL = 3.5;
+
 export const BODY_VERT = /* glsl */ `
 uniform sampler2D uPos;
 uniform sampler2D uVel;
 uniform float uBodyScale;
 uniform float uForming;
+/** A distância focal em pixels de CSS: altura da janela ÷ (2 · tan(fov/2)). */
+uniform float uFocalPx;
 
 in vec2 aRef;
 
@@ -37,6 +60,7 @@ out float vViewDepth;
 out float vEnergy;
 out float vDensity;
 out float vAlong;
+out float vNear;
 
 void main() {
   vec4 P = texture(uPos, aRef);
@@ -77,17 +101,42 @@ void main() {
   // 9.5 mostra a câmara de verdade pelas frestas — "uns poucos corpos isolados"
   // da Emergência, adiantados para trás da veneziana.
   float admit = step(lot, 0.035 + 0.965 * pow(uForming, 2.5));
+#ifdef PROBE_SUBSET
+  // Só a sonda liga (rodada 12, bodyExtent): desenha 1 corpo em PROBE_SUBSET,
+  // para os corpos medidos não se sobreporem no quadro. Em produção o bloco
+  // não existe no programa compilado.
+  admit *= step(fract(lot * 97.13), 1.0 / float(PROBE_SUBSET));
+#endif
 
-  // Corpos quase encostados na lente viram lascas do tamanho da tela. Encolhem
-  // nos últimos três metros: o bando passa pela câmera, não por cima dela.
-  float lensGuard = smoothstep(0.0, 3.0, distance(cameraPosition, center));
+  // **Perto da lente o corpo encolhe e apaga até sumir** — o bando passa pela
+  // câmera como névoa, não como lascas do tamanho da tela. A mesma rampa
+  // escurece o fragmento (vNear), então ele some por tamanho e por brilho.
+  vec3 viewCenter = (viewMatrix * vec4(center, 1.0)).xyz;
+  float viewDepth = -viewCenter.z;
+  float near = smoothstep(${BODY_NEAR_GONE.toFixed(2)}, ${BODY_NEAR_FULL.toFixed(2)}, viewDepth);
+  vNear = near;
   // Quem saiu pela tomada de ar está estacionado longe de tudo (ver PARKED em
   // shaders/boids.ts): não desenha nada.
-  lensGuard *= step(-400.0, center.y);
+  float alive = step(-400.0, center.y);
 
   float stretch = 1.0 + vEnergy * 0.6;
-  vec3 local = right * position.x + up * position.y + forward * position.z * stretch;
-  vec3 world = center + local * uBodyScale * admit * lensGuard;
+  // O teto de tamanho, **por eixo**. O comprimento (nariz a cauda, esticado)
+  // não passa de BODY_MAX_PX; a largura não passa de BODY_MAX_WIDTH_PX, e ela
+  // **não** encolhe junto com o comprimento. Encolher o corpo inteiro por um
+  // fator só deixava um traço de 4 px com 0.6 px de largura — sub-pixel, e o
+  // bando sumia da tela (medido: nenhum corpo legível passando pelas letras em
+  // 0.18). Capado assim, o corpo perto vira um grão, não um losango.
+  // Fora do eixo a perspectiva estica o que está de lado por (1 + tan²) do
+  // ângulo: no canto de um 16:10 isso é ~1.3×, e o teto medido pelo centro
+  // deixava passar 6.7 px ali.
+  float offAxis = 1.0 + dot(viewCenter.xy, viewCenter.xy) / max(viewDepth * viewDepth, 1e-3);
+  float lengthPx = 2.0 * uBodyScale * stretch * uFocalPx * offAxis / max(viewDepth, 1e-3);
+  float widthPx = 0.32 * uBodyScale * uFocalPx * offAxis / max(viewDepth, 1e-3);
+  float capLength = min(1.0, ${BODY_MAX_PX.toFixed(1)} / max(lengthPx, 1e-3));
+  float capWidth = min(1.0, ${BODY_MAX_WIDTH_PX.toFixed(1)} / max(widthPx, 1e-3));
+  vec3 local = (right * position.x + up * position.y) * capWidth
+    + forward * position.z * stretch * capLength;
+  vec3 world = center + local * uBodyScale * admit * near * alive;
 
   vAlong = position.z;
   vWorld = world;
@@ -143,6 +192,7 @@ in float vViewDepth;
 in float vEnergy;
 in float vDensity;
 in float vAlong;
+in float vNear;
 
 out vec4 fragColor;
 
@@ -218,8 +268,17 @@ void main() {
   // acendia os distantes, e o núcleo separável da profundidade de campo os
   // transformava numa trama de riscas verticais — uma grade, que o PROJECT.md
   // §2 veta. O que o portão pede são corpos "passando perto da lente".
-  float lensNear = 1.0 - smoothstep(3.0, 9.0, vViewDepth);
-  float crowd = mix(mix(1.0, 7.0, lensNear), 0.5 + 1.25 * smoothstep(0.02, 0.10, vDensity), smoothstep(0.15, 0.6, uFormingFrag));
+  //
+  // **Rodada 12: o isolado quase apaga, e o reforço perto da lente saiu.** O
+  // corpo perto da lente agora encolhe e some (vNear); o reforço de 7× que o
+  // fazia um disco claro no portão não tem mais o que acender. Depois de o
+  // bando se formar, o corpo isolado cai para 0.2 (era 0.5) e o aglomerado
+  // sobe até 1.75 — a mesma faixa medida de vDensity (mediana 0.033 → ~0.31;
+  // p90 0.073 → ~1.2). Antes de se formar (Emergência, portão) o corpo sozinho
+  // continua sendo o assunto: 3.0, porque com o teto de tamanho ele é um grão
+  // de 3.5 px, e um grão no brilho de cruzeiro some no escuro da Emergência.
+  float crowd = mix(3.0, 0.2 + 1.55 * smoothstep(0.02, 0.10, vDensity), smoothstep(0.15, 0.6, uFormingFrag));
+  crowd *= vNear * vNear;
   float energy = uGain * (0.35 + 0.65 * tip) * (0.55 + 0.85 * vEnergy) * crowd;
 
   // Na Superfície a câmara ganha luz, e o bando no brilho da descida some

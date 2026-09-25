@@ -56,7 +56,14 @@ uniform float uAperture;
 
 float cocAt(vec2 uv) {
   float depth = viewDepthAt(uv);
-  return clamp(abs(depth - uFocus) / uFocusRange, 0.0, 1.0) * uAperture;
+  float far = clamp(abs(depth - uFocus) / uFocusRange, 0.0, 1.0) * uAperture;
+  // **O campo próximo desfoca sempre** (rodada 12), com a abertura aberta ou
+  // fechada: o que passa a menos de 2.5 unidades da lente é mancha, não forma.
+  // Com a abertura em zero de 0.155 a ~0.44, um corpo perto da lente saía
+  // nítido na Identidade e em Quem sou. Nada mais chega tão perto da câmera
+  // nesta descida: a parede graduada de Quem sou fica a 3.2 unidades.
+  float near = 0.3 * (1.0 - smoothstep(0.6, 2.5, depth));
+  return max(far, near);
 }
 `;
 
@@ -74,7 +81,7 @@ ${DEPTH_GLSL}
 in vec2 vUv;
 out vec4 fragColor;
 
-// Dez amostras e não seis: mesmo raio (10 × 8.4 ≈ 6 × 14 texels) e a mesma
+// Dez amostras e não seis: mesmo raio (10 × 8.4 ≈ 6 × 14 texels; desde a rodada 12, 13.4 com a gaussiana mais estreita) e a mesma
 // gaussiana em unidades de raio, com vãos 40% menores. Ver o comentário do
 // deslocamento, abaixo.
 const int TAPS = 10;
@@ -89,7 +96,7 @@ void main() {
   // Raio em texels, proporcional ao CoC do centro. É a aproximação que troca
   // bokeh por velocidade: não há vazamento correto entre planos, e a essa
   // intensidade ninguém vê a diferença.
-  vec2 step = uDirection * uTexel * coc * 8.4;
+  vec2 step = uDirection * uTexel * coc * 13.4;
 
   vec4 total = texture(uSource, vUv) * 0.196;
   float weightSum = 0.196;
@@ -106,7 +113,13 @@ void main() {
     float offset = float(i) - 0.5 + jitter;
     // Gaussiana amostrada; normalizada pelo peso somado, então o número de
     // taps pode mudar sem recalibrar nada.
-    float w = exp(-offset * offset / 50.0);
+    // **Truncada em ~3σ** (rodada 12). Com σ = 5 amostras a gaussiana parava em
+    // exp(−2) na décima, e o produto das duas passadas separáveis de uma
+    // gaussiana cortada é um **quadrado** de canto arredondado: todo corpo claro
+    // desfocado virava uma caixa (visível no portão e na Emergência). Com σ =
+    // 3.13 ela chega a 0.6% na borda e o produto volta a ser redondo; o passo
+    // subiu na mesma razão, então o raio do borrão não mudou.
+    float w = exp(-offset * offset / 19.6);
     total += texture(uSource, vUv + step * offset) * w;
     total += texture(uSource, vUv - step * offset) * w;
     weightSum += w * 2.0;

@@ -814,6 +814,10 @@ void main() {
   // escoamento de ~6: a faixa passa pela câmera a cada ~1.7 s.
   float pressure = sin(pos.z * 0.42 + pos.x * 0.19 - uTime * 1.1);
   float surge = 1.0 + 0.3 * pressure * forming * (1.0 - roost);
+#ifdef PROBE_NO_WAVE
+  // O controle da medição da onda (rodada 12, __probe.wave): só a sonda liga.
+  surge = 1.0;
+#endif
   float vzTarget = mix(drive * surge, uRoostDrift, ROOST_HOLD * roost * band);
 
   // --- a saída pela tomada de ar (Superfície) -----------------------------

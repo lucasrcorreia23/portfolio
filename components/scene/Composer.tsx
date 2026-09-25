@@ -366,7 +366,12 @@ export function Composer({
     // desligamento pula as duas passadas inteiras — e não só zera a força.
     // É isso que faz a medição A/B medir o custo dela, e não o custo de
     // multiplicar por zero.
-    if (settings.dof && aperture > 0.001) {
+    //
+    // **Com a abertura em zero ela continua rodando** (rodada 12): o campo
+    // próximo desfoca sempre (ver `cocAt` em `shaders/post.ts`), e um corpo a
+    // uma unidade da lente não pode sair nítido só porque o beat fechou o
+    // diafragma. Onde nada está perto, o fragmento sai no primeiro `if`.
+    if (settings.dof) {
       setUniform(rig.dof, "uSource", rig.scene.texture);
       setVec2(rig.dof, "uTexel", TEXEL.set(1 / rig.dofA.width, 1 / rig.dofA.height));
       setVec2(rig.dof, "uDirection", HORIZONTAL);
@@ -472,7 +477,7 @@ export function Composer({
     setUniform(
       rig.composite,
       "uDofEnabled",
-      settings.dof && aperture > 0.001 ? 1 : 0,
+      settings.dof ? 1 : 0,
     );
 
     blit(renderer, rig.composite, null);
