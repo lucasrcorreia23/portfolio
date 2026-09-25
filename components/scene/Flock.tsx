@@ -12,7 +12,9 @@ import {
   LinearFilter,
   NearestFilter,
   NoBlending,
-  AdditiveBlending,
+  CustomBlending,
+  MaxEquation,
+  OneFactor,
   NoColorSpace,
   RGBAFormat,
   ShaderMaterial,
@@ -357,12 +359,19 @@ export function Flock({
       },
       vertexShader: GLOW_VERT,
       fragmentShader: GLOW_FRAG,
-      // Aditivo, testando a profundidade e sem escrevê-la: um halo atrás de uma
-      // letra é escondido por ela, e nenhum halo esconde nada.
+      // **Máximo, não soma**, testando a profundidade e sem escrevê-la: um halo
+      // atrás de uma letra é escondido por ela, e nenhum halo esconde nada. A
+      // soma aditiva empilhava centenas de halos no poleiro de Quem sou e a
+      // coluna virava uma parede de luz; com o máximo, onde eles se sobrepõem
+      // vale o mais claro — como os corpos opacos da rodada 8, que também não
+      // somavam.
       transparent: true,
       depthTest: true,
       depthWrite: false,
-      blending: AdditiveBlending,
+      blending: CustomBlending,
+      blendEquation: MaxEquation,
+      blendSrc: OneFactor,
+      blendDst: OneFactor,
       toneMapped: false,
     });
     glowMaterial.glslVersion = GLSL3;

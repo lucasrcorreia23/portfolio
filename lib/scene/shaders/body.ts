@@ -309,8 +309,9 @@ void main() {
  * oclusão das letras continua exata. O que a rodada 12 tirou junto com o
  * losango foi a **presença**: o corpo da rodada 8 tinha o tamanho do mundo e,
  * perto da lente, dezenas de pixels. O halo devolve esse tamanho como luz — uma
- * gaussiana alongada na direção do voo, do tamanho que o corpo teria, somada
- * por cima (aditiva, testando a profundidade, sem escrevê-la). Uma gaussiana
+ * gaussiana alongada na direção do voo, do tamanho que o corpo teria, posta
+ * por cima pelo **máximo** (testando a profundidade, sem escrevê-la): onde
+ * vários se sobrepõem vale o mais claro, e o poleiro não vira parede de luz. Uma gaussiana
  * não tem borda: é mancha de luz, nunca forma. Ele só existe quando o corpo
  * seria maior que o núcleo (`GLOW_FROM` px), então o corpo distante continua
  * um grão.
@@ -324,7 +325,7 @@ export const GLOW_FULL = 9;
 /** O halo é maior que o corpo que ele substitui: a luz transborda. */
 export const GLOW_SCALE = 1.5;
 /** Teto do comprimento do halo na tela, em px de CSS. */
-export const GLOW_MAX_PX = 90;
+export const GLOW_MAX_PX = 45;
 
 export const GLOW_VERT = /* glsl */ `
 uniform sampler2D uPos;
@@ -365,8 +366,11 @@ void main() {
   float stretch = 1.0 + vEnergy * 0.6;
   float bodyPx = 2.0 * uBodyScale * stretch * uFocalPx / depth;
   float lengthPx = min(bodyPx * ${GLOW_SCALE.toFixed(2)}, ${GLOW_MAX_PX.toFixed(1)});
-  float widthPx = max(lengthPx * 0.45, 3.0);
+  float widthPx = max(lengthPx * 0.25, 2.5);
   vGlow = smoothstep(${GLOW_FROM.toFixed(1)}, ${GLOW_FULL.toFixed(1)}, bodyPx) * admit * lensGuard * alive;
+  // Perto da lente o halo apaga: com 45 px de teto e o brilho inteiro, os
+  // corpos a menos de cinco unidades viravam ovais claros cobrindo o quadro.
+  vGlow *= smoothstep(1.5, 5.0, depth);
 
   // A direção do voo na tela: o centro e um passo à frente, projetados.
   vec4 clipCenter = projectionMatrix * viewCenter;
@@ -388,9 +392,10 @@ void main() {
   // Pixels de CSS → NDC: 2 / tamanho da tela, vezes w para sair da divisão.
   vec2 offset = offsetPx * 2.0 / uViewportPx * clipCenter.w;
   gl_Position = clipCenter + vec4(offset * step(0.001, vGlow), 0.0, 0.0);
-  // A área do halo, contra a do grão: a mancha grande espalha a mesma luz, não
-  // multiplica. O teto em 1 deixa o halo pequeno com o brilho inteiro.
-  vGlow *= min(1.0, 60.0 / max(along * across, 1.0));
+  // A área do halo: a mancha grande perto da lente espalha a luz, não a
+  // multiplica. Com a mistura pelo máximo (não pela soma) só o halo muito
+  // grande precisa baixar; 200 px² deixa o do quadro do descolamento inteiro.
+  vGlow *= min(1.0, 200.0 / max(along * across, 1.0));
 }
 `;
 
@@ -419,7 +424,7 @@ void main() {
   float g = exp(-4.0 * dot(vQuad, vQuad));
   vec3 color = mix(uTeal, uCyan, smoothstep(0.18, 0.85, vEnergy));
   float crowd = mix(1.0, 0.5 + 1.25 * smoothstep(0.02, 0.10, vDensity), smoothstep(0.15, 0.6, uFormingFrag));
-  float energy = uGain * (0.55 + 0.85 * vEnergy) * crowd * 0.75;
+  float energy = uGain * (0.55 + 0.85 * vEnergy) * crowd * 1.1;
   // Aditivo através da névoa: o que atravessa é a parte não velada.
   float amount = 1.0 - exp(-uFogDensity * max(vViewDepth, 0.0));
   fragColor = vec4(color * energy * g * vGlow * (1.0 - amount), 1.0);
