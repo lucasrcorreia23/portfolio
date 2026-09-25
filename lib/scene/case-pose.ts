@@ -1,5 +1,5 @@
 import { MathUtils, Vector3, type Vector4 } from "three";
-import { cameraPose, type CameraPose } from "./curve";
+import { readingProgress, type CameraPose } from "./curve";
 import {
   CARD_COVER_ASPECT,
   CARD_COVER_UV,
@@ -108,13 +108,6 @@ const REST_SIDE = -10.2;
 
 /** Altura da câmera de repouso. Um pouco acima do eixo, olhando levemente para baixo. */
 const REST_LIFT = 1.4;
-
-/**
- * A distância de leitura do rio, em unidades — a mesma de `SPECIMEN_SIZE` e a
- * mesma que o DIRECTION.md §4 usa para derivar o piso de espaçamento. É onde um
- * card "é lido", e portanto onde a volta tem que pousar.
- */
-const READING_DISTANCE = 14;
 
 /** Densidade de névoa dentro do case. */
 export const CASE_FOG = 0.13;
@@ -225,34 +218,19 @@ export function restPose(card: Vector4, out: CameraPose): CameraPose {
   return out;
 }
 
-const PROBE = { position: new Vector3(), target: new Vector3() };
-
 /**
- * O progresso em que um card está à distância de leitura.
+ * O progresso em que um card é lido.
  *
  * É para onde a volta leva quando não houve clique — link direto, acervo,
- * reload dentro do case. Com clique, quem manda é o progresso gravado no
- * instante em que a pessoa saiu, e este número não é consultado.
+ * reload dentro do case —, e para onde o foco de teclado rola. Com clique,
+ * quem manda é o progresso gravado no instante em que a pessoa saiu, e este
+ * número não é consultado.
  *
- * **Busca binária sobre a própria curva**, e não uma fórmula: a curva é uma
- * Catmull-Rom por treze paradas, e qualquer inversão analítica seria uma segunda
- * descrição dela — a primeira coisa a divergir no próximo ajuste de ritmo. Vinte
- * iterações num intervalo de 0.4 dão resolução de 4·10⁻⁷, bem abaixo de qualquer
- * coisa que o olho ou o `damp` distingam, e custam vinte avaliações de curva uma
- * única vez por saída.
- *
- * Monotônica no intervalo porque a câmera desce em Z sem voltar entre 0.45 e
- * 0.85 — é a mesma propriedade que faz a corrente de cards ser uma fila.
+ * Desde a rodada 12 cada card tem uma **parada própria** na curva
+ * (`riverStops()`, em `curve.ts`), então o progresso de leitura é o `at` dela,
+ * e não uma busca pela distância: a leitura deixou de ser "a câmera a 14
+ * unidades em Z" e passou a ser um ponto declarado.
  */
 export function stationProgress(cardZ: number): number {
-  const wanted = cardZ + READING_DISTANCE;
-  let low = 0.45;
-  let high = 0.85;
-  for (let i = 0; i < 20; i += 1) {
-    const mid = (low + high) / 2;
-    cameraPose(mid, PROBE);
-    if (PROBE.position.z > wanted) low = mid;
-    else high = mid;
-  }
-  return (low + high) / 2;
+  return readingProgress(cardZ);
 }

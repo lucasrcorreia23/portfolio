@@ -9,6 +9,7 @@ import {
   ROOST_X_MAX,
   SPECIMEN_Z,
 } from "./world";
+import { CARD_WIDTH, resolveRiver } from "./cards";
 
 /**
  * A coreografia da descida: onde a câmera está, para onde ela olha, e com que
@@ -54,24 +55,25 @@ type Stop = {
  *
  * ## O corredor do rio
  *
- * De 0.45 a 0.85 a câmera percorre **44 unidades**, de `z = −42` a `z = −86`.
- * São 5.24 u/vh no desktop, dentro da faixa que os dois beats já fechados
- * praticam (Identidade a 4.2, Quem sou a 5.6) — a estimativa do DIRECTION.md §4
- * era ~5 u/vh, e ela se confirma.
+ * De 0.45 a 0.85 a câmera percorre ~35 unidades, de `z = −42` a `z = −76.5`.
  *
- * **A deriva é lenta, e não um slalom.** Os cards alternam de lado a cada 4.7
- * unidades (`lib/scene/cards.ts`), e uma câmera que desviasse de cada um leria
- * como pista de obstáculos. Ela não precisa desviar: o vão livre entre a borda
- * interna de um card e o eixo do duto é de 1.5 unidade, e a estação central
- * passa por baixo da lente. O que a curva faz são três "S" largos, de amplitude
- * pouco maior que uma unidade — o suficiente para a paralaxe mudar de sinal
- * algumas vezes e o corredor não virar um trilho.
+ * **Uma parada por card, gerada da corrente** (`riverStops()`), e não uma
+ * tabela escrita à mão. Até a rodada 11 a câmera descia o eixo em três "S"
+ * largos com o olhar a ~13 unidades, e o card só era "lido" a 14 unidades —
+ * onde ocupava 20% da largura. Quem enchia a tela eram as passagens, a 1.5
+ * unidade de cada peça. Agora cada card tem a sua leitura: a câmera vai até ele,
+ * para à distância em que ele ocupa `READING_FILL` da largura, e o olha no
+ * centro. Entre duas leituras a curva faz a passagem, e o card lido sai pela
+ * borda enquanto o seguinte entra.
  *
- * **O olhar vai para o eixo, ~13 unidades à frente.** É a mesma distância de
- * leitura para a qual o corpo do card foi resolvido, e é ela que a profundidade
- * de campo usa como plano de foco: o card à distância de leitura fica na
- * navalha, os de trás desfocam. A separação em profundidade do DIRECTION.md §3
- * ("parcial, só para separar cards em profundidade") é literalmente isso.
+ * **É um slalom, e é de propósito.** As estações alternam de lado
+ * (`CARD_STATIONS`); a câmera acompanha 45% do desvio de cada uma, então ela
+ * continua passando **por entre** as peças, e o corredor inteiro vira uma
+ * sequência de leituras em vez de um trilho com retângulos passando rente.
+ *
+ * O alvo de cada leitura é o centro do card, e é essa distância que a DOF usa
+ * como plano de foco: o card lido fica na navalha, os de trás desfocam — a
+ * separação em profundidade do DIRECTION.md §3 continua sendo isso.
  *
  * ## O desvio de Quem sou
  *
@@ -94,7 +96,7 @@ type Stop = {
  * escura. A outra metade fica para o manifesto e para a HUD, que são as duas
  * caixas de texto do beat e as que precisam de fundo escuro.
  */
-const STOPS: readonly Stop[] = [
+const DIRECTED: readonly Stop[] = [
   // Emergência: ar parado, longe de tudo. Não dá para saber o tamanho do
   // espaço, e a câmera mal se move.
   { at: 0.0, position: [0.0, 0.9, 8.0], target: [0.0, 0.3, -14.0] },
@@ -119,19 +121,13 @@ const STOPS: readonly Stop[] = [
   { at: 0.34, position: [5.0, -0.2, -28.5], target: [1.8, 0.0, -42.0] },
   { at: 0.4, position: [6.8, -0.05, -35.0], target: [3.2, 0.0, -48.0] },
   { at: 0.45, position: [8.0, 0.05, -42.0], target: [4.5, 0.0, -55.0] },
-  // O rio: a câmera volta da parede para o eixo do duto e desce o corredor em
-  // três "S" largos, com o olhar preso ao eixo à distância de leitura.
-  { at: 0.51, position: [3.6, -0.15, -48.3], target: [0.9, 0.0, -61.0] },
-  { at: 0.59, position: [-1.2, 0.2, -56.7], target: [-0.2, 0.05, -69.5] },
-  { at: 0.68, position: [1.1, -0.2, -66.2], target: [0.3, 0.0, -79.0] },
-  // O fim do corredor: a câmera **não passa** o último card antes de 0.85. Ela
-  // desacelera e vira o olhar para ele — o último posto é a última coisa que o
-  // beat mostra. Antes, a câmera passava o card de −82 em ~0.81 e de lá até
-  // 0.85 não havia peça nenhuma à frente (medido na rodada 9: 0.83 e 0.85 sem
-  // card), o buraco que o DIRECTION.md §4 dizia querer evitar. Os dois cortes
-  // do rio (7 e 4 cards) terminam em −82 a bombordo, então a virada serve aos
-  // dois.
-  { at: 0.77, position: [-1.0, 0.25, -72.0], target: [-0.4, 0.05, -85.0] },
+  // **O rio não mora nesta tabela.** As paradas de 0.45 a 0.85 são geradas da
+  // corrente montada neste aparelho — uma por card, à distância de leitura —,
+  // ver `riverStops()` logo abaixo. Esta parada de 0.85 é o fim do corredor:
+  // a câmera **não passa** o último card antes dela; ela desacelera e vira o
+  // olhar para bombordo, e o último posto é a última coisa que o beat mostra.
+  // Os dois cortes do rio (7 e 4 cards) terminam em −82 a bombordo, então a
+  // virada serve aos dois.
   { at: 0.85, position: [-0.6, 0.2, -76.5], target: [-4.2, -0.8, -88.0] },
   // **A Superfície.** A câmera deixa o último card a bombordo e vira para a
   // tomada de ar. Ela passa o card do corte do mobile (−3.4, 2.0, −82) pelo
@@ -146,23 +142,135 @@ const STOPS: readonly Stop[] = [
   { at: 1.0, position: [-4.0, 1.8, -83.6], target: [-2.9, -1.2, -96.0] },
 ];
 
-const toVectors = (key: "position" | "target") =>
-  STOPS.map((stop) => new Vector3(...stop[key]));
+/**
+ * A distância de leitura do rio, em unidades de mundo — **resolvida da largura
+ * que o card deve ocupar**, e não o contrário.
+ *
+ * Até a rodada 11 ela era 14, a mesma de `SPECIMEN_SIZE`, e o card lido
+ * ocupava **17 a 23%** da largura: uma peça pequena no fundo de uma câmara
+ * escura. O que enchia a tela eram as **passagens** — a câmera descia o eixo e
+ * raspava cada card a 1.5 unidade, e a estação central passava 0.81 abaixo da
+ * lente, chegando a 74–97% da largura como um retângulo escuro cortado pela
+ * borda. A rodada 12 inverte: o card é lido de perto, inteiro e centrado, com a
+ * câmara em volta, e a passagem deixa de ser o momento em que ele aparece.
+ *
+ * `READING_FILL` é a fração da largura na leitura (o Lucas pediu de 35 a 60%).
+ * A distância sai dela e da razão de aspecto: num 16:10 são 6.2 unidades; num
+ * telefone em pé a mesma fração pediria 20, e o teto de 16 a deixa em ~0.6 —
+ * o corte do mobile tem 9 unidades entre cards, e ler de mais longe poria o
+ * card anterior entre a câmera e o lido.
+ */
+export const READING_FILL = 0.48;
+const READING_MIN = 6.2;
+const READING_MAX = 16;
 
-const positionCurve = new CatmullRomCurve3(toVectors("position"), false, "catmullrom", 0.5);
-const targetCurve = new CatmullRomCurve3(toVectors("target"), false, "catmullrom", 0.5);
+/**
+ * Quanto da posição lateral e vertical do card a câmera acompanha na leitura.
+ * Menos que 1 de propósito: a câmera fica **entre o eixo e o card**, e o card é
+ * visto um pouco de dentro do corredor — é o que faz a peça estar de face
+ * (ela gira para o eixo, `CARD_TOE_IN`) e a parede e os vizinhos aparecerem
+ * em volta.
+ */
+const READING_LATERAL = 0.45;
+const READING_VERTICAL = 0.35;
+
+/** A primeira e a última leitura do rio, em progresso. */
+const RIVER_FIRST_READING = 0.5;
+const RIVER_LAST_READING = 0.8;
+
+function readingDistance(aspect: number): number {
+  const halfWidth = Math.tan(MathUtils.degToRad(CAMERA_FOV / 2)) * aspect;
+  const wanted = CARD_WIDTH / (2 * READING_FILL * halfWidth);
+  return Math.min(READING_MAX, Math.max(READING_MIN, wanted));
+}
+
+/**
+ * As paradas do rio: uma por card da corrente **deste aparelho**, no progresso
+ * em que ele é lido. A câmera fica à distância de leitura dele, e o alvo é o
+ * centro da peça — o plano de foco da DOF cai nela, e os vizinhos desfocam.
+ *
+ * Entre duas leituras a curva faz a passagem sozinha: o card lido sai pela
+ * borda enquanto o próximo já está no quadro. Medido na montagem (1440×900):
+ * leitura em 0.48 da largura nos sete, e o pico **visível** de um card na
+ * passagem em 0.63.
+ */
+function riverStops(): Stop[] {
+  const river = resolveRiver();
+  const aspect =
+    typeof window === "undefined" ? 1.6 : window.innerWidth / Math.max(window.innerHeight, 1);
+  const distance = readingDistance(aspect);
+  const last = Math.max(river.count - 1, 1);
+  return river.cards.map((card, index) => {
+    const dx = card.x * (1 - READING_LATERAL);
+    const dy = card.y * (1 - READING_VERTICAL);
+    const dz = Math.sqrt(Math.max(distance * distance - dx * dx - dy * dy, 1));
+    return {
+      at: RIVER_FIRST_READING + (RIVER_LAST_READING - RIVER_FIRST_READING) * (index / last),
+      position: [card.x * READING_LATERAL, card.y * READING_VERTICAL, card.z + dz],
+      target: [card.x, card.y, card.z],
+    };
+  });
+}
+
+type Track = {
+  stops: readonly Stop[];
+  position: CatmullRomCurve3;
+  target: CatmullRomCurve3;
+};
+
+let track: Track | null = null;
+
+/**
+ * A curva inteira, montada uma vez — com a corrente resolvida, pelo mesmo
+ * motivo de `resolveRiver()`: remontar a curva no meio da descida moveria a
+ * câmera de lugar sem ninguém rolar.
+ */
+function resolveTrack(): Track {
+  if (track !== null) return track;
+  const before = DIRECTED.filter((stop) => stop.at <= 0.45);
+  const after = DIRECTED.filter((stop) => stop.at >= 0.85);
+  const stops = [...before, ...riverStops(), ...after];
+  const toVectors = (key: "position" | "target") =>
+    stops.map((stop) => new Vector3(...stop[key]));
+  track = {
+    stops,
+    position: new CatmullRomCurve3(toVectors("position"), false, "catmullrom", 0.5),
+    target: new CatmullRomCurve3(toVectors("target"), false, "catmullrom", 0.5),
+  };
+  return track;
+}
+
+/**
+ * O progresso em que o card montado em `cardZ` é lido — a parada dele na
+ * curva. É para onde a volta de um case leva quando não houve clique, e para
+ * onde o foco de teclado rola (`stationProgress`, em `case-pose.ts`).
+ */
+export function readingProgress(cardZ: number): number {
+  const river = resolveRiver();
+  let best = 0;
+  let bestGap = Infinity;
+  river.cards.forEach((card, index) => {
+    const gap = Math.abs(card.z - cardZ);
+    if (gap < bestGap) {
+      bestGap = gap;
+      best = index;
+    }
+  });
+  const last = Math.max(river.count - 1, 1);
+  return RIVER_FIRST_READING + (RIVER_LAST_READING - RIVER_FIRST_READING) * (best / last);
+}
 
 /**
  * Remapeia progresso normalizado para o parâmetro do spline, respeitando o
  * progresso declarado de cada ponto de controle.
  */
-function curveParam(progress: number): number {
+function curveParam(stops: readonly Stop[], progress: number): number {
   const p = clamp01(progress);
-  const last = STOPS.length - 1;
+  const last = stops.length - 1;
 
   for (let i = 0; i < last; i += 1) {
-    const a = STOPS[i];
-    const b = STOPS[i + 1];
+    const a = stops[i];
+    const b = stops[i + 1];
     if (a === undefined || b === undefined) break;
     if (p > b.at) continue;
 
@@ -183,9 +291,10 @@ export type CameraPose = {
  * Escreve a pose no objeto recebido em vez de alocar — isto roda por quadro.
  */
 export function cameraPose(progress: number, out: CameraPose): CameraPose {
-  const t = curveParam(progress);
-  positionCurve.getPoint(t, out.position);
-  targetCurve.getPoint(t, out.target);
+  const { stops, position, target } = resolveTrack();
+  const t = curveParam(stops, progress);
+  position.getPoint(t, out.position);
+  target.getPoint(t, out.target);
   return out;
 }
 
