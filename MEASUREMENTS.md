@@ -39,6 +39,7 @@ medido, com que método, e por quê o número é esse".
 - [O bando e o frame, medidos](#o-bando-e-o-frame-medidos)
 - [As capas e o fim do corredor, medidos](#as-capas-e-o-fim-do-corredor-medidos)
 - [O escuro e o ângulo, medidos](#o-escuro-e-o-ângulo-medidos)
+- [O som, medido](#o-som-medido)
 - [Desempenho da cena, medido](#desempenho-da-cena-medido)
 
 ---
@@ -1663,6 +1664,32 @@ riscas somem, ficam manchas macias. O custo não aparece no banco (abaixo).
   **2.18–2.80 ms**, controle **2.11–3.03 ms**. Sem diferença mensurável; ~15%
   dos 16.7 ms. Buffer 1440×813, DPR 1 (o canônico continua em débito).
 - Pacote: chunk da cena **319.9 kB**, rota inicial 184.4 kB.
+
+## O som, medido
+
+Rodada 10. Medido no navegador, com um `AnalyserNode` ligado ao master (gancho
+só de desenvolvimento, `window.__audio`), depois do clique no portão e do
+controle ligado, descendo e parando 2.5 s em cada ponto:
+
+| p | nível total | faixa 300–2000 Hz |
+|---|---|---|
+| 0.02 (portão, Emergência) | −56.2 dB | −71.7 dB |
+| 0.15 (garganta) | −47.1 | −70.8 |
+| 0.20 (frame) | −45.9 | −63.7 |
+| 0.36 (Quem sou) | −47.0 | −60.5 |
+| 0.44 | −47.1 | −60.0 |
+| 0.60 (rio) | −45.9 | −59.1 |
+| 0.80 | −47.3 | −57.8 |
+
+- A faixa que um alto-falante de notebook reproduz **abre 14 dB** da garganta
+  para o rio: a câmara fechada soa fechada.
+- **Sem período**: a autocorrelação do envelope, parado, fica em 0.26–0.50 em
+  todo atraso de 0.2 a 3 s. O ruído é gerado ao vivo; não há emenda para ouvir.
+- **Primeira versão reprovada por este mesmo número**: ruído marrom puro dava
+  centroide de 49–89 Hz e quase nada acima de 300 Hz — ronco, que o filtro não
+  tinha o que abrir. Entrou uma parcela de branco.
+- **O que a medição não diz**: se soa como vento genérico. Isso só se decide
+  ouvindo, e o controle começa desligado.
 
 ## Desempenho da cena, medido
 

@@ -25,6 +25,7 @@ import { resolveRiver } from "@/lib/scene/cards";
 import { createChamberPlan } from "@/lib/scene/chamber-plan";
 import { createProxySim } from "@/lib/scene/proxy-sim";
 import type { RiverCard } from "@/lib/scene/river-content";
+import { clearSoundField, publishSoundField } from "@/lib/audio/field-store";
 import { clearReadout, publishReadout } from "@/lib/scene/readout-store";
 import { createSharedUniforms } from "@/lib/scene/uniforms";
 import { sceneSettings } from "@/lib/scene/settings";
@@ -332,6 +333,27 @@ export function SceneWorld({
       shared.veilF.value,
     );
 
+    // --- o campo sonoro -----------------------------------------------------
+    // A câmara soando (`lib/audio/sound-bed.ts`): quanto ela está aberta em
+    // volta da câmera — a seção do duto ali e a névoa — e quanta massa do bando
+    // está perto da lente, pela mesma conta do rig de luz. Duas leituras e
+    // nenhum import de áudio: o store não importa nada.
+    {
+      const section = plan.section(pose.position.z);
+      const area = (section.left + section.right) * (section.floor + section.ceiling);
+      const geometric = clamp01((area - 17.6 * 12) / (28 * 16.2 - 17.6 * 12));
+      const clear = 1 - clamp01((shared.fogDensity.value - 0.05) / 0.08);
+      let mass = 0;
+      for (const cluster of shared.clusters.value) {
+        const dx = cluster.x - pose.position.x;
+        const dy = cluster.y - pose.position.y;
+        const dz = cluster.z - pose.position.z;
+        const d2 = dx * dx + dy * dy + dz * dz;
+        mass += cluster.w / (1 + d2 * 0.02);
+      }
+      publishSoundField(0.7 * geometric + 0.3 * clear, 1 - Math.exp(-mass * 0.8));
+    }
+
     // --- a leitura da HUD ---------------------------------------------------
     // A cena é a única que sabe onde a câmera está e quanta massa há no
     // poleiro; a HUD é DOM e não sabe nada disso. O fio entre as duas é o
@@ -345,6 +367,7 @@ export function SceneWorld({
   }, -10);
 
   useEffect(() => clearReadout, []);
+  useEffect(() => clearSoundField, []);
   useEffect(() => caseDrive.dispose, [caseDrive]);
 
   return (

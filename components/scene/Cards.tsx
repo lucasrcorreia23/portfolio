@@ -17,6 +17,7 @@ import {
 } from "three";
 import { localeOf, localizePath } from "@/lib/i18n/config";
 import { damp } from "@/lib/motion";
+import { emitCue } from "@/lib/audio/field-store";
 import { getCardFocus, subscribeToCardFocus } from "@/lib/work/card-focus";
 import { enterCase } from "@/lib/work/case-transition";
 import {
@@ -386,6 +387,8 @@ export function Cards({ shared, river }: CardsProps) {
   const settled = useRef(true);
   /** Último card sob o ponteiro, para o atributo e o prefetch não repetirem. */
   const lastHover = useRef(-1);
+  /** A câmera no quadro anterior, para saber quando ela cruza uma peça. */
+  const lastCameraZ = useRef<number | null>(null);
   /** Rascunho da projeção do card focado — alocado uma vez. */
   const focusScratch = useRef({
     matrix: new Matrix4(),
@@ -551,6 +554,25 @@ export function Cards({ shared, river }: CardsProps) {
         }
         attribute.needsUpdate = true;
         settled.current = true;
+      }
+    }
+
+    // --- o sopro de atravessar um card -------------------------------------
+    // Quando a câmera cruza o plano de uma peça na descida, o som marca a
+    // passagem (`lib/audio/sound-bed.ts`), com o pan do lado em que ela estava.
+    // Só no rio e só descendo pelo scroll — dentro de um case a câmera voa por
+    // outro caminho e o cue dela é o de abrir o case.
+    {
+      const camZ = camera.position.z;
+      const previous = lastCameraZ.current;
+      lastCameraZ.current = camZ;
+      if (previous !== null && shared.cardAmount.value > 0.2 && getScrollRole() === "descent") {
+        for (let i = 0; i < count; i += 1) {
+          const slot = shared.cards.value[i];
+          if (slot === undefined) continue;
+          const crossed = (previous - slot.z) * (camZ - slot.z) < 0;
+          if (crossed) emitCue("card", Math.sign(slot.x - camera.position.x));
+        }
       }
     }
 

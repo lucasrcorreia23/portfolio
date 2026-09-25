@@ -983,12 +983,24 @@ dentro do gesto; um `await` antes dele já perde o gesto em alguns navegadores.
 E a descida é liberada no clique, não no fim da transição: prender o scroll por
 mais 1.45 s comeria da regra dos oito segundos sem nada em troca.
 
+**A camada sonora (rodada 10) também é sintetizada, e não tem laço.**
+`lib/audio/sound-bed.ts` gera ruído ao vivo num AudioWorklet (texto levado ao
+`addModule` por URL de blob) — um buffer em laço teria emenda audível. O leito
+passa por um passa-baixa dirigido pela **abertura** da câmara e pela **pressão**
+do bando perto da câmera, e por um passa-faixa largo que acompanha o progresso;
+as duas leituras chegam por `lib/audio/field-store.ts` (sem imports, publicado
+pelo laço mestre). Dois cues: atravessar um card (o laço dos cards) e abrir um
+case (`enterCase`). O leito só existe com o áudio **ligado e destravado por um
+gesto**; o controle da HUD voltou, começa desligado e guarda a escolha em
+`localStorage` (lida depois de montar, para o HTML e a hidratação concordarem).
+O módulo do leito é um `import()` feito depois do gesto: fora da rota inicial.
+
 **O áudio é sintetizado, não é arquivo.** `lib/audio/audio-context.ts` monta o
 baque de pressão com um oscilador grave caindo de tom mais um estouro de ruído
 filtrado — ~1 kB de código contra dezenas de kB de mp3. O módulo já expõe
 `getAudioContext()` e `setAudioMuted()` para o controle de áudio da HUD — que
-**não existe hoje, de propósito**: saiu na rodada 6.5, porque um controle que
-liga e desliga o silêncio é pior que nenhum. Volta com a camada sonora.
+saiu na rodada 6.5 (ligava e desligava silêncio) e **voltou na 10**, com a
+camada sonora.
 
 ### Tipografia e a regra dos 80%
 
@@ -1253,10 +1265,9 @@ Três coisas que parecem detalhe e não são:
 - **A leitura da cena não existe sem cena.** `readout-store.ts` publica
   `live: false` no poster, antes do chunk e depois dele; a HUD esconde a linha
   em vez de mostrar `0.00`, que seria um instrumento inventado.
-- **Não há controle de áudio, e é regra.** Controle não existe antes da coisa
-  controlada: o único som é o baque do portão. A preferência de mudo continua
-  morando no módulo de áudio, não num componente, para quando o controle voltar
-  com a camada sonora — "mudo antes de entrar" tem que continuar mudo no clique.
+- **O controle de áudio só existe porque o leito sonoro existe** (rodada 10).
+  A preferência mora no módulo de áudio, não no componente: "mudo antes de
+  entrar" continua mudo no clique, e o leito nunca toca antes do portão.
 - **O filtro do rio move o rio e o acervo.** Na descida ele promove as peças que
   casam e recua as outras; na HUD ele viaja como `?d=` para a entrada de acervo,
   e `/work` filtra a lista. Mesmo eixo, dois efeitos, nenhum botão morto.

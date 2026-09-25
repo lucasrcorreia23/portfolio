@@ -41,7 +41,19 @@ let master: GainNode | null = null;
  * entrar viraria som ao entrar — e o baque de pressão tocaria justamente para
  * quem tinha pedido silêncio.
  */
-let muted = false;
+/**
+ * **Começa desligado** e guarda a escolha (rodada 10). O controle da HUD escreve
+ * aqui; `hydrateAudioPreference` lê a escolha salva depois da hidratação, para
+ * o HTML do servidor e o primeiro render do cliente concordarem.
+ */
+let muted = true;
+const PREFERENCE_KEY = "lucasrc.audio";
+const preferenceListeners = new Set<() => void>();
+/** O leito sonoro, carregado sob demanda (`sound-bed.ts`). */
+let bed: { dispose: () => void } | null = null;
+let bedStarting = false;
+/** O clique no portão (ou um gesto no controle) já destravou o áudio. */
+let unlocked = false;
 
 /** Pico do baque. Baixo de propósito: é uma pressão, não um susto. */
 const THUD_GAIN = 0.18;
@@ -132,7 +144,59 @@ export function prepareAudio(): Promise<void> {
 export function unlockAudio(): AudioContext | null {
   const ready = ensureContext();
   if (ready !== null) void ready.resume();
+  unlocked = ready !== null;
+  syncBed();
   return ready;
+}
+
+/**
+ * O leito só existe com o áudio ligado **e** destravado por um gesto. Ele
+ * nunca toca antes do clique no portão: antes disso `unlocked` é falso.
+ */
+function syncBed(): void {
+  if (context === null || master === null) return;
+  if (process.env.NODE_ENV !== "production") {
+    // Só para medir o leito (espectro, nível) — nunca em produção.
+    (window as unknown as { __audio?: unknown }).__audio = { context, master };
+  }
+  if (muted || !unlocked) {
+    bed?.dispose();
+    bed = null;
+    return;
+  }
+  if (bed !== null || bedStarting) return;
+  bedStarting = true;
+  const target = context;
+  const destination = master;
+  void import("./sound-bed")
+    .then(({ startSoundBed }) => startSoundBed(target, destination))
+    .then((started) => {
+      bedStarting = false;
+      if (muted) started.dispose();
+      else bed = started;
+    })
+    .catch(() => {
+      // Sem worklet (navegador antigo): o site fica em silêncio, que é melhor
+      // que um laço.
+      bedStarting = false;
+    });
+}
+
+/** Lê a escolha salva. Chamado pelo controle depois de montar. */
+export function hydrateAudioPreference(): void {
+  try {
+    const stored = window.localStorage.getItem(PREFERENCE_KEY);
+    if (stored === "on" && muted) setAudioMuted(false, false);
+  } catch {
+    // Armazenamento bloqueado: continua desligado.
+  }
+}
+
+export function subscribeToAudioPreference(listener: () => void): () => void {
+  preferenceListeners.add(listener);
+  return () => {
+    preferenceListeners.delete(listener);
+  };
 }
 
 export function getAudioContext(): AudioContext | null {
@@ -152,10 +216,29 @@ export function isAudioMuted(): boolean {
  * degrau no ganho é um clique audível, e o PROJECT.md §3.3 não abre exceção
  * para o áudio.
  */
-export function setAudioMuted(next: boolean): void {
+export function setAudioMuted(next: boolean, persist = true): void {
   muted = next;
-  if (master === null || context === null) return;
-  master.gain.setTargetAtTime(next ? 0 : 1, context.currentTime, 0.02);
+  if (persist) {
+    try {
+      window.localStorage.setItem(PREFERENCE_KEY, next ? "off" : "on");
+    } catch {
+      // Sem armazenamento a escolha vale só para esta visita.
+    }
+  }
+  for (const listener of preferenceListeners) listener();
+  if (master !== null && context !== null) {
+    master.gain.setTargetAtTime(next ? 0 : 1, context.currentTime, 0.02);
+  }
+  syncBed();
+}
+
+/**
+ * Ligar o áudio pelo controle **é** um gesto: numa rota sem portão (um case
+ * aberto por link) ele cria e destrava o contexto ali mesmo.
+ */
+export function enableAudioFromGesture(): void {
+  setAudioMuted(false);
+  unlockAudio();
 }
 
 /**

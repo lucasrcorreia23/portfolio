@@ -5,6 +5,7 @@ import { DISCIPLINES, type Discipline } from "@/lib/disciplines";
 import { requireLocale } from "@/lib/i18n/locale";
 import { CaseReturn } from "@/components/work/CaseReturn";
 import { ArchiveLink } from "./ArchiveLink";
+import { AudioToggle } from "./AudioToggle";
 import { BeatReadout } from "./BeatReadout";
 import { DescentSlot } from "./DescentSlot";
 import { HudPanel } from "./HudPanel";
@@ -20,10 +21,8 @@ import { ScrollRule } from "./ScrollRule";
  * rodapé: o site não tem rodapé.** No mobile ela colapsa num acionador no topo
  * (`HudPanel`).
  *
- * **Sem controle de áudio, e isso é regra, não esquecimento.** O único som do
- * site é o baque de 1.4 s do portão; um controle permanente que liga e desliga
- * silêncio é pior que controle nenhum. Ele volta junto com a camada sonora — a
- * preferência de mudo já mora em `lib/audio/audio-context.ts` esperando por ele.
+ * **O controle de áudio saiu na rodada 6.5 e voltou na 10**, junto com a
+ * camada sonora: antes dela ele ligava e desligava silêncio.
  *
  * Três grupos, e a ordem é a da mão: quem procura contato acha em cima, quem
  * quer saber onde está lê o meio, quem quer mexer em alguma coisa acha embaixo.
@@ -111,6 +110,11 @@ export async function Hud() {
       </div>
 
       <div className="flex flex-col gap-3">
+        <AudioToggle
+          label={t("audio.label")}
+          onLabel={t("audio.on")}
+          offLabel={t("audio.off")}
+        />
         <LanguageToggle label={t("language")} active={locale} />
       </div>
     </HudPanel>

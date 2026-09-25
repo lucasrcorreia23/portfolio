@@ -1,3 +1,5 @@
+import { emitCue } from "@/lib/audio/field-store";
+
 /**
  * A travessia do rio para o case, fora do React.
  *
@@ -114,6 +116,9 @@ export function enterCase(
   fromProgress: number,
 ): void {
   if (current.phase === "entering" && current.slug === slug) return;
+  // O som de abrir um case (`lib/audio/sound-bed.ts`). O store não importa
+  // áudio nenhum: sem o leito carregado, ninguém escuta e nada acontece.
+  emitCue("case");
   publish({
     phase: "entering",
     slug,
