@@ -111,6 +111,9 @@ uniform vec3 uCyan;
  * perturbada pela gravação; cavity é quanto o ponto está dentro de uma vala,
  * de 0 a 1.
  */
+/** 1 no quadro (KIND_RIB), 0 no resto — escrito por quem chama, antes. */
+float shadeKind = 0.0;
+
 vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity, float viewDepth) {
 #ifdef PROBE_BLACK
   // Só a sonda define isto (probe-chamber.ts, probe-round12.ts): o concreto sai
@@ -144,6 +147,13 @@ vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity
   // Piso: direta, porque o bando passa por cima dele. Teto: quase nada.
   float grazing = mix(mix(0.78, 0.30, floorness), 0.78, ceilingness);
   float lit = practicalLightNear(world, shadingNormal, grazing, 7.5);
+  // **No quadro, a luz do bando é fraca** (rodada 13). Em Quem sou a coluna
+  // do poleiro corre junto à parede de estibordo, rente aos quadros, e a face
+  // interna de um deles acendia inteira e uniforme: com o concreto sem luz
+  // sendo névoa, lia como um bloco solto aparecendo e sumindo no meio do
+  // trajeto (apontado pelo Lucas; confirmado zerando esta luz). O quadro é
+  // estrutura fina — ele recebe o relance, não a face acesa.
+  lit *= mix(1.0, 0.3, shadeKind);
   float gain = mix(mix(2.6, 2.4, floorness), 0.5, ceilingness);
   vec3 color = (albedo * 2.0 + uCyan * 0.35) * lit * gain;
   // A fonte a montante, com incidência. Ela entra pela abertura do fundo, então
@@ -339,6 +349,7 @@ void main() {
   vec3 n = normalize(vNormal);
   float cavity;
   vec3 shading = engrave(vWorld, n, vKind, cavity);
+  shadeKind = step(0.5, vKind);
   fragColor = vec4(shadeConcrete(vWorld, n, shading, cavity, vViewDepth), 1.0);
 }
 `;
