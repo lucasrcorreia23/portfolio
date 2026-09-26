@@ -54,9 +54,18 @@ uniform float uFocus;
 uniform float uFocusRange;
 uniform float uAperture;
 uniform float uNearBlur;
+/**
+ * Quanto a peça nítida é impedida de sangrar no fundo borrado, 0 a 1 (rodada
+ * 13). O gather é pelo CoC do centro: um pixel do fundo desfocado ao lado de
+ * um card em foco puxava a cor do card para fora da borda — um halo em volta
+ * de cada peça do rio, medido como anel 20 px mais claro que a parede ao lado
+ * só com a DOF ligada. Com a guarda, uma amostra **mais perto e mais nítida**
+ * que o centro perde o peso. Ligada pela rampa do rio, para o desfoque da
+ * Emergência não mudar.
+ */
+uniform float uLeakGuard;
 
-float cocAt(vec2 uv) {
-  float depth = viewDepthAt(uv);
+float cocFromDepth(float depth) {
   float far = clamp(abs(depth - uFocus) / uFocusRange, 0.0, 1.0) * uAperture;
   // **O campo próximo desfoca sempre** (rodada 12), com a abertura aberta ou
   // fechada: o que passa a menos de 2.5 unidades da lente é mancha, não forma.
@@ -65,6 +74,10 @@ float cocAt(vec2 uv) {
   // nesta descida: a parede graduada de Quem sou fica a 3.2 unidades.
   float near = 0.3 * uNearBlur * (1.0 - smoothstep(0.6, 2.5, depth));
   return max(far, near);
+}
+
+float cocAt(vec2 uv) {
+  return cocFromDepth(viewDepthAt(uv));
 }
 `;
 
@@ -88,7 +101,8 @@ out vec4 fragColor;
 const int TAPS = 10;
 
 void main() {
-  float coc = cocAt(vUv);
+  float centerDepth = viewDepthAt(vUv);
+  float coc = cocFromDepth(centerDepth);
   if (coc <= 0.001) {
     fragColor = texture(uSource, vUv);
     return;
@@ -121,9 +135,21 @@ void main() {
     // 3.13 ela chega a 0.6% na borda e o produto volta a ser redondo; o passo
     // subiu na mesma razão, então o raio do borrão não mudou.
     float w = exp(-offset * offset / 19.6);
-    total += texture(uSource, vUv + step * offset) * w;
-    total += texture(uSource, vUv - step * offset) * w;
-    weightSum += w * 2.0;
+    vec2 a = vUv + step * offset;
+    vec2 b = vUv - step * offset;
+    float wa = w;
+    float wb = w;
+    if (uLeakGuard > 0.0) {
+      float da = viewDepthAt(a);
+      float db = viewDepthAt(b);
+      wa *= 1.0 - uLeakGuard * step(da, centerDepth - 0.5)
+        * (1.0 - clamp(cocFromDepth(da) / coc, 0.0, 1.0));
+      wb *= 1.0 - uLeakGuard * step(db, centerDepth - 0.5)
+        * (1.0 - clamp(cocFromDepth(db) / coc, 0.0, 1.0));
+    }
+    total += texture(uSource, a) * wa;
+    total += texture(uSource, b) * wb;
+    weightSum += wa + wb;
   }
 
   fragColor = total / weightSum;

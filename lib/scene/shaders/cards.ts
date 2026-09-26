@@ -191,9 +191,16 @@ void main() {
  * pouco mais, longe dele ela continua lá.
  */
 export const COVER_SELF_TARGET = 0.23;
-/** Faixa do ganho — nem uma capa escura vira farol, nem uma clara some. */
+/**
+ * Faixa do ganho — nem uma capa escura vira farol, nem uma clara some. O teto
+ * era 16 na rodada 12, e as capas geradas (L média 0.013 a 0.022) chegavam a
+ * 9× o próprio valor: telas acesas, mais claras que qualquer trabalho real do
+ * rio. Com 3.3, a razão entregue ÷ original das três fica em 2.1–2.4 (o
+ * Lucas fixou 2.5): uma imagem escura continua escura, só legível. As capas
+ * reais têm ganho de 0.7 a 1.1 e não mudam.
+ */
 export const COVER_GAIN_MIN = 0.4;
-export const COVER_GAIN_MAX = 16;
+export const COVER_GAIN_MAX = 3.3;
 /** O ganho do campo procedural enquanto a imagem não chega. */
 export const COVER_FIELD_GAIN = 1;
 /** Quanto a luz dos aglomerados soma por cima da luz própria. */

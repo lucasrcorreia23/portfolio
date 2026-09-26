@@ -289,9 +289,14 @@ export function installRound12(deps: Round12Deps) {
       p: number;
       meanL: number;
       sourceMeanL: number;
+      /** Entregue ÷ original (rodada 13: teto de 2.5). */
+      ratio: number;
       r: number;
       maxL: number;
       samples: number;
+      /** Anel de 20 px fora do card, e a parede de 40 a 80 px fora. */
+      ringL: number;
+      wallL: number;
     }[] = [];
     const tiles: { source: HTMLCanvasElement; shot: HTMLCanvasElement }[] = [];
 
@@ -350,14 +355,59 @@ export function installRound12(deps: Round12Deps) {
           syy += dy * dy;
         }
         const r = sxy / Math.sqrt(Math.max(sxx * syy, 1e-12));
+
+        // O anel em volta do card inteiro, pela caixa projetada dele.
+        const whole = [
+          [0, 0],
+          [1, 0],
+          [1, 1],
+          [0, 1],
+        ].map(([u, v]) => project(onCard(card, u ?? 0, v ?? 0)));
+        let ringL = Number.NaN;
+        let wallL = Number.NaN;
+        if (whole.every((w) => w !== null)) {
+          const dpr = width / Math.max(window.innerWidth, 1);
+          const wx = whole.map((w) => (w as [number, number])[0]);
+          const wy = whole.map((w) => (w as [number, number])[1]);
+          const bx0 = Math.min(...wx);
+          const bx1 = Math.max(...wx);
+          const by0 = Math.min(...wy);
+          const by1 = Math.max(...wy);
+          const outside = (x: number, y: number) =>
+            Math.max(bx0 - x, x - bx1, by0 - y, y - by1) / dpr;
+          let rs = 0;
+          let rn = 0;
+          let ws = 0;
+          let wn = 0;
+          const pad = 80 * dpr;
+          for (let y = Math.max(0, Math.floor(by0 - pad)); y < Math.min(height, by1 + pad); y += 2) {
+            for (let x = Math.max(0, Math.floor(bx0 - pad)); x < Math.min(width, bx1 + pad); x += 2) {
+              const d = outside(x, y);
+              if (d <= 0) continue;
+              const l = lum(frame, (y * width + x) * 4);
+              if (d <= 20) {
+                rs += l;
+                rn += 1;
+              } else if (d >= 40 && d <= 80) {
+                ws += l;
+                wn += 1;
+              }
+            }
+          }
+          ringL = rs / Math.max(rn, 1);
+          wallL = ws / Math.max(wn, 1);
+        }
         rows.push({
           card: i,
           p: Number(p.toFixed(4)),
           meanL: Number(my.toFixed(4)),
           sourceMeanL: Number(mx.toFixed(4)),
+          ratio: Number((my / Math.max(mx, 1e-6)).toFixed(2)),
           r: Number(r.toFixed(3)),
           maxL: Number(maxL.toFixed(4)),
           samples: n,
+          ringL: Number(ringL.toFixed(4)),
+          wallL: Number(wallL.toFixed(4)),
         });
 
         if (sheet) {
