@@ -85,6 +85,46 @@ dois divergirem, o `PROJECT.md` ganha. Este arquivo é só o mapa do código.
 
 ## Estado atual
 
+### Onde paramos (2026-09-25, fim da rodada 13)
+
+Branch `fundacao`, árvore limpa, último commit da rodada: `72a9bcb`. Nada foi
+enviado ao remoto. As folhas de conferência estão em `.screens/13-*.png` (a
+pasta é ignorada pelo git): `13-frame.png` e `13-frame-sem-peca.png` (o quadro
+do descolamento, 0.14 a 0.24), `13-descida.png` (0.00 a 1.00), `13-capas.png`,
+`13-quem.png`, `13-emergencia.png`.
+
+**O que está de pé e medido** (MEASUREMENTS.md, "Rodada 12, medida" e "Rodada
+13, medida"):
+- a descida inteira sem retângulos: Emergência, Identidade e Quem sou;
+- o bando de volta como massa: 1042 corpos no terço central em 0.18, contra
+  1007 na rodada 8, sem borda recortada;
+- cada card lido de perto (0.47 a 0.51 da largura);
+- capas com luz própria e as geradas com teto de 2.5× o original;
+- saída do case por clique fora, `Esc`, `← RIO` e voltar, com Δ 0;
+- console limpo;
+- contraste de 5.67:1 ou mais na descida (pt e en) e 5.95:1 no case;
+- pacotes dentro dos tetos (188.0 / 187.0 / 332.2 kB).
+
+**Próximos passos, e de quem é cada um:**
+1. **Do Lucas: material real para Perfecting, WeCann e Unifique.** Uma captura
+   de tela de produto já serve. Enquanto forem gradientes gerados, são os pontos
+   mais fracos do rio, e dois estão no topo do ranking.
+2. **Do Lucas: colar a "Regra de governança"** no topo deste arquivo, sem edição.
+   Ela nunca chegou ao repositório.
+3. **Do Lucas: a Superfície sépia** (hoje sépia, não teal com luz peach). É
+   decisão de estilo: se for escolha, risca-se a pendência; se não, entra no
+   próximo prompt.
+4. **Rodar o crítico**, agora que o bando voltou a passar pela peça. A
+   referência é a `13-frame.png`.
+5. **Rodada própria: a silhueta a 3:1 no pixel** (0.74:1 hoje). Pede o bando
+   como massa finita atravessando as letras (item 9 de "O que falta").
+6. **A GPU como fração dos 16.7 ms.** O cronômetro de query satura nesta
+   bancada (tela de 75 Hz): falta um método que não dependa dele. Hoje só vale
+   o teto: quadro mediano de 13.3 ms, p95 de 14.1 ms.
+
+**Para retomar a bancada** (servidor `next dev` na 3000, Chrome próprio por CDP
+na 9222, coletor na 3131): ver MEASUREMENTS.md, "A bancada da rodada 13".
+
 **A rodada 13 devolveu o bando e tirou três retângulos.** O teto de 6 px da 12
 tinha transformado o bando em pó; agora o corpo é um **núcleo** pequeno e opaco
 (que escreve profundidade e mantém a oclusão) mais um **halo** gaussiano, do
@@ -1937,18 +1977,18 @@ Nesta ordem, porque cada uma depende da anterior:
    medir lá.
 11. ~~A varredura de contraste em inglês~~ — **feita na rodada 12**, com o
    cookie `NEXT_LOCALE=en` antes da carga (`lang` conferido na página).
-13. **A silhueta a 3:1 no pixel continua sem passar** (0.74:1 na rodada 13, com
-   o bando de volta). O item 9 descreve o que falta.
-14. **A "Regra de governança" não está no repositório.** Pedida duas vezes; o
-   texto não foi colado, e nenhum agente a escreve de memória.
-15. **A Superfície está sépia**, não teal com luz peach: pergunta do crítico ao
-   Lucas, sem decisão ainda.
 12. **A onda de densidade no pixel.** A rodada 8 registrou amplitude 0.315
    contra 0.032 do controle, e o método descrito não reproduz isso: com
    `__probe.wave()` e o controle `PROBE_NO_WAVE`, a onda **não se separa** do
    controle nem no estado anterior à rodada 12 nem depois. A onda existe na
    simulação (`surge` em `boids.ts`, intocado); falta um instrumento que a veja
    no quadro entregue.
+13. **A silhueta a 3:1 no pixel continua sem passar** (0.74:1 na rodada 13, com
+   o bando de volta). O item 9 descreve o que falta.
+14. **A "Regra de governança" não está no repositório.** Pedida duas vezes; o
+   texto não foi colado, e nenhum agente a escreve de memória.
+15. **A Superfície está sépia**, não teal com luz peach: pergunta do crítico ao
+   Lucas, sem decisão ainda.
 
 O item que era o sétimo — verificar a cena num iPhone contra o piso de 30 fps —
 **está feito**: 4.62 ms de GPU por quadro, 55.6 fps, ver "Desempenho da cena,

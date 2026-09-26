@@ -1933,6 +1933,46 @@ sobra é o teto: quadro mediano **13.3–13.4 ms** (75 fps) em todas as faixas,
 p95 ~26.7 ms (um quadro perdido), **igual no estado anterior**. A fração de GPU
 dos 16.7 ms não foi medida.
 
+## A bancada da rodada 13
+
+Como as medições das rodadas 12 e 13 foram tiradas, para quem retomar. Nenhum
+passo abaixo escreve no repositório.
+
+1. **O servidor.** `npm run dev` na 3000. Build de produção, só para pacote e
+   GPU: `find .next -mindepth 1 -maxdepth 1 ! -name dev -exec rm -rf {} +` e
+   depois `npm run build && npm run start -- -p 3100`, **sem** apagar o
+   `.next/dev`.
+2. **O coletor.** `npm run collect`, na 3131; ele grava as folhas em
+   `.screens/`.
+3. **Um Chrome só da medição**, com perfil próprio, fora do navegador de todo
+   dia:
+   ```bash
+   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+     --remote-debugging-port=9222 --user-data-dir=<pasta temporária> \
+     --no-first-run --disable-backgrounding-occluded-windows \
+     --disable-renderer-backgrounding --disable-background-timer-throttling \
+     --disable-features=CalculateNativeWinOcclusion
+   ```
+   Tudo passa por `scripts/cdp.mjs eval "<expressão>" --nav=<url>
+   --emulate=1440,900`. Com `?probe=1` a sonda fica em `window.__probe`; as
+   medições desta rodada estão em `lib/scene/probe-round12.ts`.
+4. **Inglês de verdade.** Grave `document.cookie='NEXT_LOCALE=en; path=/'` antes
+   de navegar, e confira o `lang`: esta bancada negocia `pt` em `/`.
+   **Devolva o cookie para `pt` no fim.**
+5. **Estados antigos, pelo mesmo instrumento.**
+   - `git worktree add <pasta temporária>/r8 f2c7329`
+   - `cp -Rc node_modules <pasta temporária>/r8/node_modules`: clone APFS. Um
+     symlink não serve, o Turbopack recusa `node_modules` fora da raiz.
+   - `npx next dev -p 3004` dentro da worktree.
+   - As funções novas de sonda não existem lá; a contagem entra como JS
+     injetado sobre o `readPixels` (é o que se fez para 1007 / 943 / 1042).
+6. **Buffer nativo.** CDP `Emulation.setDeviceMetricsOverride` com
+   `deviceScaleFactor: 2`: o canvas corta em 1.5 e a GPU desenha 2160×1350 de
+   verdade.
+7. **O cursor numa captura.** `screencapture -C` só mostra o ponteiro do
+   sistema: mova-o com um `CGEvent` de `mouseMoved` (um `swift` de dez linhas) e
+   ative a janela do Chrome de medição pelo PID.
+
 ## Rodada 13, medida
 
 Bancada da 12 (Chrome próprio por CDP, 1440×900, DPR 1, `?probe=1`, `?grain=0`
