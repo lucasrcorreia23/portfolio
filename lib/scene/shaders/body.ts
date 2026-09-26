@@ -371,6 +371,10 @@ void main() {
   // Perto da lente o halo apaga: com 45 px de teto e o brilho inteiro, os
   // corpos a menos de cinco unidades viravam ovais claros cobrindo o quadro.
   vGlow *= smoothstep(1.5, 5.0, depth);
+  // O halo é da massa, e a massa só existe com o bando formado: na Emergência
+  // ("uns poucos corpos isolados") ele acendia dezenas de corpos no escuro que
+  // a rodada 12 tinha deixado certo. Entra entre 0.09 e 0.13 de progresso.
+  vGlow *= smoothstep(0.55, 0.8, uForming);
 
   // A direção do voo na tela: o centro e um passo à frente, projetados.
   vec4 clipCenter = projectionMatrix * viewCenter;

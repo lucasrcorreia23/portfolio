@@ -142,10 +142,13 @@ void main() {
     if (uLeakGuard > 0.0) {
       float da = viewDepthAt(a);
       float db = viewDepthAt(b);
-      wa *= 1.0 - uLeakGuard * step(da, centerDepth - 0.5)
-        * (1.0 - clamp(cocFromDepth(da) / coc, 0.0, 1.0));
-      wb *= 1.0 - uLeakGuard * step(db, centerDepth - 0.5)
-        * (1.0 - clamp(cocFromDepth(db) / coc, 0.0, 1.0));
+      // Sem step(): a variável local do passo já se chama step e esconde a
+      // função — o shader não compilava e a DOF saía preta (visto na
+      // Emergência, onde tudo é desfoque).
+      float nearerA = da < centerDepth - 0.5 ? 1.0 : 0.0;
+      float nearerB = db < centerDepth - 0.5 ? 1.0 : 0.0;
+      wa *= 1.0 - uLeakGuard * nearerA * (1.0 - clamp(cocFromDepth(da) / coc, 0.0, 1.0));
+      wb *= 1.0 - uLeakGuard * nearerB * (1.0 - clamp(cocFromDepth(db) / coc, 0.0, 1.0));
     }
     total += texture(uSource, a) * wa;
     total += texture(uSource, b) * wb;
