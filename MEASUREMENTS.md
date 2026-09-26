@@ -1933,6 +1933,104 @@ sobra é o teto: quadro mediano **13.3–13.4 ms** (75 fps) em todas as faixas,
 p95 ~26.7 ms (um quadro perdido), **igual no estado anterior**. A fração de GPU
 dos 16.7 ms não foi medida.
 
+## Rodada 13, medida
+
+Bancada da 12 (Chrome próprio por CDP, 1440×900, DPR 1, `?probe=1`, `?grain=0`
+onde se comparam quadros). Referências do bando em worktrees com servidor de
+desenvolvimento próprio: rodada 8 (`f2c7329`) e antes da 12 (`c190103`), mesmo
+instrumento nos três estados. Folhas: `.screens/13-descida.png`,
+`13-frame.png`, `13-frame-sem-peca.png`, `13-capas.png`, `13-quem.png`,
+`13-emergencia.png`.
+
+### O bando
+
+**Contagem no terço central em 0.18** (`SEPARATION_PROGRESS`): componentes
+acima de L 0.07 (o limiar de corpo da sonda), média de 20 quadros:
+
+| | corpos |
+|---|---|
+| rodada 8 (`f2c7329`) | **1007** |
+| antes da 12 (`c190103`) | 943 |
+| rodada 12 | 263 |
+| **rodada 13** | **1042** |
+
+**O bando pela peça, 0.14 a 0.24** (`__probe.throughPiece`: caixa da palavra
+por pixel, corpos por diferença com e sem o bando): mínimo **42** corpos (0.175),
+máximo 117. Nenhum quadro vazio.
+
+**Borda nítida** (`__probe.sharpEdges`): só o bando, 201 quadros de 0 a 1;
+nítido = gradiente de L acima de G × pico da componente por px; comprimento =
+diagonal do grupo conexo de pixels nítidos, em px de CSS:
+
+| G | 1 corpo em 256 | 1 em 64 |
+|---|---|---|
+| **50%** (borda recortada antisserrilhada ≥ 50%/px; gaussiana de σ ≥ 1.2 px, não) | **5.7** | 6.4 |
+| 40% | 10.6 | 12.8 |
+| 25% | 29.7 | — |
+
+O que os limiares mais baixos pegam são flancos de gaussiana de σ ~2 px (halos
+pequenos). A maior mancha macia passa de 99 px. Os 6.4 px da amostra de 1/64
+são dois núcleos sobrepostos.
+
+**Silhueta sem a malha** (em 0.19, 60 quadros, anel ÷ tinta): **0.74:1**, contra
+o alvo de 3:1. Não passa (rodadas anteriores: 0.74, 1.02).
+
+**Calor**: pico 1.8% do quadro (0.65), teto 15%.
+
+**Emergência**: folha de 0.00 a 0.12 contra `12-emergencia.png`, diferença
+média **3.6/255**; a olho, igual.
+
+### As capas
+
+| card | L original | L entregue | entregue ÷ original | r |
+|---|---|---|---|---|
+| Perfecting (gerada) | 0.022 | 0.047 | **2.13** | 0.996 |
+| Unifique (gerada) | 0.013 | 0.032 | **2.40** | 0.999 |
+| Decision Suite | 0.290 | 0.133 | 0.46 | 0.969 |
+| WeCann (gerada) | 0.016 | 0.037 | **2.28** | 0.998 |
+| Prime8 | 0.312 | 0.123 | 0.39 | 0.973 |
+| ZOOMtecnologia | 0.229 | 0.126 | 0.55 | 0.966 |
+| Nestlé | 0.205 | 0.117 | 0.57 | 0.935 |
+
+Teto 2.5 ✅. As reais têm os mesmos números da 12.
+
+**O halo em volta do card era a DOF.** Anel de 20 px fora do card contra a parede
+de 40–80 px, na leitura:
+
+| | card 1 | card 6 |
+|---|---|---|
+| DOF ligada, antes | 0.0161 / 0.0094 | 0.0175 / 0.0093 |
+| DOF desligada | 0.0093 / 0.0094 | 0.0092 / 0.0092 |
+| **depois** (`uLeakGuard`, chanfro 0.07) | 0.0093 / 0.0094 | 0.0096 / 0.0092 |
+
+Nos sete: anel igual à parede ou abaixo, menos o Prime8 (0.0175 / 0.0148),
+que tem outra peça ao lado.
+
+### Os três retângulos
+
+- **Quem sou**: esconder o céu no mesmo instante (`pairDiff`) muda 2% do quadro,
+  espalhado — não era ele. Com contraste esticado, retângulos concêntricos nas
+  seções: a quantidade de névoa sobre concreto sem luz. Depois do piso de névoa,
+  só os contornos irregulares do ruído.
+- **O bloco**: some zerando a luz do bando, fica zerando a da fonte; atenuar por
+  distância ou por face de frente não muda nada (a face é vista de raspão, a
+  6–10 u). Com a luz do bando a 30% no quadro, some.
+- **A Emergência** saiu preta numa folha intermediária: `step()` escondido pela
+  variável `step` do DOF (AGENTS.md, armadilhas). Consertado e remedido.
+
+### Regressões
+
+| | resultado |
+|---|---|
+| contraste, descida pt | 5.76 / 5.68 / 5.68 / 5.69 / 5.67 |
+| contraste, descida en | idem |
+| contraste no case (pt e en) | 5.95 |
+| leitura dos cards | 0.471–0.507 |
+| saídas do case | Δ 0.00000 pelas quatro, rio visível |
+| costura da travessia | 0.0089 px, 0 quadros de buraco |
+| pacote | 188.0 / 187.0 kB; cena 332.2 de 350 |
+| GPU, 2160×1350 (DPR 2 emulado) | escada de K: 5.3 / 5.8 / 6.3 / 7.0 ms por faixa (32–42% de 16.7), com o cronômetro a 4.3× o teto físico (indicativo); quadro mediano 13.3 ms e p95 14.1 ms em todas as faixas (na 12, p95 26.7) |
+
 ## Desempenho da cena, medido
 
 Varredura sintética de 0.00 a 0.28, passo de relógio fixo em 1/60 s, DPR travado

@@ -85,6 +85,17 @@ dois divergirem, o `PROJECT.md` ganha. Este arquivo é só o mapa do código.
 
 ## Estado atual
 
+**A rodada 13 devolveu o bando e tirou três retângulos.** O teto de 6 px da 12
+tinha transformado o bando em pó; agora o corpo é um **núcleo** pequeno e opaco
+(que escreve profundidade e mantém a oclusão) mais um **halo** gaussiano, do
+tamanho que o corpo teria, misturado pelo **máximo** — e o critério passou de
+tamanho para borda (MEASUREMENTS.md, "Rodada 13, medida"). As capas geradas
+têm teto de ganho (entregue ≤ 2.5× o original), e o halo em volta dos cards —
+que era a DOF puxando a peça nítida para o fundo borrado — saiu. Os retângulos:
+o de Quem sou era a quantidade de névoa desenhando as seções (o concreto sem
+luz agora é a própria névoa); o bloco solto era a face de um quadro acesa pelo
+poleiro (a luz do bando no quadro caiu para 30%); e a Emergência ficou igual.
+
 **A rodada 12 corrigiu oito defeitos de imersão, sem mudar o estilo.** Ver
 MEASUREMENTS.md, "Rodada 12, medida", para os números. Em uma linha cada:
 o script do portão saiu do componente (`next/script` no layout) e o console
@@ -393,8 +404,11 @@ Estado medido, com o portão, a HUD e a cena dos quatro primeiros beats:
 |---|---|---|
 | `/` e `/pt` — a descida, com portão, preloader, HUD, os links dos cards, o controle de áudio, a Superfície e o poster sem WebGL | **186.6 kB** | 200 kB ✅ |
 | `/work/[slug]` — o case, sem portão, **com a cena em chunk dinâmico** | **184.9 kB** | 200 kB ✅ |
-| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, campo de distância, descolamento, poleiro, véu medido, o corredor do rio, o conteúdo dele e **a travessia para o case** e **a câmara** (planta, loft, quadros, gravação, números) e **a Superfície** (aletas, soleira, lâminas de luz, saída do bando) | **329.5 kB** | 350 kB ✅ |
+| **chunk da cena** — three, R3F, `Text` do drei, troika, compositor, shaders, campo de distância, descolamento, poleiro, véu medido, o corredor do rio, o conteúdo dele e **a travessia para o case** e **a câmara** (planta, loft, quadros, gravação, números) e **a Superfície** (aletas, soleira, lâminas de luz, saída do bando) | **332.2 kB** | 350 kB ✅ |
 | chunk do driver de scroll (gsap + ScrollTrigger + lenis) | 48.0 kB | fora da rota inicial |
+
+**Rodada 13.** Chunk da cena **332.2 kB** (+2.7: o halo do bando, a guarda da
+DOF, o piso de névoa do concreto). Rota inicial sem mudança. Sobram 17.8 kB.
 
 **Rodada 12.** 188.0 kB na home (+1.4: o `next/script` do layout), 187.0 kB no
 case (+2.1: `CaseExit` e `leaveCase`) e **329.5 kB** no chunk da cena (+3.6: o
@@ -721,12 +735,27 @@ não existe.
 
 #### O bando
 
-**Nenhum corpo passa de ~6 px na tela** (rodada 12): o teto é por eixo, em px de
-CSS (`BODY_MAX_PX` = 3.5 de comprimento, `BODY_MAX_WIDTH_PX` = 2 de largura), com
-o fator (1 + tan²) de fora do eixo, e `uFocalPx` vem do `Flock` a cada quadro.
-Encolher o corpo inteiro por um fator só deixava um fio sub-pixel e o bando
-sumia. Perto da lente ele encolhe e apaga (`BODY_NEAR_GONE`/`FULL`). Depois de
-formado, o isolado brilha 0.2 e o aglomerado até 1.75.
+**Núcleo e halo** (rodada 13; `BODY_VERT`/`GLOW_VERT` em `shaders/body.ts`).
+O **núcleo** é o fuso, com teto por eixo em px de CSS (`BODY_MAX_PX` 3.5 ×
+`BODY_MAX_WIDTH_PX` 2, com o fator (1 + tan²) de fora do eixo; `uFocalPx` vem
+do `Flock`). Ele é opaco e escreve profundidade: a oclusão das letras depende
+dele. O **halo** é um quad por corpo, gaussiano, alongado na direção do voo, com
+o tamanho que o corpo da rodada 8 teria (1.5×, teto 45 px, largura 0.25 do
+comprimento), testando a profundidade sem escrevê-la. Quatro coisas que
+custaram uma medição cada:
+
+- **Mistura pelo máximo, não pela soma.** Aditivo, o poleiro empilhava
+  centenas de halos numa parede de luz.
+- **Teto na amplitude, antes da gaussiana** (`GLOW_PEAK`). Um halo claro demais
+  satura no tonemap e vira barra de ponta dura.
+- **Só com o bando formado** (`uForming`), senão acende a Emergência; e **baixo
+  no rio** (`uCardAmount`), senão a DOF do corredor o desmancha em névoa em
+  volta das capas.
+- **Alpha-to-coverage não serve** para amolecer a silhueta do fuso: com 4
+  amostras vira pontilhado, e cada pixel pontilhado é borda nítida.
+
+O brilho segue a densidade: isolado 0.5, aglomerado até 1.75 (a rampa da
+rodada 8).
 
 FBO ping-pong, RGBA32F, `NearestFilter` **explícito nos dois filtros** — o padrão
 de `minFilter` é linear, filtrar float exige `OES_texture_float_linear`, e o
@@ -948,11 +977,16 @@ Mexer numa medida da câmara é mexer num lugar só.
   incidência (com raspão só a mais de ~10 unidades da abertura). Sem ele a
   parede do fundo, coplanar à abertura, saía mais clara que a própria fonte.
 - **A cor da névoa não depende da profundidade** além de ~14 unidades (rodada
-  12): o `--deep` é o halo da fonte, **pela direção do raio** (`sourceHalo`), e
-  além de 40–70 unidades tudo satura em névoa. Pesar o halo pela profundidade,
-  ou deixar uma superfície distante passar alguns por cento da própria cor,
-  redesenha as seções da câmara como retângulos concêntricos — aconteceu duas
-  vezes nesta rodada. O plano do céu não tem luz própria na descida.
+  12): o `--deep` é o halo da fonte, **pela direção do raio** (`sourceHalo`).
+  Pesar o halo pela profundidade redesenha as seções da câmara como retângulos
+  concêntricos.
+- **O concreto sem luz é a própria névoa** (rodada 13, `fogColorAt` como piso em
+  `shadeConcrete`; o céu atrás da abertura também). Sem isso a **quantidade** de
+  névoa, que cresce com a profundidade, pintava cada seção num tom, e o salão do
+  rio lia como um retângulo claro visto de Quem sou. A estrutura aparece só onde
+  a luz toca e nas valas. `PROBE_BLACK` devolve esse piso.
+- **O quadro recebe pouca luz do bando** (30%, pelo `vKind`): a face interna de
+  um quadro rente ao poleiro acendia inteira e lia como um bloco solto.
 - **Bolsões de névoa** (`fogPocket`, em `shaders/fog.ts`) são fixos em z e
   amostrados ao longo do raio, não só no ponto: um bolsão entre a câmera e a
   parede vela a parede, um atrás dela não.
@@ -987,6 +1021,10 @@ parava em exp(−2), e o produto de duas passadas separáveis de uma gaussiana
 cortada é um quadrado — todo corpo claro desfocado virava caixa. σ = 3.13 e
 passo 13.4, mesmo raio.
 
+**A peça nítida não sangra no fundo borrado** (rodada 13, `uLeakGuard`, pela
+rampa do rio): uma amostra mais perto e mais nítida que o centro perde o peso.
+Era o halo em volta de cada card.
+
 **O campo próximo desfoca sempre** (`cocAt`, menos de 2.5 unidades), com a
 abertura em zero inclusive; por isso as passadas rodam sempre que a DOF está
 ligada, e não só com abertura > 0. Dentro do case ele sai junto com o resto
@@ -1001,7 +1039,9 @@ luminância média **linear** da camada quando ela chega, leva a imagem a
 `COVER_SELF_TARGET` antes da névoa; o bando soma por cima; um joelho alto
 (`COVER_KNEE` → `COVER_CEILING`) segura fundos brancos. **É um ganho por
 imagem**, e é de propósito: a capa do ZOOM tem L média 0.03 e a da Decision
-Suite 0.29. **Na peça atracada tudo isso sai** — a entrega ao `<img>` do case
+Suite 0.29. **O teto é 3.3** (rodada 13): com 16, as capas geradas chegavam a
+9× o próprio valor e viravam telas acesas; o Lucas fixou entregue ≤ 2.5× o
+original. **Na peça atracada tudo isso sai** — a entrega ao `<img>` do case
 precisa dos mesmos bytes; é a rampa `docked` que faz a troca. Mexer nesse `mix`
 é mexer na costura da travessia.
 
@@ -1482,6 +1522,14 @@ Três coisas que parecem detalhe e não são:
   que na descida é no-op (lá todo bloco marcado já cabe numa viewport) e no case
   transforma a coluna na fatia visível dela. Marcar bloco a bloco **não** é a
   saída: nove blocos disputando os oito slots reprovaram em 2.87:1.
+- **Uma variável GLSL chamada `step` esconde a função `step()`.** O DOF tem
+  `vec2 step` (o passo da amostragem); a guarda nova chamou `step(a, b)` ali
+  dentro, o shader deixou de compilar sem erro visível no quadro, e todo pixel
+  desfocado saiu preto — a Emergência inteira virou um retângulo preto. Compare
+  com `a < b ? 1.0 : 0.0`.
+- **`hold()` satura a energia do bando**, então os corpos mudam de cor entre
+  duas leituras "no mesmo instante". Uma máscara de outra coisa (a palavra, por
+  exemplo) tem que sair de dois quadros **sem** o bando.
 - **Dois quadros comparados precisam ser o mesmo instante.** Uma medição por
   diferença (peça com e sem máscara, superfície normal e preta) feita em dois
   `step(1)` seguidos compara também o que o tempo mudou — a névoa tem ruído no
@@ -1889,6 +1937,12 @@ Nesta ordem, porque cada uma depende da anterior:
    medir lá.
 11. ~~A varredura de contraste em inglês~~ — **feita na rodada 12**, com o
    cookie `NEXT_LOCALE=en` antes da carga (`lang` conferido na página).
+13. **A silhueta a 3:1 no pixel continua sem passar** (0.74:1 na rodada 13, com
+   o bando de volta). O item 9 descreve o que falta.
+14. **A "Regra de governança" não está no repositório.** Pedida duas vezes; o
+   texto não foi colado, e nenhum agente a escreve de memória.
+15. **A Superfície está sépia**, não teal com luz peach: pergunta do crítico ao
+   Lucas, sem decisão ainda.
 12. **A onda de densidade no pixel.** A rodada 8 registrou amplitude 0.315
    contra 0.032 do controle, e o método descrito não reproduz isso: com
    `__probe.wave()` e o controle `PROBE_NO_WAVE`, a onda **não se separa** do
