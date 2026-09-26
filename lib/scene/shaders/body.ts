@@ -326,6 +326,8 @@ export const GLOW_FULL = 9;
 export const GLOW_SCALE = 1.5;
 /** Teto do comprimento do halo na tela, em px de CSS. */
 export const GLOW_MAX_PX = 45;
+/** Teto da amplitude do halo, em HDR linear, antes do tonemap (1.15×). */
+export const GLOW_PEAK = 0.55;
 
 export const GLOW_VERT = /* glsl */ `
 uniform sampler2D uPos;
@@ -436,6 +438,12 @@ void main() {
   float energy = uGain * (0.55 + 0.85 * vEnergy) * crowd * 1.1;
   // Aditivo através da névoa: o que atravessa é a parte não velada.
   float amount = 1.0 - exp(-uFogDensity * max(vViewDepth, 0.0));
-  fragColor = vec4(color * energy * g * vGlow * (1.0 - amount), 1.0);
+  // **A amplitude tem teto, e antes da gaussiana.** Um halo claro demais
+  // satura no tonemap: o topo vira platô e a borda fica íngreme — uma barra
+  // recortada, exatamente a forma legível que o halo existe para não ter
+  // (medido: borda nítida de 25 px em 0.31). Limitando a amplitude, e não o
+  // pixel, o perfil continua gaussiano abaixo da saturação.
+  float amplitude = min(energy * vGlow * (1.0 - amount), ${GLOW_PEAK.toFixed(2)});
+  fragColor = vec4(color * amplitude * g, 1.0);
 }
 `;
