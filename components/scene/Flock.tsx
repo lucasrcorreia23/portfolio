@@ -351,6 +351,7 @@ export function Flock({
         uBodyScale: bodyMaterial.uniforms["uBodyScale"] ?? { value: 0.085 },
         uFocalPx: focalPx,
         uViewportPx: viewportPx,
+        uCardAmount: shared.cardAmount,
         uForming: shared.forming,
         uTeal: shared.teal,
         uCyan: shared.cyan,

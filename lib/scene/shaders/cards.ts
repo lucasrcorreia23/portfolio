@@ -360,7 +360,11 @@ void main() {
   // alguém tocou. O acento do case tinge a quina, e é o único lugar do rio em
   // que ele aparece — placa e capa não são pintadas por token.
   vec3 chamferTint = mix(mix(uMist, uCyan, clamp(glazing, 0.0, 1.0)), vAccent, 0.35 + 0.4 * hover);
-  color += chamferTint * chamfer * (glazing * 0.22 + hover * 0.30);
+  // Rodada 13: de 0.22 para 0.07. Com a luz do bando passando rente, a quina
+  // acesa desenhava uma moldura teal em volta do card inteiro — o brilho que
+  // contorna o retângulo, que o Lucas chamou de box-shadow em shader. A quina
+  // continua lá como relance; a marcação de foco e ponteiro (hover) não muda.
+  color += chamferTint * chamfer * (glazing * 0.07 + hover * 0.30);
 
   // --- a capa, recuada -----------------------------------------------------
   vec2 coverMin = ${COVER_MIN};

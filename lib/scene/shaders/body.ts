@@ -334,6 +334,7 @@ uniform float uBodyScale;
 uniform float uForming;
 uniform float uFocalPx;
 uniform vec2  uViewportPx;
+uniform float uCardAmount;
 
 in vec2 aRef;
 
@@ -375,6 +376,10 @@ void main() {
   // ("uns poucos corpos isolados") ele acendia dezenas de corpos no escuro que
   // a rodada 12 tinha deixado certo. Entra entre 0.09 e 0.13 de progresso.
   vGlow *= smoothstep(0.55, 0.8, uForming);
+  // No rio o halo baixa: fora de foco, a DOF do corredor o desmanchava numa
+  // névoa teal em volta das capas — fumaça, que o DIRECTION.md §6 veta, e o
+  // rio existe para mostrar o trabalho.
+  vGlow *= mix(1.0, 0.35, uCardAmount);
 
   // A direção do voo na tela: o centro e um passo à frente, projetados.
   vec4 clipCenter = projectionMatrix * viewCenter;
