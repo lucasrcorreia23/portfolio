@@ -81,6 +81,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
               <IdentityBeat
                 beat={beat}
                 specimen={t("identity.specimen")}
+                name={t("identity.name")}
                 position={position}
               />
             ) : null}

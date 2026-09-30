@@ -7,6 +7,8 @@ type IdentityBeatProps = {
   beat: Beat;
   /** A string do corpo de prova. A mesma que o troika desenha na cena. */
   specimen: string;
+  /** O nome por extenso: o `<h1>` acessível. */
+  name: string;
   /** As três linhas do posicionamento, em ordem de leitura. */
   position: readonly string[];
 };
@@ -33,14 +35,20 @@ type IdentityBeatProps = {
  * coluna vai para a outra margem, e para o terço inferior, fora da faixa onde o
  * corpo de prova atravessa o quadro. Nunca centralizada.
  */
-export function IdentityBeat({ beat, specimen, position }: IdentityBeatProps) {
+export function IdentityBeat({ beat, specimen, name, position }: IdentityBeatProps) {
   const span = beat.to - beat.from;
 
   return (
     <>
-      <DisplayLine as="h1" step="display-1" className="beat-specimen mt-6">
-        {specimen}
-      </DisplayLine>
+      {/* A peça é a assinatura LRC (rodada 17); o título da página continua
+          sendo o nome por extenso, para quem lê com leitor de tela e para a
+          indexação. O LRC em DOM só aparece sem cena (poster). */}
+      <h1 className="sr-only">{name}</h1>
+      <div aria-hidden="true">
+        <DisplayLine as="p" step="display-1" className="beat-specimen mt-6">
+          {specimen}
+        </DisplayLine>
+      </div>
 
       <BeatReveal
         from={beat.from + span * 0.15}
