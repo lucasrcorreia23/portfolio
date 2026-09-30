@@ -2312,6 +2312,25 @@ existia**, não um lugar novo. Os commits continuam no histórico
 (`5416158` a `22c5f65`) se alguma peça — a camada de sprites, o passo de vidro
 — for útil de novo.
 
+## Rodada 22, medida — o rio
+
+Folhas: `.screens/22-agua.png` (0.10 → 0.90) e `22-um.png` (0.55, quadro
+inteiro).
+
+- **O nível da água é o que decide.** No piso (y −7) o reflexo funcionava
+  (conferido desenhando só a textura do reflexo), mas o reflexo dos cards e do
+  bando, perto de y 0, caía fora do quadro, e perto da câmera a água só
+  refletia o teto escuro. A −3.6 as peças pairam sobre o rio e o reflexo delas
+  entra na metade de baixo da tela.
+- **Contraste:** 5.70 / 5.67 / 5.69 / 5.68.
+- **Tempo de quadro,** `requestAnimationFrame` na página real (1440×900, tela
+  de 75 Hz), A/B no mesmo carregamento de servidor: com a água 13.3 ms de
+  mediana em 0.18/0.36/0.62/0.90, sem ela (`?water=0`) 13.3–13.4. O teto do
+  vsync esconde a diferença: o custo real de GPU do segundo passo (a cena em
+  meia resolução) não foi separado. Uma primeira leitura de 26.6 ms foi
+  aquecimento do servidor de desenvolvimento e não se repetiu.
+- **Pacote:** chunk da cena 302.6 kB (+0.9).
+
 ## Desempenho da cena, medido
 
 Varredura sintética de 0.00 a 0.28, passo de relógio fixo em 1/60 s, DPR travado
