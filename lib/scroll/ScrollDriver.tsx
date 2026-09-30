@@ -5,7 +5,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis, { type VirtualScrollData } from "lenis";
 import { useReducedMotion } from "@/lib/capabilities/use-reduced-motion";
-import { easeStrong, LENIS_LERP } from "@/lib/motion";
+import { LENIS_LERP } from "@/lib/motion";
 import { riverReadings } from "@/lib/scene/river-readings";
 import { descentFromScroll, scrollFromDescent } from "./descent-map";
 import { publishFrame } from "./frame-bus";
@@ -18,21 +18,26 @@ import {
 } from "./scroll-store";
 
 /**
- * O passo do rio (rodada 14): dentro do beat de Trabalho, **um gesto de roda
- * leva a um card** — nem meio, nem dois.
+ * O rio tem água (rodada 14, revista): perto de cada card a rolagem fica mais
+ * densa, e quando a mão para, a página assenta devagar na leitura mais
+ * próxima.
  *
- * Os cards ficam a ~1 vh de rolagem um do outro no desktop, e a medição de
- * antes (roda sintética a 1440×900) mostrou um gesto de uma tela atravessando
- * dois cases e um de duas telas atravessando quatro. Um snap por proximidade
- * alinhava a parada ao card mas não limitava o avanço: medido, os mesmos 2 e 4.
+ * A primeira versão travava: um gesto virava uma viagem de duração fixa até o
+ * card vizinho e o resto do gesto era engolido. Resolvia o pulo de cases, mas o
+ * Lucas a leu como radical e não natural — e tudo neste projeto precisa
+ * refletir o mundo real. Então nada é engolido e nada tem duração fixa:
  *
- * `STEP_DURATION_S` é quanto dura a viagem de um card ao outro; `QUIET_MS` é o
- * silêncio de roda que encerra o gesto — um trackpad continua mandando inércia
- * por meio segundo depois do dedo sair, e cada resto dessa inércia não pode
- * virar outro passo.
+ * - `RIVER_VISCOSITY` é quanto um gesto rende em cima de um card (metade), e
+ *   ele sobe até o cheio no meio da passagem — a rolagem desacelera onde há o
+ *   que ver, como a câmera, que também desacelera ali (`RIVER_SLOW`, em
+ *   `curve.ts`);
+ * - depois de `SETTLE_QUIET_MS` sem roda e com a página parada, ela deriva até
+ *   a leitura mais próxima pelo próprio `lerp` do Lenis, bem mais baixo que o
+ *   da rolagem (`SETTLE_LERP`): um assentamento, não um estalo.
  */
-const STEP_DURATION_S = 1.1;
-const QUIET_MS = 240;
+const RIVER_VISCOSITY = 0.5;
+const SETTLE_QUIET_MS = 420;
+const SETTLE_LERP = 0.028;
 
 export default function ScrollDriver() {
   const reducedMotion = useReducedMotion();
@@ -81,60 +86,37 @@ export default function ScrollDriver() {
       };
     }
 
-    // **O rio anda um card por gesto.** Um evento de roda dentro do alcance do
-    // rio (a leitura vizinha na direção do gesto a no máximo um intervalo) vira
-    // uma viagem até essa leitura, e o resto do gesto é engolido até a viagem
-    // acabar e a roda silenciar. Na última leitura, rolando para baixo, e na
-    // primeira, rolando para cima, não há vizinha: a rolagem volta a ser livre e
-    // sai do rio. As leituras são as da curva (`riverReadings`), e a curva
-    // repousa em cada uma (`RIVER_HOLD`, em `lib/scene/curve.ts`).
-    //
-    // Só roda e trackpad: no toque a rolagem é nativa, e quem segura é o
-    // repouso da curva. Dentro de um case a rolagem é do artigo, e nada muda.
-    let stepping = false;
-    let stepDone = true;
+    // **O rio tem água.** Ver `RIVER_VISCOSITY`. As leituras são as da curva
+    // (`riverReadings`); no toque a rolagem é nativa e só a desaceleração da
+    // câmera vale. Dentro de um case a rolagem é do artigo, e nada muda.
     let lastWheel = 0;
-    let stepStarted = 0;
-    const stepRiver = (data: VirtualScrollData): boolean => {
-      if (getScrollRole() !== "descent" || !data.event.type.includes("wheel")) return true;
-      const now = performance.now();
-      if (stepping) {
-        lastWheel = now;
-        if (data.event.cancelable) data.event.preventDefault();
-        return false;
-      }
-      const direction = Math.sign(data.deltaY);
-      const limit = lenis.limit;
-      if (direction === 0 || limit <= 0) return true;
+    let settled = true;
+    const nearestReading = (here: number) => {
       const readings = riverReadings();
       const interval = readings.length > 1 ? readings[1]! - readings[0]! : 1;
+      let best = readings[0] ?? 0;
+      for (const at of readings) if (Math.abs(at - here) < Math.abs(best - here)) best = at;
+      return { best, interval };
+    };
+    const viscous = (data: VirtualScrollData): boolean => {
+      if (getScrollRole() !== "descent" || !data.event.type.includes("wheel")) return true;
+      lastWheel = performance.now();
+      settled = false;
+      const limit = lenis.limit;
+      if (limit <= 0) return true;
       const here = descentFromScroll(lenis.animatedScroll / limit);
-      const epsilon = 0.002;
-      const next =
-        direction > 0
-          ? readings.find((at) => at > here + epsilon)
-          : readings.findLast((at) => at < here - epsilon);
-      if (next === undefined || Math.abs(next - here) > interval + epsilon) return true;
-      stepping = true;
-      stepDone = false;
-      lastWheel = now;
-      stepStarted = now;
-      lenis.scrollTo(scrollFromDescent(next) * limit, {
-        duration: STEP_DURATION_S,
-        easing: easeStrong,
-        force: true,
-        onComplete: () => {
-          stepDone = true;
-        },
-      });
-      if (data.event.cancelable) data.event.preventDefault();
-      return false;
+      const { best, interval } = nearestReading(here);
+      const d = Math.abs(here - best) / (interval / 2);
+      if (d > 1) return true;
+      const t = d * d * (3 - 2 * d);
+      data.deltaY *= RIVER_VISCOSITY + (1 - RIVER_VISCOSITY) * t;
+      return true;
     };
 
     const lenis = new Lenis({
       lerp: LENIS_LERP,
       smoothWheel: true,
-      virtualScroll: stepRiver,
+      virtualScroll: viscous,
       // O rAF é o do GSAP: um relógio só para o scroll, as animações e,
       // mais adiante, o loop de render da cena.
       autoRaf: false,
@@ -157,15 +139,21 @@ export default function ScrollDriver() {
         lenis.resize();
         ScrollTrigger.refresh();
       }
-      // O `onComplete` não chega se outra rolagem interromper a viagem (o
-      // `requestScrollTo` da volta de um case, o foco de teclado): o prazo da
-      // viagem encerra o passo do mesmo jeito, senão a roda ficaria presa.
-      const now = performance.now();
-      if (stepping && !stepDone && now - stepStarted > STEP_DURATION_S * 1000 + 200) {
-        stepDone = true;
-      }
-      if (stepping && stepDone && now - lastWheel > QUIET_MS) {
-        stepping = false;
+      // O assentamento: uma vez por pausa, com a página já parada.
+      if (
+        !settled &&
+        getScrollRole() === "descent" &&
+        performance.now() - lastWheel > SETTLE_QUIET_MS &&
+        Math.abs(lenis.velocity) < 0.3 &&
+        lenis.limit > 0
+      ) {
+        settled = true;
+        const here = descentFromScroll(lenis.animatedScroll / lenis.limit);
+        const { best, interval } = nearestReading(here);
+        const gap = Math.abs(here - best);
+        if (gap < interval / 2 && gap > 0.001) {
+          lenis.scrollTo(scrollFromDescent(best) * lenis.limit, { lerp: SETTLE_LERP });
+        }
       }
       const wanted = consumeScrollRequest();
       if (wanted !== null) {

@@ -269,44 +269,33 @@ export function readingProgress(cardZ: number): number {
 }
 
 /**
- * Quanto de cada lado de uma leitura do rio a câmera fica parada, em fração do
- * intervalo entre duas paradas (rodada 14).
+ * Quanto a câmera desacelera em cada leitura do rio (rodada 14, revista).
  *
- * Até a rodada 13 a câmera cruzava cada card sem parar: o progresso era linear
- * por segmento e o Catmull-Rom passa direto pelo ponto de controle. Com sete
- * cards a 0.05 de progresso um do outro — ~1.05 vh de rolagem por card no
- * desktop —, um gesto de roda atravessava um ou dois cases. Com 0.28 de cada
- * lado, 56% da rolagem entre duas leituras deixa a câmera parada num card, e a
- * passagem acontece no resto, mais decidida. O snap do driver
- * (`ScrollDriver`) puxa a rolagem para dentro desse repouso.
+ * Até a rodada 13 a câmera cruzava cada card na mesma velocidade da passagem,
+ * e um gesto de roda atravessava vários cases. A primeira resposta foi um
+ * repouso chapado — a câmera parava de vez em 56% da rolagem — e o Lucas o leu
+ * como travada: radical e não natural. Agora não há parada: a velocidade da
+ * câmera ao longo da curva é `1 − k·cos(2π·local)`, ou seja **0.35×** em cima de
+ * cada card e **1.65×** no meio da passagem, sem degrau e sem platô. É a
+ * desaceleração de quem chega perto de uma coisa para olhar, não um trilho que
+ * trava.
  */
-const RIVER_HOLD = 0.28;
-
-/** Smootherstep: derivada zero nas duas pontas e na segunda também. */
-function smoother(x: number): number {
-  const t = clamp01(x);
-  return t * t * t * (t * (t * 6 - 15) + 10);
-}
+const RIVER_SLOW = 0.65;
 
 /**
- * O `local` de um segmento, com repouso nas pontas que são leituras do rio.
+ * O `local` de um segmento, desacelerando nas pontas que são leituras do rio.
  * Um segmento que só tem o rio de um lado (a entrada, de Quem sou, e a saída,
- * para a Superfície) repousa só desse lado e chega/sai com velocidade do outro.
+ * para a Superfície) desacelera só desse lado.
  */
 function holdLocal(local: number, fromRiver: boolean, toRiver: boolean): number {
-  const h = RIVER_HOLD;
-  if (fromRiver && toRiver) return smoother((local - h) / (1 - 2 * h));
-  if (toRiver) return arrive(clamp01(local / (1 - h)));
-  if (fromRiver) return 1 - arrive(1 - clamp01((local - h) / (1 - h)));
+  const k = RIVER_SLOW;
+  const tau = Math.PI * 2;
+  if (fromRiver && toRiver) return local - (k * Math.sin(tau * local)) / tau;
+  // Um lado só: velocidade 1 − k na ponta do rio e cheia (1) na outra, sem
+  // degrau com o segmento vizinho.
+  if (toRiver) return local + k * local * local * (1 - local);
+  if (fromRiver) return local - k * local * (1 - local) * (1 - local);
   return local;
-}
-
-/**
- * `u + u² − u³`: sai com a derivada 1 (a velocidade do segmento vizinho, sem
- * degrau) e chega com derivada zero (o repouso).
- */
-function arrive(u: number): number {
-  return u + u * u - u * u * u;
 }
 
 /**
