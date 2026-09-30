@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
+  Color,
   AdditiveBlending,
   DepthFormat,
   DepthTexture,
@@ -28,7 +29,7 @@ import {
 } from "@/lib/scene/shaders/post";
 import { markScenePainted } from "@/lib/scene/scene-painted";
 import { sceneSettings } from "@/lib/scene/settings";
-import { veilUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
+import { SPRITE_LAYER, veilUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
 import { MAX_VEIL_BOXES, VEIL_CEILING, VEIL_FLOOR_DAWN } from "@/lib/scene/veil";
 
 /** Níveis da cadeia de bloom, a partir de meia resolução. */
@@ -116,6 +117,9 @@ export function Composer({
     scene.depthTexture = new DepthTexture(1, 1, UnsignedIntType);
     scene.depthTexture.format = DepthFormat;
 
+    // Os sprites (rodada 19): esporos, lanternas e formações, somados depois da
+    // DOF. Ver o bloco "sprites" no laço de quadro.
+    const sprites = makeColorTarget(0);
     const dofA = makeColorTarget(0);
     const dofB = makeColorTarget(0);
     const bloom = Array.from({ length: BLOOM_LEVELS }, () =>
@@ -148,6 +152,7 @@ export function Composer({
       BLOOM_THRESHOLD_FRAG,
       {
         uSource: { value: scene.texture },
+        uSprites: { value: sprites.texture },
         // Alto de propósito. A cena escreve HDR linear; as paredes ficam perto
         // de 0.05 e os corpos em cruzeiro perto de 0.4. Só um cacho comprimido
         // e acelerado passa daqui — "bloom não é o efeito, é o transbordo".
@@ -211,10 +216,12 @@ export function Composer({
       VEIL_SEED_FRAG,
       {
         uSource: { value: scene.texture },
+        uSprites: { value: sprites.texture },
         uBloom: { value: bloom[0]?.texture ?? null },
         uTexel: { value: new Vector2() },
         uBloomStrength: { value: BLOOM_STRENGTH },
         uExposure: shared.exposure,
+        uDawn: shared.dawn,
       },
       GLSL3,
     );
@@ -247,6 +254,7 @@ export function Composer({
       {
         uScene: { value: scene.texture },
         uBlurred: { value: dofB.texture },
+        uSprites: { value: sprites.texture },
         uBloom: { value: bloom[0]?.texture ?? null },
         uResolution: shared.resolution,
         uBloomStrength: { value: BLOOM_STRENGTH },
@@ -267,6 +275,7 @@ export function Composer({
 
     return {
       scene,
+      sprites,
       dofA,
       dofB,
       bloom,
@@ -289,6 +298,7 @@ export function Composer({
     return () => {
       held.scene.depthTexture?.dispose();
       held.scene.dispose();
+      held.sprites.dispose();
       held.dofA.dispose();
       held.dofB.dispose();
       for (const target of held.bloom) target.dispose();
@@ -315,6 +325,7 @@ export function Composer({
     const height = Math.max(1, Math.floor(size.height * dpr));
 
     rig.scene.setSize(width, height);
+    rig.sprites.setSize(width, height);
     rig.dofA.setSize(Math.max(1, width >> 1), Math.max(1, height >> 1));
     rig.dofB.setSize(Math.max(1, width >> 1), Math.max(1, height >> 1));
     rig.bloom.forEach((target, level) => {
@@ -353,6 +364,29 @@ export function Composer({
     renderer.render(state.scene, state.camera);
 
     const aperture = apertureRef.current;
+
+    // --- os sprites ---------------------------------------------------------
+    // Camada 2, num alvo à parte, **depois** da cena: cada sprite testa a
+    // profundidade dela à mão (uSceneDepth) e traz o próprio bokeh. O
+    // composite os soma depois da DOF. A câmera volta à camada 0 no fim.
+    shared.sceneDepth.value = rig.scene.depthTexture;
+    shared.focus.value = focusRef.current;
+    shared.focusRange.value = focusRangeRef.current;
+    shared.aperture.value = settings.dof ? aperture : 0;
+    shared.nearBlur.value = settings.dof ? 1 - shared.caseRecess.value : 0;
+    if ("near" in state.camera) {
+      shared.cameraNear.value = state.camera.near;
+      shared.cameraFar.value = state.camera.far;
+    }
+    renderer.getClearColor(CLEAR);
+    const clearAlpha = renderer.getClearAlpha();
+    renderer.setRenderTarget(rig.sprites);
+    renderer.setClearColor(0x000000, 0);
+    renderer.clear(true, false, false);
+    state.camera.layers.set(SPRITE_LAYER);
+    renderer.render(state.scene, state.camera);
+    state.camera.layers.set(0);
+    renderer.setClearColor(CLEAR, clearAlpha);
     // O amanhecer (rodada 18): mais exposição, e a luminância do fundo — que o
     // véu usa como alvo — relida da paleta, que troca com o tema.
     shared.exposure.value = EXPOSURE * (1 + 0.15 * shared.dawn.value);
@@ -471,6 +505,7 @@ export function Composer({
     // --- composite ----------------------------------------------------------
     setUniform(rig.composite, "uScene", rig.scene.texture);
     setUniform(rig.composite, "uBlurred", rig.dofB.texture);
+    setUniform(rig.composite, "uSprites", rig.sprites.texture);
     if (first !== undefined) setUniform(rig.composite, "uBloom", first.texture);
 
     // Grão animado por quadro. A semente muda sempre, e a intensidade respira
@@ -499,6 +534,7 @@ export function Composer({
   return null;
 }
 
+const CLEAR = new Color();
 const HORIZONTAL = new Vector2(1, 0);
 const VERTICAL = new Vector2(0, 1);
 const TEXEL = new Vector2();
