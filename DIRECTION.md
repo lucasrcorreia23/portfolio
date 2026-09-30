@@ -4,6 +4,34 @@ Rota estética escolhida. Lido junto com o `PROJECT.md` em todo prompt.
 O `PROJECT.md` é a verdade do projeto; este arquivo é **como essa verdade se
 parece**. Onde os dois divergirem, o `PROJECT.md` ganha.
 
+> **Decisões do Lucas, 2026-09-30 — valem sobre o texto abaixo até ele ser
+> reescrito seção por seção (rodadas 14 a 18).**
+>
+> 1. **A câmara troca a medida pela natureza.** Cotas, réguas, setas de escala,
+>    números de estação gravados e a cota da soleira saem das paredes e dos
+>    cards. No lugar entram fósseis e folhas gravados (mesmo mecanismo de
+>    relevo visto de relance), musgo e líquen bioluminescente, raízes e
+>    trepadeiras, e água rasa no piso. Onde este arquivo fala de "cota",
+>    "régua" e "Medida gravada" na **câmara** (§1, §2, §5 "Estrutura", §6),
+>    vale isto. **A HUD e o portão continuam numéricos** — o instrumento fica
+>    na HUD, a natureza na câmara.
+> 2. **O organismo pode emitir; a estrutura não.** Musgo, líquen e as lanternas
+>    que andam pelas paredes têm brilho próprio fraco. O concreto continua sem
+>    emissivo.
+> 3. **O bando tem cor por corpo.** Cada corpo tem um matiz da paleta atual
+>    (teal, cyan, peach, rose, coral), com os frios pesando mais; a energia
+>    clareia o próprio matiz. Rosa e coral continuam abaixo de 15% da tela.
+> 4. **Há vida além do bando**: poucos organismos errantes presos às paredes,
+>    ao piso e ao teto, cada um uma luz colorida.
+> 5. **O corpo de prova é a assinatura LRC**, extrudada de leve, com chanfro.
+>    A proibição de "laje extrudada" (§6) cai para a peça; o campo de
+>    descolamento continua fino.
+> 6. **Existe uma variante "amanhecer"** — a mesma câmara com outra hora do
+>    dia, névoa clara mist/peach, nunca branco. A proibição de "branco de
+>    laboratório" (§6) continua valendo para ela.
+> 7. **O rio pára em cada card**: a câmera repousa na leitura de cada peça e a
+>    rolagem é atraída para ela. Um gesto não pula cases.
+
 ---
 
 ## 1. A imagem central

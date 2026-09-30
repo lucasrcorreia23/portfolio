@@ -48,6 +48,7 @@ O que isso significa em decisão de design:
 - Sempre existe **um organismo** e sempre existe **uma estrutura**. Nunca só um dos dois.
 - O organismo se move por física, não por keyframe. Deriva, corrente, cardume, respiração.
 - A estrutura é fina, precisa e discreta. Coordenadas, medidas, marcadores, régua. Ela mede o organismo, não o prende.
+  > **Decisão do Lucas, 2026-09-30:** a medida mora na HUD e no portão. Na câmara, a estrutura é o concreto e a natureza que cresce nele — fósseis gravados, musgo e líquen bioluminescente, raízes, água no piso. Ver o bloco de decisões no topo do `DIRECTION.md`.
 - A luz vem de dentro da cena, nunca de um `box-shadow`.
 
 ### O que isso NÃO é
