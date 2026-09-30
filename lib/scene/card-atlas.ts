@@ -180,39 +180,30 @@ function drawPlate(
   const monoSize = Math.round(h * 0.19);
   main.font = `500 ${monoSize}px "Geist Mono", ui-monospace, SFMono-Regular, monospace`;
   main.letterSpacing = `${(monoSize * 0.16).toFixed(2)}px`;
+  // O cliente cabe antes do ano, ou é cortado com reticências: um cliente
+  // longo (Nestlé) atropelava o ano na mesma linha.
+  const year = String(card.year);
+  const room = w - pad * 2 - main.measureText(year).width - monoSize * 2;
+  let client = card.client.toLocaleUpperCase("pt-BR");
+  if (main.measureText(client).width > room) {
+    while (client.length > 1 && main.measureText(`${client}…`).width > room) {
+      client = client.slice(0, -1);
+    }
+    client = `${client.trimEnd()}…`;
+  }
   main.textAlign = "left";
-  main.fillText(card.client.toLocaleUpperCase("pt-BR"), pad, Math.round(h * 0.82));
+  main.fillText(client, pad, Math.round(h * 0.82));
   main.textAlign = "right";
-  main.fillText(String(card.year), w - pad, Math.round(h * 0.82));
+  main.fillText(year, w - pad, Math.round(h * 0.82));
 
   // A régua da placa: uma linha fina abaixo do título, do léxico da estrutura.
   main.fillRect(pad, Math.round(h * 0.56), Math.round(w * 0.28), 2);
 
-  // --- nível de detalhe: um ramo gravado ----------------------------------
-  // Até a rodada 15 este nível tinha `EST. NNN` e marcas de intervalo — a
-  // régua. A câmara trocou a medida pela natureza (rodada 16), e o que a
-  // aproximação revela agora é um ramo pequeno no canto da placa: haste curva
-  // e folhas alternadas, traço fino, o mesmo desenho dos fósseis das paredes.
-  // No alto, à direita: a linha de baixo é do cliente e do ano.
-  const reach = Math.round(h * 0.5);
-  const sprigX = w - pad - reach - Math.round(h * 0.12);
-  const sprigY = Math.round(h * 0.62);
-  detail.lineCap = "round";
-  detail.lineWidth = 2;
-  detail.beginPath();
-  detail.moveTo(sprigX, sprigY);
-  detail.quadraticCurveTo(sprigX + reach * 0.5, sprigY - reach * 0.2, sprigX + reach, sprigY - reach * 0.8);
-  detail.stroke();
-  for (let k = 1; k <= 5; k += 1) {
-    const t = k / 6;
-    const x = sprigX + reach * t;
-    const y = sprigY - reach * (0.2 * t + 0.6 * t * t);
-    const side = k % 2 === 0 ? -1 : 1;
-    const leaf = h * 0.16 * (1 - t * 0.5);
-    detail.beginPath();
-    detail.ellipse(x + side * leaf * 0.5, y - leaf * 0.35, leaf * 0.55, leaf * 0.22, side * 0.7 - 0.4, 0, Math.PI * 2);
-    detail.stroke();
-  }
+  // --- nível de detalhe ----------------------------------------------------
+  // Vazio desde a rodada 17. Tinha `EST. NNN` e marcas de intervalo até a 15 e
+  // um ramo gravado na 16; no holograma as letras flutuam sem fundo, e
+  // qualquer ornamento a mais disputava com o ano.
+  void detail;
 }
 
 const SRGB_TO_LINEAR = new Float32Array(256).map((_, i) => {

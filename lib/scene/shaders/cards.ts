@@ -1,9 +1,6 @@
 import { MAX_CARDS } from "../cards";
 import {
   CARD_BEZEL,
-  CARD_CORNER,
-  CARD_HALF_HEIGHT,
-  CARD_HALF_WIDTH,
   CARD_COVER_UV,
   CARD_PLATE_FAR,
   CARD_PLATE_NEAR,
@@ -453,14 +450,12 @@ void main() {
   }
   field = mix(matte, shot, docked);
 
-  // "Levemente recuada": a sombra do rebaixo, na borda de cima e na da
-  // esquerda. É o que faz a capa ler como encaixada no substrato em vez de
-  // impressa nele — e é a segunda coisa que precisa sair na entrega, porque o
-  // <img> não tem rebaixo e a faixa escura apareceria como uma borda que some.
-  float recess = smoothstep(0.0, 0.035, coverUv.x)
-               * (1.0 - smoothstep(0.965, 1.0, coverUv.y));
-  field *= mix(mix(0.28, 1.0, clamp(recess, 0.0, 1.0)), 1.0, docked);
+  // Rodada 17: o rebaixo da capa (uma faixa escura em cima e à esquerda) saiu
+  // com a moldura — no holograma ele lia como borda.
 
+  // Sem chanfro, o ponteiro e o foco de teclado aparecem na própria imagem:
+  // ela acende um pouco, puxada para o acento do case.
+  field = mix(field, field * 1.25 + vAccent * 0.02, hover * (1.0 - docked));
   color = mix(color, field, cover);
 
   // --- a placa de cota -----------------------------------------------------
@@ -476,6 +471,7 @@ void main() {
   //   3. o **nível de detalhe** (canal G): estação e marcas de intervalo, que
   //      só entram no fim da rampa de aproximação — ou imediatamente, se o
   //      ponteiro estiver na peça.
+  float plateInk = 0.0;
   vec2 plateMin = ${PLATE_MIN};
   vec2 plateMax = ${PLATE_MAX};
   vec2 inPlate = step(plateMin, vUv) * step(vUv, plateMax);
@@ -489,9 +485,10 @@ void main() {
     float rightMain = texture(uPlateArray, vec3(plateUv + vec2(uPlateTexel.x, 0.0), vIndex)).r;
     float downMain  = texture(uPlateArray, vec3(plateUv + vec2(0.0, uPlateTexel.y), vIndex)).r;
 
-    // O rebaixo da placa: ela é mais escura que a capa, porque é substrato
-    // recessado e não imagem.
-    color = mix(color, uSubstrate * (0.06 + 0.10 * grain), 0.85);
+    // Sem fundo (rodada 17): o que fica atrás das letras é a névoa, e só as
+    // letras são desenhadas. A borda do traço mistura para a névoa em vez de
+    // ser cortada seco.
+    color = fogColorAt(vViewDepth, vWorld);
 
     float reveal = smoothstep(
       ${CARD_PLATE_FAR.toFixed(1)},
@@ -521,26 +518,25 @@ void main() {
     // PROJECT.md §2 veta como glitch RGB. Agora a tinta é mist, o lado claro do
     // bisel soma mist e o lado escuro **escala** a cor em vez de subtrair uma.
     // O acento do case continua só no chanfro da borda.
-    color += uMist * clamp(ink, 0.0, 1.0);
+    plateInk = max(tap.r, tap.g * reveal);
+    color += uMist * clamp(ink, 0.0, 1.0) * smoothstep(0.3, 0.6, plateInk);
     color += uMist * clamp(glint, 0.0, 0.6);
     color *= 1.0 + clamp(glint, -0.2, 0.0) * 2.5;
   }
 
-  // **A borda se desfaz na névoa** (rodada 16). O plano tinha quina viva e
-  // canto reto, e lia como recorte colado no ar. Agora os cantos são
-  // arredondados (o mesmo CARD_CORNER do SDF dos boids) e os últimos
-  // centímetros da peça cedem para a cor da névoa diante dela: a borda existe,
-  // mas é leve. Na peça atracada nada disso vale — ela tem que casar com o
-  // retângulo do <img> em DOM.
-  {
-    vec2 halfSize = vec2(${CARD_HALF_WIDTH.toFixed(4)}, ${CARD_HALF_HEIGHT.toFixed(4)});
-    vec2 p = (vUv - 0.5) * halfSize * 2.0;
-    float radius = ${CARD_CORNER.toFixed(3)} * (1.0 - docked);
-    vec2 q = abs(p) - halfSize + radius;
-    float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;
-    if (d > 0.0) discard;
-    float soft = smoothstep(-0.12, 0.0, d);
-    color = mix(color, fogColorAt(vViewDepth, vWorld), soft * 0.9 * (1.0 - docked));
+  // **Holograma, sem borda** (rodada 17, pedido do Lucas). O card deixou de
+  // ser uma placa de concreto com moldura, canto arredondado e rebaixo: o que
+  // existe no ar é a imagem, quadrada, e as letras da placa flutuando embaixo
+  // dela. Todo o resto do plano — a moldura, o fundo da placa — é descartado,
+  // e a borda da imagem cede para a névoa em poucos texels, sem contorno. A
+  // peça atracada fica inteira: ela tem que casar com o <img> do case.
+  if (docked < 0.5) {
+    if (cover < 0.5 && plateInk < 0.3) discard;
+    if (cover > 0.5) {
+      vec2 e2 = min(coverUv, 1.0 - coverUv);
+      float feather = 1.0 - smoothstep(0.0, 0.018, min(e2.x, e2.y));
+      color = mix(color, fogColorAt(vViewDepth, vWorld), feather * 0.9);
+    }
   }
 
 #ifdef PROBE_BLACK
