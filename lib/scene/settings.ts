@@ -135,6 +135,11 @@ export type SceneSettings = {
    */
   cards: boolean;
   /**
+   * `?water=0`: o rio (rodada 22) sai — a lâmina e o passo de reflexo. É o A/B
+   * do custo dele, que é uma segunda renderização da cena em meia resolução.
+   */
+  water: boolean;
+  /**
    * `?river=N`: quantos cards a corrente monta, sobrepondo a capacidade
    * derivada do aparelho (`riverCapacity`, em `lib/scene/cards.ts`).
    *
@@ -212,6 +217,7 @@ const DEFAULTS: SceneSettings = {
   bench: false,
   detach: true,
   cards: true,
+  water: true,
   river: null,
   span: null,
   veil: true,
@@ -272,6 +278,7 @@ export function sceneSettings(): SceneSettings {
     bench: readFlag(params, "bench", DEFAULTS.bench),
     detach: readFlag(params, "detach", DEFAULTS.detach),
     cards: readFlag(params, "cards", DEFAULTS.cards),
+    water: readFlag(params, "water", DEFAULTS.water),
     river: readNumber(params, "river"),
     span: readNumber(params, "span"),
     veil: readFlag(params, "veil", DEFAULTS.veil),

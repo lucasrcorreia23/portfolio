@@ -9,7 +9,6 @@ import {
   PLAN_FAR,
 } from "../chamber-plan";
 import { SPECIMEN_Z } from "../world";
-import { LAMP_COUNT } from "../lamps";
 import { FOG_GLSL, FOG_UNIFORMS_GLSL } from "./fog";
 import { LIGHTS_GLSL, LIGHTS_UNIFORMS_GLSL } from "./lights";
 
@@ -39,10 +38,8 @@ import { LIGHTS_GLSL, LIGHTS_UNIFORMS_GLSL } from "./lights";
  * medida pela natureza (decisão do Lucas, 2026-09-30), e três coisas moram
  * neste arquivo agora:
  *
- * - **a água no piso** (`waterAt`, `engrave`): poças rasas em trechos de Quem
- *   sou e do rio, com a normal ondulando no tempo e o reflexo especular das
- *   luzes que já existem — aglomerados e lanternas. Nenhum corpo é desenhado
- *   duas vezes;
+ * - **a água** saiu daqui na rodada 22: o piso é coberto por um rio contínuo
+ *   com reflexo de verdade (`components/scene/Water.tsx`);
  * - **o musgo e o líquen** (em `shadeConcrete`): manchas nas quinas baixas das
  *   paredes e nas bordas do piso que **acendem** quando o bando ou uma
  *   lanterna passa perto. É o organismo que emite, não a estrutura;
@@ -114,8 +111,6 @@ uniform vec3 uCyan;
  */
 /** 1 no quadro (KIND_RIB), 0 no resto — escrito por quem chama, antes. */
 float shadeKind = 0.0;
-/** Quanto do piso está alagado aqui, 0 a 1 — escrito por engrave(), antes. */
-float wetness = 0.0;
 /** Quanto musgo há neste ponto — escrito pelo bloco do musgo, lido pelo amanhecer. */
 float mossAmount = 0.0;
 
@@ -171,30 +166,6 @@ vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity
   // superfície, e é ele que dá a cor à poça.
   color += (albedo * 18.0 + 0.05) * lamp * mix(1.0, 0.5, ceilingness);
 
-  // **A água** (rodada 16). O concreto molhado escurece, e a superfície reflete
-  // as luzes que passam por cima: o bando e as lanternas viram rastros de cor
-  // tremendo no piso. Blinn-Phong com a normal da ondulação, pesado pelo
-  // Fresnel — de raspão, que é como a câmera vê o piso, a água é espelho.
-  if (wetness > 0.0) {
-    vec3 V = normalize(cameraPosition - world);
-    vec3 spec = vec3(0.0);
-    for (int i = 0; i < 4; i++) {
-      vec3 d = uClusters[i].xyz - world;
-      vec3 H = normalize(normalize(d) + V);
-      float s = pow(max(dot(shadingNormal, H), 0.0), 90.0);
-      spec += uClusterColor[i] * uClusters[i].w * s / (1.0 + dot(d, d) * 0.004);
-    }
-    for (int i = 0; i < ${LAMP_COUNT}; i++) {
-      if (uLamps[i].w <= 0.0) continue;
-      vec3 d = uLamps[i].xyz - world;
-      vec3 H = normalize(normalize(d) + V);
-      float s = pow(max(dot(shadingNormal, H), 0.0), 70.0);
-      spec += uLampColor[i] * uLamps[i].w * s / (1.0 + dot(d, d) * 0.02);
-    }
-    float fres = 0.04 + 0.96 * pow(1.0 - max(dot(V, shadingNormal), 0.0), 5.0);
-    color = mix(color, color * 0.35, wetness) + spec * wetness * (0.4 + 3.0 * fres) * 2.2;
-  }
-
   // **Musgo e líquen** (rodada 16). Manchas nas quinas baixas das paredes e
   // nas bordas do piso, pontilhadas de líquen; brilho próprio fraquíssimo que
   // sobe quando a luz do bando ou de uma lanterna passa rente. Longe do corpo
@@ -207,7 +178,7 @@ vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity
     float patchMask = smoothstep(0.62 - 0.22 * corner, 0.78 - 0.2 * corner, patchN);
     float speck = smoothstep(0.42, 0.78, sceneNoise(world * 4.3 + vec3(2.0))) * mix(0.55, 1.0, near);
     float quiet = 1.0 - 0.85 * exp(-pow((world.z - ${f(SPECIMEN_Z)}) / 9.0, 2.0));
-    float moss = patchMask * (0.3 + 0.7 * speck) * (1.0 - wetness) * (1.0 - 0.6 * shadeKind) * quiet;
+    float moss = patchMask * (0.3 + 0.7 * speck) * (1.0 - 0.6 * shadeKind) * quiet;
     mossAmount = moss;
     if (moss > 0.0) {
       vec3 hue = mix(uCyan, uPeach, smoothstep(0.35, 0.7, sceneNoise(world * 0.07 + vec3(11.0))));
@@ -263,7 +234,6 @@ vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity
     vec3 base = air * (0.5 + 0.2 * grain) * mix(mix(1.0, 0.85, floorness), 1.08, ceilingness);
     base *= 1.0 - 0.45 * cavity;
     base = mix(base, base * vec3(0.72, 0.84, 0.8), clamp(mossAmount * 1.4, 0.0, 1.0));
-    base = mix(base, base * 0.82 + air * 0.12, wetness);
     vec3 light = tint * 0.35 * gain + lamp * 1.6;
     base = base * (1.0 + light * 1.6) + light * 0.1;
     return applyFog(base, viewDepth, world);
@@ -279,39 +249,15 @@ vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity
 `;
 
 /**
- * O piso alagado: onde está a água e como ela ondula. Poças, não um espelho de
- * parede a parede — em trechos de Quem sou e do rio, nunca na Identidade.
+ * O relevo do concreto. Desde a rodada 22 (a água) o piso não tem mais poças:
+ * o rio é uma lâmina contínua à parte (`components/scene/Water.tsx`), com
+ * reflexo de verdade. A função fica como o ponto em que a normal de
+ * sombreamento nasce, e hoje é a da geometria.
  */
 export const ENGRAVING_GLSL = /* glsl */ `
-float waterAt(vec3 w) {
-  float band = smoothstep(-28.0, -34.0, w.z) * (1.0 - smoothstep(-84.0, -90.0, w.z));
-  if (band <= 0.0) return 0.0;
-  float pools = smoothstep(0.46, 0.6, sceneNoise(vec3(w.x * 0.11, 3.7, w.z * 0.07)));
-  return band * pools;
-}
-
-float ripple(vec2 p, float t) {
-  return sceneNoise(vec3(p.x * 1.3, t * 0.45, p.y * 1.3))
-    + 0.5 * sceneNoise(vec3(p.x * 3.4, t * 0.8 + 5.0, p.y * 3.4));
-}
-
-/**
- * A normal de sombreamento do piso alagado. Nas paredes, no teto e no piso
- * seco ela é a da geometria. cavity continua existindo para as placas dos
- * fósseis, que usam o mesmo shadeConcrete.
- */
 vec3 engrave(vec3 world, vec3 n, float kind, out float cavity) {
   cavity = 0.0;
-  wetness = 0.0;
-  if (kind > 0.5 || n.y < 0.9) return n;
-  float wet = waterAt(world);
-  if (wet <= 0.0) return n;
-  wetness = wet;
-  const float e = 0.04;
-  float h = ripple(world.xz, uTime);
-  float hx = (ripple(world.xz + vec2(e, 0.0), uTime) - h) / e;
-  float hz = (ripple(world.xz + vec2(0.0, e), uTime) - h) / e;
-  return normalize(n + 0.05 * wet * vec3(-hx, 0.0, -hz));
+  return n;
 }
 `;
 

@@ -51,6 +51,7 @@ import { Roots } from "./Roots";
 import { SceneClock } from "./SceneClock";
 import { Specimen } from "./Specimen";
 import { Structure } from "./Structure";
+import { Water } from "./Water";
 
 /** Ponto a montante da peça onde se mede a densidade que acende o rim. */
 const AHEAD_OF_SPECIMEN = new Vector3(0, 0, SPECIMEN_Z - 6);
@@ -516,6 +517,7 @@ export function SceneWorld({
       )}
       <Chamber shared={shared} plan={plan} />
       <Structure shared={shared} plan={plan} />
+      {settings.water ? <Water shared={shared} /> : null}
       <Roots shared={shared} plan={plan} />
       {/* O rio. `?cards=0` tira as malhas **e** as esteiras do shader dos
           boids — é o A/B de desempenho e, ao mesmo tempo, o controle da medida
