@@ -1,6 +1,8 @@
 import { MAX_CARDS } from "../cards";
 import {
   CARD_BEZEL,
+  CARD_HALF_HEIGHT,
+  CARD_HALF_WIDTH,
   CARD_COVER_UV,
   CARD_PLATE_FAR,
   CARD_PLATE_NEAR,
@@ -63,6 +65,9 @@ import { LIGHTS_GLSL, LIGHTS_UNIFORMS_GLSL } from "./lights";
  * vizinho. Com `flat` o valor atravessa exato, e a indexação de `uCoverBlend`
  * fica correta sem `+ 0.5` de gambiarra.
  */
+
+/** O raio do canto da placa de vidro, em unidades de mundo. */
+const CARD_GLASS_CORNER = 0.14;
 
 const COVER_MIN = `vec2(${CARD_COVER_UV[0].toFixed(4)}, ${CARD_COVER_UV[1].toFixed(4)})`;
 const COVER_MAX = `vec2(${CARD_COVER_UV[2].toFixed(4)}, ${CARD_COVER_UV[3].toFixed(4)})`;
@@ -327,6 +332,8 @@ uniform float uDockBlend;
 uniform vec2 uDockCoverCrop;
 /** Quanto a cena recuou para virar fundo de leitura. Ver uniforms.ts. */
 uniform float uCaseRecess;
+/** Cena + esporos, para o vidro refratar (rodada 20). */
+uniform sampler2D uBackdrop;
 
 /** Índice do card sob o ponteiro, ou -1. Ver card-pick.ts. */
 uniform float uHoverCard;
@@ -472,6 +479,7 @@ void main() {
   //      só entram no fim da rampa de aproximação — ou imediatamente, se o
   //      ponteiro estiver na peça.
   float plateInk = 0.0;
+  float plateInkAmount = 0.0;
   vec2 plateMin = ${PLATE_MIN};
   vec2 plateMax = ${PLATE_MAX};
   vec2 inPlate = step(plateMin, vUv) * step(vUv, plateMax);
@@ -522,24 +530,56 @@ void main() {
     // À noite a tinta é --mist somada; de manhã --mist é escura, e somar escuro
     // não desenha nada — então a tinta é misturada (rodada 18).
     float inkAmount = clamp(ink, 0.0, 1.0) * smoothstep(0.3, 0.6, plateInk);
+    plateInkAmount = inkAmount;
     color = mix(color + uMist * inkAmount, mix(color, uMist, clamp(inkAmount * 2.5, 0.0, 1.0)), uDawn);
     color += uMist * clamp(glint, 0.0, 0.6) * (1.0 - uDawn);
     color *= 1.0 + clamp(glint, -0.2, 0.0) * 2.5;
   }
 
-  // **Holograma, sem borda** (rodada 17, pedido do Lucas). O card deixou de
-  // ser uma placa de concreto com moldura, canto arredondado e rebaixo: o que
-  // existe no ar é a imagem, quadrada, e as letras da placa flutuando embaixo
-  // dela. Todo o resto do plano — a moldura, o fundo da placa — é descartado,
-  // e a borda da imagem cede para a névoa em poucos texels, sem contorno. A
-  // peça atracada fica inteira: ela tem que casar com o <img> do case.
+  // **Uma placa de vidro** (rodada 20, com o quadro do activetheory.net como
+  // referência — revoga o holograma sem borda da rodada 17). O card é vidro
+  // grosso: canto arredondado suave, a flora e os esporos de trás refratando
+  // através dele (mais na borda, onde a placa engrossa como lente), a imagem
+  // do case dentro, levemente translúcida, e a quina acesa por um fio claro e
+  // pelo fresnel. A peça atracada fica fora disso: ela tem que casar com o
+  // <img> do case ao décimo de pixel, com os mesmos bytes.
   if (docked < 0.5) {
-    if (cover < 0.5 && plateInk < 0.3) discard;
+    vec2 halfSize = vec2(${CARD_HALF_WIDTH.toFixed(4)}, ${CARD_HALF_HEIGHT.toFixed(4)});
+    vec2 p = (vUv - 0.5) * halfSize * 2.0;
+    float radius = ${CARD_GLASS_CORNER.toFixed(3)};
+    vec2 q = abs(p) - halfSize + radius;
+    float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;
+    if (d > 0.0) discard;
+
+    vec3 nv = normalize(vNormal);
+    vec3 toEye = normalize(cameraPosition - vWorld);
+    float fres = pow(1.0 - abs(dot(nv, toEye)), 3.0);
+    float edge = 1.0 - smoothstep(0.0, 0.18, -d);
+    vec2 suv = gl_FragCoord.xy / uResolution;
+    vec2 bend = normalize(p + 1e-4) * edge * edge * 0.022;
+    vec3 back = vec3(
+      texture(uBackdrop, suv - bend * 0.92).r,
+      texture(uBackdrop, suv - bend).g,
+      texture(uBackdrop, suv - bend * 1.08).b
+    );
+    vec3 glass = back * vec3(0.72, 0.8, 0.86);
+
     if (cover > 0.5) {
       vec2 e2 = min(coverUv, 1.0 - coverUv);
-      float feather = 1.0 - smoothstep(0.0, 0.018, min(e2.x, e2.y));
-      color = mix(color, fogColorAt(vViewDepth, vWorld), feather * 0.9);
+      float inset = smoothstep(0.0, 0.02, min(e2.x, e2.y));
+      glass = mix(glass, color, 0.88 * inset);
+    } else if (onPlate > 0.5) {
+      glass = mix(glass + uMist * plateInkAmount,
+        mix(glass, uMist, clamp(plateInkAmount * 2.5, 0.0, 1.0)), uDawn);
     }
+
+    float rim = 1.0 - smoothstep(0.0, 0.025, -d);
+    float inner = smoothstep(0.035, 0.055, -d) * (1.0 - smoothstep(0.055, 0.09, -d));
+    glass += (uMist * 0.3 + vAccent * 0.25) * rim * (0.45 + fres + hover * 0.8);
+    glass += uMist * 0.03 * inner;
+    glass += (uCyan * 0.5 + uMist * 0.2) * fres * 0.15;
+    glass += lamp * 0.25;
+    color = glass;
   }
 
 #ifdef PROBE_BLACK
