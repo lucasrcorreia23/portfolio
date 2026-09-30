@@ -1,6 +1,9 @@
 import { MAX_CARDS } from "../cards";
 import {
   CARD_BEZEL,
+  CARD_CORNER,
+  CARD_HALF_HEIGHT,
+  CARD_HALF_WIDTH,
   CARD_COVER_UV,
   CARD_PLATE_FAR,
   CARD_PLATE_NEAR,
@@ -103,6 +106,8 @@ uniform float uCardMask;
  */
 uniform float uDockCard;
 uniform float uDockHandoff;
+uniform float uTime;
+uniform float uCaseRecess;
 
 out vec3  vWorld;
 out vec3  vNormal;
@@ -114,15 +119,34 @@ flat out float vIndex;
 flat out vec3  vAccent;
 
 void main() {
-  float c = cos(aCard.w);
-  float s = sin(aCard.w);
+  // **A peça flutua** (rodada 16). Até aqui cada card era um retângulo
+  // pregado no ar, imóvel enquanto o bando e a névoa se moviam em volta — e o
+  // Lucas o leu como banner artificial. Agora ele está suspenso na corrente:
+  // sobe e desce alguns centímetros, balança um grau e pouco, com fase própria
+  // (aSeed), em períodos de 8 a 30 segundos. É a escala de uma placa pendurada
+  // num ar que se move, não uma animação.
+  //
+  // A deriva zera na travessia para o case (uCaseRecess): a peça atracada tem
+  // que casar com o retângulo da capa em DOM ao décimo de pixel.
+  float drift = 1.0 - uCaseRecess;
+  float t = uTime * 0.21 + aSeed * 37.0;
+  float bob = (sin(t) * 0.06 + sin(t * 2.3 + 1.7) * 0.02) * drift;
+  float sway = sin(t * 0.77 + 0.6) * 0.024 * drift;
+  float roll = sin(t * 0.61 + 2.1) * 0.013 * drift;
+
+  float c = cos(aCard.w + sway);
+  float s = sin(aCard.w + sway);
+  vec2 rolled = vec2(
+    cos(roll) * position.x - sin(roll) * position.y,
+    sin(roll) * position.x + cos(roll) * position.y
+  );
 
   // Rotação em torno de Y: a mesma convenção do corpo de prova, e a mesma que o
   // shader dos boids inverte para entrar no referencial do card.
   vec3 local = vec3(
-    c * position.x + s * position.z,
-    position.y,
-    -s * position.x + c * position.z
+    c * rolled.x + s * position.z,
+    rolled.y + bob,
+    -s * rolled.x + c * position.z
   );
 
   // A instância escondida colapsa no próprio centro: nenhum fragmento, nenhuma
@@ -337,6 +361,9 @@ void main() {
   // quina gravada. Ele acende quando um cacho passa na frente dele.
   float lit = practicalLight(vWorld, vNormal, 0.22);
   vec3 color = uSubstrate * (0.10 + 0.24 * grain) + uCyan * lit * 0.18;
+  // As lanternas que passam perto também tocam a peça (rodada 16).
+  vec3 lamp = lampLight(vWorld);
+  color += lamp * (uSubstrate * 6.0 + 0.02);
 
   // A resposta de ponteiro é por card, e o teste é exato porque vIndex é flat.
   float hover = uHoverAmount * (1.0 - step(0.5, abs(vIndex - uHoverCard)));
@@ -415,7 +442,7 @@ void main() {
   vec3 albedo = mix(field, shot, shown);
   float selfLight = mix(${COVER_FIELD_GAIN.toFixed(2)}, uCoverGain[int(vIndex)], shown);
   float flockLight = ${COVER_FLOCK_GAIN.toFixed(2)} * practicalLight(vWorld, vNormal, 0.3);
-  vec3 matte = albedo * (selfLight + flockLight) * mix(1.0, 0.10, uCaseRecess);
+  vec3 matte = (albedo * (selfLight + flockLight) + albedo * lamp * 0.6) * mix(1.0, 0.10, uCaseRecess);
   float matteLum = dot(matte, vec3(0.2126, 0.7152, 0.0722));
   // O joelho: linear até COVER_KNEE, e dali dobrando para o teto sem degrau.
   // A cor é escalada, não substituída — o matiz da imagem não muda.
@@ -497,6 +524,23 @@ void main() {
     color += uMist * clamp(ink, 0.0, 1.0);
     color += uMist * clamp(glint, 0.0, 0.6);
     color *= 1.0 + clamp(glint, -0.2, 0.0) * 2.5;
+  }
+
+  // **A borda se desfaz na névoa** (rodada 16). O plano tinha quina viva e
+  // canto reto, e lia como recorte colado no ar. Agora os cantos são
+  // arredondados (o mesmo CARD_CORNER do SDF dos boids) e os últimos
+  // centímetros da peça cedem para a cor da névoa diante dela: a borda existe,
+  // mas é leve. Na peça atracada nada disso vale — ela tem que casar com o
+  // retângulo do <img> em DOM.
+  {
+    vec2 halfSize = vec2(${CARD_HALF_WIDTH.toFixed(4)}, ${CARD_HALF_HEIGHT.toFixed(4)});
+    vec2 p = (vUv - 0.5) * halfSize * 2.0;
+    float radius = ${CARD_CORNER.toFixed(3)} * (1.0 - docked);
+    vec2 q = abs(p) - halfSize + radius;
+    float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;
+    if (d > 0.0) discard;
+    float soft = smoothstep(-0.12, 0.0, d);
+    color = mix(color, fogColorAt(vViewDepth, vWorld), soft * 0.9 * (1.0 - docked));
   }
 
 #ifdef PROBE_BLACK
