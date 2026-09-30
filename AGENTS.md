@@ -85,6 +85,17 @@ dois divergirem, o `PROJECT.md` ganha. Este arquivo é só o mapa do código.
 
 ## Estado atual
 
+### Rodada 17 (2026-09-30): a assinatura LRC, o cursor e os hologramas
+
+O corpo de prova é o monograma LRC extrudado (`lib/scene/monogram-data.ts`,
+gerado por `node scripts/monogram.mjs` a partir do mesmo TTF; `Specimen.tsx`
+monta `ExtrudeGeometry`). **O troika saiu da cena** (chunk 338 → 300 kB); o
+`<h1>` do DOM tem o nome por extenso e o LRC em DOM só aparece sem cena. O
+cursor é uma luz âmbar que o bando evita (`lib/scene/pointer-light.ts`,
+`uPointer` nos boids, no concreto, nos corpos, e uma aura em `Lamps.tsx`). Os
+cards viraram hologramas quadrados: só imagem e letras, sem moldura. Posters e
+OG regerados. **Próximo: rodada 18, a variante amanhecer.**
+
 ### Rodada 16 (2026-09-30): natureza na câmara, e o rio sem trava
 
 As cotas, réguas, setas e números gravados saíram da câmara e dos cards. No
@@ -882,6 +893,13 @@ e que o material nunca leria. `frustumCulled = false` e uma esfera envolvente
 enorme não são opcionais — a CPU não sabe onde os corpos estão.
 
 #### O corpo de prova
+
+> **Rodada 17: a peça não é mais texto.** É o monograma LRC extrudado (ver
+> "Rodada 17" em "Estado atual"). O que segue sobre troika e o arquivo de fonte
+> é o registro de como a palavra CORREIA era desenhada; o TTF continua em
+> `public/fonts/` porque é de onde `scripts/monogram.mjs` tira os glifos, mas
+> nenhum código de runtime o carrega. `troika-three-text` e `@react-three/drei`
+> continuam no `package.json` sem uso — tirá-los é uma decisão à parte.
 
 `@react-three/drei/core/Text` (importação profunda), não o troika direto: o
 `troika-three-text` não publica tipos utilizáveis sob este `tsconfig`.

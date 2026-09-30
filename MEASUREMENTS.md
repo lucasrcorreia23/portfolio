@@ -2215,6 +2215,42 @@ dos cards). Sobram 12.0 kB.
 - Os posters do modo sem WebGL ainda mostram as cotas: são regerados junto com
   o LRC (rodada 17).
 
+## Rodada 17, medida
+
+Folhas: `.screens/17-descida.png` (0.10 → 0.30), `17-frame.png` (0.19),
+`17-cards.png` (0.55 → 0.80), `17-cursor.png` (a luz do cursor em 0.36, na
+página de verdade).
+
+### A assinatura
+
+Monograma `plinth` (o L emoldura R e C sobre um plinto), 2.06 × 0.97 em,
+extrudado a 0.15·H com chanfro de 0.03·H. A primeira versão ocupava 0.84 da
+largura, como a palavra; a 7.4 unidades de altura ela transbordava o quadro do
+descolamento pelos dois lados, e desceu para **0.62** (caixa alta 4.1,
+altura 5.8). A folga entre a haste do L e o R subiu de 34 para 110 unidades de
+em: com 34 as duas hastes liam como uma só e o monograma lia "RC".
+
+Contraste de 0.00 a 0.30: **5.68**. Rosa + coral em 0.18: **2.05%**.
+
+**Não foram remedidas** as quatro medidas do descolamento (3B) nem a oclusão
+A/C: os instrumentos em `probe.ts` supõem a largura de uma letra de CORREIA
+(`W = 0.8 · SPECIMEN_SIZE`), e precisam ser reescritos para o monograma antes
+de valer. Na imagem, o escoamento se separa na aresta, atravessa as
+contra-formas do R e do C e passa na fresta entre o L e o R.
+
+### O pacote
+
+O troika e o `Text` do drei saíram da cena: o chunk caiu de **338.0 para
+299.1 kB**, e com a luz do cursor e os hologramas fechou em **300.0 kB**.
+O `npm run measure` passou a achar o chunk da cena por `shadeConcrete`.
+
+### O cursor
+
+Luz a `clamp(foco, 4.5, 12)` unidades da câmera no raio do cursor. Lida pelo
+gancho de dev `__pointerLight` depois de 60 movimentos: força 0.9999, em
+(2.7, 0.9, −42.0) com a câmera em Quem sou. Na tela: uma aura âmbar fraca e um
+vazio no bando em volta dela.
+
 ## Desempenho da cena, medido
 
 Varredura sintética de 0.00 a 0.28, passo de relógio fixo em 1/60 s, DPR travado
