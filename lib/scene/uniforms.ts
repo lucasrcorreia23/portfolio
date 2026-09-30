@@ -38,6 +38,12 @@ export type SharedUniforms = ReturnType<typeof createSharedUniforms>;
  */
 export const SPRITE_LAYER = 2;
 
+/**
+ * A camada do vidro (rodada 20): o LRC e os cards, desenhados por cima da cena
+ * e dos esporos, amostrando os dois como fundo refratado (`backdrop`).
+ */
+export const GLASS_LAYER = 3;
+
 export function createSharedUniforms(palette: Palette = readPalette()) {
   return {
     time: { value: 0 },
@@ -63,6 +69,8 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
      * Quem escreve é o compositor, por quadro.
      */
     sceneDepth: { value: null as Texture | null },
+    /** Cena + esporos, para o vidro refratar (rodada 20). */
+    backdrop: { value: null as Texture | null },
     focus: { value: 20 },
     focusRange: { value: 26 },
     aperture: { value: 0 },

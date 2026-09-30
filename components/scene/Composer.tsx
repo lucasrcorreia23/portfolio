@@ -19,6 +19,7 @@ import {
 import { blit, createPassMaterial } from "@/lib/scene/gpu";
 import {
   BLOOM_DOWN_FRAG,
+  BACKDROP_FRAG,
   BLOOM_THRESHOLD_FRAG,
   BLOOM_UP_FRAG,
   COMPOSITE_FRAG,
@@ -29,7 +30,12 @@ import {
 } from "@/lib/scene/shaders/post";
 import { markScenePainted } from "@/lib/scene/scene-painted";
 import { sceneSettings } from "@/lib/scene/settings";
-import { SPRITE_LAYER, veilUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
+import {
+  GLASS_LAYER,
+  SPRITE_LAYER,
+  veilUniforms,
+  type SharedUniforms,
+} from "@/lib/scene/uniforms";
 import { MAX_VEIL_BOXES, VEIL_CEILING, VEIL_FLOOR_DAWN } from "@/lib/scene/veil";
 
 /** Níveis da cadeia de bloom, a partir de meia resolução. */
@@ -120,6 +126,8 @@ export function Composer({
     // Os sprites (rodada 19): esporos, lanternas e formações, somados depois da
     // DOF. Ver o bloco "sprites" no laço de quadro.
     const sprites = makeColorTarget(0);
+    // O fundo do vidro (rodada 20): cena + esporos, amostrado pela refração.
+    const backdrop = makeColorTarget(0);
     const dofA = makeColorTarget(0);
     const dofB = makeColorTarget(0);
     const bloom = Array.from({ length: BLOOM_LEVELS }, () =>
@@ -147,6 +155,17 @@ export function Composer({
       },
       GLSL3,
     );
+
+    const backdropPass = createPassMaterial(
+      BACKDROP_FRAG,
+      {
+        uSource: { value: scene.texture },
+        uSprites: { value: sprites.texture },
+        uDawn: shared.dawn,
+      },
+      GLSL3,
+    );
+    shared.backdrop.value = backdrop.texture;
 
     const threshold = createPassMaterial(
       BLOOM_THRESHOLD_FRAG,
@@ -276,6 +295,8 @@ export function Composer({
     return {
       scene,
       sprites,
+      backdrop,
+      backdropPass,
       dofA,
       dofB,
       bloom,
@@ -299,6 +320,8 @@ export function Composer({
       held.scene.depthTexture?.dispose();
       held.scene.dispose();
       held.sprites.dispose();
+      held.backdrop.dispose();
+      held.backdropPass.dispose();
       held.dofA.dispose();
       held.dofB.dispose();
       for (const target of held.bloom) target.dispose();
@@ -326,6 +349,7 @@ export function Composer({
 
     rig.scene.setSize(width, height);
     rig.sprites.setSize(width, height);
+    rig.backdrop.setSize(width, height);
     rig.dofA.setSize(Math.max(1, width >> 1), Math.max(1, height >> 1));
     rig.dofB.setSize(Math.max(1, width >> 1), Math.max(1, height >> 1));
     rig.bloom.forEach((target, level) => {
@@ -380,13 +404,30 @@ export function Composer({
     }
     renderer.getClearColor(CLEAR);
     const clearAlpha = renderer.getClearAlpha();
-    renderer.setRenderTarget(rig.sprites);
-    renderer.setClearColor(0x000000, 0);
-    renderer.clear(true, false, false);
-    state.camera.layers.set(SPRITE_LAYER);
+    const drawSprites = () => {
+      renderer.setRenderTarget(rig.sprites);
+      renderer.setClearColor(0x000000, 0);
+      renderer.clear(true, false, false);
+      state.camera.layers.set(SPRITE_LAYER);
+      renderer.render(state.scene, state.camera);
+      state.camera.layers.set(0);
+      renderer.setClearColor(CLEAR, clearAlpha);
+    };
+    drawSprites();
+
+    // --- o vidro ------------------------------------------------------------
+    // (Rodada 20.) O LRC e os cards refratam o que está atrás deles, esporos
+    // incluídos: o fundo é a cena mais os sprites, somados num alvo; o vidro é
+    // desenhado por cima, no alvo da cena (a profundidade dela continua lá, e
+    // o vidro escreve a dele); e os sprites são redesenhados contra a
+    // profundidade nova, para o esporo atrás do vidro aparecer **só**
+    // refratado, e não duas vezes.
+    blit(renderer, rig.backdropPass, rig.backdrop);
+    renderer.setRenderTarget(rig.scene);
+    state.camera.layers.set(GLASS_LAYER);
     renderer.render(state.scene, state.camera);
     state.camera.layers.set(0);
-    renderer.setClearColor(CLEAR, clearAlpha);
+    drawSprites();
     // O amanhecer (rodada 18): mais exposição, e a luminância do fundo — que o
     // véu usa como alvo — relida da paleta, que troca com o tema.
     shared.exposure.value = EXPOSURE * (1 + 0.15 * shared.dawn.value);

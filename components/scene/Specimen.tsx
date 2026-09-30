@@ -2,15 +2,13 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { ExtrudeGeometry, FrontSide, ShaderMaterial, ShapePath, type Mesh } from "three";
+import { ExtrudeGeometry, FrontSide, GLSL3, ShaderMaterial, ShapePath, type Mesh } from "three";
 import { MONOGRAM } from "@/lib/scene/monogram-data";
-import {
-  SPECIMEN_FRAG,
-  SPECIMEN_VERT,
-} from "@/lib/scene/shaders/specimen";
+import { GLASS_FRAG, GLASS_VERT } from "@/lib/scene/shaders/glass";
 import { TYPE_ARTICLE } from "@/lib/scene/type-article";
 import { bakeTypeField, type TypeField } from "@/lib/scene/type-field";
 import {
+  GLASS_LAYER,
   fogUniforms,
   lightUniforms,
   type SharedUniforms,
@@ -83,26 +81,32 @@ export function Specimen({ shared, attackRef }: SpecimenProps) {
   const field = useRef<TypeField | null>(null);
 
   const { material, geometry } = useMemo(() => {
+    // Vidro (rodada 20): ver `shaders/glass.ts`. Opaco e escrevendo
+    // profundidade; o que ele tem de transparente vem do fundo amostrado.
     const specimenMaterial = new ShaderMaterial({
       uniforms: {
         ...fogUniforms(shared),
         ...lightUniforms(shared),
-        uDeep: shared.deep,
         uCyan: shared.cyan,
+        uViolet: shared.violet,
+        uMagenta: shared.magenta,
+        uMist: shared.mist,
+        uBackdrop: shared.backdrop,
         uFlockAhead: shared.flockAhead,
         uAheadField: shared.flockAheadField,
         uAheadReady: shared.flockAheadReady,
         uSpecimenFogDepth: shared.specimenFogDepth,
         uSpecimenFogFlat: shared.specimenFogFlat,
       },
-      vertexShader: SPECIMEN_VERT,
-      fragmentShader: SPECIMEN_FRAG,
+      vertexShader: GLASS_VERT,
+      fragmentShader: GLASS_FRAG,
       transparent: false,
       depthTest: true,
       depthWrite: true,
       side: FrontSide,
       toneMapped: false,
     });
+    specimenMaterial.glslVersion = GLSL3;
     return { material: specimenMaterial, geometry: buildMonogram() };
   }, [shared]);
 
@@ -157,6 +161,7 @@ export function Specimen({ shared, attackRef }: SpecimenProps) {
       geometry={geometry}
       material={material}
       position={[...TYPE_ARTICLE.position]}
+      layers={GLASS_LAYER}
     />
   );
 }

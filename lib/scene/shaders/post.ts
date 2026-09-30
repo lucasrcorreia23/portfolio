@@ -196,6 +196,26 @@ void main() {
 }
 `;
 
+/**
+ * O fundo do vidro (rodada 20): a cena e os esporos somados, na mesma regra
+ * do composite — de manhã os esporos são tinta. É o que o vidro refrata.
+ */
+export const BACKDROP_FRAG = /* glsl */ `
+uniform sampler2D uSource;
+uniform sampler2D uSprites;
+uniform float uDawn;
+
+in vec2 vUv;
+out vec4 fragColor;
+
+void main() {
+  vec3 c = texture(uSource, vUv).rgb;
+  vec3 sp = texture(uSprites, vUv).rgb;
+  c = mix(c + sp, c * (1.0 - clamp(dot(sp, vec3(0.3333)), 0.0, 0.85)) + sp * 0.12, uDawn);
+  fragColor = vec4(c, 1.0);
+}
+`;
+
 /** Downsample de 13 taps. */
 export const BLOOM_DOWN_FRAG = /* glsl */ `
 uniform sampler2D uSource;
