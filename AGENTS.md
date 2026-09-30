@@ -141,6 +141,40 @@ DOM em outro. Números em MEASUREMENTS.md, "Rodada 14, medida"; folha em
 `.screens/14-rio.png`. **Próximo: rodada 15, cor no bando e luz colorida nas
 paredes.**
 
+### Rodada 22 em andamento — onde retomar (2026-09-30)
+
+Pedido do Lucas: **sutileza e realismo no lugar que já existe** (a câmara e o
+rio). As rodadas 19–21 (vazio, esporos, vidro) foram desfeitas (`d8da9e2`).
+Quatro passos, um de cada vez, cada um com uma folha para ele olhar antes do
+próximo:
+
+1. ~~**Água de verdade**~~ — feito (`d2011bf`): `components/scene/Water.tsx`,
+   rio a `WATER_LEVEL` −3.6 (`chamber-plan.ts`) com reflexo planar.
+   `?water=0` desliga.
+2. ~~**Paredes com textura real**~~ — feito (`ad16ddf`): relevo em
+   `engrave()`/`rockHeight()` e água no concreto (`shadeConcrete`) em
+   `shaders/chamber.ts`. Fósseis (`Structure.tsx`) removidos.
+3. ~~**Organismo mais sutil**~~ — feito (`c96e8f6`): pesos frios e matiz
+   puxado para o teal em `shaders/body.ts`, ganho 1.9.
+4. **Luz mais natural — o próximo.** O que o Lucas aprovou:
+   - raios de luz na névoa a partir da fonte a montante e das lanternas
+     (um passo de raios de luz no compositor, `shaders/post.ts`, por
+     amostragem radial a partir da posição na tela de cada fonte, fraco);
+   - a claridade da névoa refletida na água (em `Water.tsx`, somar
+     `fogColorAt` na direção refletida onde o reflexo é escuro);
+   - as poças de luz colorida das lanternas mais fracas (`lampLight` em
+     `shadeConcrete`, hoje `albedo * 18 + 0.05`);
+   - a luz do cursor mais suave (`pointer-light.ts`, aura em `Lamps.tsx`).
+   No fim do passo: contraste (`__probe.contrast`), calor (`warmth`), pacote
+   (`npm run build && npm run measure`), folha `.screens/22-luz.png`, e
+   atualizar a lista abaixo e o MEASUREMENTS.md ("Rodada 22, medida").
+
+**A bancada** está no MEASUREMENTS.md, "A bancada da rodada 13": `npm run dev`
+na 3000, `npm run collect` na 3131, Chrome próprio com
+`--remote-debugging-port=9222`, e `node scripts/cdp.mjs eval "..."
+--nav="http://localhost:3000/pt?probe=1" --emulate=1440,900 --sleep=12000`.
+Folha: `window.__probe.sheet({ progress, to, warmFrom, columns, rows, name })`.
+
 ### Pendências — a lista única (atualizada a cada rodada)
 
 **Esta é a lista do que está ruim ou não foi conferido**, juntando as "três
