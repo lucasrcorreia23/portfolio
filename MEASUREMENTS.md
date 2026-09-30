@@ -2071,6 +2071,70 @@ que tem outra peça ao lado.
 | pacote | 188.0 / 187.0 kB; cena 332.2 de 350 |
 | GPU, 2160×1350 (DPR 2 emulado) | escada de K: 5.3 / 5.8 / 6.3 / 7.0 ms por faixa (32–42% de 16.7), com o cronômetro a 4.3× o teto físico (indicativo); quadro mediano 13.3 ms e p95 14.1 ms em todas as faixas (na 12, p95 26.7) |
 
+## Rodada 14, medida
+
+O rio parava em nada: a câmera cruzava cada card sem repousar e um gesto de
+roda atravessava vários cases. Folha: `.screens/14-rio.png` (0.49 → 0.61,
+descendo).
+
+### Cards atravessados por gesto de roda
+
+Roda sintética por CDP (`Input.dispatchMouseEvent`, `mouseWheel`), 1440×900,
+partindo da leitura do card 1, quatro gestos seguidos; a medida é o card mais
+próximo do progresso 2.2 s depois do gesto. O antes é o mesmo servidor com as
+mudanças em `git stash`.
+
+| gesto | antes | só com snap por proximidade | depois (passo do rio) |
+|---|---|---|---|
+| meia tela (450 px, 6 eventos) | 1 · 1 · 1 · 1 | 1 · 1 · 1 · 1 | 1 · 1 · 1 · 1 |
+| uma tela (900 px, 10 eventos) | 2 · 2 · 1 | 2 · 2 · 1 | 1 · 1 · 1 · 1 |
+| flick de duas telas (1800 px, 14 eventos) | 4 · 1 | 4 · 1 | 1 · 1 · 1 · 1 |
+
+O snap do Lenis (`lenis/snap`, `proximity`) alinhava a parada à leitura
+(desvio 0) mas **não limitava o avanço** — por isso saiu, e entrou o passo:
+um gesto vira uma viagem de 1.1 s até a leitura vizinha, e o resto do gesto é
+engolido até a viagem acabar e a roda silenciar por 240 ms.
+
+Bordas, um gesto de uma tela de cada vez:
+
+| partida | três gestos | leitura |
+|---|---|---|
+| 0.40, descendo (Quem sou) | 0.50 · 0.55 · 0.60 | entra no rio e pára no primeiro card |
+| 0.80, descendo (último card) | 0.895 · 0.99 · 1.00 | sai livre para a Superfície |
+| 0.90, subindo (Superfície) | 0.80 · 0.75 · 0.70 | volta ao último card e desce card a card |
+| 0.50, subindo (primeiro card) | 0.405 · 0.31 · 0.215 | sai livre para Quem sou |
+
+### O repouso na curva
+
+Na folha, `z` da câmera: **−49.2** de 0.490 a 0.512, **−54.4** de 0.534 a
+0.566, **−58.9** de 0.588 a 0.610. A passagem cabe num quadro da folha (0.523,
+0.577). `RIVER_HOLD` = 0.28: 56% da rolagem entre duas leituras é repouso.
+
+### O mobile, beat a beat
+
+A 390×844, a borda de cada seção do DOM contra o progresso publicado (a HUD
+lida em `EST.`):
+
+| seção | rolagem crua | antes (progresso = rolagem) | depois |
+|---|---|---|---|
+| Identidade | 0.123 – 0.328 | 0.123 – 0.328 (beat: 0.10–0.28) | 0.10 – 0.28 |
+| Quem sou | 0.336 – 0.531 | 0.336 – 0.531 (beat: 0.28–0.45) | 0.28 – 0.45 |
+| Trabalho | 0.541 – 0.817 | 0.541 – 0.817 (beat: 0.45–0.85) | 0.46 – 0.84 |
+
+### Pacote
+
+Rota inicial 188.3 kB (+0.3, o mapa por beat no store), case 187.3 kB, chunk
+da cena 332.1 kB, driver 48.3 kB (+0.3, o passo).
+
+### O que não foi medido
+
+- A volta de um case com Δ 0 **depois** do mapa: `requestScrollTo` agora passa
+  por `scrollFromDescent` e o progresso volta por `descentFromScroll`, que é a
+  inversa linear por trecho (erro de ponto flutuante), mas a medição da
+  travessia não foi refeita.
+- O toque: o passo só vale para roda e trackpad. No telefone quem segura é o
+  repouso da curva.
+
 ## Desempenho da cena, medido
 
 Varredura sintética de 0.00 a 0.28, passo de relógio fixo em 1/60 s, DPR travado

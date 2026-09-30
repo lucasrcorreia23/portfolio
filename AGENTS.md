@@ -85,6 +85,17 @@ dois divergirem, o `PROJECT.md` ganha. Este arquivo é só o mapa do código.
 
 ## Estado atual
 
+### Rodada 14 (2026-09-30): o rio pára em cada card
+
+Primeira das rodadas 14 a 18 do plano de 2026-09-30 (ritmo do rio, cor no
+bando, vida nas paredes, natureza no lugar das cotas, assinatura LRC,
+variante amanhecer — as decisões estão no topo do DIRECTION.md). Feito: um
+gesto de roda leva a um card (antes: uma tela atravessava 2, duas telas 4), a
+câmera repousa em cada leitura, e o mobile deixou de ter a câmera num beat e o
+DOM em outro. Números em MEASUREMENTS.md, "Rodada 14, medida"; folha em
+`.screens/14-rio.png`. **Próximo: rodada 15, cor no bando e luz colorida nas
+paredes.**
+
 ### Onde paramos (2026-09-25, fim da rodada 13)
 
 Branch `fundacao`, árvore limpa, último commit da rodada: `72a9bcb`. Nada foi
@@ -662,6 +673,24 @@ modo calmo.
 
 `velocity` existe no store como leitura de HUD e **não dirige nada**. A regra
 da variável única continua valendo.
+
+**A rolagem não é o progresso: há um mapa por beat entre os dois** (rodada 14,
+`lib/scroll/descent-map.ts`). As seções medem `vh` no desktop e `mobileVh` no
+mobile, e o progresso é o dos `from`/`to` de `BEATS`; o store publica
+`descentFromScroll(rolagem)` na descida, e `consumeScrollRequest` devolve
+`scrollFromDescent(pedido)` ao driver. Sem o mapa, no mobile a câmera entrava
+no rio com Quem sou na tela. **Quem rola o documento a partir de um progresso
+passa pelo mapa** — o driver, o passo do rio e a varredura de contraste.
+
+**O rio anda um card por gesto de roda** (rodada 14, `stepRiver` no
+`ScrollDriver`, pelo gancho `virtualScroll` do Lenis). Um evento de roda com a
+leitura vizinha a no máximo um intervalo vira uma viagem de 1.1 s até ela, e o
+resto do gesto é engolido até a viagem acabar e a roda silenciar 240 ms. Nas
+pontas do rio não há vizinha e a rolagem é livre. As leituras vêm de
+`lib/scene/river-readings.ts`, que **não importa three** porque o driver o lê
+(senão a cena entraria no chunk do scroll). E a curva repousa em cada leitura
+(`RIVER_HOLD` em `curve.ts`): 56% da rolagem entre dois cards deixa a câmera
+parada, o que segura o toque, onde o passo não vale.
 
 **E a variável é da descida, não da rota em que se está.** O driver publica
 `lenis.progress`, que é a rolagem do documento atual — na home isso **é** a
