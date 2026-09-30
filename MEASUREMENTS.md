@@ -2135,6 +2135,47 @@ da cena 332.1 kB, driver 48.3 kB (+0.3, o passo).
 - O toque: o passo só vale para roda e trackpad. No telefone quem segura é o
   repouso da curva.
 
+## Rodada 15, medida
+
+Folhas: `.screens/15-bando.png` (0.12 → 0.72) e `.screens/15-paredes.png`
+(0.30 → 0.66), mais `15-um.png` (0.36, quadro inteiro).
+
+### O calor, com o bando colorido
+
+`__probe.descend` até o ponto e `warmth(12)`. A régua antiga (`r > 1.15·g`)
+conta também o `--peach` do bando; a nova (`eventShareOfFrame`) conta só rosa
+e coral (`g < 0.45·r` além da anterior). O teto do PROJECT.md §3.1 é dos dois
+eventos.
+
+| progresso | quente (régua antiga) | rosa + coral | aceso |
+|---|---|---|---|
+| 0.18 | 4.49% | 1.32% | 10.4% |
+| 0.36 | 18.13% | **4.24%** | 41.6% |
+| 0.44 | 13.55% | 0.02% | 32.9% |
+| 0.45 | 5.76% | 0.00% | 22.2% |
+| 0.52 | 0.04% | 0.00% | 5.2% |
+| 0.63 | 1.36% | 0.00% | 3.4% |
+| 0.92 | 23.05% | 1.20% | 28.3% |
+
+Rosa + coral no máximo 4.24% (teto 15%). Pela régua antiga o poleiro
+passaria de 15% (18.1%): o que passa é o peach, que não é evento.
+
+### O contraste
+
+`__probe.contrast` a 1.5 vh/s, 1440×900, pt: **5.69** (0–0.28), **5.67**
+(0.28–0.45), **5.67** (0.45–0.85), **5.68** (0.85–1.00). Todos passam o piso
+de 4.5 e o alvo de 5.5.
+
+### Pacote
+
+Chunk da cena **334.6 kB** (+2.5: o matiz, a luz colorida, as lanternas).
+Sobram 15.4 kB.
+
+### O que não foi medido
+
+O tempo de GPU: as lanternas são 352 quads aditivos e o concreto ganhou dois
+laços (4 aglomerados coloridos, 8 lanternas). Não rodei o banco.
+
 ## Desempenho da cena, medido
 
 Varredura sintética de 0.00 a 0.28, passo de relógio fixo em 1/60 s, DPR travado

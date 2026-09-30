@@ -85,6 +85,13 @@ dois divergirem, o `PROJECT.md` ganha. Este arquivo é só o mapa do código.
 
 ## Estado atual
 
+### Rodada 15 (2026-09-30): cor no bando e lanternas
+
+O bando tem um matiz por corpo, a luz que ele joga no concreto tem a cor do
+aglomerado, e oito lanternas rastejam pelas paredes. Rosa e coral ficam em no
+máximo 4.2% da tela; contraste de 5.67:1 ou mais. MEASUREMENTS.md, "Rodada 15,
+medida". **Próximo: rodada 16, natureza na câmara.**
+
 ### Rodada 14 (2026-09-30): o rio pára em cada card
 
 Primeira das rodadas 14 a 18 do plano de 2026-09-30 (ritmo do rio, cor no
@@ -803,6 +810,20 @@ retângulo preto para sempre — daí o cão de guarda de 500 ms no `SceneClock`
 não existe.
 
 #### O bando
+
+**Cada corpo tem um matiz** (rodada 15, `bodyHue` em `shaders/body.ts`):
+sorteio estável por corpo com os pesos de `BODY_HUE_WEIGHTS`, num hash
+diferente do da admissão. A energia clareia o próprio matiz (`bodyColor`).
+O halo usa a mesma cor. Rosa e coral por cima continuam como eventos.
+
+**E há vida além do bando: as lanternas** (`lib/scene/lamps.ts`,
+`components/scene/Lamps.tsx`). Oito organismos presos ao perímetro da seção,
+com física na CPU e reciclagem relativa à câmera, como o proxy. Cada um é um
+punhado de pontos aditivos e uma luz colorida (`uLamps`/`uLampColor`,
+`lampLight` em `shaders/lights.ts`) somada em `shadeConcrete`. Até a
+Identidade só três acendem, a meia força; somem na Superfície. A luz dos
+aglomerados também tem cor agora (`uClusterColor`, `practicalTintNear`),
+trocada devagar no `SceneWorld` (`CLUSTER_HUES`).
 
 **Núcleo e halo** (rodada 13; `BODY_VERT`/`GLOW_VERT` em `shaders/body.ts`).
 O **núcleo** é o fuso, com teto por eixo em px de CSS (`BODY_MAX_PX` 3.5 ×
