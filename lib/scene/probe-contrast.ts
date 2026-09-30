@@ -41,6 +41,7 @@ export const MIST_LUMINANCE = 0.796;
 export const CONTRAST_FLOOR = 4.5;
 
 import { VEIL_FALLOFF } from "./veil";
+import { scrollFromDescent } from "@/lib/scroll/descent-map";
 
 /** Diferença mínima, em nível de 8 bits, para um pixel contar como mudado. */
 const FOOTPRINT_EPSILON = 2;
@@ -338,7 +339,7 @@ export function installContrast(deps: ContrastDeps) {
 
     return (progress: number) => {
       const limit = root.scrollHeight - window.innerHeight;
-      const y = limit * progress;
+      const y = limit * scrollFromDescent(progress);
       if (lenis !== undefined) lenis.scrollTo(y, { immediate: true, force: true });
       else window.scrollTo(0, y);
     };

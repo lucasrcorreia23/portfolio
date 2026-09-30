@@ -29,6 +29,8 @@
  * uma consequência em vez de uma restauração.
  */
 
+import { descentFromScroll, scrollFromDescent } from "./descent-map";
+
 export type ScrollSnapshot = {
   /** Progresso normalizado da descida, 0 a 1. É isto que dirige tudo. */
   progress: number;
@@ -101,9 +103,11 @@ export function publishScroll(next: {
   progress: number;
   velocity: number;
 }): void {
+  // `next.progress` é a rolagem do documento; a descida lê o progresso por
+  // beat (ver `descent-map.ts`), que só no mobile difere de verdade.
   const value = clamp01(next.progress);
   snapshot.pageProgress = value;
-  if (role === "descent") snapshot.progress = value;
+  if (role === "descent") snapshot.progress = descentFromScroll(value);
   snapshot.velocity = Number.isFinite(next.velocity) ? next.velocity : 0;
   for (const listener of listeners) listener(snapshot);
 }
@@ -166,7 +170,8 @@ export function consumeScrollRequest(): number | null {
   if (role !== "descent") return null;
   const value = pendingScrollTo;
   pendingScrollTo = null;
-  return value;
+  // O pedido vem em progresso da descida; o driver rola o documento.
+  return value === null ? null : scrollFromDescent(value);
 }
 
 /** Idem, para a remedida. */
