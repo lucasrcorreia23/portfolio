@@ -141,7 +141,7 @@ DOM em outro. Números em MEASUREMENTS.md, "Rodada 14, medida"; folha em
 `.screens/14-rio.png`. **Próximo: rodada 15, cor no bando e luz colorida nas
 paredes.**
 
-### Rodada 22 em andamento — onde retomar (2026-09-30)
+### Rodada 22 — onde retomar (2026-09-30)
 
 Pedido do Lucas: **sutileza e realismo no lugar que já existe** (a câmara e o
 rio). As rodadas 19–21 (vazio, esporos, vidro) foram desfeitas (`d8da9e2`).
@@ -156,18 +156,15 @@ próximo:
    `shaders/chamber.ts`. Fósseis (`Structure.tsx`) removidos.
 3. ~~**Organismo mais sutil**~~ — feito (`c96e8f6`): pesos frios e matiz
    puxado para o teal em `shaders/body.ts`, ganho 1.9.
-4. **Luz mais natural — o próximo.** O que o Lucas aprovou:
-   - raios de luz na névoa a partir da fonte a montante e das lanternas
-     (um passo de raios de luz no compositor, `shaders/post.ts`, por
-     amostragem radial a partir da posição na tela de cada fonte, fraco);
-   - a claridade da névoa refletida na água (em `Water.tsx`, somar
-     `fogColorAt` na direção refletida onde o reflexo é escuro);
-   - as poças de luz colorida das lanternas mais fracas (`lampLight` em
-     `shadeConcrete`, hoje `albedo * 18 + 0.05`);
-   - a luz do cursor mais suave (`pointer-light.ts`, aura em `Lamps.tsx`).
-   No fim do passo: contraste (`__probe.contrast`), calor (`warmth`), pacote
-   (`npm run build && npm run measure`), folha `.screens/22-luz.png`, e
-   atualizar a lista abaixo e o MEASUREMENTS.md ("Rodada 22, medida").
+4. ~~**Luz mais natural**~~ — feito: raios de luz na névoa (`RAYS_FRAG`
+   em `shaders/post.ts`, fontes escolhidas por `writeRayLights` no
+   `Composer`; `?rays=0` desliga), a claridade da névoa refletida na água
+   (`Water.tsx`), as poças das lanternas mais fracas (`shadeConcrete`) e o
+   cursor mais suave (`lampLight`, a aura em `Lamps.tsx`, `body.ts`).
+   MEASUREMENTS.md, "Rodada 22, medida — a luz"; folha `.screens/22-luz.png`.
+
+**A rodada 22 fechou os quatro passos.** O que o Lucas não viu ainda é a folha
+da luz.
 
 **A bancada** está no MEASUREMENTS.md, "A bancada da rodada 13": `npm run dev`
 na 3000, `npm run collect` na 3131, Chrome próprio com
@@ -180,14 +177,14 @@ Folha: `window.__probe.sheet({ progress, to, warmFrom, columns, rows, name })`.
 **Esta é a lista do que está ruim ou não foi conferido**, juntando as "três
 piores coisas" de cada relatório e o "O que não foi medido" de cada rodada no
 MEASUREMENTS.md. Quem fecha um item risca aqui; quem acha um novo, acrescenta.
-Estado: rodada 22 em andamento (o rio feito, as paredes feitas, o organismo e
-a luz a seguir). As rodadas 19 a 21 foram desfeitas — ver MEASUREMENTS.md.
+Estado: rodada 22 com os quatro passos feitos (o rio, as paredes, o organismo,
+a luz), esperando o Lucas olhar a folha da luz. As rodadas 19 a 21 foram desfeitas — ver MEASUREMENTS.md.
 
 **A cena**
 1. **O rio aparece pouco na Emergência e na Identidade**: a câmera olha para a
    frente e só pega a água na borda de baixo. (22)
-2. **Longe do que ela reflete, a água é só escura**: falta a claridade da
-   névoa refletida. Entra no passo da luz. (22)
+2. ~~**Longe do que ela reflete, a água é só escura**~~ — a claridade da
+   névoa refletida entrou no passo da luz. (22)
 3. **A parede quase nunca está no quadro**: a textura nova (22) só aparece nas
    bordas. O relevo não foi conferido de perto, iluminado e enquadrado.
 4. **O descolamento (3B) e a oclusão não foram remedidos com o LRC**: os
@@ -196,17 +193,24 @@ a luz a seguir). As rodadas 19 a 21 foram desfeitas — ver MEASUREMENTS.md.
 5. **O amanhecer está pálido**, perto do "branco de laboratório", e o
    monograma perde força nele. Talvez seja cedo para ligá-lo sozinho pela
    preferência do sistema. A troca de tema é um corte, sem transição. (18)
+5b. **Uma lanterna passa rente à lente na Emergência** (0.00 a 0.03): um
+   disco amarelo desfocado no meio do quadro, que lê como luz de palco.
+   Visto na folha `22-luz-emergencia-r0.png`, sem os raios, então vem da
+   rodada 15. Não conferi por que ela chega tão perto. (15)
 
 **Medições que faltam**
 6. **Tempo de GPU** do reflexo da água (um segundo desenho da cena em meia
+   resolução), dos raios de luz (quatro fontes × doze leituras em meia
    resolução), das lanternas e do cursor — no M5 e no telefone. O teto de 75 Hz
    desta bancada esconde a diferença (13.3 ms com e sem a água). (15, 22)
 7. **A costura da travessia para o case** com a deriva dos cards e o mapa por
    beat: a conta diz que continua exata, a medição de 0.0024 px não foi
    refeita. (14, 16)
 8. **O calor no amanhecer**: a régua supõe fundo escuro. (18)
-9. **Contraste e pacote depois das paredes** da rodada 22 (conferir no fim do
-   passo da luz).
+9. ~~**Contraste e pacote depois das paredes**~~ — 5.67:1 ou mais, 302.8 kB.
+   (22)
+9b. **O cursor não foi visto na imagem** depois de suavizado: a sonda o
+   desliga. Precisa de captura com o ponteiro de verdade. (22)
 
 **O ritmo do rio**
 10. **No toque, a desaceleração vem só da curva**: a viscosidade é da roda e do
@@ -1341,7 +1345,7 @@ LCP do case em 10.8 s. **A build cai se a capa de entrega faltar**
 
 #### O compositor
 
-Cena → DOF → **campo do véu** → composite, tudo sobre `WebGLRenderTarget`. Ele
+Cena → DOF → bloom → **raios** (rodada 22) → **campo do véu** → composite, tudo sobre `WebGLRenderTarget`. Ele
 desliga o render automático do R3F ao se inscrever com prioridade 1.
 
 O alvo da cena é multiamostrado **e** tem `DepthTexture`: o three inclui

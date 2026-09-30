@@ -2331,6 +2331,37 @@ inteiro).
   aquecimento do servidor de desenvolvimento e não se repetiu.
 - **Pacote:** chunk da cena 302.6 kB (+0.9).
 
+## Rodada 22, medida — a luz
+
+Folhas: `.screens/22-luz.png` (0.10 → 0.90), `22-luz-antes.png` (o mesmo
+trecho antes do passo), `22-luz-010.png` e `22-luz-066.png` (quadro inteiro),
+`22-luz-emergencia.png` e `22-luz-emergencia-r0.png` (0.00 → 0.12, com e sem
+os raios).
+
+- **Os raios** (`RAYS_FRAG`) aparecem onde há algo entre a lente e a fonte: a
+  0.07–0.10 a luz a montante passa pela borda do LRC e se abre em leque na
+  névoa. A primeira calibragem (ganho 0.9 na fonte, 0.05 nas lanternas,
+  alcance até 0.35 da tela) virou um véu ciano e marrom sem forma de raio no
+  rio. A causa eram as lanternas rentes à lente. Ficou 0.35 / 0.014, alcance
+  ≤ 0.14 da tela e só lanternas a mais de 5 unidades. A/B com `?rays=0`.
+- **A água** devolve o halo da fonte na direção refletida onde o reflexo é
+  escuro. A 0.66 o canto de baixo, antes preto, tem a névoa em riscas.
+- **Contraste,** 1.5 vh/s, pt: **5.70 / 5.67 / 5.68 / 5.68**.
+- **Calor:** rosa + coral no máximo **0.04%** do quadro (0.18, 0.36, 0.63,
+  0.92). A régua antiga dá 21.8% em 0.92, que é o peach da Superfície.
+- **Pacote:** chunk da cena **302.8 kB** (+0.2 desde o rio). Rota inicial
+  188.6 / 187.6 kB.
+
+### O que não foi medido
+
+- **O tempo de GPU dos raios**: quatro fontes × doze leituras de profundidade
+  em meia resolução. O teto de 75 Hz desta bancada o esconderia, como escondeu
+  a água.
+- **O cursor, na imagem**: a sonda desliga a luz do cursor, e as folhas não o
+  mostram. Precisa de uma captura com o ponteiro de verdade (a bancada, item 7).
+- **O amanhecer**: os raios caem a 40% e o céu da água usa a cor do halo de
+  manhã, mas não abri o tema.
+
 ## Desempenho da cena, medido
 
 Varredura sintética de 0.00 a 0.28, passo de relógio fixo em 1/60 s, DPR travado
