@@ -85,6 +85,20 @@ dois divergirem, o `PROJECT.md` ganha. Este arquivo é só o mapa do código.
 
 ## Estado atual
 
+### Rodada 16 (2026-09-30): natureza na câmara, e o rio sem trava
+
+As cotas, réguas, setas e números gravados saíram da câmara e dos cards. No
+lugar: fósseis gravados (`plan.fossils`, desenhados em `engraving-atlas.ts`),
+poças no piso que refletem o bando e as lanternas, musgo e líquen que acendem
+com a luz que passa (os dois em `shaders/chamber.ts`) e raízes descendo pelas
+paredes e pendurando nos portais (`lib/scene/roots.ts`). **A HUD e o portão
+continuam numéricos.** Os cards flutuam (deriva por card no vertex shader,
+zerada por `uCaseRecess`), com cantos arredondados e borda que cede para a
+névoa. E, a pedido do Lucas, o rio perdeu a trava da rodada 14: a câmera
+desacelera em cada card (`RIVER_SLOW`) e a rolagem fica viscosa perto deles e
+assenta devagar (`RIVER_VISCOSITY`, `SETTLE_LERP` no `ScrollDriver`).
+MEASUREMENTS.md, "Rodada 16, medida". **Próximo: rodada 17, a assinatura LRC.**
+
 ### Rodada 15 (2026-09-30): cor no bando e lanternas
 
 O bando tem um matiz por corpo, a luz que ele joga no concreto tem a cor do
@@ -689,15 +703,15 @@ mobile, e o progresso é o dos `from`/`to` de `BEATS`; o store publica
 no rio com Quem sou na tela. **Quem rola o documento a partir de um progresso
 passa pelo mapa** — o driver, o passo do rio e a varredura de contraste.
 
-**O rio anda um card por gesto de roda** (rodada 14, `stepRiver` no
-`ScrollDriver`, pelo gancho `virtualScroll` do Lenis). Um evento de roda com a
-leitura vizinha a no máximo um intervalo vira uma viagem de 1.1 s até ela, e o
-resto do gesto é engolido até a viagem acabar e a roda silenciar 240 ms. Nas
-pontas do rio não há vizinha e a rolagem é livre. As leituras vêm de
-`lib/scene/river-readings.ts`, que **não importa three** porque o driver o lê
-(senão a cena entraria no chunk do scroll). E a curva repousa em cada leitura
-(`RIVER_HOLD` em `curve.ts`): 56% da rolagem entre dois cards deixa a câmera
-parada, o que segura o toque, onde o passo não vale.
+**O rio tem água** (rodadas 14 e 16, `viscous` no `ScrollDriver`, pelo gancho
+`virtualScroll` do Lenis). Perto de cada card um gesto de roda rende metade
+(`RIVER_VISCOSITY`), e quando a mão para a página deriva até a leitura mais
+próxima pelo `lerp` do Lenis (`SETTLE_LERP`). **Nada é engolido e nada tem
+duração fixa** — a rodada 14 tinha um passo de 1.1 s por gesto e o Lucas o
+leu como trava. As leituras vêm de `lib/scene/river-readings.ts`, que **não
+importa three** porque o driver o lê (senão a cena entraria no chunk do
+scroll). E a câmera desacelera em cada leitura (`RIVER_SLOW` em `curve.ts`:
+0.35× em cima do card, 1.65× no meio da passagem), sem platô.
 
 **E a variável é da descida, não da rota em que se está.** O driver publica
 `lenis.progress`, que é a rolagem do documento atual — na home isso **é** a

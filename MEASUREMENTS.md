@@ -2176,6 +2176,45 @@ Sobram 15.4 kB.
 O tempo de GPU: as lanternas são 352 quads aditivos e o concreto ganhou dois
 laços (4 aglomerados coloridos, 8 lanternas). Não rodei o banco.
 
+## Rodada 16, medida
+
+Folhas: `.screens/16-rio.png` (0.34 → 0.92), `16-cards.png` (leituras 0.55 e
+0.60), `16-paredes.png`, `16-emergencia.png` (0.00 → 0.12, sem regressão).
+
+### O rio, revisto a pedido do Lucas
+
+O repouso chapado e o passo de 1.1 s da rodada 14 foram lidos como trava. Com
+a desaceleração (câmera a 0.35× em cada card) e a viscosidade (metade do
+gesto perto de um card) mais o assentamento por `lerp` 0.028, a mesma roda
+sintética da rodada 14, medida 2.2 s depois do gesto (o assentamento ainda
+corre, por isso o desvio de 0.003–0.004):
+
+| gesto | rodada 13 | rodada 14 (passo) | agora |
+|---|---|---|---|
+| meia tela | 1 · 1 · 1 · 1 | 1 · 1 · 1 · 1 | 1 · 0 · 1 · 0 |
+| uma tela | 2 · 2 · 1 | 1 · 1 · 1 · 1 | 1 · 1 · 1 · 1 |
+| flick de duas telas | 4 · 1 | 1 · 1 · 1 · 1 | 3 · 2 |
+
+### Contraste e calor, com a natureza na câmara
+
+Contraste a 1.5 vh/s: **5.69 / 5.67 / 5.69 / 5.68** (os quatro trechos).
+Rosa + coral: pico de **4.27%** em 0.36.
+
+### Pacote
+
+Chunk da cena **338.0 kB** (+3.4: fósseis, água, líquen, raízes, a deriva
+dos cards). Sobram 12.0 kB.
+
+### O que não foi medido
+
+- A costura da travessia com a deriva dos cards: a deriva zera com
+  `uCaseRecess`, que chega a 1 na atracação, mas a medição de 0.0024 px não foi
+  refeita.
+- O tempo de GPU com a água (Blinn-Phong de 12 luzes por pixel molhado) e as
+  raízes.
+- Os posters do modo sem WebGL ainda mostram as cotas: são regerados junto com
+  o LRC (rodada 17).
+
 ## Desempenho da cena, medido
 
 Varredura sintética de 0.00 a 0.28, passo de relógio fixo em 1/60 s, DPR travado
