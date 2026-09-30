@@ -25,6 +25,7 @@ import {
 import type { FlockRead } from "@/lib/scene/probe";
 import { resolveRiver } from "@/lib/scene/cards";
 import { createChamberPlan } from "@/lib/scene/chamber-plan";
+import { createLampSim } from "@/lib/scene/lamps";
 import { createProxySim } from "@/lib/scene/proxy-sim";
 import type { RiverCard } from "@/lib/scene/river-content";
 import { clearSoundField, publishSoundField } from "@/lib/audio/field-store";
@@ -41,6 +42,7 @@ import { Chamber } from "./Chamber";
 import { ComposedClock } from "./ComposedClock";
 import { Composer } from "./Composer";
 import { Flock } from "./Flock";
+import { Lamps } from "./Lamps";
 import { ProbeClock } from "./ProbeClock";
 import { SceneClock } from "./SceneClock";
 import { Specimen } from "./Specimen";
@@ -93,6 +95,11 @@ type SceneWorldProps = {
  * progresso amortecido (`damp` por quadro, taxa independente de fps). A câmera
  * nunca dá um passo do tamanho de um salto de scroll.
  */
+
+/** A sequência de cores que cada aglomerado percorre, e quanto dura cada uma. */
+const CLUSTER_HUES = ["teal", "cyan", "teal", "peach", "cyan", "rose"] as const;
+const CLUSTER_HUE_SECONDS = 9;
+
 export function SceneWorld({
   specimen,
   river,
@@ -107,6 +114,17 @@ export function SceneWorld({
   // (`resolveRiver`) — os nichos ficam onde os cards deste aparelho estão.
   const plan = useMemo(() => createChamberPlan(resolveRiver()), []);
   const proxy = useMemo(() => createProxySim(plan.section), [plan]);
+  const lamps = useMemo(() => createLampSim(plan.section), [plan]);
+  const lampPalette = useMemo(
+    () => ({
+      teal: shared.teal.value,
+      cyan: shared.cyan.value,
+      peach: shared.peach.value,
+      rose: shared.rose.value,
+      coral: shared.coral.value,
+    }),
+    [shared],
+  );
   const pose = useMemo(() => createCameraPose(), []);
   const roost = useMemo(() => createRoost(), []);
   const caseDrive = useMemo(() => createCaseDrive(), []);
@@ -310,6 +328,32 @@ export function SceneWorld({
         cluster.energy,
       );
     }
+    // **A cor de cada aglomerado** (rodada 15): uma sequência da paleta, fria
+    // na maioria, que cada aglomerado percorre devagar e defasado dos outros —
+    // a parede pega a cor de quem passou, e a cor muda sem piscar.
+    {
+      const hues = CLUSTER_HUES;
+      const colors = shared.clusterColor.value;
+      for (let i = 0; i < colors.length; i += 1) {
+        const phase = shared.time.value / CLUSTER_HUE_SECONDS + i * 1.7;
+        const k = Math.floor(phase);
+        const f = phase - k;
+        const blend = f * f * (3 - 2 * f);
+        const a = lampPalette[hues[k % hues.length] ?? "teal"];
+        const b = lampPalette[hues[(k + 1) % hues.length] ?? "teal"];
+        colors[i]?.copy(a).lerp(b, blend);
+      }
+    }
+
+    // --- as lanternas -------------------------------------------------------
+    lamps.update(dt, shared.time.value, progress, pose.position.z);
+    lamps.write(
+      shared.lamps.value,
+      shared.lampNormal.value,
+      shared.lampColor.value,
+      lampPalette,
+    );
+
     // A sonda pode fixar a luz (só em desenvolvimento, e só com `?probe=1`):
     // a folha da curadoria mostra os sete cards "na mesma luz", e a luz desta
     // cena é o bando, que muda de card para card.
@@ -450,6 +494,7 @@ export function SceneWorld({
           boids — é o A/B de desempenho e, ao mesmo tempo, o controle da medida
           de esteira (ver `lib/scene/settings.ts`). */}
       {settings.cards ? <Cards shared={shared} river={river} /> : null}
+      <Lamps shared={shared} />
       <Flock
         shared={shared}
         progressRef={progressRef}

@@ -1,4 +1,4 @@
-import { Color, Vector2, Vector4, type Texture } from "three";
+import { Color, Vector2, Vector3, Vector4, type Texture } from "three";
 import { readPalette, type Palette } from "@/lib/palette";
 import {
   CARD_CORNER,
@@ -6,6 +6,7 @@ import {
   CARD_HALF_WIDTH,
   MAX_CARDS,
 } from "./cards";
+import { LAMP_COUNT } from "./lamps";
 import { MAX_VEIL_BOXES } from "./veil";
 import { CHAMBER_FAR, SPECIMEN_Z } from "./world";
 
@@ -65,6 +66,19 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
     clusters: {
       value: [new Vector4(), new Vector4(), new Vector4(), new Vector4()],
     },
+    /**
+     * A cor da luz de cada aglomerado (rodada 15). Até a 14 a parede recebia
+     * a luz do bando sempre ciano; com o bando colorido, cada aglomerado leva
+     * uma cor da paleta, que troca devagar (`clusterHue` no `SceneWorld`).
+     */
+    clusterColor: {
+      value: [new Color(palette.teal), new Color(palette.cyan), new Color(palette.teal), new Color(palette.peach)],
+    },
+
+    /** As lanternas (`lib/scene/lamps.ts`): xyz em mundo, w = intensidade. */
+    lamps: { value: Array.from({ length: LAMP_COUNT }, () => new Vector4()) },
+    lampNormal: { value: Array.from({ length: LAMP_COUNT }, () => new Vector3(1, 0, 0)) },
+    lampColor: { value: Array.from({ length: LAMP_COUNT }, () => new Color(palette.teal)) },
 
     /**
      * A fonte distante a montante. A cor viaja `--teal` → `--cyan` →
@@ -284,6 +298,9 @@ export function veilUniforms(shared: SharedUniforms) {
 export function lightUniforms(shared: SharedUniforms) {
   return {
     uClusters: shared.clusters,
+    uClusterColor: shared.clusterColor,
+    uLamps: shared.lamps,
+    uLampColor: shared.lampColor,
     uSourceColor: shared.sourceColor,
     uSourceStrength: shared.sourceStrength,
     uSourceZ: shared.sourceZ,

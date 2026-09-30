@@ -1,3 +1,5 @@
+import { LAMP_COUNT, LAMP_REACH } from "../lamps";
+
 /**
  * O rig de luz prática — DIRECTION.md §5, "Luz".
  *
@@ -13,6 +15,11 @@
 export const LIGHTS_UNIFORMS_GLSL = /* glsl */ `
 // xyz = posição do aglomerado em mundo, w = energia 0..1.
 uniform vec4 uClusters[4];
+// A cor da luz de cada aglomerado (rodada 15).
+uniform vec3 uClusterColor[4];
+// As lanternas (lib/scene/lamps.ts): xyz em mundo, w = intensidade; e a cor.
+uniform vec4 uLamps[${LAMP_COUNT}];
+uniform vec3 uLampColor[${LAMP_COUNT}];
 // A fonte distante a montante. Sobe de quase zero para o máximo só entre
 // 0.85 e 1.00 — é a luz para a qual você está andando.
 uniform vec3  uSourceColor;
@@ -69,6 +76,45 @@ float practicalLightNear(vec3 worldPos, vec3 normal, float grazing, float reach)
       grazing
     );
     total += cluster.w * fall * incidence;
+  }
+  return total;
+}
+
+/**
+ * A mesma luz de alcance curto, **com a cor de cada aglomerado** (rodada 15).
+ * É o termo que tinge o concreto; a intensidade continua sendo a escalar acima.
+ */
+vec3 practicalTintNear(vec3 worldPos, vec3 normal, float grazing, float reach) {
+  vec3 total = vec3(0.0);
+  for (int i = 0; i < 4; i++) {
+    vec4 cluster = uClusters[i];
+    vec3 delta = cluster.xyz - worldPos;
+    float dist = length(delta);
+    float fall = 1.0 - smoothstep(0.0, reach, dist);
+    fall *= fall;
+    float incidence = mix(
+      max(dot(normal, delta / max(dist, 1e-4)), 0.0),
+      1.0 - abs(dot(normal, delta / max(dist, 1e-4))),
+      grazing
+    );
+    total += uClusterColor[i] * cluster.w * fall * incidence;
+  }
+  return total;
+}
+
+/**
+ * A luz das lanternas, colorida. Sem termo de incidência: a lanterna mora na
+ * própria superfície, e o que ela faz é uma poça de luz em volta de si — o
+ * termo de raspão zeraria justamente o piso em que ela anda.
+ */
+vec3 lampLight(vec3 worldPos) {
+  vec3 total = vec3(0.0);
+  for (int i = 0; i < ${LAMP_COUNT}; i++) {
+    vec4 lamp = uLamps[i];
+    if (lamp.w <= 0.0) continue;
+    float dist = distance(lamp.xyz, worldPos);
+    float fall = 1.0 - smoothstep(0.0, ${LAMP_REACH.toFixed(1)}, dist);
+    total += uLampColor[i] * lamp.w * fall * fall;
   }
   return total;
 }

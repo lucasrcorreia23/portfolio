@@ -155,7 +155,16 @@ vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity
   // estrutura fina — ele recebe o relance, não a face acesa.
   lit *= mix(1.0, 0.3, shadeKind);
   float gain = mix(mix(2.6, 2.4, floorness), 0.5, ceilingness);
-  vec3 color = (albedo * 2.0 + uCyan * 0.35) * lit * gain;
+  // O tom da luz é o do aglomerado que passou (rodada 15): até a 14 era sempre
+  // uCyan * 0.35, e com o bando colorido a parede continuava ciano.
+  vec3 tint = practicalTintNear(world, shadingNormal, grazing, 7.5) * mix(1.0, 0.3, shadeKind);
+  vec3 color = (albedo * 2.0 * lit + tint * 0.35) * gain;
+  // As lanternas: poças de luz colorida em volta de quem rasteja pela câmara.
+  vec3 lamp = lampLight(world);
+  // O albedo do concreto é --abyss (~0.01 linear): multiplicado sozinho, a
+  // poça não aparece. O termo constante é a luz espalhada pela umidade da
+  // superfície, e é ele que dá a cor à poça.
+  color += (albedo * 18.0 + 0.05) * lamp * mix(1.0, 0.5, ceilingness);
   // A fonte a montante, com incidência. Ela entra pela abertura do fundo, então
   // uma superfície tem que estar **de frente** para a abertura para recebê-la —
   // sem este termo a parede do fundo, coplanar à abertura, recebia a luz
