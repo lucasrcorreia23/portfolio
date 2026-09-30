@@ -173,8 +173,10 @@ vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity
   vec3 lamp = lampLight(world);
   // O albedo do concreto é --abyss (~0.01 linear): multiplicado sozinho, a
   // poça não aparece. O termo constante é a luz espalhada pela umidade da
-  // superfície, e é ele que dá a cor à poça.
-  color += (albedo * 18.0 + 0.05) * lamp * mix(1.0, 0.5, ceilingness);
+  // superfície, e é ele que dá a cor à poça. **Rodada 22: mais fraca** — com
+  // 18 e 0.05 cada lanterna era uma mancha de cor chapada na parede, mais
+  // clara que o organismo que a emitia.
+  color += (albedo * 10.0 + 0.022) * lamp * mix(1.0, 0.5, ceilingness);
 
   // **O brilho molhado** (rodada 22). Onde a parede está molhada — a faixa
   // junto ao rio e os riscos de escorrimento —, a luz que passa deixa um
