@@ -2251,6 +2251,54 @@ gancho de dev `__pointerLight` depois de 60 movimentos: força 0.9999, em
 (2.7, 0.9, −42.0) com a câmera em Quem sou. Na tela: uma aura âmbar fraca e um
 vazio no bando em volta dela.
 
+## Rodada 18, medida
+
+Folhas: `.screens/18-amanhecer.png` e `18-noite.png` (a mesma descida, 0.04 →
+0.92, nos dois temas), `18-quem.png` (a página real de manhã, com HUD).
+
+### O contraste nos dois temas
+
+`__probe.contrast` a 1.5 vh/s, 1440×900, pt. **A sonda aprendeu o amanhecer**:
+de manhã o texto é escuro (`--mist` #0c1d27, L 0.0111), então ela mede o pixel
+**mais escuro** atrás de cada caixa e a razão `(L + 0.05) / (0.0111 + 0.05)`.
+Sem isso a primeira medição deu 0.88–1.28, que era o instrumento comparando o
+fundo claro com texto claro.
+
+| trecho | noite | amanhecer |
+|---|---|---|
+| 0.00–0.28 | 5.70 | 5.95 |
+| 0.28–0.45 | 5.67 | 5.92 |
+| 0.45–0.85 | 5.68 | 6.07 |
+| 0.85–1.00 | 5.67 | 5.95 |
+
+O véu da manhã é um piso (`VEIL_FLOOR_DAWN` = 0.316): a redução guarda o mínimo
+junto do máximo (canal verde), o portão abre quando algo escuro passa atrás do
+texto, e o joelho espelhado ergue o escuro em vez de dobrar o claro.
+
+### Três tentativas de manhã, pela imagem
+
+1. Tokens só, com os materiais da noite: tudo convergia para o ar claro; os
+   corpos eram pó e o halo (mistura pelo máximo) não existia sobre claro.
+2. Corpos como cor (mais escuros que o ar, 5 × 2.8 px), halo pela mistura
+   **mínima**, névoa a 55%, paredes um passo abaixo do ar: o bando voltou, mas
+   o quadro seguia lavado — "branco de laboratório" — e as letras da placa
+   sumiam (tinta escura **somada** não desenha nada).
+3. Ar mais quente e mais escuro (`--void` #c9bfb0), paredes a 0.5 do ar, a luz
+   das lanternas tingindo 1.6×, tinta da placa **misturada**, monograma a 0.6:
+   é o estado entregue.
+
+### Pacote
+
+Rota inicial **188.6 kB** (+0.3: o controle e o store do tema), case 187.6,
+chunk da cena **301.7 kB**. Sobram 48.3 kB do teto da cena.
+
+### O que não foi medido
+
+- O calor de manhã (a régua `r > 1.15·g` supõe fundo escuro).
+- O modo calmo do amanhecer foi visto só pelos posters.
+- A troca de tema no meio da descida: funciona (a cena relê a paleta), mas é
+  um corte, sem transição.
+
 ## Desempenho da cena, medido
 
 Varredura sintética de 0.00 a 0.28, passo de relógio fixo em 1/60 s, DPR travado

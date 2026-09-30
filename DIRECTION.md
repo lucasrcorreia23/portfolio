@@ -29,8 +29,15 @@ parece**. Onde os dois divergirem, o `PROJECT.md` ganha.
 > 6. **Existe uma variante "amanhecer"** — a mesma câmara com outra hora do
 >    dia, névoa clara mist/peach, nunca branco. A proibição de "branco de
 >    laboratório" (§6) continua valendo para ela.
-> 7. **O rio pára em cada card**: a câmera repousa na leitura de cada peça e a
->    rolagem é atraída para ela. Um gesto não pula cases.
+> 7. **O rio desacelera em cada card** — sem trava: a câmera fica mais lenta na
+>    leitura de cada peça, a rolagem fica viscosa perto dela e, parada, assenta
+>    devagar. Tudo precisa ser natural e refletir o mundo real (o Lucas vetou a
+>    primeira versão, com repouso chapado e passo de duração fixa).
+> 8. **Os cards são hologramas quadrados**: só a imagem e as letras flutuam,
+>    sem moldura, sem canto arredondado, sem placa de fundo. Eles flutuam
+>    devagar, como coisas suspensas no ar.
+> 9. **O cursor é uma luz quente** (âmbar, o peach com menos azul) que acende o
+>    que está perto e que o bando evita, como os quadros.
 
 ---
 

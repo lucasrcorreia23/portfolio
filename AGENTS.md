@@ -85,6 +85,19 @@ dois divergirem, o `PROJECT.md` ganha. Este arquivo é só o mapa do código.
 
 ## Estado atual
 
+### Rodada 18 (2026-09-30): o amanhecer
+
+Uma segunda hora do dia, `data-theme="dawn"` no `<html>` (`lib/theme.ts`): os
+nove tokens trocam em `styles/tokens.css`, `THEME_SCRIPT` escreve o atributo
+antes da hidratação (a escolha guardada ou `prefers-color-scheme: light`), e o
+controle `LUZ NOITE/AMANHECER` fica na HUD. Na cena, `applyPalette` relê a
+paleta para dentro das mesmas cores e `uDawn` (nos uniforms da névoa, então
+todo material vê) liga os ramos de manhã: concreto como o ar um passo abaixo e
+tingido pela luz, corpos como cor escura, halo pela mistura mínima
+(`Flock.tsx` troca a `blendEquation`), névoa mais rala, véu com piso em vez de
+teto. Posters do amanhecer em `public/posters/<beat>-dawn.webp`. Contraste de
+5.92 a 6.07 de manhã, 5.67 a 5.70 à noite.
+
 ### Rodada 17 (2026-09-30): a assinatura LRC, o cursor e os hologramas
 
 O corpo de prova é o monograma LRC extrudado (`lib/scene/monogram-data.ts`,
@@ -127,6 +140,22 @@ câmera repousa em cada leitura, e o mobile deixou de ter a câmera num beat e o
 DOM em outro. Números em MEASUREMENTS.md, "Rodada 14, medida"; folha em
 `.screens/14-rio.png`. **Próximo: rodada 15, cor no bando e luz colorida nas
 paredes.**
+
+### Onde paramos (2026-09-30, fim da rodada 18)
+
+As rodadas 14 a 18 do plano de 2026-09-30 estão feitas (ver as seções acima e
+MEASUREMENTS.md, "Rodada 14" a "Rodada 18"). O que ficou aberto, em ordem:
+
+1. **Remedir o descolamento (3B) e a oclusão com o monograma.** Os
+   instrumentos de `probe.ts` supõem uma letra de CORREIA; precisam ser
+   reescritos antes de valer.
+2. **A costura da travessia** com a deriva dos cards e o mapa por beat: a
+   conta diz que continua exata, a medição não foi refeita.
+3. **O tempo de GPU** com água, raízes, lanternas e cursor.
+4. **Tirar `troika-three-text` e `@react-three/drei` do `package.json`**, que
+   ficaram sem uso.
+5. As pendências antigas do Lucas continuam: material real de Perfecting,
+   WeCann e Unifique; a "Regra de governança".
 
 ### Onde paramos (2026-09-25, fim da rodada 13)
 
