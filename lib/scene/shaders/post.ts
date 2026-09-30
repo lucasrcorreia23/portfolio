@@ -21,7 +21,7 @@
  * precisa acontecer antes do tonemap. Numa pilha de efeitos encadeados o véu
  * resolveria para uma luminância que a passada seguinte muda.
  *
- * Ordem das passadas: cena → DOF → bloom → composite.
+ * Ordem das passadas: cena → DOF → bloom → raios → véu → composite.
  */
 
 import { MAX_VEIL_BOXES, VEIL_FALLOFF } from "../veil";
@@ -258,6 +258,72 @@ void main() {
 }
 `;
 
+/** Quantas fontes de raios uma passada resolve: a montante e três lanternas. */
+export const RAY_LIGHTS = 4;
+
+/**
+ * **Os raios de luz na névoa** (rodada 22).
+ *
+ * A névoa já tinha a luz das fontes — o halo da fonte a montante
+ * (`sourceHalo`, em `fog.ts`) e as auras das lanternas —, mas como um brilho
+ * que nada atravessa: um corpo passando diante da fonte não deixava sombra no
+ * ar. Num lugar úmido e escuro o que denuncia a luz é justamente isso, a
+ * lâmina de ar aceso cortada por quem passa na frente.
+ *
+ * Por pixel e por fonte, a passada anda pela reta da tela até a fonte e conta
+ * quantas amostras veem **através** até ela — profundidade da amostra além da
+ * profundidade da fonte. O brilho em volta da fonte é multiplicado por essa
+ * fração: onde nada está na frente é o halo de sempre, e onde um corpo, uma
+ * letra ou um card corta a reta sobra uma faixa escura saindo dele, radial à
+ * fonte. É o espalhamento de um raio só, sem marcha de volume, e custa doze
+ * leituras de profundidade por fonte em meia resolução.
+ *
+ * Fraco de propósito: a maior parte do quadro recebe menos de um centésimo de
+ * luz linear daqui. Somado antes do tonemap, e medido pelo véu (a semente dele
+ * soma este alvo), então o texto continua protegido.
+ */
+export const RAYS_FRAG = /* glsl */ `
+uniform vec4  uRayLight[${RAY_LIGHTS}];
+uniform vec3  uRayColor[${RAY_LIGHTS}];
+uniform float uRayRadius[${RAY_LIGHTS}];
+uniform float uAspect;
+
+${DEPTH_GLSL}
+
+in vec2 vUv;
+out vec4 fragColor;
+
+const int RAY_TAPS = 12;
+
+void main() {
+  float jitter = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
+  vec3 total = vec3(0.0);
+  for (int k = 0; k < ${RAY_LIGHTS}; k++) {
+    vec4 light = uRayLight[k];
+    if (light.w <= 0.0) continue;
+    vec2 d = light.xy - vUv;
+    float len = length(d * vec2(uAspect, 1.0)) / uRayRadius[k];
+    float reach = exp(-len * len);
+    if (reach < 0.01) continue;
+    float seen = 0.0;
+    for (int i = 0; i < RAY_TAPS; i++) {
+      vec2 uv = vUv + d * ((float(i) + jitter) / float(RAY_TAPS));
+      // Fora da tela não há o que ocluir: a fonte fora do quadro ainda acende
+      // o ar dentro dele.
+      if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) {
+        seen += 1.0;
+        continue;
+      }
+      float sd = viewDepthAt(uv);
+      seen += smoothstep(light.z - 2.5, light.z - 0.6, sd);
+    }
+    seen /= float(RAY_TAPS);
+    total += uRayColor[k] * light.w * reach * seen * seen;
+  }
+  fragColor = vec4(total, 1.0);
+}
+`;
+
 /* ---------------------------------------------------------------------------
  * O véu de legibilidade
  *
@@ -314,6 +380,7 @@ void main() {
 export const VEIL_SEED_FRAG = /* glsl */ `
 uniform sampler2D uSource;
 uniform sampler2D uBloom;
+uniform sampler2D uRays;
 uniform vec2  uTexel;
 uniform float uBloomStrength;
 uniform float uExposure;
@@ -329,7 +396,8 @@ void main() {
   for (int y = 0; y < 4; y++) {
     for (int x = 0; x < 4; x++) {
       vec2 uv = vUv + (vec2(float(x), float(y)) - 1.5) * uTexel;
-      vec3 c = texture(uSource, uv).rgb + texture(uBloom, uv).rgb * uBloomStrength;
+      vec3 c = texture(uSource, uv).rgb + texture(uBloom, uv).rgb * uBloomStrength
+        + texture(uRays, uv).rgb;
       c = vec3(1.0) - exp(-c * uExposure);
       float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
       peak = max(peak, l);
@@ -439,6 +507,7 @@ export const COMPOSITE_FRAG = /* glsl */ `
 uniform sampler2D uScene;
 uniform sampler2D uBlurred;
 uniform sampler2D uBloom;
+uniform sampler2D uRays;
 uniform vec2  uResolution;
 uniform float uBloomStrength;
 uniform float uGrain;
@@ -555,6 +624,8 @@ void main() {
   vec3 color = sampleFocused(uv, blend).rgb;
 
   color += texture(uBloom, uv).rgb * uBloomStrength;
+  // Os raios de luz na névoa (rodada 22), em luz linear como o bloom.
+  color += texture(uRays, uv).rgb;
 
   // Tonemap exponencial: preserva o pé da curva, que é onde esta cena vive, e
   // segura os cachos quentes sem lavar a cor deles.

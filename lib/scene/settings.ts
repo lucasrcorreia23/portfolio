@@ -140,6 +140,11 @@ export type SceneSettings = {
    */
   water: boolean;
   /**
+   * `?rays=0`: os raios de luz na névoa (rodada 22, `RAYS_FRAG` em
+   * `shaders/post.ts`) saem — a passada inteira, não só a força. O A/B dela.
+   */
+  rays: boolean;
+  /**
    * `?river=N`: quantos cards a corrente monta, sobrepondo a capacidade
    * derivada do aparelho (`riverCapacity`, em `lib/scene/cards.ts`).
    *
@@ -218,6 +223,7 @@ const DEFAULTS: SceneSettings = {
   detach: true,
   cards: true,
   water: true,
+  rays: true,
   river: null,
   span: null,
   veil: true,
@@ -279,6 +285,7 @@ export function sceneSettings(): SceneSettings {
     detach: readFlag(params, "detach", DEFAULTS.detach),
     cards: readFlag(params, "cards", DEFAULTS.cards),
     water: readFlag(params, "water", DEFAULTS.water),
+    rays: readFlag(params, "rays", DEFAULTS.rays),
     river: readNumber(params, "river"),
     span: readNumber(params, "span"),
     veil: readFlag(params, "veil", DEFAULTS.veil),
