@@ -32,6 +32,12 @@ import { CHAMBER_FAR, SPECIMEN_Z } from "./world";
 
 export type SharedUniforms = ReturnType<typeof createSharedUniforms>;
 
+/**
+ * A camada dos sprites (rodada 19): esporos, lanternas e formações ficam fora
+ * do passo da cena e são desenhados pelo compositor num alvo próprio.
+ */
+export const SPRITE_LAYER = 2;
+
 export function createSharedUniforms(palette: Palette = readPalette()) {
   return {
     time: { value: 0 },
@@ -47,6 +53,22 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
     coral: { value: new Color(palette.coral) },
     peach: { value: new Color(palette.peach) },
     mist: { value: new Color(palette.mist) },
+    violet: { value: new Color(palette.violet) },
+    magenta: { value: new Color(palette.magenta) },
+
+    /**
+     * A profundidade da cena e a óptica da câmera, para os **sprites** (rodada
+     * 19): esporos, lanternas e formações são desenhados num alvo à parte,
+     * depois da cena, com o próprio bokeh e testando a profundidade dela à mão.
+     * Quem escreve é o compositor, por quadro.
+     */
+    sceneDepth: { value: null as Texture | null },
+    focus: { value: 20 },
+    focusRange: { value: 26 },
+    aperture: { value: 0 },
+    nearBlur: { value: 1 },
+    cameraNear: { value: 0.1 },
+    cameraFar: { value: 200 },
 
     /** O amanhecer, 0 ou 1 (rodada 18). Escrito pelo `SceneWorld` na troca. */
     dawn: { value: 0 },
@@ -312,6 +334,8 @@ export function applyPalette(shared: SharedUniforms, palette: Palette): void {
   shared.coral.value.set(palette.coral);
   shared.peach.value.set(palette.peach);
   shared.mist.value.set(palette.mist);
+  shared.violet.value.set(palette.violet);
+  shared.magenta.value.set(palette.magenta);
   const warm = shared.pointerColor.value.set(palette.peach);
   warm.g *= 1.2;
   warm.b *= 0.45;
@@ -348,5 +372,21 @@ export function lightUniforms(shared: SharedUniforms) {
     uSourceColor: shared.sourceColor,
     uSourceStrength: shared.sourceStrength,
     uSourceZ: shared.sourceZ,
+  };
+}
+
+/**
+ * A óptica que os sprites leem (rodada 19): a profundidade da cena e os termos
+ * do círculo de confusão, com os mesmos nomes do `DEPTH_GLSL` do compositor.
+ */
+export function spriteUniforms(shared: SharedUniforms) {
+  return {
+    uSceneDepth: shared.sceneDepth,
+    uFocus: shared.focus,
+    uFocusRange: shared.focusRange,
+    uAperture: shared.aperture,
+    uNearBlur: shared.nearBlur,
+    uCameraNear: shared.cameraNear,
+    uCameraFar: shared.cameraFar,
   };
 }
