@@ -20,6 +20,9 @@ uniform vec3 uClusterColor[4];
 // As lanternas (lib/scene/lamps.ts): xyz em mundo, w = intensidade; e a cor.
 uniform vec4 uLamps[${LAMP_COUNT}];
 uniform vec3 uLampColor[${LAMP_COUNT}];
+// O cursor: xyz em mundo, w = força; e a cor quente dele.
+uniform vec4 uPointer;
+uniform vec3 uPointerColor;
 // A fonte distante a montante. Sobe de quase zero para o máximo só entre
 // 0.85 e 1.00 — é a luz para a qual você está andando.
 uniform vec3  uSourceColor;
@@ -115,6 +118,11 @@ vec3 lampLight(vec3 worldPos) {
     float dist = distance(lamp.xyz, worldPos);
     float fall = 1.0 - smoothstep(0.0, ${LAMP_REACH.toFixed(1)}, dist);
     total += uLampColor[i] * lamp.w * fall * fall;
+  }
+  // O cursor entra como mais uma lanterna, de alcance um pouco maior.
+  if (uPointer.w > 0.0) {
+    float fall = 1.0 - smoothstep(0.0, 11.0, distance(uPointer.xyz, worldPos));
+    total += uPointerColor * uPointer.w * fall * fall * 1.3;
   }
   return total;
 }

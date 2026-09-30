@@ -203,6 +203,8 @@ uniform vec3  uCyan;
 uniform vec3  uRose;
 uniform vec3  uCoral;
 uniform vec3  uMist;
+uniform vec4  uPointer;
+uniform vec3  uPointerColor;
 uniform float uSpecimenZ;
 uniform float uGain;
 uniform float uFormingFrag;
@@ -345,6 +347,11 @@ void main() {
   // sumiria. Fora das frestas, e antes de 0.86, o termo é zero.
   if (uOutside > 0.0) {
     lit += uPeach * louverOpen(vWorld) * uOutside * (1.2 + 1.6 * tip);
+  }
+  // O cursor acende, quente, os corpos que passam perto dele (rodada 17).
+  if (uPointer.w > 0.0) {
+    float near = 1.0 - smoothstep(0.0, 6.0, distance(vWorld, uPointer.xyz));
+    lit = mix(lit, lit * 0.4 + uPointerColor * (1.4 + 2.2 * tip), uPointer.w * near * near);
   }
   lit = applyFog(lit, vViewDepth, vWorld);
 

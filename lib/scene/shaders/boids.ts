@@ -147,6 +147,8 @@ uniform float uRoostDrift;
  * **estacionam** — ficam fora do quadro, sem renascer, até o progresso voltar.
  */
 uniform float uExit;
+/** O cursor: xyz em mundo, w = força (lib/scene/pointer-light.ts). */
+uniform vec4  uPointer;
 
 const int NEIGHBORS = 24;
 
@@ -861,6 +863,15 @@ void main() {
 ${detach || cards ? TURB_SAMPLE : ""}
 ${detach ? FIELD_FORCE : ""}
 ${cards ? CARD_FORCE : ""}
+  // **O cursor espanta o bando** (rodada 17). Uma presença esférica que os
+  // corpos contornam, como contornam os quadros: empurra para fora dela, forte
+  // perto e nada a partir de 3.5 unidades. Sem ela ligada, o termo é zero.
+  if (uPointer.w > 0.0) {
+    vec3 away = pos - uPointer.xyz;
+    float d = length(away);
+    float push = 1.0 - smoothstep(0.4, 3.5, d);
+    force += away / max(d, 0.25) * push * push * 26.0 * uPointer.w;
+  }
   vec3 next = vel + force * uDt;
   next *= 0.985;
 

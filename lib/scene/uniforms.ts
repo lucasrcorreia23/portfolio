@@ -75,6 +75,22 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
       value: [new Color(palette.teal), new Color(palette.cyan), new Color(palette.teal), new Color(palette.peach)],
     },
 
+    /**
+     * O cursor (`lib/scene/pointer-light.ts`): xyz em mundo, w = força. Uma luz
+     * quente que o bando evita. A cor é o --peach puxado para o amarelo — o
+     * "amarelinho" que o Lucas pediu; não é token novo, é a luz do peach com
+     * menos azul.
+     */
+    pointer: { value: new Vector4() },
+    pointerColor: {
+      value: (() => {
+        const warm = new Color(palette.peach);
+        warm.g *= 1.2;
+        warm.b *= 0.45;
+        return warm;
+      })(),
+    },
+
     /** As lanternas (`lib/scene/lamps.ts`): xyz em mundo, w = intensidade. */
     lamps: { value: Array.from({ length: LAMP_COUNT }, () => new Vector4()) },
     lampNormal: { value: Array.from({ length: LAMP_COUNT }, () => new Vector3(1, 0, 0)) },
@@ -301,6 +317,8 @@ export function lightUniforms(shared: SharedUniforms) {
     uClusterColor: shared.clusterColor,
     uLamps: shared.lamps,
     uLampColor: shared.lampColor,
+    uPointer: shared.pointer,
+    uPointerColor: shared.pointerColor,
     uSourceColor: shared.sourceColor,
     uSourceStrength: shared.sourceStrength,
     uSourceZ: shared.sourceZ,

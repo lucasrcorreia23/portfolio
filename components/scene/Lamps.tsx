@@ -4,6 +4,7 @@ import { useEffect, useMemo } from "react";
 import {
   AdditiveBlending,
   BufferAttribute,
+  BufferGeometry,
   GLSL3,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
@@ -87,8 +88,44 @@ void main() {
 }
 `;
 
+/**
+ * A aura do cursor (rodada 17): uma mancha gaussiana quente, larga e fraca, no
+ * ponto em que a luz do cursor mora. Sem ela a luz acendia o bando e a parede
+ * sem origem visível; com ela, lê-se que é a mão iluminando a câmara.
+ */
+const AURA_VERT = /* glsl */ `
+uniform vec4 uPointer;
+uniform vec2 uResolution;
+out vec2 vQuad;
+out float vViewDepth;
+void main() {
+  vec4 view = viewMatrix * vec4(uPointer.xyz, 1.0);
+  vViewDepth = -view.z;
+  vec4 clip = projectionMatrix * view;
+  vQuad = position.xy;
+  // ~160 px do buffer de raio: uma luz no ar, não um disco.
+  vec2 offset = position.xy * 160.0 / uResolution * clip.w * 2.0;
+  gl_Position = clip + vec4(offset * step(0.001, uPointer.w), 0.0, 0.0);
+}
+`;
+
+const AURA_FRAG = /* glsl */ `
+${FOG_UNIFORMS_GLSL}
+uniform vec4 uPointer;
+uniform vec3 uPointerColor;
+in vec2 vQuad;
+in float vViewDepth;
+out vec4 fragColor;
+void main() {
+  float r2 = dot(vQuad, vQuad);
+  float g = exp(-5.0 * r2) * 0.12 + exp(-40.0 * r2) * 0.18;
+  if (g < 0.002) discard;
+  fragColor = vec4(uPointerColor * g * uPointer.w, 1.0);
+}
+`;
+
 export function Lamps({ shared }: { shared: SharedUniforms }) {
-  const { geometry, material } = useMemo(() => {
+  const { geometry, material, aura, auraGeometry } = useMemo(() => {
     const geometry = new InstancedBufferGeometry();
     geometry.setAttribute(
       "position",
@@ -128,16 +165,46 @@ export function Lamps({ shared }: { shared: SharedUniforms }) {
       toneMapped: false,
     });
     material.glslVersion = GLSL3;
-    return { geometry, material };
+
+    const aura = new ShaderMaterial({
+      uniforms: {
+        ...fogUniforms(shared),
+        uPointer: shared.pointer,
+        uPointerColor: shared.pointerColor,
+      },
+      vertexShader: AURA_VERT,
+      fragmentShader: AURA_FRAG,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+      blending: AdditiveBlending,
+      toneMapped: false,
+    });
+    aura.glslVersion = GLSL3;
+    const auraGeometry = new BufferGeometry();
+    auraGeometry.setAttribute(
+      "position",
+      new BufferAttribute(new Float32Array([-1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0]), 3),
+    );
+    auraGeometry.setIndex([0, 1, 2, 0, 2, 3]);
+    auraGeometry.boundingSphere = new Sphere(new Vector3(), 1e4);
+    return { geometry, material, aura, auraGeometry };
   }, [shared]);
 
   useEffect(
     () => () => {
       geometry.dispose();
       material.dispose();
+      aura.dispose();
+      auraGeometry.dispose();
     },
-    [geometry, material],
+    [geometry, material, aura, auraGeometry],
   );
 
-  return <mesh geometry={geometry} material={material} frustumCulled={false} />;
+  return (
+    <>
+      <mesh geometry={geometry} material={material} frustumCulled={false} />
+      <mesh geometry={auraGeometry} material={aura} frustumCulled={false} renderOrder={10} />
+    </>
+  );
 }

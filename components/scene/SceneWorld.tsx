@@ -26,6 +26,7 @@ import type { FlockRead } from "@/lib/scene/probe";
 import { resolveRiver } from "@/lib/scene/cards";
 import { createChamberPlan } from "@/lib/scene/chamber-plan";
 import { createLampSim } from "@/lib/scene/lamps";
+import { installPointerLight, updatePointerLight } from "@/lib/scene/pointer-light";
 import { createProxySim } from "@/lib/scene/proxy-sim";
 import type { RiverCard } from "@/lib/scene/river-content";
 import { clearSoundField, publishSoundField } from "@/lib/audio/field-store";
@@ -346,6 +347,17 @@ export function SceneWorld({
       }
     }
 
+    // --- o cursor -----------------------------------------------------------
+    // Fora do modo calmo, da sonda e de um case: ali ele não é presença.
+    updatePointerLight(
+      shared.pointer.value,
+      camera,
+      state.gl.domElement,
+      focusRef.current,
+      !instant && !probe && inCase < 0.01,
+      dt,
+    );
+
     // --- as lanternas -------------------------------------------------------
     lamps.update(dt, shared.time.value, progress, pose.position.z);
     lamps.write(
@@ -461,6 +473,7 @@ export function SceneWorld({
   }, -10);
 
   useEffect(() => clearReadout, []);
+  useEffect(() => installPointerLight(), []);
   useEffect(() => clearSoundField, []);
   useEffect(() => caseDrive.dispose, [caseDrive]);
 
