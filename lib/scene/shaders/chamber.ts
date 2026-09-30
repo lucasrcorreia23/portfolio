@@ -2,17 +2,14 @@ import {
   APERTURE_HALF_HEIGHT,
   APERTURE_HALF_WIDTH,
   APERTURE_Y,
-  LONE_MARK_Z,
   LOUVER_Z,
   louverPitch,
   louverShadowHalf,
   OUTSIDE_LIGHT,
   PLAN_FAR,
-  RULE_FROM,
-  RULE_TO,
-  RULES,
 } from "../chamber-plan";
-import { SPECIMEN_CAP_HEIGHT, SPECIMEN_Z } from "../world";
+import { SPECIMEN_Z } from "../world";
+import { LAMP_COUNT } from "../lamps";
 import { FOG_GLSL, FOG_UNIFORMS_GLSL } from "./fog";
 import { LIGHTS_GLSL, LIGHTS_UNIFORMS_GLSL } from "./lights";
 
@@ -35,18 +32,22 @@ import { LIGHTS_GLSL, LIGHTS_UNIFORMS_GLSL } from "./lights";
  * recebe. O papel sai da normal da geometria, então os quadros e os nichos
  * herdam a regra sem precisar de atributo.
  *
- * ## As gravações são um campo de altura, não linhas
+ * ## A natureza que mora no concreto (rodada 16)
  *
- * A estrutura antiga era `lineSegments` em blending aditivo — o oposto de
- * recessado: aditivo acende a face. Aqui cada régua, marca de intervalo, cota
- * do piso e seta de escala é uma **vala** com chanfro, descrita por distância
- * ao eixo dela. O shader deriva a normal do gradiente do campo, então o chanfro
- * pega a luz rasante e o fundo da vala escurece — "o brilho pega a quina da
- * gravação, não a face" (DIRECTION.md §2). Os números gravados são placas à
- * parte (`Structure.tsx`) com o mesmo sombreamento, lido deste mesmo arquivo.
+ * Até a rodada 15 as paredes tinham réguas, marcas de intervalo, a seta de
+ * escala e a cota do piso gravadas aqui, analiticamente. A câmara trocou a
+ * medida pela natureza (decisão do Lucas, 2026-09-30), e três coisas moram
+ * neste arquivo agora:
  *
- * Os dois períodos das marcas continuam 7 e 11: primos entre si, voltam a
- * coincidir a cada 77 unidades, mais do que cabe num quadro.
+ * - **a água no piso** (`waterAt`, `engrave`): poças rasas em trechos de Quem
+ *   sou e do rio, com a normal ondulando no tempo e o reflexo especular das
+ *   luzes que já existem — aglomerados e lanternas. Nenhum corpo é desenhado
+ *   duas vezes;
+ * - **o musgo e o líquen** (em `shadeConcrete`): manchas nas quinas baixas das
+ *   paredes e nas bordas do piso que **acendem** quando o bando ou uma
+ *   lanterna passa perto. É o organismo que emite, não a estrutura;
+ * - os fósseis gravados são placas à parte (`Structure.tsx`) com o mesmo
+ *   sombreamento, lido deste arquivo.
  */
 
 const f = (n: number) => n.toFixed(4);
@@ -113,6 +114,8 @@ uniform vec3 uCyan;
  */
 /** 1 no quadro (KIND_RIB), 0 no resto — escrito por quem chama, antes. */
 float shadeKind = 0.0;
+/** Quanto do piso está alagado aqui, 0 a 1 — escrito por engrave(), antes. */
+float wetness = 0.0;
 
 vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity, float viewDepth) {
 #ifdef PROBE_BLACK
@@ -165,6 +168,52 @@ vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity
   // poça não aparece. O termo constante é a luz espalhada pela umidade da
   // superfície, e é ele que dá a cor à poça.
   color += (albedo * 18.0 + 0.05) * lamp * mix(1.0, 0.5, ceilingness);
+
+  // **A água** (rodada 16). O concreto molhado escurece, e a superfície reflete
+  // as luzes que passam por cima: o bando e as lanternas viram rastros de cor
+  // tremendo no piso. Blinn-Phong com a normal da ondulação, pesado pelo
+  // Fresnel — de raspão, que é como a câmera vê o piso, a água é espelho.
+  if (wetness > 0.0) {
+    vec3 V = normalize(cameraPosition - world);
+    vec3 spec = vec3(0.0);
+    for (int i = 0; i < 4; i++) {
+      vec3 d = uClusters[i].xyz - world;
+      vec3 H = normalize(normalize(d) + V);
+      float s = pow(max(dot(shadingNormal, H), 0.0), 90.0);
+      spec += uClusterColor[i] * uClusters[i].w * s / (1.0 + dot(d, d) * 0.004);
+    }
+    for (int i = 0; i < ${LAMP_COUNT}; i++) {
+      if (uLamps[i].w <= 0.0) continue;
+      vec3 d = uLamps[i].xyz - world;
+      vec3 H = normalize(normalize(d) + V);
+      float s = pow(max(dot(shadingNormal, H), 0.0), 70.0);
+      spec += uLampColor[i] * uLamps[i].w * s / (1.0 + dot(d, d) * 0.02);
+    }
+    float fres = 0.04 + 0.96 * pow(1.0 - max(dot(V, shadingNormal), 0.0), 5.0);
+    color = mix(color, color * 0.35, wetness) + spec * wetness * (0.4 + 3.0 * fres) * 2.2;
+  }
+
+  // **Musgo e líquen** (rodada 16). Manchas nas quinas baixas das paredes e
+  // nas bordas do piso, pontilhadas de líquen; brilho próprio fraquíssimo que
+  // sobe quando a luz do bando ou de uma lanterna passa rente. Longe do corpo
+  // de prova: na Identidade nada disputa com o descolamento.
+  {
+    float lowWall = (1.0 - floorness) * (1.0 - ceilingness) * (1.0 - smoothstep(-5.0, -1.0, world.y));
+    float floorEdge = floorness * smoothstep(5.0, 9.5, abs(world.x));
+    float corner = max(lowWall, floorEdge);
+    float patchN = sceneNoise(world * 0.23 + vec3(7.1, 1.3, 4.2));
+    float patchMask = smoothstep(0.62 - 0.22 * corner, 0.78 - 0.2 * corner, patchN);
+    float speck = smoothstep(0.42, 0.78, sceneNoise(world * 4.3 + vec3(2.0))) * mix(0.55, 1.0, near);
+    float quiet = 1.0 - 0.85 * exp(-pow((world.z - ${f(SPECIMEN_Z)}) / 9.0, 2.0));
+    float moss = patchMask * (0.3 + 0.7 * speck) * (1.0 - wetness) * (1.0 - 0.6 * shadeKind) * quiet;
+    if (moss > 0.0) {
+      vec3 hue = mix(uCyan, uPeach, smoothstep(0.35, 0.7, sceneNoise(world * 0.07 + vec3(11.0))));
+      // O piso de 0.03 é o líquen sozinho no escuro: constelações fracas nas
+      // quinas baixas, que dão à parede uma presença sem acendê-la.
+      float excite = 0.03 + 0.5 * lit + 1.4 * dot(lamp, vec3(0.3333));
+      color += hue * moss * min(excite, 0.6) * 0.55;
+    }
+  }
   // A fonte a montante, com incidência. Ela entra pela abertura do fundo, então
   // uma superfície tem que estar **de frente** para a abertura para recebê-la —
   // sem este termo a parede do fundo, coplanar à abertura, recebia a luz
@@ -211,110 +260,39 @@ vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity
 `;
 
 /**
- * As gravações analíticas. Constantes do `chamber-plan.ts` coladas como número:
- * a planta é a fonte única, e o shader lê dela na compilação.
+ * O piso alagado: onde está a água e como ela ondula. Poças, não um espelho de
+ * parede a parede — em trechos de Quem sou e do rio, nunca na Identidade.
  */
-const rulesGLSL = RULES.map(
-  (rule) =>
-    `  if (side * ${f(rule.side)} > 0.0) h = max(h, ruleGroove(z, y, ${f(rule.y)}));`,
-).join("\n");
-
 export const ENGRAVING_GLSL = /* glsl */ `
-float groove(float d, float halfWidth, float chamfer) {
-  return 1.0 - smoothstep(halfWidth, halfWidth + chamfer, d);
+float waterAt(vec3 w) {
+  float band = smoothstep(-28.0, -34.0, w.z) * (1.0 - smoothstep(-84.0, -90.0, w.z));
+  if (band <= 0.0) return 0.0;
+  float pools = smoothstep(0.46, 0.6, sceneNoise(vec3(w.x * 0.11, 3.7, w.z * 0.07)));
+  return band * pools;
 }
 
-float segDistance(vec2 p, vec2 a, vec2 b) {
-  vec2 pa = p - a;
-  vec2 ba = b - a;
-  float t = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
-  return length(pa - ba * t);
-}
-
-/** Uma régua: a vala longa e as marcas de intervalo em 7 e 11. */
-float ruleGroove(float z, float y, float ruleY) {
-  if (z > ${f(RULE_FROM)} || z < ${f(RULE_TO)}) return 0.0;
-  float h = groove(abs(y - ruleY), 0.028, 0.034);
-  float d7 = abs(mod(z + 3.5, 7.0) - 3.5);
-  float d11 = abs(mod(z + 5.5, 11.0) - 5.5);
-  float dy = y - ruleY;
-  float t7 = dy >= 0.0 && dy <= 0.42 ? d7 : 1e3;
-  float t11 = dy >= 0.0 && dy <= 0.95 ? d11 : 1e3;
-  h = max(h, groove(min(t7, t11), 0.022, 0.03));
-  return h;
+float ripple(vec2 p, float t) {
+  return sceneNoise(vec3(p.x * 1.3, t * 0.45, p.y * 1.3))
+    + 0.5 * sceneNoise(vec3(p.x * 3.4, t * 0.8 + 5.0, p.y * 3.4));
 }
 
 /**
- * O campo de altura das paredes laterais: 0 na face, 1 no fundo da vala.
- * side é −1 a bombordo, +1 a estibordo; (z, y) são as coordenadas na parede.
- */
-float wallEngraving(float side, float z, float y) {
-  float h = 0.0;
-${rulesGLSL}
-
-  // A marca solitária da Emergência — uma só, a bombordo.
-  if (side < 0.0) {
-    h = max(h, groove(segDistance(vec2(z, y), vec2(${f(LONE_MARK_Z)}, -1.1), vec2(${f(LONE_MARK_Z)}, -0.2)), 0.024, 0.03));
-
-    // A seta de escala do corpo de prova: haste na altura de caixa alta, as
-    // duas pontas abertas e as linhas de chamada. "O título é dimensionado
-    // como peça de ensaio" (DIRECTION.md §4).
-    float zc = ${f(SPECIMEN_Z + 1.4)};
-    float top = ${f(SPECIMEN_CAP_HEIGHT / 2)};
-    vec2 p = vec2(z, y);
-    float d = segDistance(p, vec2(zc, -top), vec2(zc, top));
-    d = min(d, segDistance(p, vec2(zc, top), vec2(zc - 0.16, top - 0.34)));
-    d = min(d, segDistance(p, vec2(zc, top), vec2(zc + 0.16, top - 0.34)));
-    d = min(d, segDistance(p, vec2(zc, -top), vec2(zc - 0.16, -top + 0.34)));
-    d = min(d, segDistance(p, vec2(zc, -top), vec2(zc + 0.16, -top + 0.34)));
-    d = min(d, segDistance(p, vec2(zc - 0.6, top), vec2(zc + 1.6, top)));
-    d = min(d, segDistance(p, vec2(zc - 0.6, -top), vec2(zc + 1.6, -top)));
-    h = max(h, groove(d, 0.022, 0.03));
-  }
-  return h;
-}
-
-/** O piso: a cota correndo pelo eixo, com as marcas de estação a cada 11. */
-float floorEngraving(float x, float z) {
-  if (z > ${f(RULE_FROM)} || z < ${f(RULE_TO)}) return 0.0;
-  float h = groove(abs(x + 2.6), 0.03, 0.04);
-  float d11 = abs(mod(z + 5.5, 11.0) - 5.5);
-  h = max(h, abs(x + 2.6) < 0.375 ? groove(d11, 0.026, 0.035) : 0.0);
-  return h;
-}
-
-/** A profundidade física da vala, em unidades — o que vira inclinação da normal. */
-const float ENGRAVING_DEPTH = 0.035;
-
-/**
- * Perturba a normal pela gravação. Diferenças finitas do campo: três avaliações
- * de um campo analítico barato, contra uma textura que precisaria de resolução
- * de parede inteira.
+ * A normal de sombreamento do piso alagado. Nas paredes, no teto e no piso
+ * seco ela é a da geometria. cavity continua existindo para as placas dos
+ * fósseis, que usam o mesmo shadeConcrete.
  */
 vec3 engrave(vec3 world, vec3 n, float kind, out float cavity) {
   cavity = 0.0;
-  if (kind > 0.5) return n;
-  const float e = 0.008;
-  if (abs(n.x) > 0.9) {
-    float side = sign(n.x) * -1.0;
-    float h = wallEngraving(side, world.z, world.y);
-    if (h <= 0.0 && wallEngraving(side, world.z + 0.06, world.y) <= 0.0
-        && wallEngraving(side, world.z, world.y + 0.06) <= 0.0) return n;
-    float hz = (wallEngraving(side, world.z + e, world.y) - h) / e;
-    float hy = (wallEngraving(side, world.z, world.y + e) - h) / e;
-    cavity = h;
-    return normalize(n + ENGRAVING_DEPTH * vec3(0.0, hy, hz));
-  }
-  if (n.y > 0.9) {
-    float h = floorEngraving(world.x, world.z);
-    if (h <= 0.0 && floorEngraving(world.x + 0.06, world.z) <= 0.0
-        && floorEngraving(world.x, world.z + 0.06) <= 0.0) return n;
-    float hx = (floorEngraving(world.x + e, world.z) - h) / e;
-    float hz = (floorEngraving(world.x, world.z + e) - h) / e;
-    cavity = h;
-    return normalize(n + ENGRAVING_DEPTH * vec3(hx, 0.0, hz));
-  }
-  return n;
+  wetness = 0.0;
+  if (kind > 0.5 || n.y < 0.9) return n;
+  float wet = waterAt(world);
+  if (wet <= 0.0) return n;
+  wetness = wet;
+  const float e = 0.04;
+  float h = ripple(world.xz, uTime);
+  float hx = (ripple(world.xz + vec2(e, 0.0), uTime) - h) / e;
+  float hz = (ripple(world.xz + vec2(0.0, e), uTime) - h) / e;
+  return normalize(n + 0.05 * wet * vec3(-hx, 0.0, -hz));
 }
 `;
 

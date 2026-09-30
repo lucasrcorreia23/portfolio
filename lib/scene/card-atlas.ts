@@ -141,8 +141,8 @@ function makeCanvas(width: number, height: number): CanvasRenderingContext2D {
  *
  * **Ela é uma gravação, não um rótulo**, e quem faz isso é o shader — aqui só
  * sai a máscara. O corpo é mono em caixa alta com tracking largo, que é o
- * léxico da HUD do DIRECTION.md §2 (`EST. 040`, `COTA +12.40`); o título entra
- * na display, porque é o nome da peça e não um metadado.
+ * léxico da HUD do DIRECTION.md §2; o título entra na display, porque é o nome
+ * da peça e não um metadado.
  *
  * Nada de opacidade para baixar o tom (DIRECTION.md §5): a máscara sai cheia e
  * quem decide quanto dela chega ao pixel é a luz de raspão do material.
@@ -188,29 +188,30 @@ function drawPlate(
   // A régua da placa: uma linha fina abaixo do título, do léxico da estrutura.
   main.fillRect(pad, Math.round(h * 0.56), Math.round(w * 0.28), 2);
 
-  // --- nível de detalhe: estação e marcas de intervalo ---------------------
-  // `EST.` é o número de estação do DIRECTION.md §2, e aqui ele é o posto do
-  // card na curadoria — a mesma ordem que o `river_rank` grava no frontmatter.
-  detail.fontStretch = "normal";
-  const detailSize = Math.round(h * 0.15);
-  detail.font = `500 ${detailSize}px "Geist Mono", ui-monospace, SFMono-Regular, monospace`;
-  detail.letterSpacing = `${(detailSize * 0.2).toFixed(2)}px`;
-  detail.textAlign = "right";
-  detail.fillText(
-    `EST. ${String(card.rank).padStart(3, "0")}`,
-    w - pad,
-    Math.round(h * 0.34),
-  );
-
-  // Marcas de intervalo em dois períodos primos entre si, que nunca batem em
-  // fase dentro da placa — gravação em concreto, não papel milimetrado
-  // (DIRECTION.md §4, o mesmo critério da veneziana do portão).
-  const baseline = Math.round(h * 0.92);
-  for (let x = pad; x < w - pad; x += 23) {
-    detail.fillRect(x, baseline, 1, Math.round(h * 0.06));
-  }
-  for (let x = pad; x < w - pad; x += 71) {
-    detail.fillRect(x, baseline - Math.round(h * 0.05), 1, Math.round(h * 0.11));
+  // --- nível de detalhe: um ramo gravado ----------------------------------
+  // Até a rodada 15 este nível tinha `EST. NNN` e marcas de intervalo — a
+  // régua. A câmara trocou a medida pela natureza (rodada 16), e o que a
+  // aproximação revela agora é um ramo pequeno no canto da placa: haste curva
+  // e folhas alternadas, traço fino, o mesmo desenho dos fósseis das paredes.
+  // No alto, à direita: a linha de baixo é do cliente e do ano.
+  const reach = Math.round(h * 0.5);
+  const sprigX = w - pad - reach - Math.round(h * 0.12);
+  const sprigY = Math.round(h * 0.62);
+  detail.lineCap = "round";
+  detail.lineWidth = 2;
+  detail.beginPath();
+  detail.moveTo(sprigX, sprigY);
+  detail.quadraticCurveTo(sprigX + reach * 0.5, sprigY - reach * 0.2, sprigX + reach, sprigY - reach * 0.8);
+  detail.stroke();
+  for (let k = 1; k <= 5; k += 1) {
+    const t = k / 6;
+    const x = sprigX + reach * t;
+    const y = sprigY - reach * (0.2 * t + 0.6 * t * t);
+    const side = k % 2 === 0 ? -1 : 1;
+    const leaf = h * 0.16 * (1 - t * 0.5);
+    detail.beginPath();
+    detail.ellipse(x + side * leaf * 0.5, y - leaf * 0.35, leaf * 0.55, leaf * 0.22, side * 0.7 - 0.4, 0, Math.PI * 2);
+    detail.stroke();
   }
 }
 

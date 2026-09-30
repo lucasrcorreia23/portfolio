@@ -1,5 +1,4 @@
 import type { RiverLayout } from "./cards";
-import { SPECIMEN_CAP_HEIGHT, SPECIMEN_Z } from "./world";
 
 /**
  * A planta da câmara — o perfil da seção ao longo do eixo, os quadros
@@ -213,16 +212,6 @@ export const SILL_DEPTH = 2.2;
 export const SILL_HALF_WIDTH = APERTURE_HALF_WIDTH + 0.6;
 export const SILL_TOP = APERTURE_Y - APERTURE_HALF_HEIGHT;
 
-/**
- * **A cota da superfície.** O portão abre na cota −38.402 — "a cota da
- * soleira, onde se está antes de entrar" (`components/gate/readout.ts`) —, e a
- * descida termina aqui, na referência de nível: o ±0 que todo desenho de
- * arquitetura grava no térreo. Com as mesmas três casas do portão, para as duas
- * leituras serem do mesmo instrumento. É o número gravado do último quadro
- * (DIRECTION.md §4).
- */
-export const SURFACE_COTA = "COTA ±00.000";
-
 /** Quanto o nicho recua, e o comprimento dele ao longo do eixo. */
 export const NICHE_DEPTH = 2;
 const NICHE_HALF_LENGTH = 1.2;
@@ -288,21 +277,33 @@ export type Niche = {
   index: number;
 };
 
-export type EngravingLabel = {
+/**
+ * Os motivos gravados (rodada 16, decisão do Lucas de 2026-09-30): a câmara
+ * trocou a medida pela natureza. Onde havia `EST. 047` e `COTA +03.10` há
+ * fósseis e folhas em baixo-relevo, pelo mesmo mecanismo — a vala só aparece no
+ * raspão da luz. Desenhados proceduralmente em `engraving-atlas.ts`.
+ */
+export type FossilMotif = "fern" | "leaf" | "ammonite" | "shell" | "seed" | "fish";
+
+export type Fossil = {
   /**
    * `wall` é parede lateral; `floor` é o piso; `sill` é o topo da soleira —
-   * horizontal como o piso, mas na altura `y` do próprio label.
+   * horizontal como o piso, mas na altura `y` do próprio fóssil.
    */
   surface: "wall" | "floor" | "sill";
   /** Para parede: −1 bombordo, +1 estibordo. Para piso, ignorado. */
   side: -1 | 1;
-  /** Centro do texto, em mundo. Para parede, `x` é resolvido da seção. */
+  /** Centro, em mundo. Para parede, `x` é resolvido da seção. */
   x: number;
   y: number;
   z: number;
-  /** Altura de caixa alta do texto, em unidades de mundo. */
-  cap: number;
-  text: string;
+  /** Lado da placa, em unidades de mundo. */
+  size: number;
+  /** Giro no plano da superfície, em radianos. */
+  angle: number;
+  motif: FossilMotif;
+  /** Semente do desenho: dois fósseis do mesmo motivo nunca são iguais. */
+  seed: number;
 };
 
 export type ChamberPlan = {
@@ -311,39 +312,8 @@ export type ChamberPlan = {
   breaks: readonly number[];
   ribs: readonly Rib[];
   niches: readonly Niche[];
-  labels: readonly EngravingLabel[];
+  fossils: readonly Fossil[];
 };
-
-/** `EST. 047` — o número de estação é a profundidade, como a leitura `Z` da HUD. */
-function stationLabel(z: number): string {
-  return `EST. ${String(Math.round(-z)).padStart(3, "0")}`;
-}
-
-/** `COTA +03.10` — o léxico do DIRECTION.md §2, com o sinal tipográfico. */
-export function cotaLabel(value: number): string {
-  const sign = value < 0 ? "−" : "+";
-  const abs = Math.abs(value);
-  const whole = String(Math.floor(abs)).padStart(2, "0");
-  const frac = String(Math.round((abs - Math.floor(abs)) * 100)).padStart(2, "0");
-  return `COTA ${sign}${whole}.${frac}`;
-}
-
-/**
- * As réguas das paredes laterais — gravadas analiticamente no shader da parede
- * (`shaders/chamber.ts`). Alturas todas diferentes: duas réguas na mesma altura
- * nas duas paredes leriam como grade (PROJECT.md §2). Estibordo tem duas porque
- * é a parede que a câmera raspa em Quem sou.
- */
-export const RULES: readonly { y: number; side: -1 | 1 }[] = [
-  { y: -3.2, side: -1 },
-  { y: 2.4, side: -1 },
-  { y: -1.6, side: 1 },
-  { y: 3.1, side: 1 },
-];
-export const RULE_FROM = -18;
-export const RULE_TO = -84;
-/** A marca solitária da Emergência: uma, no singular (DIRECTION.md §4). */
-export const LONE_MARK_Z = -16;
 
 export function createChamberPlan(river: RiverLayout | null): ChamberPlan {
   const niches: Niche[] = [];
@@ -409,63 +379,54 @@ export function createChamberPlan(river: RiverLayout | null): ChamberPlan {
     ),
   );
 
-  const labels: EngravingLabel[] = [
-    // Identidade: a estação da peça, a estibordo, e a cota da altura de caixa
-    // alta a bombordo, ao lado da seta de escala gravada. "O título é
-    // dimensionado como peça de ensaio" (DIRECTION.md §4).
-    { surface: "wall", side: 1, x: 0, y: 1.35, z: -22.5, cap: 0.42, text: stationLabel(-22.5) },
-    {
-      surface: "wall",
-      side: -1,
-      x: 0,
-      y: SPECIMEN_CAP_HEIGHT / 2 + 0.42,
-      z: SPECIMEN_Z + 1.4,
-      cap: 0.26,
-      text: cotaLabel(SPECIMEN_CAP_HEIGHT),
-    },
-    { surface: "wall", side: -1, x: 0, y: 0.9, z: -33, cap: 0.45, text: stationLabel(-33) },
-    // Quem sou: a parede que a câmera raspa. As cotas das duas réguas, e o
-    // número de estação no trecho que entra no quadro em 0.40–0.45.
-    { surface: "wall", side: 1, x: 0, y: -1.2, z: -41, cap: 0.3, text: cotaLabel(-1.6) },
-    { surface: "wall", side: 1, x: 0, y: 3.5, z: -45.5, cap: 0.3, text: cotaLabel(3.1) },
-    // A estação desta parede fica onde ela **entra no quadro**: a câmera corre
-    // ao longo dela olhando para a frente e para bombordo, então no ponto mais
-    // rente a parede está fora da tela. Em z −50 ela aparece de 0.36 a 0.45,
-    // de raspão, e é por isso que o número é grande.
-    { surface: "wall", side: 1, x: 0, y: 0.9, z: -50, cap: 0.8, text: stationLabel(-50) },
-    // O piso: a cota dele, lida olhando para baixo, a caminho do título.
-    { surface: "floor", side: 1, x: -3.4, y: 0, z: -30, cap: 0.5, text: cotaLabel(-7) },
-    // O fim do duto, no trecho reto depois do estreitamento.
-    { surface: "wall", side: -1, x: 0, y: 1.2, z: -93.5, cap: 0.5, text: stationLabel(-93.5) },
-    // A última cota, na soleira — perto da borda da frente, onde a câmera do
-    // último quadro a lê de cima, e à direita do centro: a coluna do contato
-    // em DOM ocupa a metade esquerda do quadro, e a cota não pode ficar embaixo
-    // dela.
+  // Os fósseis: de relance, onde a luz passa rente. Poucos e nunca em
+  // cadência — espalhados como se o concreto tivesse sido derramado sobre um
+  // leito antigo. A Identidade tem só um, longe da peça: nada disputa com o
+  // descolamento (DIRECTION.md §6).
+  const fossils: Fossil[] = [
+    // Identidade: uma folha só, a estibordo, atrás da câmera do descolamento.
+    { surface: "wall", side: 1, x: 0, y: 1.6, z: -22.5, size: 1.3, angle: 0.4, motif: "leaf", seed: 3 },
+    { surface: "wall", side: -1, x: 0, y: -2.2, z: -33, size: 1.6, angle: -0.25, motif: "ammonite", seed: 7 },
+    // Quem sou: a parede que a câmera raspa ganha a samambaia e o peixe.
+    { surface: "wall", side: 1, x: 0, y: -1.1, z: -41, size: 2.2, angle: 0.12, motif: "fern", seed: 11 },
+    { surface: "wall", side: 1, x: 0, y: 3.1, z: -45.5, size: 1.4, angle: -0.6, motif: "shell", seed: 5 },
+    { surface: "wall", side: 1, x: 0, y: 0.6, z: -50, size: 2.6, angle: 1.45, motif: "fish", seed: 2 },
+    // O piso, a caminho do título.
+    { surface: "floor", side: 1, x: -3.4, y: 0, z: -30, size: 1.8, angle: 2.2, motif: "seed", seed: 9 },
+    { surface: "floor", side: 1, x: 2.8, y: 0, z: -44, size: 1.5, angle: 0.9, motif: "leaf", seed: 13 },
+    // O fim do duto.
+    { surface: "wall", side: -1, x: 0, y: 1.0, z: -93.5, size: 1.8, angle: 0.3, motif: "fern", seed: 17 },
+    // A soleira, sob a luz de fora — à direita, longe da coluna do contato.
     {
       surface: "sill",
       side: 1,
       x: 1.5,
       y: SILL_TOP,
-      z: PLAN_FAR + SILL_DEPTH - 0.85,
-      cap: 0.85,
-      text: SURFACE_COTA,
+      z: PLAN_FAR + SILL_DEPTH - 0.9,
+      size: 1.4,
+      angle: 0.7,
+      motif: "leaf",
+      seed: 21,
     },
   ];
-  // Cada nicho é uma estação do rio, e o número dela fica gravado no fundo da
-  // baia, acima do card.
+  // Cada nicho do rio guarda um fóssil pequeno acima do card.
+  const nicheMotifs: FossilMotif[] = ["ammonite", "seed", "shell", "leaf", "fern", "fish"];
   for (const niche of niches) {
-    labels.push({
+    fossils.push({
       surface: "wall",
       side: niche.side,
       x: 0,
-      y: niche.y + 1.9,
+      y: niche.y + 2.0,
       z: niche.z,
-      cap: 0.42,
-      text: stationLabel(niche.z),
+      size: 1.0,
+      angle: 0.3 * niche.side,
+      motif: nicheMotifs[niche.index % nicheMotifs.length] ?? "leaf",
+      seed: 31 + niche.index,
     });
   }
 
-  return { section, breaks, ribs, niches, labels };
+  return { section, breaks, ribs, niches, fossils };
+
 }
 
 /** A parede em `x` numa seção, com sinal: bombordo negativo. */

@@ -346,14 +346,14 @@ export function installChamberProbe(deps: ChamberProbeDeps) {
         };
       }),
     );
-    const labels = plan.labels
-      .filter((label) => label.surface === "wall")
-      .map((label) => {
-        const s = plan.section(label.z);
+    const labels = plan.fossils
+      .filter((fossil) => fossil.surface === "wall")
+      .map((fossil) => {
+        const s = plan.section(fossil.z);
         return {
-          kind: "número",
-          label: label.text,
-          point: new Vector3(wallX(s, label.side), label.y, label.z),
+          kind: "fóssil",
+          label: `${fossil.motif} z${fossil.z}`,
+          point: new Vector3(wallX(s, fossil.side), fossil.y, fossil.z),
         };
       });
     return [...ribs, ...niches, ...labels];
@@ -478,17 +478,17 @@ export function installChamberProbe(deps: ChamberProbeDeps) {
     }
 
     // Uma caixa por número na tela.
-    const results = plan.labels
+    const results = plan.fossils
       .filter((label) => label.surface === "wall")
       .map((label) => {
         const s = plan.section(label.z);
         const x = wallX(s, label.side);
-        const halfLength = label.text.length * label.cap * 0.45;
+        const halfLength = label.size / 2;
         const corners = [
-          new Vector3(x, label.y - label.cap, label.z - halfLength),
-          new Vector3(x, label.y + label.cap, label.z - halfLength),
-          new Vector3(x, label.y - label.cap, label.z + halfLength),
-          new Vector3(x, label.y + label.cap, label.z + halfLength),
+          new Vector3(x, label.y - halfLength, label.z - halfLength),
+          new Vector3(x, label.y + halfLength, label.z - halfLength),
+          new Vector3(x, label.y - halfLength, label.z + halfLength),
+          new Vector3(x, label.y + halfLength, label.z + halfLength),
         ].map(projectLoose);
         if (corners.some((c) => c === null)) return null;
         const xs = corners.map((c) => (c as [number, number])[0]);
@@ -523,11 +523,11 @@ export function installChamberProbe(deps: ChamberProbeDeps) {
         const lg = glyphSum / glyphN;
         const lw = wallSum / wallN;
         const capPx = Math.abs(
-          ((projectLoose(new Vector3(x, label.y + label.cap / 2, label.z)) ?? [0, 0])[1]) -
-            ((projectLoose(new Vector3(x, label.y - label.cap / 2, label.z)) ?? [0, 0])[1]),
+          ((projectLoose(new Vector3(x, label.y + label.size / 2, label.z)) ?? [0, 0])[1]) -
+            ((projectLoose(new Vector3(x, label.y - label.size / 2, label.z)) ?? [0, 0])[1]),
         );
         return {
-          text: label.text,
+          text: `${label.motif} z${label.z}`,
           box: [x0, y0, x1, y1],
           capPx: Number(capPx.toFixed(1)),
           glyphPixels: glyphN,

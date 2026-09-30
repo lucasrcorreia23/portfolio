@@ -13,10 +13,10 @@ import {
 } from "three";
 import { wallX, type ChamberPlan } from "@/lib/scene/chamber-plan";
 import {
-  ATLAS_BASELINE,
   ATLAS_WIDTH,
-  ROW_HEIGHT,
+  TILE,
   createEngravingAtlas,
+  tileOf,
 } from "@/lib/scene/engraving-atlas";
 import { CONCRETE_GLSL } from "@/lib/scene/shaders/chamber";
 import { FOG_GLSL, FOG_UNIFORMS_GLSL } from "@/lib/scene/shaders/fog";
@@ -28,23 +28,20 @@ import {
 } from "@/lib/scene/uniforms";
 
 /**
- * Os números gravados — `EST. NNN` e `COTA ±NN.NN` na parede e no piso.
+ * Os fósseis gravados — folhas, samambaias, amonites, conchas, sementes e
+ * peixes em baixo-relevo, na parede e no piso (rodada 16). Até a rodada 15
+ * eram os números `EST. NNN` e `COTA ±NN.NN`; a câmara trocou a medida pela
+ * natureza (decisão do Lucas, 2026-09-30) e o mecanismo ficou o mesmo.
  *
- * O item mais adiado do projeto: a estrutura antiga registrava que "os números
- * gravados em mono ficam para o prompt seguinte", e o prompt seguinte nunca
- * veio. É o que separa "medida gravada no material" de "linha fina desenhada"
- * (DIRECTION.md §2).
- *
- * Cada número é uma placa rente à superfície, instanciada, amostrando uma linha
- * do atlas de altura (`engraving-atlas.ts`). **A placa só desenha onde há
- * vala**: fora da máscara ela descarta, e o concreto da parede aparece. Dentro,
- * o sombreamento é o **mesmo** da parede (`CONCRETE_GLSL`) com a normal
- * perturbada pelo gradiente da máscara — então na borda da letra a placa e a
+ * Cada fóssil é uma placa rente à superfície, instanciada, amostrando um
+ * ladrilho do atlas de altura (`engraving-atlas.ts`). **A placa só desenha onde
+ * há vala**: fora da máscara ela descarta, e o concreto da parede aparece.
+ * Dentro, o sombreamento é o **mesmo** da parede (`CONCRETE_GLSL`) com a normal
+ * perturbada pelo gradiente da máscara — então na borda do traço a placa e a
  * parede são o mesmo pixel, e o que se lê é só a vala e o chanfro dela.
  *
- * Sem emissivo e sem blending: o número existe quando a luz do bando pega o
- * chanfro, e a vala escurece mesmo sem luz nenhuma — que é o que o torna
- * legível de relance, e não só no lampejo.
+ * Sem emissivo e sem blending: o fóssil existe quando a luz do bando ou de uma
+ * lanterna pega o chanfro, e a vala escurece mesmo sem luz nenhuma.
  */
 
 const VERT = /* glsl */ `
@@ -52,8 +49,7 @@ in vec3 aCenter;
 in vec3 aU;
 in vec3 aV;
 in vec3 aNormal;
-in float aRow;
-in float aWidth;
+in vec2 aTile;
 
 uniform vec2 uAtlasSize;
 
@@ -70,8 +66,8 @@ void main() {
   vNormal = aNormal;
   vU = normalize(aU);
   vV = normalize(aV);
-  float u = (position.x * 0.5 + 0.5) * aWidth;
-  float v = (aRow + (0.5 - position.y * 0.5)) * ${ROW_HEIGHT.toFixed(1)} / uAtlasSize.y;
+  float u = (aTile.x + position.x * 0.5 + 0.5) * ${TILE.toFixed(1)} / uAtlasSize.x;
+  float v = (aTile.y + 0.5 - position.y * 0.5) * ${TILE.toFixed(1)} / uAtlasSize.y;
   vUv = vec2(u, v);
   vec4 view = viewMatrix * vec4(world, 1.0);
   vViewDepth = -view.z;
@@ -125,60 +121,44 @@ export function Structure({
   plan: ChamberPlan;
 }) {
   const { geometry, material, atlas } = useMemo(() => {
-    const labels = plan.labels;
-    const atlas = createEngravingAtlas(labels);
-    const count = labels.length;
+    const fossils = plan.fossils;
+    const atlas = createEngravingAtlas(fossils);
+    const count = fossils.length;
 
     const centers = new Float32Array(count * 3);
     const us = new Float32Array(count * 3);
     const vs = new Float32Array(count * 3);
     const normals = new Float32Array(count * 3);
-    const rows = new Float32Array(count);
-    const widths = new Float32Array(count);
+    const tiles = new Float32Array(count * 2);
 
-    labels.forEach((label, i) => {
-      const capPx = atlas.capPx;
-      // Quanto mede uma unidade de mundo em pixels do atlas, para esta placa.
-      const scale = label.cap / capPx;
-      const widthFrac = atlas.widths[i] ?? 0.5;
-      const halfU = (widthFrac * ATLAS_WIDTH * scale) / 2;
-      const halfV = (ROW_HEIGHT * scale) / 2;
-      // O centro das maiúsculas não é o centro da linha do atlas.
-      const capCenterPx = ATLAS_BASELINE - capPx / 2;
-      const drop = (capCenterPx - ROW_HEIGHT / 2) * scale;
-
+    fossils.forEach((fossil, i) => {
+      const half = fossil.size / 2;
       let center: Vector3;
       let u: Vector3;
       let v: Vector3;
       let n: Vector3;
-      if (label.surface === "floor" || label.surface === "sill") {
-        const s = plan.section(label.z);
+      if (fossil.surface === "floor" || fossil.surface === "sill") {
+        const s = plan.section(fossil.z);
         n = new Vector3(0, 1, 0);
         u = new Vector3(1, 0, 0);
         v = new Vector3(0, 0, -1);
         // A soleira é horizontal como o piso, mas mora na altura dela.
-        const y = label.surface === "sill" ? label.y : -s.floor;
-        center = new Vector3(label.x, y + LIFT, label.z);
+        const y = fossil.surface === "sill" ? fossil.y : -s.floor;
+        center = new Vector3(fossil.x, y + LIFT, fossil.z);
       } else {
-        const s = plan.section(label.z);
-        const x = wallX(s, label.side);
-        n = new Vector3(-label.side, 0, 0);
-        // Lido de dentro do duto: a estibordo o texto corre para +z, a
-        // bombordo para −z.
-        u = new Vector3(0, 0, label.side);
+        const s = plan.section(fossil.z);
+        const x = wallX(s, fossil.side);
+        n = new Vector3(-fossil.side, 0, 0);
+        u = new Vector3(0, 0, fossil.side);
         v = new Vector3(0, 1, 0);
-        center = new Vector3(x - label.side * LIFT, label.y, label.z);
+        center = new Vector3(x - fossil.side * LIFT, fossil.y, fossil.z);
       }
-      // O centro das maiúsculas cai em `label.y`: a placa sobe o quanto a
-      // linha de base está abaixo do meio da linha do atlas.
-      center.addScaledVector(v, drop);
-
+      const [col, row] = tileOf(i);
       centers.set([center.x, center.y, center.z], i * 3);
-      us.set([u.x * halfU, u.y * halfU, u.z * halfU], i * 3);
-      vs.set([v.x * halfV, v.y * halfV, v.z * halfV], i * 3);
+      us.set([u.x * half, u.y * half, u.z * half], i * 3);
+      vs.set([v.x * half, v.y * half, v.z * half], i * 3);
       normals.set([n.x, n.y, n.z], i * 3);
-      rows[i] = i;
-      widths[i] = widthFrac;
+      tiles.set([col, row], i * 2);
     });
 
     const geometry = new InstancedBufferGeometry();
@@ -194,8 +174,7 @@ export function Structure({
     geometry.setAttribute("aU", new InstancedBufferAttribute(us, 3));
     geometry.setAttribute("aV", new InstancedBufferAttribute(vs, 3));
     geometry.setAttribute("aNormal", new InstancedBufferAttribute(normals, 3));
-    geometry.setAttribute("aRow", new InstancedBufferAttribute(rows, 1));
-    geometry.setAttribute("aWidth", new InstancedBufferAttribute(widths, 1));
+    geometry.setAttribute("aTile", new InstancedBufferAttribute(tiles, 2));
     geometry.instanceCount = count;
     // Quem sabe onde as placas estão é o vertex shader.
     geometry.boundingSphere = new Sphere(new Vector3(), 1e4);
@@ -208,7 +187,7 @@ export function Structure({
         uCyan: shared.cyan,
         uAtlas: { value: atlas.texture },
         uAtlasSize: {
-          value: new Vector2(ATLAS_WIDTH, atlas.texture.image.height as number),
+          value: new Vector2(ATLAS_WIDTH, atlas.height),
         },
       },
       vertexShader: VERT,
