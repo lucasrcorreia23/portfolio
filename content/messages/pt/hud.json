@@ -14,6 +14,11 @@
     "on": "ON",
     "off": "MUDO"
   },
+  "theme": {
+    "label": "Luz",
+    "night": "NOITE",
+    "dawn": "AMANHECER"
+  },
   "filters": "Filtros",
   "language": "Idioma",
   "progress": "Progresso",

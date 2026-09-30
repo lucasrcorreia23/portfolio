@@ -14,6 +14,11 @@
     "on": "ON",
     "off": "MUTED"
   },
+  "theme": {
+    "label": "Light",
+    "night": "NIGHT",
+    "dawn": "DAWN"
+  },
   "filters": "Filters",
   "language": "Language",
   "progress": "Progress",

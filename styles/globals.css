@@ -3,6 +3,10 @@
 @import "./tokens.css";
 
 @layer base {
+  html[data-theme="dawn"] {
+    color-scheme: light;
+  }
+
   html {
     color-scheme: dark;
     background-color: var(--void);

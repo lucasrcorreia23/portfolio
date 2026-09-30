@@ -79,6 +79,31 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * Amanhecer — rodada 18 (decisão do Lucas, 2026-09-30).
+ *
+ * A mesma câmara em outra hora do dia: os nove tokens com os mesmos nomes e os
+ * mesmos papéis, em valores de manhã. O fundo é uma névoa quente clara (nunca
+ * `#FFFFFF`, que continua proibido), o texto é escuro, e o organismo fica mais
+ * saturado e mais escuro que o ar — sobre claro, a luz se lê como cor, não como
+ * brilho. `--mist` continua sendo "a cor do texto", e é por isso que ela
+ * escurece.
+ *
+ * Quem escreve o atributo é o script antes da hidratação no layout raiz e o
+ * controle da HUD (`lib/theme.ts`). A cena relê a paleta na troca.
+ * ------------------------------------------------------------------------ */
+:root[data-theme="dawn"] {
+  --void: #c9bfb0;
+  --abyss: #d6cdbf;
+  --deep: #93a7a8;
+  --teal: #0f7e8c;
+  --cyan: #1a9aab;
+  --rose: #c74f72;
+  --coral: #d8552a;
+  --peach: #e9964f;
+  --mist: #0c1d27;
+}
+
+/* ---------------------------------------------------------------------------
  * Aliases para o Tailwind.
  *
  * `inline` faz o Tailwind escrever `var(--void)` direto na utility em vez de

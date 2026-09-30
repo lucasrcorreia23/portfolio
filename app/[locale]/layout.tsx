@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Script from "next/script";
+import { THEME_SCRIPT } from "@/lib/theme";
 import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Hud } from "@/components/hud/Hud";
@@ -78,7 +79,9 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
 
   return (
-    <html lang={locale} className={fontVariables}>
+    // `suppressHydrationWarning` só no `<html>`: o `THEME_SCRIPT` escreve
+    // `data-theme` antes da hidratação, de propósito.
+    <html lang={locale} className={fontVariables} suppressHydrationWarning>
       {/* Sem `NextIntlClientProvider`: nenhum componente de cliente deste
           projeto traduz. As strings são resolvidas no servidor e descem como
           props, o que mantém o formatador ICU fora do navegador — 13 kB
@@ -100,6 +103,10 @@ export default async function LocaleLayout({
       <body className="text-mist">
         <Script id="restore-scroll" strategy="beforeInteractive">
           {RESTORE_SCRIPT}
+        </Script>
+        {/* A hora do dia, antes da primeira pintura (ver `lib/theme.ts`). */}
+        <Script id="theme" strategy="beforeInteractive">
+          {THEME_SCRIPT}
         </Script>
         <ScrollProvider>
           <Hud />

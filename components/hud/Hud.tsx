@@ -10,6 +10,7 @@ import { BeatReadout } from "./BeatReadout";
 import { DescentSlot } from "./DescentSlot";
 import { HudPanel } from "./HudPanel";
 import { LanguageToggle } from "./LanguageToggle";
+import { ThemeToggle } from "./ThemeToggle";
 import { RiverFilters } from "./RiverFilters";
 import { ScrollRule } from "./ScrollRule";
 
@@ -114,6 +115,11 @@ export async function Hud() {
           label={t("audio.label")}
           onLabel={t("audio.on")}
           offLabel={t("audio.off")}
+        />
+        <ThemeToggle
+          label={t("theme.label")}
+          nightLabel={t("theme.night")}
+          dawnLabel={t("theme.dawn")}
         />
         <LanguageToggle label={t("language")} active={locale} />
       </div>
