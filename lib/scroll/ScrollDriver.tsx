@@ -3,34 +3,37 @@
 import { useEffect } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import Lenis from "lenis";
+import Lenis, { type VirtualScrollData } from "lenis";
 import { useReducedMotion } from "@/lib/capabilities/use-reduced-motion";
-import { LENIS_LERP } from "@/lib/motion";
+import { easeStrong, LENIS_LERP } from "@/lib/motion";
+import { riverReadings } from "@/lib/scene/river-readings";
+import { descentFromScroll, scrollFromDescent } from "./descent-map";
 import { publishFrame } from "./frame-bus";
 import {
   consumeScrollRequest,
   consumeScrollResize,
+  getScrollRole,
   publishScroll,
   resetScroll,
 } from "./scroll-store";
 
 /**
- * O único driver de scroll do site, e o único lugar que publica no store.
+ * O passo do rio (rodada 14): dentro do beat de Trabalho, **um gesto de roda
+ * leva a um card** — nem meio, nem dois.
  *
- * Dois caminhos, um contrato: aconteça o que acontecer, o progresso
- * normalizado de 0 a 1 continua sendo publicado. No modo calmo ele corta
- * entre composições em vez de dirigir a câmera, mas quem lê não muda.
+ * Os cards ficam a ~1 vh de rolagem um do outro no desktop, e a medição de
+ * antes (roda sintética a 1440×900) mostrou um gesto de uma tela atravessando
+ * dois cases e um de duas telas atravessando quatro. Um snap por proximidade
+ * alinhava a parada ao card mas não limitava o avanço: medido, os mesmos 2 e 4.
  *
- * **Este módulo não está na rota inicial, e isso é o orçamento falando.**
- * Gsap e lenis são 48 kB comprimidos que não servem ao primeiro quadro útil:
- * o portão é DOM e não rola, e o scroll só começa depois do clique de
- * entrada. Ele é carregado por `loadScrollDriver()` — pelo preloader do
- * portão na home, e depois do primeiro quadro nas outras rotas. Ver
- * AGENTS.md, "Orçamento de JS".
- *
- * Não renderiza nada: quem renderiza os filhos é o `ScrollProvider`, que
- * fica no layout e continua leve.
+ * `STEP_DURATION_S` é quanto dura a viagem de um card ao outro; `QUIET_MS` é o
+ * silêncio de roda que encerra o gesto — um trackpad continua mandando inércia
+ * por meio segundo depois do dedo sair, e cada resto dessa inércia não pode
+ * virar outro passo.
  */
+const STEP_DURATION_S = 1.1;
+const QUIET_MS = 240;
+
 export default function ScrollDriver() {
   const reducedMotion = useReducedMotion();
 
@@ -78,9 +81,60 @@ export default function ScrollDriver() {
       };
     }
 
+    // **O rio anda um card por gesto.** Um evento de roda dentro do alcance do
+    // rio (a leitura vizinha na direção do gesto a no máximo um intervalo) vira
+    // uma viagem até essa leitura, e o resto do gesto é engolido até a viagem
+    // acabar e a roda silenciar. Na última leitura, rolando para baixo, e na
+    // primeira, rolando para cima, não há vizinha: a rolagem volta a ser livre e
+    // sai do rio. As leituras são as da curva (`riverReadings`), e a curva
+    // repousa em cada uma (`RIVER_HOLD`, em `lib/scene/curve.ts`).
+    //
+    // Só roda e trackpad: no toque a rolagem é nativa, e quem segura é o
+    // repouso da curva. Dentro de um case a rolagem é do artigo, e nada muda.
+    let stepping = false;
+    let stepDone = true;
+    let lastWheel = 0;
+    let stepStarted = 0;
+    const stepRiver = (data: VirtualScrollData): boolean => {
+      if (getScrollRole() !== "descent" || !data.event.type.includes("wheel")) return true;
+      const now = performance.now();
+      if (stepping) {
+        lastWheel = now;
+        if (data.event.cancelable) data.event.preventDefault();
+        return false;
+      }
+      const direction = Math.sign(data.deltaY);
+      const limit = lenis.limit;
+      if (direction === 0 || limit <= 0) return true;
+      const readings = riverReadings();
+      const interval = readings.length > 1 ? readings[1]! - readings[0]! : 1;
+      const here = descentFromScroll(lenis.animatedScroll / limit);
+      const epsilon = 0.002;
+      const next =
+        direction > 0
+          ? readings.find((at) => at > here + epsilon)
+          : readings.findLast((at) => at < here - epsilon);
+      if (next === undefined || Math.abs(next - here) > interval + epsilon) return true;
+      stepping = true;
+      stepDone = false;
+      lastWheel = now;
+      stepStarted = now;
+      lenis.scrollTo(scrollFromDescent(next) * limit, {
+        duration: STEP_DURATION_S,
+        easing: easeStrong,
+        force: true,
+        onComplete: () => {
+          stepDone = true;
+        },
+      });
+      if (data.event.cancelable) data.event.preventDefault();
+      return false;
+    };
+
     const lenis = new Lenis({
       lerp: LENIS_LERP,
       smoothWheel: true,
+      virtualScroll: stepRiver,
       // O rAF é o do GSAP: um relógio só para o scroll, as animações e,
       // mais adiante, o loop de render da cena.
       autoRaf: false,
@@ -102,6 +156,16 @@ export default function ScrollDriver() {
       if (consumeScrollResize()) {
         lenis.resize();
         ScrollTrigger.refresh();
+      }
+      // O `onComplete` não chega se outra rolagem interromper a viagem (o
+      // `requestScrollTo` da volta de um case, o foco de teclado): o prazo da
+      // viagem encerra o passo do mesmo jeito, senão a roda ficaria presa.
+      const now = performance.now();
+      if (stepping && !stepDone && now - stepStarted > STEP_DURATION_S * 1000 + 200) {
+        stepDone = true;
+      }
+      if (stepping && stepDone && now - lastWheel > QUIET_MS) {
+        stepping = false;
       }
       const wanted = consumeScrollRequest();
       if (wanted !== null) {
