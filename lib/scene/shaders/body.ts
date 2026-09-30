@@ -362,9 +362,11 @@ void main() {
     lit = color * (0.42 + 0.22 * tip) * (0.85 + 0.35 * vEnergy) * vNear;
   }
   // O cursor acende, quente, os corpos que passam perto dele (rodada 17).
+  // Rodada 22: aquece, não repinta — o corpo guarda a cor dele e a luz da mão
+  // entra por cima, a pouco mais da metade.
   if (uPointer.w > 0.0) {
     float near = 1.0 - smoothstep(0.0, 6.0, distance(vWorld, uPointer.xyz));
-    lit = mix(lit, lit * 0.4 + uPointerColor * (1.4 + 2.2 * tip), uPointer.w * near * near);
+    lit = mix(lit, lit * 0.65 + uPointerColor * (0.9 + 1.4 * tip), 0.55 * uPointer.w * near * near);
   }
   lit = applyFog(lit, vViewDepth, vWorld);
 

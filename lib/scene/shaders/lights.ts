@@ -119,10 +119,11 @@ vec3 lampLight(vec3 worldPos) {
     float fall = 1.0 - smoothstep(0.0, ${LAMP_REACH.toFixed(1)}, dist);
     total += uLampColor[i] * lamp.w * fall * fall;
   }
-  // O cursor entra como mais uma lanterna, de alcance um pouco maior.
+  // O cursor entra como mais uma lanterna, de alcance um pouco maior e
+  // queda mais longa (rodada 22): uma luz de mão, sem borda de poça.
   if (uPointer.w > 0.0) {
-    float fall = 1.0 - smoothstep(0.0, 11.0, distance(uPointer.xyz, worldPos));
-    total += uPointerColor * uPointer.w * fall * fall * 1.3;
+    float fall = 1.0 - smoothstep(0.0, 12.0, distance(uPointer.xyz, worldPos));
+    total += uPointerColor * uPointer.w * fall * fall * fall * 0.75;
   }
   return total;
 }

@@ -120,7 +120,9 @@ in float vViewDepth;
 out vec4 fragColor;
 void main() {
   float r2 = dot(vQuad, vQuad);
-  float g = exp(-5.0 * r2) * 0.12 + exp(-40.0 * r2) * 0.18;
+  // Rodada 22: sem o miolo apertado (exp(−40 r²) · 0.18), que lia como um
+  // ponto de luz desenhado no ar; o que sobra é o espalhamento na névoa.
+  float g = exp(-4.0 * r2) * 0.075 + exp(-14.0 * r2) * 0.05;
   if (g < 0.002) discard;
   fragColor = vec4(uPointerColor * g * uPointer.w, 1.0);
 }
