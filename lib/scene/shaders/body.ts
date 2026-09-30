@@ -58,7 +58,9 @@ export const BODY_NEAR_FULL = 3.5;
  * O sorteio usa um hash diferente do da admissão (`lot`), senão os primeiros
  * corpos a entrar na Emergência seriam todos da mesma cor.
  */
-export const BODY_HUE_WEIGHTS = [0.38, 0.26, 0.18, 0.11, 0.07] as const;
+// Rodada 22 (organismo mais sutil): os frios dominam — o bando é teal e ciano
+// com poucos quentes, e mesmo esses puxados para o frio (ver bodyColor).
+export const BODY_HUE_WEIGHTS = [0.5, 0.3, 0.12, 0.05, 0.03] as const;
 
 const cumulative = BODY_HUE_WEIGHTS.reduce<number[]>(
   (acc, w) => [...acc, (acc[acc.length - 1] ?? 0) + w],
@@ -85,8 +87,10 @@ vec3 bodyHue(float h) {
  * corpo peach acelerado fica peach claro, não ciano.
  */
 vec3 bodyColor(float h, float energy) {
-  vec3 base = bodyHue(h);
-  vec3 lifted = mix(base, uMist, 0.35);
+  // Rodada 22: o matiz sorteado é puxado 40% para o teal — o bando continua
+  // tendo cor, mas como variação dentro de um organismo, não como confete.
+  vec3 base = mix(uTeal, bodyHue(h), 0.6);
+  vec3 lifted = mix(base, uMist, 0.3);
   return mix(base, lifted, smoothstep(0.18, 0.85, energy));
 }
 `;
@@ -393,7 +397,7 @@ export const GLOW_SCALE = 1.5;
 /** Teto do comprimento do halo na tela, em px de CSS. */
 export const GLOW_MAX_PX = 45;
 /** Teto da amplitude do halo, em HDR linear, antes do tonemap (1.15×). */
-export const GLOW_PEAK = 0.55;
+export const GLOW_PEAK = 0.4;
 
 export const GLOW_VERT = /* glsl */ `
 uniform sampler2D uPos;

@@ -315,7 +315,8 @@ export function Flock({
         uPointer: shared.pointer,
         uPointerColor: shared.pointerColor,
         uSpecimenZ: shared.specimenZ,
-        uGain: { value: 2.4 },
+        // Rodada 22: brilho mais contido (era 2.4).
+        uGain: { value: 1.9 },
         uFormingFrag: shared.forming,
         uCards: shared.cards,
         uCardCount: shared.cardCount,
