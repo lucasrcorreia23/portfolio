@@ -141,21 +141,54 @@ DOM em outro. Números em MEASUREMENTS.md, "Rodada 14, medida"; folha em
 `.screens/14-rio.png`. **Próximo: rodada 15, cor no bando e luz colorida nas
 paredes.**
 
-### Onde paramos (2026-09-30, fim da rodada 18)
+### Pendências — a lista única (atualizada a cada rodada)
 
-As rodadas 14 a 18 do plano de 2026-09-30 estão feitas (ver as seções acima e
-MEASUREMENTS.md, "Rodada 14" a "Rodada 18"). O que ficou aberto, em ordem:
+**Esta é a lista do que está ruim ou não foi conferido**, juntando as "três
+piores coisas" de cada relatório e o "O que não foi medido" de cada rodada no
+MEASUREMENTS.md. Quem fecha um item risca aqui; quem acha um novo, acrescenta.
+Estado: rodada 22 em andamento (o rio feito, as paredes feitas, o organismo e
+a luz a seguir). As rodadas 19 a 21 foram desfeitas — ver MEASUREMENTS.md.
 
-1. **Remedir o descolamento (3B) e a oclusão com o monograma.** Os
-   instrumentos de `probe.ts` supõem uma letra de CORREIA; precisam ser
-   reescritos antes de valer.
-2. **A costura da travessia** com a deriva dos cards e o mapa por beat: a
-   conta diz que continua exata, a medição não foi refeita.
-3. **O tempo de GPU** com água, raízes, lanternas e cursor.
-4. **Tirar `troika-three-text` e `@react-three/drei` do `package.json`**, que
-   ficaram sem uso.
-5. As pendências antigas do Lucas continuam: material real de Perfecting,
-   WeCann e Unifique; a "Regra de governança".
+**A cena**
+1. **O rio aparece pouco na Emergência e na Identidade**: a câmera olha para a
+   frente e só pega a água na borda de baixo. (22)
+2. **Longe do que ela reflete, a água é só escura**: falta a claridade da
+   névoa refletida. Entra no passo da luz. (22)
+3. **A parede quase nunca está no quadro**: a textura nova (22) só aparece nas
+   bordas. O relevo não foi conferido de perto, iluminado e enquadrado.
+4. **O descolamento (3B) e a oclusão não foram remedidos com o LRC**: os
+   instrumentos de `probe.ts` supõem uma letra de CORREIA e precisam ser
+   reescritos. (17)
+5. **O amanhecer está pálido**, perto do "branco de laboratório", e o
+   monograma perde força nele. Talvez seja cedo para ligá-lo sozinho pela
+   preferência do sistema. A troca de tema é um corte, sem transição. (18)
+
+**Medições que faltam**
+6. **Tempo de GPU** do reflexo da água (um segundo desenho da cena em meia
+   resolução), das lanternas e do cursor — no M5 e no telefone. O teto de 75 Hz
+   desta bancada esconde a diferença (13.3 ms com e sem a água). (15, 22)
+7. **A costura da travessia para o case** com a deriva dos cards e o mapa por
+   beat: a conta diz que continua exata, a medição de 0.0024 px não foi
+   refeita. (14, 16)
+8. **O calor no amanhecer**: a régua supõe fundo escuro. (18)
+9. **Contraste e pacote depois das paredes** da rodada 22 (conferir no fim do
+   passo da luz).
+
+**O ritmo do rio**
+10. **No toque, a desaceleração vem só da curva**: a viscosidade é da roda e do
+    trackpad. Um arraste forte no celular ainda pode passar de um card. (14)
+11. A viagem inteira pelos sete cards ficou mais longa com a viscosidade; se o
+    Lucas achar lento, os números são `RIVER_VISCOSITY`, `SETTLE_LERP` e
+    `RIVER_SLOW`. (14, 16)
+
+**Limpeza**
+12. `troika-three-text` e `@react-three/drei` estão sem uso no
+    `package.json`. (17)
+
+**Do Lucas**
+13. Material real de Perfecting, WeCann e Unifique (capas geradas até hoje).
+14. A "Regra de governança", que nunca foi colada.
+15. A Superfície sépia: escolha ou pendência?
 
 ### Onde paramos (2026-09-25, fim da rodada 13)
 
