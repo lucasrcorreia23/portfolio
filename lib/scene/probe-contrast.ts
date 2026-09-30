@@ -513,6 +513,7 @@ export function installContrast(deps: ContrastDeps) {
     const height = bufferHeight();
     const pixels = new Uint8Array(width * height * 4);
     let warm = 0;
+    let events = 0;
     let lit = 0;
     let scanned = 0;
 
@@ -529,6 +530,11 @@ export function installContrast(deps: ContrastDeps) {
         const r = toLinear[pixels[at] ?? 0] ?? 0;
         const g = toLinear[pixels[at + 1] ?? 0] ?? 0;
         if (r > 1.15 * g) warm += 1;
+        // Rodada 15: o bando tem corpos --peach, que também passam em
+        // r > 1.15·g (1.00 contra 0.58) mas não são coral nem rosa. O teto do
+        // PROJECT.md §3.1 é dos dois eventos; o verde deles fica abaixo de 0.45
+        // do vermelho (rose 0.29, coral 0.19), o do peach fica acima.
+        if (r > 1.15 * g && g < 0.45 * r) events += 1;
       }
     }
 
@@ -540,6 +546,8 @@ export function installContrast(deps: ContrastDeps) {
       /** Fração da tela acima do limiar de corpo, quente ou fria. */
       litShareOfFrame: scanned > 0 ? lit / scanned : 0,
       warmShareOfLit: lit > 0 ? warm / lit : 0,
+      /** Só rosa e coral (sem o --peach do bando). É isto que o teto mede. */
+      eventShareOfFrame: scanned > 0 ? events / scanned : 0,
     };
   };
 

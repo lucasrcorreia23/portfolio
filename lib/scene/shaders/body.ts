@@ -45,6 +45,52 @@ export const BODY_MAX_WIDTH_PX = 2;
 export const BODY_NEAR_GONE = 1;
 export const BODY_NEAR_FULL = 3.5;
 
+/**
+ * **O matiz de cada corpo** (rodada 15, decisão do Lucas de 2026-09-30).
+ *
+ * Até a rodada 14 o bando era um matiz só — teal em cruzeiro clareando para
+ * cyan, que é quase o mesmo tom —, e o rosa e o coral só existiam como evento
+ * na aresta e na esteira. Agora cada corpo sorteia uma cor da paleta atual, de
+ * forma estável (o mesmo corpo tem a mesma cor em todo quadro), com os frios
+ * pesando mais: teal 38 · cyan 26 · peach 18 · rose 11 · coral 7. O rosa da
+ * compressão e o coral da esteira continuam como eventos, por cima.
+ *
+ * O sorteio usa um hash diferente do da admissão (`lot`), senão os primeiros
+ * corpos a entrar na Emergência seriam todos da mesma cor.
+ */
+export const BODY_HUE_WEIGHTS = [0.38, 0.26, 0.18, 0.11, 0.07] as const;
+
+const cumulative = BODY_HUE_WEIGHTS.reduce<number[]>(
+  (acc, w) => [...acc, (acc[acc.length - 1] ?? 0) + w],
+  [],
+);
+
+/** O hash do matiz, para o vertex shader. */
+const HUE_LOT_GLSL = /* glsl */ `
+  vHue = fract(sin(dot(aRef, vec2(39.3468, 11.1351))) * 24634.6345);
+`;
+
+/** A cor de um sorteio de matiz, para o fragment shader. */
+const BODY_HUE_GLSL = /* glsl */ `
+vec3 bodyHue(float h) {
+  if (h < ${cumulative[0]!.toFixed(3)}) return uTeal;
+  if (h < ${cumulative[1]!.toFixed(3)}) return uCyan;
+  if (h < ${cumulative[2]!.toFixed(3)}) return uPeach;
+  if (h < ${cumulative[3]!.toFixed(3)}) return uRose;
+  return uCoral;
+}
+
+/**
+ * A energia clareia **o próprio matiz**, em vez de trocar o corpo por cyan: um
+ * corpo peach acelerado fica peach claro, não ciano.
+ */
+vec3 bodyColor(float h, float energy) {
+  vec3 base = bodyHue(h);
+  vec3 lifted = mix(base, uMist, 0.35);
+  return mix(base, lifted, smoothstep(0.18, 0.85, energy));
+}
+`;
+
 export const BODY_VERT = /* glsl */ `
 uniform sampler2D uPos;
 uniform sampler2D uVel;
@@ -61,6 +107,7 @@ out float vEnergy;
 out float vDensity;
 out float vAlong;
 out float vNear;
+flat out float vHue;
 
 void main() {
   vec4 P = texture(uPos, aRef);
@@ -69,6 +116,7 @@ void main() {
   vec3 center = P.xyz;
   vDensity = P.w;
   vEnergy  = V.w;
+${HUE_LOT_GLSL}
 
   // Base ortonormal a partir **só** da velocidade — nunca da câmera.
   //
@@ -154,6 +202,7 @@ uniform vec3  uTeal;
 uniform vec3  uCyan;
 uniform vec3  uRose;
 uniform vec3  uCoral;
+uniform vec3  uMist;
 uniform float uSpecimenZ;
 uniform float uGain;
 uniform float uFormingFrag;
@@ -193,11 +242,13 @@ in float vEnergy;
 in float vDensity;
 in float vAlong;
 in float vNear;
+flat in float vHue;
 
 out vec4 fragColor;
 
 ${FOG_GLSL}
 ${OUTSIDE_GLSL}
+${BODY_HUE_GLSL}
 
 void main() {
   // A rampa do DIRECTION.md §5, nesta ordem: teal em cruzeiro, cyan em
@@ -223,8 +274,7 @@ void main() {
   // cyan começa em 0.18 — um quarto da população entra nela — e satura em 0.85,
   // que só o topo de ~1% alcança. Cauda longa de calor leve, poucos corpos
   // francamente cyan: é o "cyan em aceleração" do §5 e não um bando cyan.
-  vec3 color = uTeal;
-  color = mix(color, uCyan, smoothstep(0.18, 0.85, vEnergy));
+  vec3 color = bodyColor(vHue, vEnergy);
   color = mix(color, uRose, smoothstep(0.07, 0.13, vDensity) * 0.75 * nearLeadingEdge(vWorld));
 
   // Coral: **a jusante e quente**, e só isso.
@@ -346,6 +396,7 @@ out float vEnergy;
 out float vDensity;
 out float vViewDepth;
 out vec3  vWorld;
+flat out float vHue;
 
 void main() {
   vec4 P = texture(uPos, aRef);
@@ -354,6 +405,7 @@ void main() {
   vDensity = P.w;
   vEnergy = V.w;
   vWorld = center;
+${HUE_LOT_GLSL}
 
   float lot = fract(sin(dot(aRef, vec2(12.9898, 78.233))) * 43758.5453);
   float admit = step(lot, 0.035 + 0.965 * pow(uForming, 2.5));
@@ -415,6 +467,9 @@ ${FOG_UNIFORMS_GLSL}
 
 uniform vec3  uTeal;
 uniform vec3  uCyan;
+uniform vec3  uRose;
+uniform vec3  uCoral;
+uniform vec3  uMist;
 uniform float uGain;
 uniform float uFormingFrag;
 
@@ -424,16 +479,18 @@ in float vEnergy;
 in float vDensity;
 in float vViewDepth;
 in vec3  vWorld;
+flat in float vHue;
 
 out vec4 fragColor;
 
 ${FOG_GLSL}
+${BODY_HUE_GLSL}
 
 void main() {
   if (vGlow <= 0.0) discard;
   // Gaussiana: 0.018 na borda do quad — sem aresta.
   float g = exp(-4.0 * dot(vQuad, vQuad));
-  vec3 color = mix(uTeal, uCyan, smoothstep(0.18, 0.85, vEnergy));
+  vec3 color = bodyColor(vHue, vEnergy);
   float crowd = mix(1.0, 0.5 + 1.25 * smoothstep(0.02, 0.10, vDensity), smoothstep(0.15, 0.6, uFormingFrag));
   float energy = uGain * (0.55 + 0.85 * vEnergy) * crowd * 1.1;
   // Aditivo através da névoa: o que atravessa é a parte não velada.
