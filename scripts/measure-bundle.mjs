@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
  * Duas caixas, cada uma com seu teto:
  *
  *   rota inicial   200 kB gz   tudo no caminho crítico até o primeiro quadro
- *   chunk da cena  350 kB gz   three, R3F, troika, compositor, shaders
+ *   chunk da cena  350 kB gz   three, R3F, compositor, shaders
  *
  * ## Por que este arquivo existe
  *
@@ -84,7 +84,10 @@ const DYNAMIC = [
   {
     id: "chunk da cena",
     budget: BUDGET_SCENE,
-    markers: ["WebGLRenderer", "troika"],
+    // Rodada 17: o troika saiu da cena (o corpo de prova é o monograma
+    // extrudado). O segundo marcador passou a ser um nome do próprio GLSL da
+    // cena, que só existe nesse chunk.
+    markers: ["WebGLRenderer", "shadeConcrete"],
   },
   {
     id: "chunk do driver de scroll",
@@ -245,7 +248,7 @@ const homeSources = [...homeHtml.matchAll(/<script[^>]+src="([^"]+)"/g)]
 
 const leaked = homeSources.filter((path) => {
   const source = readFileSync(path, "utf8");
-  return source.includes("WebGLRenderer") && source.includes("troika");
+  return source.includes("WebGLRenderer") && source.includes("shadeConcrete");
 });
 
 if (leaked.length > 0) {

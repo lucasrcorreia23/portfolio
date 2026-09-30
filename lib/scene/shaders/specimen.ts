@@ -105,7 +105,10 @@ void main() {
   // corpos já acendem dois terços do rim.
   float ahead = mix(uFlockAhead, 1.0 - exp(-column / 5.0), uAheadReady);
 
-  base += uCyan * (fresnel * 1.1 + 0.18) * (0.14 + 1.9 * ahead);
+  // Rodada 17: a peça tem volume, e o fresnel passa a ter laterais e chanfro
+  // de verdade para acender. O termo plano cai de 0.18 para 0.06 — com ele
+  // alto a face inteira acendia por igual e o monograma lia como plástico.
+  base += uCyan * (fresnel * 1.3 + 0.06) * (0.14 + 1.9 * ahead);
 
   base += uSourceColor * upstreamLight(vWorld) * 0.35;
 

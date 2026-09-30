@@ -1,4 +1,11 @@
-import { SPECIMEN_CAP_HEIGHT, SPECIMEN_SIZE, SPECIMEN_Z } from "./world";
+import {
+  MONOGRAM_VARIANT,
+  SPECIMEN_BEVEL,
+  SPECIMEN_CAP_HEIGHT,
+  SPECIMEN_DEPTH,
+  SPECIMEN_SIZE,
+  SPECIMEN_Z,
+} from "./world";
 
 /**
  * `TypeArticle` — o dono do corpo de prova.
@@ -7,64 +14,34 @@ import { SPECIMEN_CAP_HEIGHT, SPECIMEN_SIZE, SPECIMEN_Z } from "./world";
  * corpo, tracking, âncora e transform** da peça. Nada mais no projeto escreve
  * esses valores." Este é ele — e desde o descolamento ele é também o dono da
  * **geometria do campo de distância** (`TYPE_FIELD`), assado do mesmo mesh em
- * `lib/scene/type-field.ts`. O poster de movimento reduzido e a OG image saem
- * daqui depois, pelo mesmo motivo: o quadro congelado tem que ser exatamente o
- * quadro do site.
+ * `lib/scene/type-field.ts`.
  *
- * ## O arquivo de fonte, e as duas descobertas que o escolheram
+ * ## Rodada 17: a peça é a assinatura LRC
  *
- * O DOM usa o Archivo variável do `next/font` em `wdth: 125` (a classe
- * `.type-display`). O troika **não pode usar o mesmo arquivo**, por dois
- * motivos independentes, os dois verificados na fonte da biblioteca:
- *
- * 1. **`.woff2` não é suportado.** O parser lança `'woff2 fonts not supported'`
- *    ao ver a assinatura `wOF2`. Só `.ttf`, `.otf` e `.woff` v1 entram.
- * 2. **Eixos de fonte variável não são aplicados.** O `fontWeight` do troika só
- *    escolhe a fonte de fallback para caracteres fora do arquivo; não há
- *    caminho para pedir `wdth: 125`. O arquivo variável renderizaria na
- *    instância padrão, ou seja em largura normal — e o papel display do
- *    PROJECT.md §3.2 *é* o Expanded.
- *
- * Então a peça usa uma **instância estática** do Archivo Expanded em ExtraBold,
- * que é o peso 800 de `--text-display-1--font-weight`. Mesmo desenho, mesmo
- * autor, mesma licença (OFL-1.1) — um segundo formato do mesmo tipo, não uma
- * segunda tipografia. A regra do PROJECT.md §3.2 ("nenhuma terceira família")
- * continua inteira.
+ * Até a rodada 16 a peça era a palavra CORREIA, desenhada pelo troika em
+ * espessura zero. Agora é o monograma LRC (decisão do Lucas, 2026-09-30),
+ * **extrudado de leve** e com chanfro: o contorno vem do mesmo
+ * `ArchivoExpanded-ExtraBold.ttf` (extraído por `scripts/monogram.mjs` para
+ * `monogram-data.ts`) e vira `ExtrudeGeometry` em `Specimen.tsx`. Mesma família,
+ * mesmo peso; a regra do PROJECT.md §3.2 continua inteira. O troika saiu da
+ * peça — o `<h1>` do DOM continua sendo o texto acessível.
  */
 export const TYPE_ARTICLE = {
-  /** Servido de `public/`, porque o troika precisa de uma URL, não de um import. */
-  font: "/fonts/ArchivoExpanded-ExtraBold.ttf",
+  /** A composição do monograma (`plinth` ou `tight`). */
+  variant: MONOGRAM_VARIANT,
 
-  /** Corpo em unidades de mundo. Resolvido em `world.ts` contra a regra dos 80%. */
+  /** Corpo em unidades de mundo por em. Resolvido em `world.ts` contra a regra dos 80%. */
   size: SPECIMEN_SIZE,
 
   /** Altura de caixa alta. O assado do SDF do 3b se amarra a ela, não à viewport. */
   capHeight: SPECIMEN_CAP_HEIGHT,
 
-  /**
-   * O mesmo `-0.035em` de `--text-display-1--letter-spacing`. O troika mede
-   * tracking em em, igual ao CSS, então o número atravessa sem conversão.
-   */
-  letterSpacing: -0.035,
+  /** A extrusão e o chanfro, em unidades de mundo. */
+  depth: SPECIMEN_DEPTH,
+  bevel: SPECIMEN_BEVEL,
 
-  /** Ancorada no centro nos dois eixos: a peça está montada no meio da câmara. */
-  anchorX: "center",
-  anchorY: "middle",
-
-  /** Onde ela está montada. */
+  /** Onde ela está montada. O monograma é centrado no próprio traço. */
   position: [0, 0, SPECIMEN_Z] as const,
-
-  /**
-   * Resolução do atlas de SDF por glifo, do troika.
-   *
-   * O padrão é 64, e para um título ocupando 84% da viewport isso amolece as
-   * quinas — que é justamente o que uma peça de ensaio não pode ter. 128
-   * quadruplica a memória de atlas por glifo, e são sete glifos.
-   *
-   * Nada a ver com o assado do `TYPE_FIELD` abaixo: aquele é um campo de
-   * distância do mesh inteiro, para o escoamento amostrar.
-   */
-  sdfGlyphSize: 128,
 } as const;
 
 /**
@@ -91,9 +68,13 @@ export const TYPE_ARTICLE = {
  * diagonais. Sobra margem vertical, que é barata — a peça é larga e baixa.
  */
 export const TYPE_FIELD = {
-  /** Lados da textura do campo. 4:1, a razão do bloco de sete letras. */
+  /**
+   * Lados da textura do campo. 2:1 desde a rodada 17: o monograma tem ~2.1:1
+   * de traço, e com a margem a caixa fica perto de 1.6:1. Era 4:1 para as
+   * sete letras de CORREIA.
+   */
   width: 1024,
-  height: 256,
+  height: 512,
 
   /** Folga em volta da silhueta, em unidades de caixa alta. Ver acima. */
   margin: 0.6,
@@ -121,13 +102,3 @@ export const TYPE_FIELD = {
    */
   enclosureShape: [0.5, 0.9],
 } as const;
-
-/**
- * A string vem do dicionário (`identity.specimen`), não daqui: ela é conteúdo e
- * é traduzível. O que este módulo garante é que ela seja **desenhada** do mesmo
- * jeito em todo lugar — e que chegue em caixa alta, como a classe
- * `.type-display` faz no DOM.
- */
-export function specimenText(raw: string): string {
-  return raw.toLocaleUpperCase("pt-BR");
-}

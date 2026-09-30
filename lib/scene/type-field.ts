@@ -91,8 +91,17 @@ type TextRenderInfo = {
 function readBounds(mesh: Mesh): readonly number[] | null {
   const info = (mesh as unknown as { textRenderInfo?: TextRenderInfo | null })
     .textRenderInfo;
-  if (info === null || info === undefined) return null;
-  const bounds = info.visibleBounds ?? info.blockBounds;
+  // Rodada 17: a peça é uma malha comum (o monograma extrudado), e os limites
+  // são os da própria geometria. O caminho do troika fica para quem voltar a
+  // assar texto.
+  let bounds: readonly number[] | undefined;
+  if (info === null || info === undefined) {
+    const box = mesh.geometry.boundingBox;
+    if (box === null) return null;
+    bounds = [box.min.x, box.min.y, box.max.x, box.max.y];
+  } else {
+    bounds = info.visibleBounds ?? info.blockBounds;
+  }
   if (bounds === undefined || bounds.length < 4) return null;
   const [minX, minY, maxX, maxY] = bounds;
   if (

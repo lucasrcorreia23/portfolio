@@ -1,3 +1,5 @@
+import { MONOGRAM, MONOGRAM_CAP } from "./monogram-data";
+
 /**
  * As medidas da câmara. Uma unidade de mundo ≈ um metro.
  *
@@ -26,37 +28,50 @@ export const CHAMBER_NEAR = 12;
 export const SPECIMEN_Z = -26;
 
 /**
- * Corpo do corpo de prova, em unidades de mundo.
- *
- * Escolhido para fechar a regra dos 80% do PROJECT.md §3.2 **dentro da cena**,
- * no quadro que importa. No progresso 0.18 a câmera está a 14 unidades da
- * peça; com FOV de 45° isso dá `2 · 14 · tan(22.5°) = 11.6` de altura visível
- * e, a 16:10, `18.6` de largura. A peça tem sete caracteres com avanço de
- * ~0.80 em no Archivo Expanded, ou seja `7 × 0.80 × corpo` de largura. Para
- * ocupar 0.84 dessa largura:
- *
- *   corpo = 0.84 × 18.6 ÷ (7 × 0.80) ≈ 2.79
- *
- * O mesmo 0.84 do `--display-fill` em `styles/tokens.css`, e pela mesma razão:
- * quatro pontos de folga sobre o mínimo de 80%.
+ * A composição da assinatura: `plinth` (o L emoldurando R e C) ou `tight`
+ * (lado a lado). Ver `scripts/monogram.mjs`.
  */
-export const SPECIMEN_SIZE = 2.79;
-
-/** Altura de caixa alta da peça. O SDF fino do 3b se mede contra ela. */
-export const SPECIMEN_CAP_HEIGHT = SPECIMEN_SIZE * 0.72;
+export const MONOGRAM_VARIANT = "plinth" as const;
 
 /**
- * Meia-extensão da peça no plano dela, para o desvio de campo distante do
- * bando. Sete caracteres com avanço de ~0.80 em.
+ * Corpo do corpo de prova, em unidades de mundo por em.
  *
- * É uma **estimativa**, e ela basta para o que usa: o escoamento a essa
- * distância sente um bloco, não uma letra. A silhueta de verdade chega no 3b,
- * assada do próprio mesh. Medir aqui a caixa real do troika só poderia ser
- * feito depois do `sync()`, e amarraria a simulação ao ciclo de carregamento da
- * fonte por nenhum ganho visível.
+ * Desde a rodada 17 a peça é a assinatura LRC, não a palavra CORREIA. A conta
+ * é a mesma de sempre, pela largura do traço: no progresso 0.18 a câmera está
+ * a 14 unidades da peça, e com FOV de 45° a 16:10 isso dá `18.6` de largura
+ * visível. A palavra ocupava 0.84 dela (o `--display-fill` de
+ * `styles/tokens.css`); o monograma ocupa **0.62**:
+ *
+ *   corpo = 0.62 × 18.6 ÷ (largura do monograma em em)
+ *
+ * Com o `plinth` (1.903 em de largura) isso dá ~6.1, caixa alta ~4.2 e altura
+ * total ~5.4. A 0.84 a peça tinha 7.4 de altura e, vista fora do eixo no quadro
+ * do descolamento, transbordava a tela pelos dois lados (`.screens/17-descida`):
+ * uma marca de 2:1 não precisa da largura de uma palavra de sete letras para
+ * ser a coisa mais importante do quadro.
  */
-export const SPECIMEN_HALF_WIDTH = (7 * 0.8 * SPECIMEN_SIZE) / 2;
-export const SPECIMEN_HALF_HEIGHT = SPECIMEN_CAP_HEIGHT / 2;
+const MONOGRAM_WIDTH_EM = (MONOGRAM[MONOGRAM_VARIANT].bounds[2] - MONOGRAM[MONOGRAM_VARIANT].bounds[0]) / 1000;
+const MONOGRAM_HEIGHT_EM = (MONOGRAM[MONOGRAM_VARIANT].bounds[3] - MONOGRAM[MONOGRAM_VARIANT].bounds[1]) / 1000;
+export const SPECIMEN_SIZE = (0.62 * 18.6) / MONOGRAM_WIDTH_EM;
+
+/** Altura de caixa alta da peça. O SDF fino do 3b se mede contra ela. */
+export const SPECIMEN_CAP_HEIGHT = SPECIMEN_SIZE * (MONOGRAM_CAP / 1000);
+
+/**
+ * Meia-extensão da peça no plano dela, lida do contorno do monograma: é a
+ * caixa do traço, não uma estimativa por avanço de letra como era com o troika.
+ */
+export const SPECIMEN_HALF_WIDTH = (MONOGRAM_WIDTH_EM * SPECIMEN_SIZE) / 2;
+export const SPECIMEN_HALF_HEIGHT = (MONOGRAM_HEIGHT_EM * SPECIMEN_SIZE) / 2;
+
+/**
+ * A espessura da peça (rodada 17, decisão do Lucas de 2026-09-30): a
+ * assinatura é extrudada **de leve**, com chanfro. O campo de descolamento
+ * continua fino (DIRECTION.md §5, "os dois finos"): a banda do sólido cobre a
+ * profundidade da extrusão, e nada mais.
+ */
+export const SPECIMEN_DEPTH = 0.15 * SPECIMEN_CAP_HEIGHT;
+export const SPECIMEN_BEVEL = 0.03 * SPECIMEN_CAP_HEIGHT;
 
 /** Campo de visão vertical da câmera, em graus. Entra na conta acima. */
 export const CAMERA_FOV = 45;
