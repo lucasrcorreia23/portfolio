@@ -10,6 +10,7 @@ import {
   SPECIMEN_Z,
 } from "./world";
 import { CARD_WIDTH, resolveRiver } from "./cards";
+import { readingAt } from "./river-readings";
 
 /**
  * A coreografia da descida: onde a câmera está, para onde ela olha, e com que
@@ -43,6 +44,8 @@ type Stop = {
   at: number;
   position: readonly [number, number, number];
   target: readonly [number, number, number];
+  /** Uma leitura do rio: a câmera repousa aqui (ver `RIVER_HOLD`). */
+  river?: true;
 };
 
 /**
@@ -184,10 +187,6 @@ const READING_MAX = 16;
 const READING_LATERAL = 0.45;
 const READING_VERTICAL = 0.35;
 
-/** A primeira e a última leitura do rio, em progresso. */
-const RIVER_FIRST_READING = 0.5;
-const RIVER_LAST_READING = 0.8;
-
 function readingDistance(aspect: number): number {
   const halfWidth = Math.tan(MathUtils.degToRad(CAMERA_FOV / 2)) * aspect;
   const wanted = CARD_WIDTH / (2 * READING_FILL * halfWidth);
@@ -209,13 +208,13 @@ function riverStops(): Stop[] {
   const aspect =
     typeof window === "undefined" ? 1.6 : window.innerWidth / Math.max(window.innerHeight, 1);
   const distance = readingDistance(aspect);
-  const last = Math.max(river.count - 1, 1);
   return river.cards.map((card, index) => {
     const dx = card.x * (1 - READING_LATERAL);
     const dy = card.y * (1 - READING_VERTICAL);
     const dz = Math.sqrt(Math.max(distance * distance - dx * dx - dy * dy, 1));
     return {
-      at: RIVER_FIRST_READING + (RIVER_LAST_READING - RIVER_FIRST_READING) * (index / last),
+      at: readingAt(index, river.count),
+      river: true,
       position: [card.x * READING_LATERAL, card.y * READING_VERTICAL, card.z + dz],
       target: [card.x, card.y, card.z],
     };
@@ -266,8 +265,48 @@ export function readingProgress(cardZ: number): number {
       best = index;
     }
   });
-  const last = Math.max(river.count - 1, 1);
-  return RIVER_FIRST_READING + (RIVER_LAST_READING - RIVER_FIRST_READING) * (best / last);
+  return readingAt(best, river.count);
+}
+
+/**
+ * Quanto de cada lado de uma leitura do rio a câmera fica parada, em fração do
+ * intervalo entre duas paradas (rodada 14).
+ *
+ * Até a rodada 13 a câmera cruzava cada card sem parar: o progresso era linear
+ * por segmento e o Catmull-Rom passa direto pelo ponto de controle. Com sete
+ * cards a 0.05 de progresso um do outro — ~1.05 vh de rolagem por card no
+ * desktop —, um gesto de roda atravessava um ou dois cases. Com 0.28 de cada
+ * lado, 56% da rolagem entre duas leituras deixa a câmera parada num card, e a
+ * passagem acontece no resto, mais decidida. O snap do driver
+ * (`ScrollDriver`) puxa a rolagem para dentro desse repouso.
+ */
+const RIVER_HOLD = 0.28;
+
+/** Smootherstep: derivada zero nas duas pontas e na segunda também. */
+function smoother(x: number): number {
+  const t = clamp01(x);
+  return t * t * t * (t * (t * 6 - 15) + 10);
+}
+
+/**
+ * O `local` de um segmento, com repouso nas pontas que são leituras do rio.
+ * Um segmento que só tem o rio de um lado (a entrada, de Quem sou, e a saída,
+ * para a Superfície) repousa só desse lado e chega/sai com velocidade do outro.
+ */
+function holdLocal(local: number, fromRiver: boolean, toRiver: boolean): number {
+  const h = RIVER_HOLD;
+  if (fromRiver && toRiver) return smoother((local - h) / (1 - 2 * h));
+  if (toRiver) return arrive(clamp01(local / (1 - h)));
+  if (fromRiver) return 1 - arrive(1 - clamp01((local - h) / (1 - h)));
+  return local;
+}
+
+/**
+ * `u + u² − u³`: sai com a derivada 1 (a velocidade do segmento vizinho, sem
+ * degrau) e chega com derivada zero (o repouso).
+ */
+function arrive(u: number): number {
+  return u + u * u - u * u * u;
 }
 
 /**
@@ -286,7 +325,7 @@ function curveParam(stops: readonly Stop[], progress: number): number {
 
     const span = b.at - a.at;
     const local = span <= 0 ? 0 : (p - a.at) / span;
-    return (i + local) / last;
+    return (i + holdLocal(local, a.river === true, b.river === true)) / last;
   }
 
   return 1;
