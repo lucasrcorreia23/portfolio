@@ -3,14 +3,19 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
-  AdditiveBlending,
   BufferAttribute,
   GLSL3,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
   HalfFloatType,
+  MathUtils,
   LinearFilter,
   NearestFilter,
+  NoBlending,
+  CustomBlending,
+  MaxEquation,
+  MinEquation,
+  OneFactor,
   NoColorSpace,
   RGBAFormat,
   ShaderMaterial,
@@ -27,7 +32,12 @@ import {
   AHEAD_ROWS_FRAG,
   AHEAD_SUM_FRAG,
 } from "@/lib/scene/shaders/ahead";
-import { SPORE_FRAG, SPORE_SCALE, SPORE_VERT } from "@/lib/scene/shaders/body";
+import {
+  BODY_FRAG,
+  BODY_VERT,
+  GLOW_FRAG,
+  GLOW_VERT,
+} from "@/lib/scene/shaders/body";
 import {
   BOIDS_POSITION_FRAG,
   boidsVelocityFrag,
@@ -36,10 +46,8 @@ import { SEED_FRAG } from "@/lib/scene/shaders/seed";
 import type { FlockRead } from "@/lib/scene/probe";
 import { TYPE_ARTICLE } from "@/lib/scene/type-article";
 import {
-  SPRITE_LAYER,
   cardUniforms,
   fogUniforms,
-  spriteUniforms,
   type SharedUniforms,
 } from "@/lib/scene/uniforms";
 import {
@@ -239,24 +247,46 @@ export function Flock({
     };
     const seedMaterial = createPassMaterial(SEED_FRAG, seedUniforms, GLSL3);
 
-    // **O esporo é um quad voltado para a tela** (rodada 19): a lasca
-    // lenticular e o halo saíram. Um quad por instância, as mesmas referências
-    // da textura da simulação. Ver o docblock de `shaders/body.ts`.
+    // Corpo lenticular: um fuso de seis vértices e oito triângulos — nariz,
+    // cauda e um anel de quatro no meio.
+    //
+    // **Volume, e não um plano.** Um quad orientado pela velocidade fica
+    // invisível exatamente quando o corpo voa na direção da câmera, que é o
+    // caso desta cena o tempo todo: o plano passa a conter a direção do olhar e
+    // a área projetada vai a zero. O DIRECTION.md §5 pede "corpo lenticular de
+    // poucos triângulos", e lenticular é uma lente — tem espessura. Oito
+    // triângulos custam praticamente o mesmo que dois e se leem de qualquer
+    // ângulo.
+    //
+    // Achatado no eixo Y (0.09 contra 0.16 em X): continua sendo uma lasca com
+    // direção, não um corpo redondo, e nada nele lembra asa ou pássaro
+    // (DIRECTION.md §6).
+    const geometry = new InstancedBufferGeometry();
+    geometry.setAttribute(
+      "position",
+      new BufferAttribute(
+        new Float32Array([
+          0.0, 0.0, 1.0, // 0 nariz
+          0.0, 0.0, -1.0, // 1 cauda
+          0.16, 0.0, -0.1, // 2 flanco direito
+          0.0, 0.09, -0.1, // 3 dorso
+          -0.16, 0.0, -0.1, // 4 flanco esquerdo
+          0.0, -0.09, -0.1, // 5 ventre
+        ]),
+        3,
+      ),
+    );
+    geometry.setIndex([
+      0, 2, 3, 0, 3, 4, 0, 4, 5, 0, 5, 2, // nariz → anel
+      1, 3, 2, 1, 4, 3, 1, 5, 4, 1, 2, 5, // cauda → anel, winding invertido
+    ]);
+
     const count = size * size;
     const refs = new Float32Array(count * 2);
     for (let i = 0; i < count; i += 1) {
       refs[i * 2] = ((i % size) + 0.5) / size;
       refs[i * 2 + 1] = (Math.floor(i / size) + 0.5) / size;
     }
-    const geometry = new InstancedBufferGeometry();
-    geometry.setAttribute(
-      "position",
-      new BufferAttribute(
-        new Float32Array([-1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0]),
-        3,
-      ),
-    );
-    geometry.setIndex([0, 1, 2, 0, 2, 3]);
     geometry.setAttribute("aRef", new InstancedBufferAttribute(refs, 2));
     geometry.instanceCount = count;
     geometry.boundingSphere = new Sphere(new Vector3(), 1e4);
@@ -267,38 +297,94 @@ export function Flock({
     const bodyPos = { value: position[0].texture };
     const bodyVel = { value: velocity[0].texture };
 
-    const sporeMaterial = new ShaderMaterial({
+    const focalPx = { value: 1086 };
+    const bodyMaterial = new ShaderMaterial({
       uniforms: {
         ...fogUniforms(shared),
-        ...spriteUniforms(shared),
         uPos: bodyPos,
         uVel: bodyVel,
-        uSporeScale: { value: SPORE_SCALE },
+        uBodyScale: { value: 0.085 },
+        uFocalPx: focalPx,
+        uDawn: shared.dawn,
         uForming: shared.forming,
         uTeal: shared.teal,
         uCyan: shared.cyan,
         uRose: shared.rose,
         uCoral: shared.coral,
         uMist: shared.mist,
-        uViolet: shared.violet,
-        uMagenta: shared.magenta,
         uPointer: shared.pointer,
         uPointerColor: shared.pointerColor,
         uSpecimenZ: shared.specimenZ,
-        uGain: { value: 1.15 },
+        uGain: { value: 2.4 },
         uFormingFrag: shared.forming,
+        uCards: shared.cards,
+        uCardCount: shared.cardCount,
+        uCardAmount: shared.cardAmount,
       },
-      vertexShader: SPORE_VERT,
-      fragmentShader: SPORE_FRAG,
-      // Aditivos, sem profundidade: moram no alvo dos sprites, que não tem
-      // buffer de profundidade — o teste contra a cena é feito no shader.
-      transparent: true,
-      depthTest: false,
-      depthWrite: false,
-      blending: AdditiveBlending,
+      vertexShader: BODY_VERT,
+      fragmentShader: BODY_FRAG,
+      // Opaco, com escrita de profundidade. É o que permite metade do bando
+      // ficar na frente das letras e metade atrás — ver o docblock de
+      // `lib/scene/shaders/body.ts`.
+      transparent: false,
+      depthTest: true,
+      depthWrite: true,
+      blending: NoBlending,
       toneMapped: false,
     });
-    sporeMaterial.glslVersion = GLSL3;
+    bodyMaterial.glslVersion = GLSL3;
+
+    // O halo (rodada 13): um quad por corpo, as mesmas referências da textura.
+    // Ver GLOW_VERT em `shaders/body.ts`.
+    const glowGeometry = new InstancedBufferGeometry();
+    glowGeometry.setAttribute(
+      "position",
+      new BufferAttribute(
+        new Float32Array([-1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0]),
+        3,
+      ),
+    );
+    glowGeometry.setIndex([0, 1, 2, 0, 2, 3]);
+    glowGeometry.setAttribute("aRef", new InstancedBufferAttribute(refs, 2));
+    glowGeometry.instanceCount = count;
+    glowGeometry.boundingSphere = new Sphere(new Vector3(), 1e4);
+    const viewportPx = { value: new Vector2(1440, 900) };
+    const glowMaterial = new ShaderMaterial({
+      uniforms: {
+        ...fogUniforms(shared),
+        uPos: bodyPos,
+        uVel: bodyVel,
+        uBodyScale: bodyMaterial.uniforms["uBodyScale"] ?? { value: 0.085 },
+        uFocalPx: focalPx,
+        uViewportPx: viewportPx,
+        uCardAmount: shared.cardAmount,
+        uForming: shared.forming,
+        uTeal: shared.teal,
+        uCyan: shared.cyan,
+        uRose: shared.rose,
+        uCoral: shared.coral,
+        uMist: shared.mist,
+        uGain: bodyMaterial.uniforms["uGain"] ?? { value: 2.4 },
+        uFormingFrag: shared.forming,
+      },
+      vertexShader: GLOW_VERT,
+      fragmentShader: GLOW_FRAG,
+      // **Máximo, não soma**, testando a profundidade e sem escrevê-la: um halo
+      // atrás de uma letra é escondido por ela, e nenhum halo esconde nada. A
+      // soma aditiva empilhava centenas de halos no poleiro de Quem sou e a
+      // coluna virava uma parede de luz; com o máximo, onde eles se sobrepõem
+      // vale o mais claro — como os corpos opacos da rodada 8, que também não
+      // somavam.
+      transparent: true,
+      depthTest: true,
+      depthWrite: false,
+      blending: CustomBlending,
+      blendEquation: MaxEquation,
+      blendSrc: OneFactor,
+      blendDst: OneFactor,
+      toneMapped: false,
+    });
+    glowMaterial.glslVersion = GLSL3;
 
     return {
       position,
@@ -309,7 +395,11 @@ export function Flock({
       seedMaterial,
       seedUniforms,
       geometry,
-      sporeMaterial,
+      bodyMaterial,
+      glowGeometry,
+      glowMaterial,
+      viewportPx,
+      focalPx,
       bodyPos,
       bodyVel,
       aheadRows,
@@ -329,7 +419,9 @@ export function Flock({
       held.velocityMaterial.dispose();
       held.positionMaterial.dispose();
       held.seedMaterial.dispose();
-      held.sporeMaterial.dispose();
+      held.bodyMaterial.dispose();
+      held.glowMaterial.dispose();
+      held.glowGeometry.dispose();
       held.geometry.dispose();
       held.aheadRows.dispose();
       held.aheadRowsMaterial.dispose();
@@ -460,7 +552,18 @@ export function Flock({
     };
   }, [readRef, rig]);
 
-  useFrame((_state, delta) => {
+  useFrame((state, delta) => {
+    // O halo soma pelo máximo à noite e tinge pelo mínimo de manhã (rodada 18).
+    // É estado de mistura, não de programa: trocar não recompila nada.
+    rig.glowMaterial.blendEquation = shared.dawn.value > 0.5 ? MinEquation : MaxEquation;
+    // A focal em pixels de CSS, para o teto de tamanho dos corpos
+    // (`BODY_MAX_PX` em `shaders/body.ts`). Da altura da janela, não do
+    // buffer: o critério é em pixels de tela, e o DPR não o muda.
+    const fovCamera = state.camera as { fov?: number };
+    const fov = MathUtils.degToRad(fovCamera.fov ?? 45);
+    rig.viewportPx.value.set(state.size.width, state.size.height);
+    rig.focalPx.value = state.size.height / (2 * Math.tan(fov / 2));
+
     // O passo é clampado: o `lagSmoothing(0)` do driver é deliberado, então
     // voltar de uma aba em segundo plano entrega vários segundos de uma vez, e
     // um passo desse tamanho explode a integração.
@@ -474,14 +577,21 @@ export function Flock({
     );
   }, -5);
 
-  // Na camada dos sprites: fora do passo da cena, desenhados pelo compositor
-  // no alvo deles (rodada 19).
   return (
-    <mesh
-      geometry={rig.geometry}
-      material={rig.sporeMaterial}
-      frustumCulled={false}
-      layers={SPRITE_LAYER}
-    />
+    <>
+      <mesh
+        geometry={rig.geometry}
+        material={rig.bodyMaterial}
+        frustumCulled={false}
+      />
+      {/* O halo depois de tudo que é transparente (o corpo de prova incluído):
+          ele testa a profundidade que a letra escreveu. */}
+      <mesh
+        geometry={rig.glowGeometry}
+        material={rig.glowMaterial}
+        frustumCulled={false}
+        renderOrder={10}
+      />
+    </>
   );
 }

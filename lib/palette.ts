@@ -19,8 +19,6 @@ export const PALETTE_TOKENS = [
   "coral",
   "peach",
   "mist",
-  "violet",
-  "magenta",
 ] as const;
 
 export type PaletteToken = (typeof PALETTE_TOKENS)[number];

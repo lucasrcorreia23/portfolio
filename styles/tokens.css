@@ -18,8 +18,6 @@
   --coral: #ff7a4d; /* calor, ponto de fuga */
   --peach: #ffc8a2; /* luz mais alta */
   --mist: #dce9ec; /* texto sobre escuro */
-  --violet: #8a6cff; /* rodada 19: a cor como massa (activetheory.net) */
-  --magenta: #e052c4; /* rodada 19: flores e esporos quentes */
 
   /* Durações — DIRECTION.md §4/§5. Não existe duração linear no projeto;
      toda transição usa --ease-strong (declarado no @theme abaixo). */
@@ -103,8 +101,6 @@
   --coral: #d8552a;
   --peach: #e9964f;
   --mist: #0c1d27;
-  --violet: #5a3fc4;
-  --magenta: #a82c8a;
 }
 
 /* ---------------------------------------------------------------------------
@@ -125,8 +121,6 @@
   --color-coral: var(--coral);
   --color-peach: var(--peach);
   --color-mist: var(--mist);
-  --color-violet: var(--violet);
-  --color-magenta: var(--magenta);
 
   /* Duas famílias, papéis rígidos — PROJECT.md §3.2.
      Nenhuma terceira família entra no projeto. */

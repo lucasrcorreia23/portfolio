@@ -181,9 +181,6 @@ function renderMask(
     3,
   );
   camera.position.set(0, 0, 2);
-  // A peça mora na camada do vidro desde a rodada 20; o assado a vê em
-  // qualquer camada.
-  camera.layers.enableAll();
   camera.updateMatrixWorld();
 
   const previousTarget = gl.getRenderTarget();

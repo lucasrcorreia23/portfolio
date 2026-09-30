@@ -39,24 +39,14 @@ parece**. Onde os dois divergirem, o `PROJECT.md` ganha.
 > 9. **O cursor é uma luz quente** (âmbar, o peach com menos azul) que acende o
 >    que está perto e que o bando evita, como os quadros.
 >
-> **Segunda leva, mesmo dia, com o activetheory.net como referência de nível**
-> (o quadro dos cards de vidro diante das flores de partículas). Valem sobre o
-> texto abaixo e sobre os itens 1, 3, 5 e 8 acima:
->
-> 10. **Não há câmara.** As paredes somem: o espaço é vazio escuro com névoa
->     volumétrica colorida, e a estrutura são **formações orgânicas de
->     partículas** (flores, corais, musgo de pontos). Fósseis, réguas, raízes e
->     água saem com as paredes.
-> 11. **O organismo são esporos luminosos**, não lascas: orbes de tamanhos
->     variados, com núcleo e bokeh. "Nenhum indivíduo legível" continua valendo
->     pela massa.
-> 12. **O corpo de prova é vidro iridescente**, transmissivo: refrata os
->     esporos atrás dele. O descolamento continua sendo o frame.
-> 13. **Os cards são placas de vidro grossas**, com canto arredondado suave e
->     borda acesa, a imagem do case dentro e a flora refratando por trás
->     (revoga o item 8).
-> 14. **A cor é massa.** A paleta ganha `--violet` e `--magenta`; a regra dos
->     15% de rosa e coral cai (PROJECT.md §3.1).
+> **Uma segunda leva (vazio sem câmara, esporos com bokeh, LRC e cards de
+> vidro, paleta com violeta e magenta), tentada no mesmo dia com o
+> activetheory.net como referência, foi desfeita pelo Lucas:** "preferiria que
+> eu soubesse onde eu estava, que apesar de estar imerso me lembrava um rio com
+> água. Volte, só precisava de mais sutileza e realismo." O lugar fica — a
+> câmara e o rio. O que muda a seguir é o acabamento: água de verdade, paredes
+> com textura real, organismo mais sutil, luz mais natural. Registro da
+> tentativa no MEASUREMENTS.md, "Rodadas 19 a 21, desfeitas".
 
 ---
 

@@ -171,7 +171,6 @@ void main() {
  */
 export const BLOOM_THRESHOLD_FRAG = /* glsl */ `
 uniform sampler2D uSource;
-uniform sampler2D uSprites;
 uniform float uThreshold;
 uniform float uSoftKnee;
 
@@ -179,9 +178,7 @@ in vec2 vUv;
 out vec4 fragColor;
 
 void main() {
-  // Os sprites (esporos, lanternas, formações) moram num alvo à parte desde a
-  // rodada 19 e florescem como tudo o mais.
-  vec3 c = texture(uSource, vUv).rgb + texture(uSprites, vUv).rgb;
+  vec3 c = texture(uSource, vUv).rgb;
   float luma = dot(c, vec3(0.2126, 0.7152, 0.0722));
 
   float knee = uThreshold * uSoftKnee + 1e-5;
@@ -193,26 +190,6 @@ void main() {
   // corpo isolado atravessando um pixel.
   float karis = 1.0 / (1.0 + luma);
   fragColor = vec4(c * contribution * karis, 1.0);
-}
-`;
-
-/**
- * O fundo do vidro (rodada 20): a cena e os esporos somados, na mesma regra
- * do composite — de manhã os esporos são tinta. É o que o vidro refrata.
- */
-export const BACKDROP_FRAG = /* glsl */ `
-uniform sampler2D uSource;
-uniform sampler2D uSprites;
-uniform float uDawn;
-
-in vec2 vUv;
-out vec4 fragColor;
-
-void main() {
-  vec3 c = texture(uSource, vUv).rgb;
-  vec3 sp = texture(uSprites, vUv).rgb;
-  c = mix(c + sp, c * (1.0 - clamp(dot(sp, vec3(0.3333)), 0.0, 0.85)) + sp * 0.12, uDawn);
-  fragColor = vec4(c, 1.0);
 }
 `;
 
@@ -336,12 +313,10 @@ void main() {
  */
 export const VEIL_SEED_FRAG = /* glsl */ `
 uniform sampler2D uSource;
-uniform sampler2D uSprites;
 uniform sampler2D uBloom;
 uniform vec2  uTexel;
 uniform float uBloomStrength;
 uniform float uExposure;
-uniform float uDawn;
 
 in vec2 vUv;
 out vec4 fragColor;
@@ -354,10 +329,7 @@ void main() {
   for (int y = 0; y < 4; y++) {
     for (int x = 0; x < 4; x++) {
       vec2 uv = vUv + (vec2(float(x), float(y)) - 1.5) * uTexel;
-      vec3 sp = texture(uSprites, uv).rgb;
-      vec3 c = texture(uSource, uv).rgb;
-      c = mix(c + sp, c * (1.0 - clamp(dot(sp, vec3(0.3333)), 0.0, 0.85)) + sp * 0.12, uDawn);
-      c += texture(uBloom, uv).rgb * uBloomStrength;
+      vec3 c = texture(uSource, uv).rgb + texture(uBloom, uv).rgb * uBloomStrength;
       c = vec3(1.0) - exp(-c * uExposure);
       float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
       peak = max(peak, l);
@@ -466,7 +438,6 @@ void main() {
 export const COMPOSITE_FRAG = /* glsl */ `
 uniform sampler2D uScene;
 uniform sampler2D uBlurred;
-uniform sampler2D uSprites;
 uniform sampler2D uBloom;
 uniform vec2  uResolution;
 uniform float uBloomStrength;
@@ -582,15 +553,6 @@ void main() {
   float blend = uDofEnabled < 0.5 ? 0.0 : smoothstep(0.0, 0.35, cocAt(uv));
 
   vec3 color = sampleFocused(uv, blend).rgb;
-
-  // **Os sprites entram depois da profundidade de campo** (rodada 19): eles
-  // trazem o próprio bokeh, pelo tamanho. Pela DOF da cena seriam borrados
-  // pela profundidade do fundo — que no vazio é o infinito. De manhã eles são
-  // tinta: escurecem o ar claro em vez de somar luz a ele.
-  vec3 sprites = texture(uSprites, uv).rgb;
-  color = mix(color + sprites,
-    color * (1.0 - clamp(dot(sprites, vec3(0.3333)), 0.0, 0.85)) + sprites * 0.12,
-    uDawn);
 
   color += texture(uBloom, uv).rgb * uBloomStrength;
 

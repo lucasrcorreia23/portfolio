@@ -53,7 +53,6 @@ import { flowTarget } from "@/lib/scene/river-flow";
 import { CARD_FRAG, CARD_VERT } from "@/lib/scene/shaders/cards";
 import {
   fogUniforms,
-  GLASS_LAYER,
   lightUniforms,
   type SharedUniforms,
 } from "@/lib/scene/uniforms";
@@ -368,7 +367,6 @@ export function Cards({ shared, river }: CardsProps) {
         uDockCover: shared.dockCover,
         uDockCoverCrop: shared.dockCoverCrop,
         uCaseRecess: shared.caseRecess,
-        uBackdrop: shared.backdrop,
         ...local,
       },
       vertexShader: CARD_VERT,
@@ -666,9 +664,5 @@ export function Cards({ shared, river }: CardsProps) {
     }
   }, -7);
 
-  // Na camada do vidro (rodada 20): desenhados depois da cena e dos esporos,
-  // amostrando os dois como fundo refratado.
-  return (
-    <mesh geometry={geometry} material={material} frustumCulled={false} layers={GLASS_LAYER} />
-  );
+  return <mesh geometry={geometry} material={material} frustumCulled={false} />;
 }

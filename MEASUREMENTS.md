@@ -2299,6 +2299,19 @@ chunk da cena **301.7 kB**. Sobram 48.3 kB do teto da cena.
 - A troca de tema no meio da descida: funciona (a cena relê a paleta), mas é
   um corte, sem transição.
 
+## Rodadas 19 a 21, desfeitas
+
+Com o activetheory.net como referência, a descida foi refeita em três passos
+— esporos com bokeh numa camada de sprites somada depois da DOF (19), LRC e
+cards de vidro por um passo de transmissão no compositor (20), e a câmara
+dissolvida num vazio de nebulosa com formações de ~365 mil pontos (21). O
+contraste ficou em 5.67–5.69 nos três. O Lucas desfez os três: sem a câmara
+ele não sabia onde estava, e o site deixou de lembrar um rio. A lição está na
+memória `movimento-natural`: o pedido era sutileza e realismo **no lugar que já
+existia**, não um lugar novo. Os commits continuam no histórico
+(`5416158` a `22c5f65`) se alguma peça — a camada de sprites, o passo de vidro
+— for útil de novo.
+
 ## Desempenho da cena, medido
 
 Varredura sintética de 0.00 a 0.28, passo de relógio fixo em 1/60 s, DPR travado

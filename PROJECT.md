@@ -78,8 +78,7 @@ Base escura, com a luz nascendo dentro da névoa. Tokens em CSS custom propertie
 Regras não negociáveis:
 
 - Nada de gradiente linear de duas paradas. Toda transição de cor é volumétrica e granulada, feita em shader ou em textura, com pelo menos três paradas e ruído.
-- ~~Coral e rosa são **eventos**, não fundo. Ocupam menos de 15 dos 100 por cento de qualquer tela.~~
-  > **Decisão do Lucas, 2026-09-30:** a regra cai. A referência passou a ser o nível de cor do activetheory.net — rosa, magenta, violeta e azul como massa, não evento. A cor é governada pelo contraste do texto e pelo equilíbrio de cada quadro. A paleta ganha `--violet` e `--magenta` (ver `styles/tokens.css`).
+- Coral e rosa são **eventos**, não fundo. Ocupam menos de 15 dos 100 por cento de qualquer tela.
 - Branco puro `#FFFFFF` é proibido. Texto claro usa `--mist`.
 - Grão de filme real aplicado em pós-processamento, animado por frame, com intensidade entre 0.03 e 0.06. Nunca um PNG de ruído estático repetido.
 
