@@ -7,6 +7,7 @@ import {
   louverShadowHalf,
   OUTSIDE_LIGHT,
   PLAN_FAR,
+  WATER_LEVEL,
 } from "../chamber-plan";
 import { SPECIMEN_Z } from "../world";
 import { FOG_GLSL, FOG_UNIFORMS_GLSL } from "./fog";
@@ -142,6 +143,15 @@ vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity
   // a névoa.
   vec3 albedo = uWallColor * (0.55 + 0.9 * grain * mix(1.0, 0.45, ceilingness));
 
+  // **Água no concreto** (rodada 22). Manchas escorrendo do alto — o ruído é
+  // esticado na vertical, então vira risco, não mancha —, e a faixa junto ao
+  // rio escura e molhada. É o que faz a parede ser de um lugar úmido, e não uma
+  // superfície de render.
+  float streak = sceneNoise(vec3(world.z * 1.7 + world.x * 1.7, world.y * 0.11, 4.0));
+  streak = smoothstep(0.5, 0.88, streak) * (1.0 - floorness) * (1.0 - ceilingness);
+  float wetBand = (1.0 - floorness) * (1.0 - smoothstep(${f(WATER_LEVEL + 0.05)}, ${f(WATER_LEVEL + 1.4)}, world.y));
+  albedo *= (1.0 - 0.35 * streak) * (1.0 - 0.5 * wetBand);
+
   // A luz do bando, **de alcance curto**. A estrutura aparece de relance, onde
   // um aglomerado passa rente, e some quando ele vai embora. Parede: rasante.
   // Piso: direta, porque o bando passa por cima dele. Teto: quase nada.
@@ -166,6 +176,22 @@ vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity
   // superfície, e é ele que dá a cor à poça.
   color += (albedo * 18.0 + 0.05) * lamp * mix(1.0, 0.5, ceilingness);
 
+  // **O brilho molhado** (rodada 22). Onde a parede está molhada — a faixa
+  // junto ao rio e os riscos de escorrimento —, a luz que passa deixa um
+  // reflexo especular na superfície em relevo. Seco, o concreto é fosco.
+  {
+    float gloss = 0.12 + 0.88 * max(wetBand, streak * 0.55);
+    vec3 V = normalize(cameraPosition - world);
+    vec3 sheen = vec3(0.0);
+    for (int i = 0; i < 4; i++) {
+      vec3 d = uClusters[i].xyz - world;
+      vec3 H = normalize(normalize(d) + V);
+      sheen += uClusterColor[i] * uClusters[i].w * pow(max(dot(shadingNormal, H), 0.0), 48.0)
+        / (1.0 + dot(d, d) * 0.03);
+    }
+    color += sheen * gloss * 0.5;
+  }
+
   // **Musgo e líquen** (rodada 16). Manchas nas quinas baixas das paredes e
   // nas bordas do piso, pontilhadas de líquen; brilho próprio fraquíssimo que
   // sobe quando a luz do bando ou de uma lanterna passa rente. Longe do corpo
@@ -182,10 +208,10 @@ vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity
     mossAmount = moss;
     if (moss > 0.0) {
       vec3 hue = mix(uCyan, uPeach, smoothstep(0.35, 0.7, sceneNoise(world * 0.07 + vec3(11.0))));
-      // O piso de 0.03 é o líquen sozinho no escuro: constelações fracas nas
-      // quinas baixas, que dão à parede uma presença sem acendê-la.
-      float excite = 0.03 + 0.5 * lit + 1.4 * dot(lamp, vec3(0.3333));
-      color += hue * moss * min(excite, 0.6) * 0.55;
+      // Rodada 22: mais sutil — metade da saturação e um piso quase nulo.
+      hue = mix(hue, vec3(dot(hue, vec3(0.3333))), 0.45);
+      float excite = 0.012 + 0.45 * lit + 1.2 * dot(lamp, vec3(0.3333));
+      color += hue * moss * min(excite, 0.5) * 0.35;
     }
   }
   // A fonte a montante, com incidência. Ela entra pela abertura do fundo, então
@@ -255,9 +281,41 @@ vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity
  * sombreamento nasce, e hoje é a da geometria.
  */
 export const ENGRAVING_GLSL = /* glsl */ `
+/**
+ * **O relevo do concreto** (rodada 22). No lugar dos fósseis desenhados, a
+ * própria superfície: três escalas de ruído (a ondulação larga de uma parede
+ * que envelheceu, a média das emendas, a fina do grão), e pequenas cavidades
+ * onde o relevo afunda. É a luz rasante do bando e das lanternas que o revela.
+ */
+float rockHeight(vec2 q) {
+  return sceneNoise(vec3(q * 0.33, 1.7)) * 0.58
+    + sceneNoise(vec3(q * 1.25, 5.1)) * 0.3
+    + sceneNoise(vec3(q * 4.1, 9.3)) * 0.12;
+}
+
 vec3 engrave(vec3 world, vec3 n, float kind, out float cavity) {
   cavity = 0.0;
-  return n;
+  if (kind > 0.5) return n;
+  vec2 q;
+  vec3 tu;
+  vec3 tv;
+  if (abs(n.x) > 0.7) {
+    q = world.zy;
+    tu = vec3(0.0, 0.0, 1.0);
+    tv = vec3(0.0, 1.0, 0.0);
+  } else if (abs(n.y) > 0.7) {
+    q = world.xz;
+    tu = vec3(1.0, 0.0, 0.0);
+    tv = vec3(0.0, 0.0, 1.0);
+  } else {
+    return n;
+  }
+  const float e = 0.035;
+  float h = rockHeight(q);
+  float hu = (rockHeight(q + vec2(e, 0.0)) - h) / e;
+  float hv = (rockHeight(q + vec2(0.0, e)) - h) / e;
+  cavity = smoothstep(0.42, 0.18, h) * 0.3;
+  return normalize(n - (tu * hu + tv * hv) * 0.3);
 }
 `;
 

@@ -212,6 +212,13 @@ export const SILL_DEPTH = 2.2;
 export const SILL_HALF_WIDTH = APERTURE_HALF_WIDTH + 0.6;
 export const SILL_TOP = APERTURE_Y - APERTURE_HALF_HEIGHT;
 
+/**
+ * O nível do rio (rodada 22): a lâmina d'água corre a esta altura, logo
+ * abaixo do bando, dos cards e do plinto do LRC. O concreto usa para molhar a
+ * faixa da parede junto à água.
+ */
+export const WATER_LEVEL = -3.6;
+
 /** Quanto o nicho recua, e o comprimento dele ao longo do eixo. */
 export const NICHE_DEPTH = 2;
 const NICHE_HALF_LENGTH = 1.2;

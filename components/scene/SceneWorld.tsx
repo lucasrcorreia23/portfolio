@@ -50,7 +50,6 @@ import { ProbeClock } from "./ProbeClock";
 import { Roots } from "./Roots";
 import { SceneClock } from "./SceneClock";
 import { Specimen } from "./Specimen";
-import { Structure } from "./Structure";
 import { Water } from "./Water";
 
 /** Ponto a montante da peça onde se mede a densidade que acende o rim. */
@@ -516,7 +515,6 @@ export function SceneWorld({
         <SceneClock />
       )}
       <Chamber shared={shared} plan={plan} />
-      <Structure shared={shared} plan={plan} />
       {settings.water ? <Water shared={shared} /> : null}
       <Roots shared={shared} plan={plan} />
       {/* O rio. `?cards=0` tira as malhas **e** as esteiras do shader dos

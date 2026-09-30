@@ -17,7 +17,7 @@ import {
   WebGLRenderTarget,
   type Mesh,
 } from "three";
-import { PLAN_FAR, PLAN_NEAR } from "@/lib/scene/chamber-plan";
+import { PLAN_FAR, PLAN_NEAR, WATER_LEVEL } from "@/lib/scene/chamber-plan";
 import { FOG_GLSL, FOG_UNIFORMS_GLSL } from "@/lib/scene/shaders/fog";
 import { LIGHTS_GLSL, LIGHTS_UNIFORMS_GLSL } from "@/lib/scene/shaders/lights";
 import {
@@ -54,7 +54,7 @@ import {
  * LRC: as peças pairam sobre a água, e o reflexo delas entra na metade de
  * baixo da tela.
  */
-export const WATER_Y = -3.6;
+export const WATER_Y = WATER_LEVEL;
 
 const HALF_WIDTH = 17;
 
