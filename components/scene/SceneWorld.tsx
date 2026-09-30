@@ -44,6 +44,7 @@ import { Composer } from "./Composer";
 import { Flock } from "./Flock";
 import { Lamps } from "./Lamps";
 import { ProbeClock } from "./ProbeClock";
+import { Roots } from "./Roots";
 import { SceneClock } from "./SceneClock";
 import { Specimen } from "./Specimen";
 import { Structure } from "./Structure";
@@ -490,6 +491,7 @@ export function SceneWorld({
       )}
       <Chamber shared={shared} plan={plan} />
       <Structure shared={shared} plan={plan} />
+      <Roots shared={shared} plan={plan} />
       {/* O rio. `?cards=0` tira as malhas **e** as esteiras do shader dos
           boids — é o A/B de desempenho e, ao mesmo tempo, o controle da medida
           de esteira (ver `lib/scene/settings.ts`). */}
