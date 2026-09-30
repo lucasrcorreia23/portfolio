@@ -17,7 +17,13 @@ import {
   WebGLRenderTarget,
   type Mesh,
 } from "three";
-import { PLAN_FAR, PLAN_NEAR, WATER_LEVEL } from "@/lib/scene/chamber-plan";
+import {
+  APERTURE_Y,
+  LOUVER_Z,
+  PLAN_FAR,
+  PLAN_NEAR,
+  WATER_LEVEL,
+} from "@/lib/scene/chamber-plan";
 import { FOG_GLSL, FOG_UNIFORMS_GLSL } from "@/lib/scene/shaders/fog";
 import { LIGHTS_GLSL, LIGHTS_UNIFORMS_GLSL } from "@/lib/scene/shaders/lights";
 import {
@@ -125,6 +131,25 @@ void main() {
     + texture(uReflection, uv - vec2(0.0, smear)).rgb
     + texture(uReflection, uv + vec2(0.0, smear * 2.0)).rgb
   ) * 0.25;
+
+  // **A claridade da névoa, refletida** (rodada 22). O reflexo planar só
+  // devolve o que a câmera espelhada vê a poucas dezenas de unidades — o teto
+  // escuro, a parede sem luz —, e longe das peças a água saía um preto chapado.
+  // Um rio de verdade, à noite, ainda devolve o céu: aqui o céu é a névoa
+  // acesa pela fonte a montante, então a direção refletida pega o mesmo halo
+  // que a névoa tem na direção da abertura (sourceHalo, em fog.ts), sem o
+  // ruído — a ondulação da superfície já o quebra em riscas. Só onde o
+  // reflexo é escuro: onde há uma peça refletida, ela manda.
+  {
+    vec3 r = reflect(-v, n);
+    vec3 toSource = normalize(vec3(0.0, ${APERTURE_Y.toFixed(3)}, ${LOUVER_Z.toFixed(3)}) - vWorld);
+    float angle = sqrt(max(2.0 * (1.0 - dot(r, toSource)), 0.0));
+    float halo = 0.8 * exp(-pow(angle / 0.14, 2.0)) + 0.3 * exp(-pow(angle / 0.5, 2.0));
+    vec3 haloColor = mix(uDeep, uVoid * 1.1 + uPeach * 0.05, uDawn);
+    vec3 sky = mix(uAbyss, haloColor, clamp(halo, 0.0, 1.0));
+    float dark = 1.0 - smoothstep(0.0, 0.05, dot(reflected, vec3(0.2126, 0.7152, 0.0722)));
+    reflected += sky * dark * 0.8;
+  }
 
   // O corpo da água: escuro, um pouco de teal, e a luz que passa perto
   // atravessando a lâmina.
