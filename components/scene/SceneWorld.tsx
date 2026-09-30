@@ -31,7 +31,9 @@ import { createProxySim } from "@/lib/scene/proxy-sim";
 import type { RiverCard } from "@/lib/scene/river-content";
 import { clearSoundField, publishSoundField } from "@/lib/audio/field-store";
 import { clearReadout, publishReadout } from "@/lib/scene/readout-store";
-import { createSharedUniforms } from "@/lib/scene/uniforms";
+import { applyPalette, createSharedUniforms } from "@/lib/scene/uniforms";
+import { readPalette } from "@/lib/palette";
+import { getTheme, subscribeToTheme } from "@/lib/theme";
 import { sceneSettings } from "@/lib/scene/settings";
 import { readVeilBoxes, writeVeilBoxes, type VeilBox } from "@/lib/scene/veil";
 import { ROOST_RADIUS, SPECIMEN_Z } from "@/lib/scene/world";
@@ -474,6 +476,16 @@ export function SceneWorld({
 
   useEffect(() => clearReadout, []);
   useEffect(() => installPointerLight(), []);
+  // **A hora do dia** (rodada 18). A paleta é relida para dentro das mesmas
+  // cores (`applyPalette`) e `uDawn` troca os ramos de manhã dos materiais.
+  useEffect(() => {
+    const apply = () => {
+      shared.dawn.value = getTheme() === "dawn" ? 1 : 0;
+      applyPalette(shared, readPalette());
+    };
+    apply();
+    return subscribeToTheme(apply);
+  }, [shared]);
   useEffect(() => clearSoundField, []);
   useEffect(() => caseDrive.dispose, [caseDrive]);
 

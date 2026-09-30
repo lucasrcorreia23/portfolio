@@ -116,6 +116,8 @@ uniform vec3 uCyan;
 float shadeKind = 0.0;
 /** Quanto do piso está alagado aqui, 0 a 1 — escrito por engrave(), antes. */
 float wetness = 0.0;
+/** Quanto musgo há neste ponto — escrito pelo bloco do musgo, lido pelo amanhecer. */
+float mossAmount = 0.0;
 
 vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity, float viewDepth) {
 #ifdef PROBE_BLACK
@@ -206,6 +208,7 @@ vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity
     float speck = smoothstep(0.42, 0.78, sceneNoise(world * 4.3 + vec3(2.0))) * mix(0.55, 1.0, near);
     float quiet = 1.0 - 0.85 * exp(-pow((world.z - ${f(SPECIMEN_Z)}) / 9.0, 2.0));
     float moss = patchMask * (0.3 + 0.7 * speck) * (1.0 - wetness) * (1.0 - 0.6 * shadeKind) * quiet;
+    mossAmount = moss;
     if (moss > 0.0) {
       vec3 hue = mix(uCyan, uPeach, smoothstep(0.35, 0.7, sceneNoise(world * 0.07 + vec3(11.0))));
       // O piso de 0.03 é o líquen sozinho no escuro: constelações fracas nas
@@ -250,6 +253,22 @@ vec3 shadeConcrete(vec3 world, vec3 geomNormal, vec3 shadingNormal, float cavity
   // (apontado pelo Lucas em Quem sou). Com o piso, a parede sem luz é névoa, e
   // a estrutura aparece só onde a luz a toca e nas valas — fina, precisa e
   // discreta, como o PROJECT.md §2 descreve.
+  // **O amanhecer** (rodada 18). De manhã o concreto é a própria névoa clara,
+  // um passo mais escuro nas faces e no grão — e a luz do bando, das lanternas
+  // e do cursor **tinge** a superfície em vez de acendê-la, que é como uma luz
+  // colorida se lê sobre uma parede clara. O musgo é mancha verde-azulada, a
+  // água escurece e espelha o céu claro.
+  if (uDawn > 0.5) {
+    vec3 air = fogColorAt(viewDepth, world);
+    vec3 base = air * (0.5 + 0.2 * grain) * mix(mix(1.0, 0.85, floorness), 1.08, ceilingness);
+    base *= 1.0 - 0.45 * cavity;
+    base = mix(base, base * vec3(0.72, 0.84, 0.8), clamp(mossAmount * 1.4, 0.0, 1.0));
+    base = mix(base, base * 0.82 + air * 0.12, wetness);
+    vec3 light = tint * 0.35 * gain + lamp * 1.6;
+    base = base * (1.0 + light * 1.6) + light * 0.1;
+    return applyFog(base, viewDepth, world);
+  }
+
   color = max(color, fogColorAt(viewDepth, world));
 
   // O fundo da vala não recebe nada de ninguém.

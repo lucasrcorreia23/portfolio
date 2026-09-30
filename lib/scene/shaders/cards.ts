@@ -519,8 +519,11 @@ void main() {
     // bisel soma mist e o lado escuro **escala** a cor em vez de subtrair uma.
     // O acento do case continua só no chanfro da borda.
     plateInk = max(tap.r, tap.g * reveal);
-    color += uMist * clamp(ink, 0.0, 1.0) * smoothstep(0.3, 0.6, plateInk);
-    color += uMist * clamp(glint, 0.0, 0.6);
+    // À noite a tinta é --mist somada; de manhã --mist é escura, e somar escuro
+    // não desenha nada — então a tinta é misturada (rodada 18).
+    float inkAmount = clamp(ink, 0.0, 1.0) * smoothstep(0.3, 0.6, plateInk);
+    color = mix(color + uMist * inkAmount, mix(color, uMist, clamp(inkAmount * 2.5, 0.0, 1.0)), uDawn);
+    color += uMist * clamp(glint, 0.0, 0.6) * (1.0 - uDawn);
     color *= 1.0 + clamp(glint, -0.2, 0.0) * 2.5;
   }
 

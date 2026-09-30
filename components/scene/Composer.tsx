@@ -29,7 +29,7 @@ import {
 import { markScenePainted } from "@/lib/scene/scene-painted";
 import { sceneSettings } from "@/lib/scene/settings";
 import { veilUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
-import { MAX_VEIL_BOXES, VEIL_CEILING } from "@/lib/scene/veil";
+import { MAX_VEIL_BOXES, VEIL_CEILING, VEIL_FLOOR_DAWN } from "@/lib/scene/veil";
 
 /** Níveis da cadeia de bloom, a partir de meia resolução. */
 const BLOOM_LEVELS = 5;
@@ -214,7 +214,7 @@ export function Composer({
         uBloom: { value: bloom[0]?.texture ?? null },
         uTexel: { value: new Vector2() },
         uBloomStrength: { value: BLOOM_STRENGTH },
-        uExposure: { value: EXPOSURE },
+        uExposure: shared.exposure,
       },
       GLSL3,
     );
@@ -234,6 +234,8 @@ export function Composer({
         uVeilF: shared.veilF,
         uCeiling: { value: VEIL_CEILING },
         uFogLuma: { value: fogLuminance(shared) },
+        uDawn: shared.dawn,
+        uFloor: { value: VEIL_FLOOR_DAWN },
         // Descida em ~16 quadros (0.27 s). Ver o docblock do véu em post.ts.
         uFall: { value: 0.06 },
       },
@@ -250,12 +252,14 @@ export function Composer({
         uBloomStrength: { value: BLOOM_STRENGTH },
         uGrain: { value: 0.045 },
         uGrainSeed: { value: 0 },
-        uExposure: { value: EXPOSURE },
+        uExposure: shared.exposure,
         uDofEnabled: { value: settings.dof ? 1 : 0 },
         // O véu de legibilidade mora aqui, e não nos materiais: é a única
         // passada em que o bloom já pousou. Ver `shaders/post.ts`.
         ...veilUniforms(shared),
         uVeilCeiling: { value: VEIL_CEILING },
+        uVeilFloor: { value: VEIL_FLOOR_DAWN },
+        uDawn: shared.dawn,
         ...depthUniforms,
       },
       GLSL3,
@@ -349,6 +353,15 @@ export function Composer({
     renderer.render(state.scene, state.camera);
 
     const aperture = apertureRef.current;
+    // O amanhecer (rodada 18): mais exposição, e a luminância do fundo — que o
+    // véu usa como alvo — relida da paleta, que troca com o tema.
+    shared.exposure.value = EXPOSURE * (1 + 0.15 * shared.dawn.value);
+    const fogLuma = rig.veilSolver.uniforms["uFogLuma"];
+    if (fogLuma !== undefined) {
+      const c = shared.void.value;
+      const l = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+      fogLuma.value = 1 - Math.exp(-l * shared.exposure.value);
+    }
     rig.depthUniforms.uAperture.value = settings.dof ? aperture : 0;
     // O campo próximo sai dentro do case, com a mesma rampa do voo: o
     // DIRECTION.md §3 desliga a DOF nas rotas de case, e isso vale para ele.

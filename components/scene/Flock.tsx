@@ -14,6 +14,7 @@ import {
   NoBlending,
   CustomBlending,
   MaxEquation,
+  MinEquation,
   OneFactor,
   NoColorSpace,
   RGBAFormat,
@@ -304,6 +305,7 @@ export function Flock({
         uVel: bodyVel,
         uBodyScale: { value: 0.085 },
         uFocalPx: focalPx,
+        uDawn: shared.dawn,
         uForming: shared.forming,
         uTeal: shared.teal,
         uCyan: shared.cyan,
@@ -551,6 +553,9 @@ export function Flock({
   }, [readRef, rig]);
 
   useFrame((state, delta) => {
+    // O halo soma pelo máximo à noite e tinge pelo mínimo de manhã (rodada 18).
+    // É estado de mistura, não de programa: trocar não recompila nada.
+    rig.glowMaterial.blendEquation = shared.dawn.value > 0.5 ? MinEquation : MaxEquation;
     // A focal em pixels de CSS, para o teto de tamanho dos corpos
     // (`BODY_MAX_PX` em `shaders/body.ts`). Da altura da janela, não do
     // buffer: o critério é em pixels de tela, e o DPR não o muda.

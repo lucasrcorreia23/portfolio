@@ -25,13 +25,17 @@ export type PaletteToken = (typeof PALETTE_TOKENS)[number];
 export type Palette = Readonly<Record<PaletteToken, string>>;
 
 let cached: Palette | null = null;
+/** O tema em que a paleta em cache foi lida (rodada 18: há dois). */
+let cachedFor: string | null = null;
 
 /**
- * Lê a paleta do `<html>`. O resultado é memoizado — os tokens não mudam em
- * tempo de execução (o site não tem tema claro; `--void` é o começo e o fim).
+ * Lê a paleta do `<html>`. O resultado é memoizado **por tema**: desde a
+ * rodada 18 há o amanhecer (`data-theme="dawn"`), e a troca relê os tokens.
  */
 export function readPalette(): Palette {
-  if (cached !== null) return cached;
+  const theme =
+    typeof document === "undefined" ? null : document.documentElement.getAttribute("data-theme");
+  if (cached !== null && cachedFor === theme) return cached;
 
   if (typeof window === "undefined") {
     throw new Error(
@@ -51,5 +55,6 @@ export function readPalette(): Palette {
   });
 
   cached = Object.fromEntries(entries) as Palette;
+  cachedFor = theme;
   return cached;
 }

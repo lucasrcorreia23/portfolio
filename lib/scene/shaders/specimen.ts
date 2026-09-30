@@ -112,6 +112,10 @@ void main() {
 
   base += uSourceColor * upstreamLight(vWorld) * 0.35;
 
+  // De manhã a peça é a coisa sólida contra o ar claro: um passo abaixo dele
+  // (rodada 18). Com a base da noite ela lia como vidro fosco, quase névoa.
+  base *= mix(1.0, 0.6, uDawn);
+
 #ifdef PROBE_BLACK
   // Só a sonda define isto (probe-round12.ts, flatRegions): a face sai preta
   // antes da névoa. Em produção o bloco não existe no programa compilado.

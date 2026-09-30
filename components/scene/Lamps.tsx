@@ -34,6 +34,7 @@ uniform vec3 uLampNormal[${LAMP_COUNT}];
 uniform vec3 uLampColor[${LAMP_COUNT}];
 uniform float uTime;
 uniform vec2 uResolution;
+uniform float uDawn;
 
 in float aLamp;
 in vec3 aSeed;
@@ -63,7 +64,8 @@ void main() {
   // independente da distância até perto da lente.
   float px = mix(7.0, 15.0, fract(aSeed.x * 13.7)) * smoothstep(0.8, 3.0, vViewDepth);
   float twinkle = 0.55 + 0.45 * sin(uTime * (1.2 + 2.0 * aSeed.z) + aSeed.y * 40.0);
-  vColor = uLampColor[i] * lamp.w * twinkle * (3.6 - 2.2 * aSeed.x);
+  // De manhã o ar é claro e o ponto precisa de mais para aparecer (rodada 18).
+  vColor = uLampColor[i] * lamp.w * twinkle * (3.6 - 2.2 * aSeed.x) * (1.0 + 1.5 * uDawn);
   vQuad = position.xy;
   vec2 offset = position.xy * px / uResolution * clip.w * 2.0;
   gl_Position = clip + vec4(offset * step(0.001, lamp.w), 0.0, 0.0);

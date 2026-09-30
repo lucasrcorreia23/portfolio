@@ -323,15 +323,20 @@ out vec4 fragColor;
 
 void main() {
   float peak = 0.0;
+  // O mínimo também (rodada 18): de manhã o texto é escuro, e quem ameaça o
+  // contraste é o pixel mais escuro atrás dele, não o mais claro.
+  float trough = 1.0;
   for (int y = 0; y < 4; y++) {
     for (int x = 0; x < 4; x++) {
       vec2 uv = vUv + (vec2(float(x), float(y)) - 1.5) * uTexel;
       vec3 c = texture(uSource, uv).rgb + texture(uBloom, uv).rgb * uBloomStrength;
       c = vec3(1.0) - exp(-c * uExposure);
-      peak = max(peak, dot(c, vec3(0.2126, 0.7152, 0.0722)));
+      float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+      peak = max(peak, l);
+      trough = min(trough, l);
     }
   }
-  fragColor = vec4(peak, 0.0, 0.0, 1.0);
+  fragColor = vec4(peak, trough, 0.0, 1.0);
 }
 `;
 
@@ -345,13 +350,16 @@ out vec4 fragColor;
 
 void main() {
   float peak = 0.0;
+  float trough = 1.0;
   for (int y = 0; y < 4; y++) {
     for (int x = 0; x < 4; x++) {
       vec2 uv = vUv + (vec2(float(x), float(y)) - 1.5) * uTexel;
-      peak = max(peak, texture(uSource, uv).r);
+      vec2 t = texture(uSource, uv).rg;
+      peak = max(peak, t.r);
+      trough = min(trough, t.g);
     }
   }
-  fragColor = vec4(peak, 0.0, 0.0, 1.0);
+  fragColor = vec4(peak, trough, 0.0, 1.0);
 }
 `;
 
@@ -372,6 +380,8 @@ uniform float uVeilF[${MAX_VEIL_BOXES}];
 uniform float uCeiling;
 uniform float uFogLuma;
 uniform float uFall;
+uniform float uDawn;
+uniform float uFloor;
 
 out vec4 fragColor;
 
@@ -381,11 +391,14 @@ void main() {
   float on  = uVeilF[index];
 
   float peak = 0.0;
+  float trough = 1.0;
   if (on > 0.0) {
     for (int y = 0; y < 16; y++) {
       for (int x = 0; x < 24; x++) {
         vec2 t = vec2((float(x) + 0.5) / 24.0, (float(y) + 0.5) / 16.0);
-        peak = max(peak, texture(uField, clamp(mix(box.xy, box.zw, t), 0.0, 1.0)).r);
+        vec2 f = texture(uField, clamp(mix(box.xy, box.zw, t), 0.0, 1.0)).rg;
+        peak = max(peak, f.r);
+        trough = min(trough, f.g);
       }
     }
   }
@@ -393,6 +406,11 @@ void main() {
   float solved = peak > uCeiling
     ? clamp((peak - uCeiling) / max(peak - uFogLuma, 1e-4), 0.0, 1.0)
     : 0.0;
+  // De manhã o portão abre quando algo **escuro** passa atrás do texto.
+  float dawnSolved = trough < uFloor
+    ? clamp((uFloor - trough) / max(uFogLuma - trough, 1e-4), 0.0, 1.0)
+    : 0.0;
+  solved = mix(solved, dawnSolved, uDawn);
   solved *= on;
 
   // Sobe no quadro, desce devagar. Um quadro sem véu é um quadro ilegível;
@@ -436,6 +454,8 @@ uniform float     uVeilF[${MAX_VEIL_BOXES}];
 uniform sampler2D uVeilSolved;
 uniform vec3      uVoid;
 uniform float     uVeilCeiling;
+uniform float     uVeilFloor;
+uniform float     uDawn;
 
 ${DEPTH_GLSL}
 ${HASH_GLSL}
@@ -504,6 +524,17 @@ vec3 applyVeil(vec3 color, vec2 uv) {
   float amount = veilAmount(uv);
   if (amount <= 0.0) return color;
   float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
+  // **De manhã o véu levanta o escuro** (rodada 18), pelo espelho do joelho:
+  // acima de 1.6× o piso nada muda, abaixo disso o pixel é erguido para perto
+  // do piso sem cruzá-lo. O que sobe é luz neutra somada, então o matiz do
+  // corpo que passa continua lá, mais claro.
+  if (uDawn > 0.5) {
+    float kneeD = uVeilFloor * 1.6;
+    if (luma >= kneeD) return color;
+    float roomD = kneeD - uVeilFloor;
+    float lifted = kneeD - roomD * (1.0 - exp(-(kneeD - luma) / roomD));
+    return mix(color, color + vec3(lifted - luma), amount);
+  }
   float knee = uVeilCeiling * 0.55;
   if (luma <= knee) return color;
   float room = uVeilCeiling - knee;

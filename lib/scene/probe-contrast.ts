@@ -36,6 +36,8 @@
 
 /** L de `--mist` (#DCE9EC) em luz relativa — o texto de leitura do site. */
 export const MIST_LUMINANCE = 0.796;
+/** L do `--mist` do amanhecer (#0c1d27): o texto escuro da rodada 18. */
+export const MIST_LUMINANCE_DAWN = 0.0111;
 
 /** O piso do PROJECT.md §5. */
 export const CONTRAST_FLOOR = 4.5;
@@ -299,16 +301,23 @@ export function installContrast(deps: ContrastDeps) {
     const y0 = height - yBottom;
     gl.readPixels(x0, y0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, buffer);
 
-    let worst = 0;
+    // No amanhecer (rodada 18) o texto é escuro, e o pior pixel atrás dele é
+    // o **mais escuro**, não o mais claro.
+    const dawn = isDawn();
+    let worst = dawn ? 1 : 0;
     for (let i = 0; i < w * h; i += 1) {
       const l = luminanceOf(buffer, i * 4);
-      if (l > worst) worst = l;
+      if (dawn ? l < worst : l > worst) worst = l;
     }
     return worst;
   };
 
+  const isDawn = () => document.documentElement.getAttribute("data-theme") === "dawn";
+
   const ratioOf = (luminance: number) =>
-    (MIST_LUMINANCE + 0.05) / (luminance + 0.05);
+    isDawn()
+      ? (luminance + 0.05) / (MIST_LUMINANCE_DAWN + 0.05)
+      : (MIST_LUMINANCE + 0.05) / (luminance + 0.05);
 
   /**
    * Pega o controle do scroll para uma medição, e **manda o Lenis remedir

@@ -98,6 +98,7 @@ uniform float uBodyScale;
 uniform float uForming;
 /** A distância focal em pixels de CSS: altura da janela ÷ (2 · tan(fov/2)). */
 uniform float uFocalPx;
+uniform float uDawn;
 
 in vec2 aRef;
 
@@ -180,8 +181,10 @@ ${HUE_LOT_GLSL}
   float offAxis = 1.0 + dot(viewCenter.xy, viewCenter.xy) / max(viewDepth * viewDepth, 1e-3);
   float lengthPx = 2.0 * uBodyScale * stretch * uFocalPx * offAxis / max(viewDepth, 1e-3);
   float widthPx = 0.32 * uBodyScale * uFocalPx * offAxis / max(viewDepth, 1e-3);
-  float capLength = min(1.0, ${BODY_MAX_PX.toFixed(1)} / max(lengthPx, 1e-3));
-  float capWidth = min(1.0, ${BODY_MAX_WIDTH_PX.toFixed(1)} / max(widthPx, 1e-3));
+  // De manhã o grão escuro precisa de um pouco mais de corpo para se ler
+  // contra o ar claro (rodada 18): 5 × 2.8 px em vez de 3.5 × 2.
+  float capLength = min(1.0, mix(${BODY_MAX_PX.toFixed(1)}, 5.0, uDawn) / max(lengthPx, 1e-3));
+  float capWidth = min(1.0, mix(${BODY_MAX_WIDTH_PX.toFixed(1)}, 2.8, uDawn) / max(widthPx, 1e-3));
   vec3 local = (right * position.x + up * position.y) * capWidth
     + forward * position.z * stretch * capLength;
   vec3 world = center + local * uBodyScale * admit * near * alive;
@@ -348,6 +351,12 @@ void main() {
   if (uOutside > 0.0) {
     lit += uPeach * louverOpen(vWorld) * uOutside * (1.2 + 1.6 * tip);
   }
+  // **De manhã o corpo é cor, não luz** (rodada 18): mais escuro e mais
+  // saturado que o ar claro em volta, com a ponta um pouco mais viva. Emissivo
+  // sobre fundo claro, ele sumiria.
+  if (uDawn > 0.5) {
+    lit = color * (0.42 + 0.22 * tip) * (0.85 + 0.35 * vEnergy) * vNear;
+  }
   // O cursor acende, quente, os corpos que passam perto dele (rodada 17).
   if (uPointer.w > 0.0) {
     float near = 1.0 - smoothstep(0.0, 6.0, distance(vWorld, uPointer.xyz));
@@ -494,6 +503,8 @@ ${FOG_GLSL}
 ${BODY_HUE_GLSL}
 
 void main() {
+  // O halo é luz somada pelo máximo: sobre o ar claro do amanhecer não há o
+  // que somar (rodada 18).
   if (vGlow <= 0.0) discard;
   // Gaussiana: 0.018 na borda do quad — sem aresta.
   float g = exp(-4.0 * dot(vQuad, vQuad));
@@ -508,6 +519,15 @@ void main() {
   // (medido: borda nítida de 25 px em 0.31). Limitando a amplitude, e não o
   // pixel, o perfil continua gaussiano abaixo da saturação.
   float amplitude = min(energy * vGlow * (1.0 - amount), ${GLOW_PEAK.toFixed(2)});
+  // **De manhã o halo é tinta, não luz** (rodada 18). O material troca a
+  // mistura para o mínimo (Flock.tsx), e o que sai daqui é "branco" onde não
+  // há halo — o mínimo não muda nada — e a cor escurecida do corpo no centro.
+  // Sobre o ar claro a massa do bando aparece como uma mancha colorida.
+  if (uDawn > 0.5) {
+    float k = clamp(amplitude * g * 2.2, 0.0, 1.0);
+    fragColor = vec4(mix(vec3(8.0), color * 0.5, k), 1.0);
+    return;
+  }
   fragColor = vec4(color * amplitude * g, 1.0);
 }
 `;

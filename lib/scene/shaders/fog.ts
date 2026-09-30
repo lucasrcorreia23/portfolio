@@ -35,6 +35,8 @@ uniform float uTime;
 uniform vec2  uResolution;
 uniform vec3  uPeach;
 uniform float uOutside;
+// O amanhecer (rodada 18): 0 à noite, 1 de manhã. Ver lib/theme.ts.
+uniform float uDawn;
 `;
 
 export const FOG_GLSL = /* glsl */ `
@@ -159,7 +161,10 @@ vec3 fogColorAt(float viewDepth, vec3 worldPos) {
   // que está muito perto da lente fica fora. Uma letra na frente do brilho
   // continua silhueta porque a névoa dela é menor que a do fundo, não porque a
   // cor da névoa muda.
-  fogColor = mix(fogColor, uDeep, clamp(sourceHalo(worldPos) * smoothstep(0.02, 0.12, depth01), 0.0, 1.0));
+  // De manhã a fonte é a claridade de fora: o halo clareia e esquenta, em vez
+  // de puxar para --deep (rodada 18).
+  vec3 haloColor = mix(uDeep, uVoid * 1.1 + uPeach * 0.05, uDawn);
+  fogColor = mix(fogColor, haloColor, clamp(sourceHalo(worldPos) * smoothstep(0.02, 0.12, depth01), 0.0, 1.0));
   // **A Superfície: a névoa lê quente no topo** (DIRECTION.md §5). Não é uma
   // cor nova na rampa, é a luz de fora espalhada pela névoa perto da tomada de
   // ar: um volume de --peach em volta da abertura, amostrado no trecho do raio
@@ -186,7 +191,9 @@ vec3 applyFog(vec3 color, float viewDepth, vec3 worldPos) {
   float pocket = (fogPocket(mix(zc, worldPos.z, 0.2)) + fogPocket(mix(zc, worldPos.z, 0.55))
     + fogPocket(worldPos.z)) / 3.0;
 
-  float density = uFogDensity * pocket * (0.55 + 0.9 * n);
+  // De manhã o ar é mais limpo (rodada 18): com a névoa da noite, sobre fundo
+  // claro, tudo convergia para a mesma cor a vinte unidades.
+  float density = uFogDensity * pocket * (0.55 + 0.9 * n) * mix(1.0, 0.55, uDawn);
   float amount = 1.0 - exp(-density * max(viewDepth, 0.0));
   // A rodada 12 saturava tudo além de 40–70 unidades para o céu atrás da
   // abertura não ler como retângulo. Isso apagava também todo corpo distante

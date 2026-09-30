@@ -48,6 +48,11 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
     peach: { value: new Color(palette.peach) },
     mist: { value: new Color(palette.mist) },
 
+    /** O amanhecer, 0 ou 1 (rodada 18). Escrito pelo `SceneWorld` na troca. */
+    dawn: { value: 0 },
+    /** A exposição do tonemap: a do compositor, maior de manhã. */
+    exposure: { value: 1.15 },
+
     /** Densidade da névoa. Espessa na Emergência, abrindo com a descida. */
     fogDensity: { value: 0.05 },
 
@@ -288,7 +293,28 @@ export function fogUniforms(shared: SharedUniforms) {
     uResolution: shared.resolution,
     uPeach: shared.peach,
     uOutside: shared.outside,
+    uDawn: shared.dawn,
   };
+}
+
+/**
+ * Relê a paleta **para dentro das mesmas cores** (rodada 18): todo material
+ * recebeu os mesmos objetos `Color`, então copiar os valores novos neles troca
+ * a cena inteira sem recompilar nada.
+ */
+export function applyPalette(shared: SharedUniforms, palette: Palette): void {
+  shared.void.value.set(palette.void);
+  shared.abyss.value.set(palette.abyss);
+  shared.deep.value.set(palette.deep);
+  shared.teal.value.set(palette.teal);
+  shared.cyan.value.set(palette.cyan);
+  shared.rose.value.set(palette.rose);
+  shared.coral.value.set(palette.coral);
+  shared.peach.value.set(palette.peach);
+  shared.mist.value.set(palette.mist);
+  const warm = shared.pointerColor.value.set(palette.peach);
+  warm.g *= 1.2;
+  warm.b *= 0.45;
 }
 
 /**
