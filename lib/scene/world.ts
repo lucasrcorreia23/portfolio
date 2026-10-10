@@ -166,6 +166,18 @@ export function stopWeight(progress: number): { index: number; weight: number } 
   return { index, weight: t < 0.5 ? before : after };
 }
 
+/**
+ * Quanto a porta de enrolar da parada `index` está aberta, 0 a 1: sobe
+ * enquanto a câmera chega, fica aberta durante a leitura e desce quando o
+ * olhar volta para a trilha. Sem estado: é função do progresso.
+ */
+export function doorOpen(progress: number, index: number): number {
+  const cases = beatOf("cases");
+  const t = ((progress - cases.from) / (cases.to - cases.from)) * STOP_COUNT - index;
+  if (t <= 0 || t >= 1) return 0;
+  return smooth((t - 0.08) / 0.26) * (1 - smooth((t - 0.54) / 0.2));
+}
+
 function smooth(x: number): number {
   const t = Math.min(1, Math.max(0, x));
   return t * t * (3 - 2 * t);

@@ -104,7 +104,10 @@ const FRAGMENT_LIGHTS = /* glsl */ `
     if (e.w <= 0.0) continue;
     vec3 toLight = e.xyz - vPbrWorld;
     float reach = length(toLight);
-    vec3 light = mix(uCyan, uRose, uEmitterWarm[i]) * (e.w / (1.0 + reach * reach * 0.035)) * uGlow;
+    float fall = e.w / (1.0 + reach * reach * 0.035);
+    // Só as manchas por perto contam: a da parada e, de leve, a vizinha.
+    if (fall < 0.02) continue;
+    vec3 light = mix(uCyan, uRose, uEmitterWarm[i]) * fall * uGlow;
     float facing = saturate(dot(pbrNormal, toLight / reach));
     reflectedLight.directDiffuse += light * facing * ${DIRECT.toFixed(2)} * BRDF_Lambert(material.diffuseContribution);
 
@@ -228,10 +231,17 @@ async function loadMap(url: string, colorSpace: ColorSpace): Promise<Texture> {
 export async function applyPbrMaps(
   gl: WebGLRenderer,
   material: PbrMaterial,
-  maps: { color: Texture; normal: Texture; arm: Texture; height?: Texture | undefined },
+  maps: {
+    color: Texture;
+    normal: Texture;
+    arm: Texture;
+    /** A oclusão, quando não é o canal vermelho do `arm`. */
+    ao?: Texture | undefined;
+    height?: Texture | undefined;
+  },
   alive: () => boolean,
 ): Promise<void> {
-  const textures = [maps.color, maps.normal, maps.arm, maps.height].filter(
+  const textures = [maps.color, maps.normal, maps.arm, maps.ao, maps.height].filter(
     (texture): texture is Texture => texture !== undefined,
   );
   for (const texture of textures) {
@@ -246,7 +256,7 @@ export async function applyPbrMaps(
   const waiting = [material.map, material.normalMap, material.aoMap];
   material.map = maps.color;
   material.normalMap = maps.normal;
-  material.aoMap = maps.arm;
+  material.aoMap = maps.ao ?? maps.arm;
   material.roughnessMap = maps.arm;
   material.metalnessMap = maps.arm;
   if (maps.height !== undefined) {

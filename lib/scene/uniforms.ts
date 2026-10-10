@@ -68,6 +68,9 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
     },
     veilF: { value: Array.from({ length: MAX_VEIL_BOXES }, () => 0) },
 
+    /** Quanto a porta de enrolar de cada parada está aberta, 0 a 1. */
+    doors: { value: Array.from({ length: STOP_COUNT }, () => 1) },
+
     /** Quanto a câmera está diante da parede da vitrine, 0 a 1: as telas acendem. */
     fork: { value: 0 },
 

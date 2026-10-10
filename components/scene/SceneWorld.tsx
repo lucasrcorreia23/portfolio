@@ -7,8 +7,10 @@ import { clearSoundField, publishSoundField } from "@/lib/audio/field-store";
 import { clamp01, damp, easeStrong } from "@/lib/motion";
 import { getEntry } from "@/lib/preload/entered";
 import { createCaseDrive } from "@/lib/scene/case-drive";
+import { DOOR_STOPS } from "@/lib/scene/door";
 import { CASE_FOG } from "@/lib/scene/case-pose";
 import { plantsSettled } from "@/lib/scene/plants";
+import { getQuality } from "@/lib/scene/quality";
 import { getPointer, installPointer } from "@/lib/scene/pointer";
 import {
   apertureAt,
@@ -26,6 +28,7 @@ import { sceneSettings } from "@/lib/scene/settings";
 import { createSharedUniforms } from "@/lib/scene/uniforms";
 import { readVeilBoxes, writeVeilBoxes } from "@/lib/scene/veil";
 import {
+  doorOpen,
   floraPatches,
   forkWeight,
   heightAt,
@@ -35,6 +38,7 @@ import {
 import { useScrollProgress } from "@/lib/scroll/use-scroll-progress";
 import { ComposedClock } from "./ComposedClock";
 import { Composer } from "./Composer";
+import { Door } from "./Door";
 import { Flora } from "./Flora";
 import { Land } from "./Land";
 import { Panels } from "./Panels";
@@ -220,6 +224,15 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
       shared.emitterWarm.value[i] = patches[i]?.warm ?? 0;
     }
 
+    // --- as portas de enrolar ----------------------------------------------
+    // Abrem na chegada da câmera e com a leitura de um case. No nível baixo
+    // de qualidade ficam abertas, paradas.
+    for (const index of DOOR_STOPS) {
+      shared.doors.value[index] = getQuality().door
+        ? Math.max(doorOpen(progress, index), inCase)
+        : 1;
+    }
+
     // --- a eletricidade -----------------------------------------------------
     // Rajadas curtas, de tempos em tempos: as descargas saltam entre as torres
     // e o ar inteiro acende um instante. No modo calmo e na leitura, nada.
@@ -260,6 +273,7 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
       <Flora shared={shared} />
       <Panels shared={shared} panels={panels} />
       <Plates shared={shared} instant={instant} />
+      <Door shared={shared} instant={instant} />
       <Wall shared={shared} />
       <Composer
         shared={shared}
