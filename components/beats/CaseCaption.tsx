@@ -32,7 +32,7 @@ export function CaseCaption({ captions }: { captions: readonly Caption[] }) {
   const stop = stopProgress(index);
 
   return (
-    <BeatReveal key={index} from={stop - reach} to={stop + reach}>
+    <BeatReveal key={index} from={stop - reach} to={stop + reach} cue="readout">
       <div className="case-caption" data-veil data-readout>
         <p className="case-caption-index type-mono text-mist" aria-hidden="true">
           {String(index + 1).padStart(2, "0")}

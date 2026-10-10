@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { emitCue } from "@/lib/audio/field-store";
+import type { SoundCue } from "@/lib/audio/field-store";
 import { useReducedMotion } from "@/lib/capabilities/use-reduced-motion";
 import { getScrollProgress, subscribeToScroll } from "@/lib/scroll/scroll-store";
 import { runReadouts } from "@/lib/text/readout";
@@ -12,6 +13,8 @@ type BeatRevealProps = {
   from: number;
   /** Progresso em que ele apaga. Sem ele, fica aceso até o fim. */
   to?: number;
+  /** O som da entrada. Sem ele, só toca onde há título acendendo. */
+  cue?: SoundCue["kind"];
   className?: string;
   children: ReactNode;
 };
@@ -31,6 +34,7 @@ const EDGE = 0.008;
 export function BeatReveal({
   from,
   to = Infinity,
+  cue,
   className = "",
   children,
 }: BeatRevealProps) {
@@ -58,8 +62,9 @@ export function BeatReveal({
       if (first && next) return;
       node.setAttribute("data-lit", String(next));
       runReadouts(node, next);
-      // O som é da luz: só toca onde há título acendendo.
-      if (next && node.querySelector(".glyph") !== null) emitCue("text");
+      if (!next) return;
+      if (cue !== undefined) emitCue(cue);
+      else if (node.querySelector(".glyph") !== null) emitCue("text");
     };
 
     write(getScrollProgress());
@@ -71,7 +76,7 @@ export function BeatReveal({
       runReadouts(node, false);
       node.removeAttribute("data-lit");
     };
-  }, [from, to, reducedMotion]);
+  }, [from, to, cue, reducedMotion]);
 
   return (
     <div ref={ref} className={className}>

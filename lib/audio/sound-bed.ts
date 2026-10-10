@@ -154,32 +154,21 @@ function playCue(context: AudioContext, destination: AudioNode, cue: SoundCue): 
     return;
   }
 
-  if (cue.kind === "text") {
-    // Um título acendendo: um chiado fino que sobe e um tom que se apaga
-    // devagar, baixo mas presente.
+  if (cue.kind === "text" || cue.kind === "readout") {
+    // Um título acendendo: um chiado só, que sobe e se apaga devagar. A
+    // numeração dos cases usa o mesmo som, mais baixo.
+    const level = cue.kind === "text" ? 0.035 : 0.015;
     source.buffer = freshNoise(context, 1.4);
     filter.type = "bandpass";
     filter.Q.value = 5;
-    filter.frequency.setValueAtTime(1600, now);
-    filter.frequency.exponentialRampToValueAtTime(5200, now + 0.9);
+    filter.frequency.setValueAtTime(900, now);
+    filter.frequency.exponentialRampToValueAtTime(2600, now + 0.9);
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.05, now + 0.25);
+    gain.gain.exponentialRampToValueAtTime(level, now + 0.25);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.35);
     source.connect(filter).connect(gain).connect(pan).connect(destination);
     source.start(now);
     source.stop(now + 1.4);
-
-    const tone = context.createOscillator();
-    const toneGain = context.createGain();
-    tone.type = "sine";
-    tone.frequency.setValueAtTime(880, now);
-    tone.frequency.exponentialRampToValueAtTime(1320, now + 0.5);
-    toneGain.gain.setValueAtTime(0.0001, now);
-    toneGain.gain.exponentialRampToValueAtTime(0.02, now + 0.12);
-    toneGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.3);
-    tone.connect(toneGain).connect(pan);
-    tone.start(now);
-    tone.stop(now + 1.35);
     return;
   }
 

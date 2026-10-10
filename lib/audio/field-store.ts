@@ -34,7 +34,7 @@ export function getSoundField(): Readonly<SoundField> {
   return field;
 }
 
-export type SoundCue = { kind: "card" | "case" | "text"; pan: number };
+export type SoundCue = { kind: "card" | "case" | "text" | "readout"; pan: number };
 
 const cueListeners = new Set<(cue: SoundCue) => void>();
 
