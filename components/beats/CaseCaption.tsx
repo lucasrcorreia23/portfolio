@@ -1,8 +1,9 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useSyncExternalStore } from "react";
 import { stopAt, stopProgress, STOP_COUNT } from "@/lib/scene/stops";
-import { useScrollProgress } from "@/lib/scroll/use-scroll-progress";
+import { getScrollProgress, subscribeToScroll } from "@/lib/scroll/scroll-store";
+import { BeatReveal } from "./BeatReveal";
 import { beatOf } from "./beats";
 
 export type Caption = {
@@ -12,37 +13,37 @@ export type Caption = {
   disciplines: string;
 };
 
+const currentStop = () => stopAt(getScrollProgress());
+const noStop = () => -1;
+
 /**
  * A legenda da parada atual: o índice em mono grande e os dados do case, à
- * esquerda do painel. É rótulo, então é da indústria: mono, neutro, sem brilho.
+ * esquerda do painel. É rótulo, então é da indústria: mono, neutro, sem brilho,
+ * e entra como leitura.
  */
 export function CaseCaption({ captions }: { captions: readonly Caption[] }) {
-  const { value: progress } = useScrollProgress({ steps: 600 });
-  const index = stopAt(progress);
+  const index = useSyncExternalStore(subscribeToScroll, currentStop, noStop);
   const caption = index < 0 ? undefined : captions[index];
   if (caption === undefined) return null;
 
   // Entra quando a câmera encontra o painel e sai quando o solta.
   const { from, to } = beatOf("cases");
-  const half = (to - from) / STOP_COUNT / 2;
-  const offset = Math.abs(progress - stopProgress(index)) / half;
-  const reveal = 1 - Math.min(1, Math.max(0, (offset - 0.35) / 0.4));
+  const reach = ((to - from) / STOP_COUNT / 2) * 0.55;
+  const stop = stopProgress(index);
 
   return (
-    <div
-      className="case-caption"
-      data-veil
-      style={{ "--reveal": reveal.toFixed(3) } as CSSProperties}
-    >
-      <p className="case-caption-index type-mono text-mist" aria-hidden="true">
-        {String(index + 1).padStart(2, "0")}
-        <span className="text-hud">/{String(STOP_COUNT).padStart(2, "0")}</span>
-      </p>
-      <p className="type-mono text-label text-mist mt-4">{caption.title}</p>
-      <p className="type-mono text-hud-sm text-mist mt-2">
-        {caption.client} · {caption.year}
-      </p>
-      <p className="type-mono text-hud-sm text-mist mt-1">{caption.disciplines}</p>
-    </div>
+    <BeatReveal key={index} from={stop - reach} to={stop + reach}>
+      <div className="case-caption" data-veil data-readout>
+        <p className="case-caption-index type-mono text-mist" aria-hidden="true">
+          {String(index + 1).padStart(2, "0")}
+          <span className="text-hud">/{String(STOP_COUNT).padStart(2, "0")}</span>
+        </p>
+        <p className="type-mono text-label text-mist mt-4">{caption.title}</p>
+        <p className="type-mono text-hud-sm text-mist mt-2">
+          {caption.client} · {caption.year}
+        </p>
+        <p className="type-mono text-hud-sm text-mist mt-1">{caption.disciplines}</p>
+      </div>
+    </BeatReveal>
   );
 }

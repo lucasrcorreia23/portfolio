@@ -191,7 +191,6 @@
   /* A legenda da parada: o índice em mono grande, cruzando a cena. */
   .case-caption {
     width: fit-content;
-    clip-path: inset(0 calc((1 - var(--reveal, 1)) * 100%) 0 0);
   }
   .case-caption-index {
     font-size: clamp(4rem, 9vw, 9.5rem);
