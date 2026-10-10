@@ -197,14 +197,14 @@ function model(source: Model | undefined, x: number, z: number, yaw: number, par
 }
 
 /**
- * Três chaminés em fila, de alturas diferentes. A mais alta leva a luz do
- * topo e é dela que as descargas saem.
+ * Três chaminés em fila, de alturas diferentes, ou só a mais alta (`count`).
+ * Ela leva a luz do topo e é dela que as descargas saem.
  */
-function stacks(source: Model | undefined, x: number, z: number, height: number, yaw: number, parts: Part[], beacons: number[]): void {
+function stacks(source: Model | undefined, x: number, z: number, height: number, yaw: number, parts: Part[], beacons: number[], count = 3): void {
   if (source === undefined) return;
   const scale = height / source.tall;
   const gap = 4.6 * scale;
-  [1, 0.86, 0.72].forEach((share, i) => {
+  [1, 0.86, 0.72].slice(0, count).forEach((share, i) => {
     const sx = x + Math.cos(yaw) * gap * (i - 1);
     const sz = z - Math.sin(yaw) * gap * (i - 1);
     const top = model(source, sx, sz, yaw + i * 2.1, parts, scale * share);
@@ -327,10 +327,8 @@ export function createIndustry(models: IndustryModels): Industry {
   }
 
   // O complexo do Impacto: o que a câmera vê em silhueta ao sair da névoa.
-  stacks(models.stack, -34, -96, 46, 0.4, stackParts, beacons);
   stacks(models.stack, -52, -118, 62, 1.9, stackParts, beacons);
   stacks(models.stack, 48, -128, 54, 2.7, stackParts, beacons);
-  stacks(models.stack, 70, -92, 34, 1.1, stackParts, beacons);
   model(models.tanks, -73, -84, 0.5, parts);
   model(models.oilTank, 58, -66, 2.2, parts);
   model(models.rustTank, 74, -74, 0, parts);
@@ -339,7 +337,7 @@ export function createIndustry(models: IndustryModels): Industry {
   for (let index = 0; index < STOP_COUNT; index += 1) {
     const z = (STOP_Z[index] ?? 0) - 14;
     const left = index % 2 === 0;
-    stacks(models.stack, pathX(z) + (left ? -46 : 52) - index * 2, z - 8, 30 + ((index * 17) % 26), index * 0.9, stackParts, beacons);
+    stacks(models.stack, pathX(z) + (left ? -46 : 52) - index * 2, z - 8, 30 + ((index * 17) % 26), index * 0.9, stackParts, beacons, left ? 3 : 1);
     // O conjunto grande fica na última parada, atrás da parede da vitrine.
     if (index === STOP_COUNT - 1) model(models.tanks, pathX(z) - 61, z + 6, 2.4, parts);
     else if (index % 2 === 1) model(models.oilTank, pathX(z) - 58, z + 6, index * 1.3, parts, 0.9 + index * 0.06);
