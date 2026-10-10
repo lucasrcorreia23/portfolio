@@ -52,3 +52,22 @@ Os `_low.glb` são os boulders decimados (59 mil → 708 e 109 mil → 654 triâ
 
 `scripts/compress-assets.mjs` grava em `public/models/industria/` o que o site carrega: `porta.glb` é a
 `rollershutter_door` sem a cópia grafitada, com a geometria em meshopt e as texturas em WebP 1k.
+
+## Indústria (Sketchfab, CC BY 4.0, exige crédito)
+
+| arquivo | triângulos | MB | autor | fonte |
+|---|---:|---:|---|---|
+| large_industrial_storage_tanks.glb | 8.412 | 1.5 | Duane's Mind (@duanesmind) | https://sketchfab.com/3d-models/large-industrial-storage-tanks-bd3ac97071104b64bc388a155b64f79e |
+| old_oil_tank.glb | 12.502 | 0.9 | Mouad Hsaine (@ittoKubashi7) | https://sketchfab.com/3d-models/old-oil-tank-d8e9ced5cc11428280ffad57f96d8686 |
+| rusted_tank_storage.glb | 5.769 | 0.8 | Mkc (@ixMkc1) | https://sketchfab.com/3d-models/rusted-tank-storage-57be2eaf4d6b4d2980bcee4ccb35f780 |
+| industrial_smoke_stacks.glb | 2.868 | 0.5 | FrodoUndead (@FrodoUndead) | https://sketchfab.com/3d-models/industrial-smoke-stacks-ffaf6bfbd8b84eb985dee2a35ba79440 |
+
+`scripts/extract-industry.mjs` tira de cada um só a forma, decimada e sem textura, e grava em
+`public/models/industria/`: entram na silhueta da indústria no lugar dos tanques e das torres de primitivas.
+
+| saída | fonte | triângulos | altura |
+|---|---|---:|---:|
+| tanques.bin | large_industrial_storage_tanks | 975 | 11,5 m |
+| tanque-oleo.bin | old_oil_tank | 423 | 10 m |
+| tanque-ferrugem.bin | rusted_tank_storage | 300 | 11 m |
+| chamine.bin | industrial_smoke_stacks (uma das três) | 72 | 34,6 m |
