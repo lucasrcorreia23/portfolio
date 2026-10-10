@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Glyphs } from "@/components/text/Glyphs";
 import { CaseReturn } from "@/components/work/CaseReturn";
 import { CaseExit } from "@/components/work/CaseExit";
 import { CaseReveal } from "@/components/work/CaseReveal";
@@ -104,20 +106,33 @@ export default async function CasePage({
         </figure>
 
         <div className="case-head">
-          <p className="type-mono text-hud text-mist w-fit" data-veil>
+          <p className="type-mono text-hud text-mist w-fit" data-veil data-readout>
             {String(Math.max(here, 0) + 1).padStart(2, "0")} · {frontmatter.client} ·{" "}
             {frontmatter.year}
           </p>
 
-          <h1 data-veil className="type-display text-display-2 mt-4 w-fit">
-            {frontmatter.title}
+          <h1
+            aria-label={frontmatter.title}
+            data-veil
+            className="type-display text-display-2 mt-4 w-fit"
+          >
+            <Glyphs text={frontmatter.title} />
           </h1>
 
-          <p className="measure text-body-lg text-mist mt-8 w-fit" data-veil>
+          <p
+            className="fog-in measure text-body-lg text-mist mt-8 w-fit"
+            data-veil
+            style={{ "--wait": "500ms" } as CSSProperties}
+          >
             {caseSummary(frontmatter, typed)}
           </p>
 
-          <dl data-veil className="case-meta type-mono text-hud-sm mt-10 w-fit">
+          <dl
+            data-veil
+            data-readout
+            className="case-meta type-mono text-hud-sm mt-10 w-fit"
+            style={{ "--wait": "700ms" } as CSSProperties}
+          >
             <dt>{t("case.role")}</dt>
             <dd>{frontmatter.role}</dd>
             <dt>{t("case.disciplines")}</dt>

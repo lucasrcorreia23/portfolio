@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 import { useSceneMode } from "@/lib/capabilities/use-scene-mode";
+import { runReadouts } from "@/lib/text/readout";
 import {
   getCaseState,
   getIdleCaseState,
@@ -23,6 +24,10 @@ import {
  * `getBoundingClientRect()` dela que a cena lê para saber onde parar. O que ela
  * não tem, enquanto o voo acontece, é opacidade. Ver `lib/scene/case-drive.ts`.
  *
+ * Quando o encaixe fecha, o texto entra como nos beats: o título acende, os
+ * metadados são leitura e o resumo sai da névoa (`data-lit`, em
+ * `styles/globals.css`). Só com a cena em movimento e só depois de um voo.
+ *
  * ## Três saídas, e nenhuma delas depende da cena ter dado certo
  *
  * 1. **Chegada direta** (link, acervo, reload): a fase nunca é `entering`, e o
@@ -42,6 +47,8 @@ export function CaseReveal({ children }: { children: ReactNode }) {
     getIdleCaseState,
   );
   const [expired, setExpired] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const held = useRef(false);
 
   useEffect(() => {
     const id = window.setTimeout(() => setExpired(true), 1200);
@@ -54,5 +61,22 @@ export function CaseReveal({ children }: { children: ReactNode }) {
   const arriving =
     hasScene && state.phase === "entering" && !state.docked && !expired;
 
-  return <div data-case={arriving ? "arriving" : "open"}>{children}</div>;
+  useEffect(() => {
+    const node = ref.current;
+    if (node === null || mode !== "driven") return;
+    if (arriving) {
+      held.current = true;
+      node.setAttribute("data-lit", "false");
+      return;
+    }
+    if (!held.current) return;
+    node.setAttribute("data-lit", "true");
+    runReadouts(node, true);
+  }, [arriving, mode]);
+
+  return (
+    <div ref={ref} data-case={arriving ? "arriving" : "open"}>
+      {children}
+    </div>
+  );
 }

@@ -456,34 +456,20 @@
      `--dur-cut` do modo calmo. Nesse intervalo as duas imagens estão
      sobrepostas, e é isso que impede que exista um quadro sem nenhuma das duas.
 
-     O resto do conteúdo entra por recorte, escalonado: metadados descendo da
-     aresta de baixo da capa, e o corpo logo atrás. Nada translada, nada
-     esmaece — a mesma regra dos beats. */
-  [data-case] .case-cover {
+     O resto do conteúdo entra no mesmo corte; por cima dele, com a cena em
+     movimento, o texto do cabeçalho entra como nos beats (`data-lit`). */
+  [data-case] .case-cover,
+  [data-case] .case-head,
+  [data-case] .case-body,
+  [data-case] .case-foot {
     opacity: 1;
     transition: opacity var(--dur-cut) linear;
   }
 
-  [data-case="arriving"] .case-cover {
-    opacity: 0;
-  }
-
-  [data-case] .case-head,
-  [data-case] .case-body,
-  [data-case] .case-foot {
-    clip-path: inset(0 0 0 0);
-    transition: clip-path 620ms var(--ease-strong);
-  }
-
-  [data-case] .case-body,
-  [data-case] .case-foot {
-    transition-delay: 140ms;
-  }
-
+  [data-case="arriving"] .case-cover,
   [data-case="arriving"] .case-head,
   [data-case="arriving"] .case-body,
   [data-case="arriving"] .case-foot {
-    clip-path: inset(0 0 100% 0);
-    transition: none;
+    opacity: 0;
   }
 }
