@@ -97,6 +97,22 @@ export function applyReveal(pose: CameraPose, reveal: number): void {
   pose.target.y += 1.5 * back;
 }
 
+/**
+ * O voo até a vitrine, 0 a 1, por cima da pose: a câmera sai da trilha e
+ * para de frente para a parede, perto o bastante para as placas encherem o
+ * quadro.
+ */
+export function applyVitrineFlight(pose: CameraPose, amount: number): void {
+  if (amount <= 0) return;
+  const wall = vitrineWall();
+  const nx = Math.sin(wall.yaw);
+  const nz = Math.cos(wall.yaw);
+  PANEL.set(wall.x + nx * 8.5, wall.y - 0.4, wall.z + nz * 8.5);
+  pose.position.lerp(PANEL, amount);
+  PANEL.set(wall.x, wall.y - 0.2, wall.z);
+  pose.target.lerp(PANEL, amount);
+}
+
 /** Quanto dura a revelação, em milissegundos. */
 export const REVEAL_MS = 3200;
 /** A névoa e a emissão com que a cena nasce, antes da revelação. */

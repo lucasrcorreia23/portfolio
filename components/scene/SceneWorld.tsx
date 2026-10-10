@@ -12,6 +12,7 @@ import { getPointer, installPointer } from "@/lib/scene/pointer";
 import {
   apertureAt,
   applyReveal,
+  applyVitrineFlight,
   cameraPose,
   createCameraPose,
   fogAt,
@@ -24,6 +25,7 @@ import { createSharedUniforms } from "@/lib/scene/uniforms";
 import { readVeilBoxes, writeVeilBoxes } from "@/lib/scene/veil";
 import { floraPatches, heightAt, stopWeight } from "@/lib/scene/world";
 import { useScrollProgress } from "@/lib/scroll/use-scroll-progress";
+import { isFlyingToVitrine } from "@/lib/work/vitrine-flight";
 import { ComposedClock } from "./ComposedClock";
 import { Composer } from "./Composer";
 import { Flora } from "./Flora";
@@ -70,6 +72,7 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
   const focusRef = useRef(20);
   const focusRangeRef = useRef(34);
   const sway = useRef({ x: 0, y: 0 });
+  const flight = useRef(0);
   /** Os programas compilaram: até lá o compositor não desenha. */
   const readyRef = useRef(false);
 
@@ -111,6 +114,10 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
     cameraPose(progress, pose);
     applyReveal(pose, reveal);
 
+    // O voo até a vitrine, quando a pessoa escolhe o desvio.
+    flight.current = damp(flight.current, isFlyingToVitrine() ? 1 : 0, 2.6, dt);
+    applyVitrineFlight(pose, easeStrong(flight.current));
+
     // A travessia para o case é misturada aqui dentro, por cima da trilha.
     const inCase = caseDrive.update(
       dt,
@@ -126,7 +133,7 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
     // modo calmo e dentro de um case, onde nada se mexe.
     if (!still) {
       const pointer = getPointer();
-      const amount = 1 - inCase;
+      const amount = (1 - inCase) * (1 - flight.current);
       sway.current.x = damp(sway.current.x, pointer.x * amount, 2.2, dt);
       sway.current.y = damp(sway.current.y, pointer.y * amount, 2.2, dt);
       VIEW.subVectors(pose.target, pose.position).normalize();

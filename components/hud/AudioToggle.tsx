@@ -2,6 +2,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import {
+  armAudio,
   enableAudioFromGesture,
   hydrateAudioPreference,
   isAudioMuted,
@@ -39,6 +40,7 @@ export function AudioToggle({ label, onLabel, offLabel }: AudioToggleProps) {
 
   useEffect(() => {
     hydrateAudioPreference();
+    return armAudio();
   }, []);
 
   return (

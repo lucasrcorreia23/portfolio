@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { AdditiveBlending, DoubleSide, ShaderMaterial, Vector2, Vector3 } from "three";
 import {
@@ -8,12 +8,15 @@ import {
   createGrassGeometry,
   createSporeGeometry,
 } from "@/lib/scene/flora";
+import { loadHeroFlower, type HeroFlower } from "@/lib/scene/hero-flower";
 import { getQuality, GRASS_MAX, SPORES_MAX } from "@/lib/scene/quality";
 import {
   FLOWER_FRAG,
   FLOWER_VERT,
   GRASS_FRAG,
   GRASS_VERT,
+  HERO_FRAG,
+  HERO_VERT,
   SPORE_FRAG,
   SPORE_VERT,
 } from "@/lib/scene/shaders/flora";
@@ -86,6 +89,48 @@ export function Flora({ shared }: { shared: SharedUniforms }) {
     };
   }, [built]);
 
+  // A flor de perto chega depois: é um arquivo. Até lá, e se ele faltar, o
+  // campo é só o das flores geradas.
+  const [hero, setHero] = useState<HeroFlower | null>(null);
+  useEffect(() => {
+    let alive = true;
+    let loaded: HeroFlower | null = null;
+    loadHeroFlower().then(
+      (flower) => {
+        loaded = flower;
+        if (alive) setHero(flower);
+        else {
+          flower.geometry.dispose();
+          flower.texture.dispose();
+        }
+      },
+      () => {},
+    );
+    return () => {
+      alive = false;
+      loaded?.geometry.dispose();
+      loaded?.texture.dispose();
+    };
+  }, []);
+  const heroMaterial = useMemo(
+    () =>
+      hero === null
+        ? null
+        : new ShaderMaterial({
+            uniforms: {
+              ...fogUniforms(shared),
+              uHeight: { value: built.height },
+              uMap: { value: hero.texture },
+              uTeal: shared.teal,
+            },
+            vertexShader: HERO_VERT,
+            fragmentShader: HERO_FRAG,
+            side: DoubleSide,
+          }),
+    [hero, shared, built],
+  );
+  useEffect(() => () => heroMaterial?.dispose(), [heroMaterial]);
+
   useFrame((state) => {
     // O ladrilho de relva e o volume dos esporos ficam à frente da câmera.
     state.camera.getWorldDirection(FORWARD);
@@ -102,6 +147,9 @@ export function Flora({ shared }: { shared: SharedUniforms }) {
     built.grassGeometry.instanceCount = Math.floor(GRASS_MAX * quality.grass);
     built.flowerGeometry.instanceCount = Math.floor(built.flowerCount * quality.flowers);
     built.sporeGeometry.setDrawRange(0, Math.floor(SPORES_MAX * quality.spores));
+    if (hero !== null) {
+      hero.geometry.instanceCount = Math.floor(hero.count * quality.flowers);
+    }
   }, -8);
 
   return (
@@ -116,6 +164,9 @@ export function Flora({ shared }: { shared: SharedUniforms }) {
         material={built.flowerMaterial}
         frustumCulled={false}
       />
+      {hero === null || heroMaterial === null ? null : (
+        <mesh geometry={hero.geometry} material={heroMaterial} frustumCulled={false} />
+      )}
       <points
         geometry={built.sporeGeometry}
         material={built.sporeMaterial}

@@ -1,67 +1,26 @@
-import { getScrollProgress, subscribeToScroll } from "@/lib/scroll/scroll-store";
 import { getSoundField, subscribeToCues, type SoundCue } from "./field-store";
 
 /**
- * O leito sonoro — a câmara soando, não uma trilha por cima dela.
+ * A trilha do site: um arquivo (`public/audio/trilha.mp3`, cedido pelo autor),
+ * tocado em laço enquanto o som estiver ligado.
  *
- * ## Nenhum arquivo, e nenhum laço
+ * O laço é por **crossfade**: um mp3 tem silêncio de codificação nas pontas, e
+ * `loop = true` deixaria um soluço a cada volta. Cada volta começa antes de a
+ * anterior acabar, e as duas se cruzam.
  *
- * O ruído é **gerado ao vivo** num AudioWorklet, amostra por amostra. Um buffer
- * em laço se repete, e a emenda de um ruído repetido é audível na terceira volta
- * — é a coisa mais genérica que este site poderia fazer. Aqui não há emenda
- * porque não há nada repetindo. O worklet é um texto de trinta linhas levado ao
- * `addModule` por uma URL de blob: sem arquivo público, sem rede.
+ * O volume segue a cena, pelas duas leituras do `field-store`: sobe com a
+ * abertura do ar (a saída da névoa, no Impacto) e um pouco mais nas paradas.
+ * Um passa-baixa abre junto, então no loading a trilha chega abafada.
  *
- * ## O que dirige o quê
- *
- * O ruído é marrom com uma parcela de branco (grave de duto, com ar por cima)
- * em dois canais descorrelacionados, e passa por dois filtros:
- *
- * - um **passa-baixa** cuja frequência sobe com a abertura da câmara e desce
- *   com a pressão do bando: a garganta fecha o som, o rio abre, o bando
- *   comprimindo perto da câmera o abafa;
- * - um **passa-faixa largo** sobreposto, cujo centro acompanha o progresso — o
- *   duto soa mais baixo lá no fundo e mais alto perto da tomada de ar.
- *
- * O ganho sobe com o bando se formando e com a pressão, e é **baixo** o tempo
- * todo: é a sala, não um instrumento. Sem oscilador, sem nota, sem batida.
- *
- * ## As duas interações
- *
- * Atravessar um card é um sopro curto de ruído filtrado, com o pan do lado em
- * que o card estava; abrir um case é um inchaço grave de meio segundo. Os dois
- * nascem de ruído novo a cada vez, e nenhum passa de 0.04 de ganho.
+ * As duas interações continuam sintetizadas: chegar a uma parada e abrir um
+ * case.
  */
 
-const WORKLET = `
-class BrownNoise extends AudioWorkletProcessor {
-  constructor() {
-    super();
-    this.l = 0; this.r = 0; this.drift = 0; this.target = 1; this.n = 0;
-  }
-  process(_inputs, outputs) {
-    const out = outputs[0];
-    const left = out[0], right = out[1] || out[0];
-    for (let i = 0; i < left.length; i++) {
-      // Marrom: a integral do branco, com vazamento para não derivar.
-      this.l = (this.l + 0.02 * (Math.random() * 2 - 1)) * 0.998;
-      this.r = (this.r + 0.02 * (Math.random() * 2 - 1)) * 0.998;
-      // Uma amplitude que anda à toa, sem período: o ar respira, não pulsa.
-      if (++this.n >= 4096) { this.n = 0; this.target = 0.7 + Math.random() * 0.6; }
-      this.drift += (this.target - this.drift) * 0.00004;
-      // Marrom puro mora abaixo de 100 Hz: medido, o centroide ficava entre 53
-      // e 88 Hz, e o filtro que abre e fecha com a câmara não tinha o que
-      // abrir — era ronco, e alto-falante de notebook nem o reproduz. Uma
-      // parcela de branco dá ar ao duto; quem decide quanto dele passa é o
-      // passa-baixa.
-      left[i] = (this.l * 2.4 + (Math.random() * 2 - 1) * 0.16) * this.drift;
-      right[i] = (this.r * 2.4 + (Math.random() * 2 - 1) * 0.16) * this.drift;
-    }
-    return true;
-  }
-}
-registerProcessor("brown-noise", BrownNoise);
-`;
+const TRACK_URL = "/audio/trilha.mp3";
+/** Quanto duas voltas da trilha se sobrepõem, em segundos. */
+const CROSSFADE_S = 3;
+/** O volume da trilha com o ar todo aberto. */
+const TRACK_LEVEL = 0.32;
 
 export type SoundBed = { dispose: () => void };
 
@@ -69,94 +28,94 @@ export async function startSoundBed(
   context: AudioContext,
   destination: AudioNode,
 ): Promise<SoundBed> {
-  const url = URL.createObjectURL(new Blob([WORKLET], { type: "text/javascript" }));
-  try {
-    await context.audioWorklet.addModule(url);
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-
-  const source = new AudioWorkletNode(context, "brown-noise", {
-    numberOfInputs: 0,
-    outputChannelCount: [2],
-  });
   const lowpass = context.createBiquadFilter();
   lowpass.type = "lowpass";
   lowpass.Q.value = 0.5;
-  lowpass.frequency.value = 220;
-  const band = context.createBiquadFilter();
-  band.type = "peaking";
-  band.Q.value = 0.6;
-  band.gain.value = 4;
-  band.frequency.value = 140;
+  lowpass.frequency.value = 600;
+
   const gain = context.createGain();
   gain.gain.value = 0;
+  lowpass.connect(gain).connect(destination);
 
-  source.connect(lowpass).connect(band).connect(gain).connect(destination);
+  let disposed = false;
+  let timer = 0;
+  const playing = new Set<AudioBufferSourceNode>();
 
-  // O bordão: duas senoides graves numa quinta, uma delas desafinada um nada
-  // para o batimento lento. Entra com a abertura do ar e cresce nas paradas.
-  const drone = context.createGain();
-  drone.gain.value = 0;
-  const voices = [55, 82.6, 110.3].map((frequency, index) => {
-    const oscillator = context.createOscillator();
-    oscillator.type = "sine";
-    oscillator.frequency.value = frequency;
-    const level = context.createGain();
-    level.gain.value = [1, 0.55, 0.22][index] ?? 0.2;
-    oscillator.connect(level).connect(drone);
-    oscillator.start();
-    return { oscillator, level };
-  });
-  drone.connect(destination);
+  // Uma volta da trilha, com a entrada e a saída em rampa, e a próxima
+  // agendada para começar dentro da saída desta.
+  const play = (buffer: AudioBuffer, at: number) => {
+    if (disposed) return;
+    const source = context.createBufferSource();
+    source.buffer = buffer;
+    const fade = context.createGain();
+    const end = at + buffer.duration;
+    fade.gain.setValueAtTime(0, at);
+    fade.gain.linearRampToValueAtTime(1, at + CROSSFADE_S);
+    fade.gain.setValueAtTime(1, end - CROSSFADE_S);
+    fade.gain.linearRampToValueAtTime(0, end);
+    source.connect(fade).connect(lowpass);
+    source.start(at);
+    playing.add(source);
+    source.onended = () => {
+      playing.delete(source);
+      source.disconnect();
+      fade.disconnect();
+    };
+    const next = end - CROSSFADE_S;
+    timer = window.setTimeout(
+      () => play(buffer, next),
+      Math.max(0, (next - context.currentTime - 1) * 1000),
+    );
+  };
 
-  // A cada quadro de rolagem e a cada 100 ms — a pressão do bando muda sem
-  // ninguém rolar. `setTargetAtTime` amortece tudo: nada no som dá degrau.
+  // Sem a trilha (rede, formato) o site fica em silêncio: os cues continuam.
+  void fetch(TRACK_URL)
+    .then((response) => response.arrayBuffer())
+    .then((data) => context.decodeAudioData(data))
+    .then((buffer) => play(buffer, context.currentTime + 0.05))
+    .catch(() => {});
+
   const update = () => {
     const now = context.currentTime;
-    const progress = getScrollProgress();
     const field = getSoundField();
-    const openness = field.live ? field.openness : 0.3;
+    const openness = field.live ? field.openness : 0.5;
     const pressure = field.live ? field.pressure : 0;
-    const cutoff = (160 + 1500 * openness * openness) * (1 - 0.55 * pressure);
-    lowpass.frequency.setTargetAtTime(Math.max(90, cutoff), now, 0.35);
-    band.frequency.setTargetAtTime(90 + 260 * progress, now, 0.8);
-    const level = 0.01 + 0.03 * openness + 0.02 * pressure;
-    gain.gain.setTargetAtTime(level, now, 0.5);
-    drone.gain.setTargetAtTime(0.012 * openness + 0.014 * pressure, now, 1.4);
+    lowpass.frequency.setTargetAtTime(500 + 15000 * openness * openness, now, 0.6);
+    gain.gain.setTargetAtTime(
+      TRACK_LEVEL * (0.3 + 0.6 * openness + 0.1 * pressure),
+      now,
+      0.8,
+    );
   };
-  const stopScroll = subscribeToScroll(update);
-  const timer = window.setInterval(update, 100);
+  const poll = window.setInterval(update, 100);
   update();
 
   const onCue = (cue: SoundCue) => {
     try {
       playCue(context, destination, cue);
     } catch {
-      // Um sopro que não toca não impede ninguém de atravessar.
+      // Um cue que falha não derruba a trilha.
     }
   };
   const stopCues = subscribeToCues(onCue);
 
   return {
     dispose: () => {
-      stopScroll();
+      disposed = true;
       stopCues();
-      window.clearInterval(timer);
-      const now = context.currentTime;
-      gain.gain.setTargetAtTime(0, now, 0.2);
-      drone.gain.setTargetAtTime(0, now, 0.2);
+      window.clearInterval(poll);
+      window.clearTimeout(timer);
+      gain.gain.setTargetAtTime(0, context.currentTime, 0.2);
       window.setTimeout(() => {
-        source.disconnect();
-        lowpass.disconnect();
-        band.disconnect();
-        gain.disconnect();
-        for (const voice of voices) {
-          voice.oscillator.stop();
-          voice.oscillator.disconnect();
-          voice.level.disconnect();
+        for (const source of playing) {
+          try {
+            source.stop();
+          } catch {
+            // Já tinha parado.
+          }
         }
-        drone.disconnect();
+        lowpass.disconnect();
+        gain.disconnect();
       }, 1200);
     },
   };

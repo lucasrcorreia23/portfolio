@@ -7,6 +7,7 @@ import {
   Vector3,
 } from "three";
 import { GRASS_MAX, SPORES_MAX } from "./quality";
+import { HERO_FAR } from "./hero-flower";
 import { GRASS_TILE } from "./shaders/flora";
 import { floraPatches, pathX, type Patch } from "./world";
 
@@ -87,37 +88,70 @@ export function createFlowerGeometry(): {
   // dobrado (4 triângulos), aberto para fora; a coroa de dentro fica em pé.
   const head: number[] = [];
   const headNormals: number[] = [];
+  // A pétala é curva nos dois sentidos: em concha na largura e arqueada no
+  // comprimento, com a ponta virando para cima. As normais são suavizadas
+  // entre as faces, para ela ler como superfície e não como chapa.
   const petal = (angle: number, open: number, length: number, width: number) => {
     const c = Math.cos(angle);
     const s = Math.sin(angle);
-    // No plano da pétala: `out` aponta para fora, `up` para cima.
-    const at = (out: number, up: number, side: number): [number, number, number] => [
-      c * out - s * side,
-      up,
-      s * out + c * side,
-    ];
     const lean = Math.cos(open);
     const rise = Math.sin(open);
-    const base = at(0.12, 0, 0);
-    const left = at(0.12 + length * 0.55 * lean, length * 0.55 * rise, -width);
-    const right = at(0.12 + length * 0.55 * lean, length * 0.55 * rise, width);
-    const mid = at(0.12 + length * 0.5 * lean, length * 0.5 * rise - 0.12, 0);
-    const tip = at(0.12 + length * lean * 1.05, length * rise * 0.9, 0);
-    const normal: [number, number, number] = [c * rise * -1, lean, s * rise * -1];
-    for (const triangle of [
-      [base, left, mid],
-      [base, mid, right],
-      [left, tip, mid],
-      [mid, tip, right],
-    ]) {
-      for (const vertex of triangle) {
-        head.push(...vertex);
-        headNormals.push(...normal);
+    // Ao longo da pétala: onde está, quão larga é e quanto o meio afunda.
+    const rows = [
+      { t: 0, half: 0, dip: 0 },
+      { t: 0.4, half: 1, dip: 0.2 },
+      { t: 0.78, half: 0.72, dip: 0.13 },
+      { t: 1, half: 0, dip: 0 },
+    ];
+    const points: [number, number, number][] = [];
+    const at = (t: number, side: number, dip: number) => {
+      // O arco: sai quase deitada e a ponta sobe.
+      const out = 0.12 + length * lean * t * (1 - 0.22 * t);
+      const up = length * (rise * t * 0.75 + 0.42 * t * t) - dip * length;
+      points.push([c * out - s * side, up, s * out + c * side]);
+      return points.length - 1;
+    };
+    const base = at(0, 0, 0);
+    const l1 = at(rows[1]!.t, -width * rows[1]!.half, 0);
+    const m1 = at(rows[1]!.t, 0, rows[1]!.dip);
+    const r1 = at(rows[1]!.t, width * rows[1]!.half, 0);
+    const l2 = at(rows[2]!.t, -width * rows[2]!.half, 0);
+    const m2 = at(rows[2]!.t, 0, rows[2]!.dip);
+    const r2 = at(rows[2]!.t, width * rows[2]!.half, 0);
+    const tip = at(1, 0, 0);
+    const faces = [
+      [base, l1, m1], [base, m1, r1],
+      [l1, l2, m2], [l1, m2, m1], [m1, m2, r2], [m1, r2, r1],
+      [l2, tip, m2], [m2, tip, r2],
+    ];
+    const sums = points.map(() => [0, 0, 0]);
+    for (const [a, b, d] of faces as [number, number, number][]) {
+      const pa = points[a]!;
+      const pb = points[b]!;
+      const pd = points[d]!;
+      const ux = pb[0] - pa[0], uy = pb[1] - pa[1], uz = pb[2] - pa[2];
+      const vx = pd[0] - pa[0], vy = pd[1] - pa[1], vz = pd[2] - pa[2];
+      let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+      // Todas para o lado de cima da pétala.
+      if (ny < 0) { nx = -nx; ny = -ny; nz = -nz; }
+      for (const index of [a, b, d]) {
+        const sum = sums[index]!;
+        sum[0] = (sum[0] ?? 0) + nx;
+        sum[1] = (sum[1] ?? 0) + ny;
+        sum[2] = (sum[2] ?? 0) + nz;
+      }
+    }
+    for (const face of faces) {
+      for (const index of face) {
+        head.push(...points[index!]!);
+        const sum = sums[index!]!;
+        const size = Math.hypot(sum[0] ?? 0, sum[1] ?? 0, sum[2] ?? 0) || 1;
+        headNormals.push((sum[0] ?? 0) / size, (sum[1] ?? 0) / size, (sum[2] ?? 0) / size);
       }
     }
   };
-  for (let k = 0; k < 5; k += 1) petal((k / 5) * Math.PI * 2, 0.5, 1.15, 0.42);
-  for (let k = 0; k < 3; k += 1) petal((k / 3) * Math.PI * 2 + 0.6, 1.15, 0.85, 0.34);
+  for (let k = 0; k < 5; k += 1) petal((k / 5) * Math.PI * 2, 0.35, 1.15, 0.46);
+  for (let k = 0; k < 3; k += 1) petal((k / 3) * Math.PI * 2 + 0.6, 0.95, 0.8, 0.36);
   // O miolo: uma pirâmide pequena, para a flor ter centro vista de cima.
   for (let k = 0; k < 4; k += 1) {
     const a = (k / 4) * Math.PI * 2;
@@ -158,8 +192,9 @@ export function createFlowerGeometry(): {
     while (list.length < patch.count && guard < patch.count * 6) {
       guard += 1;
       const [x, z] = scatter(patch, random);
-      // Nenhuma flor no meio da trilha: a câmera não atravessa cabeças.
-      if (Math.abs(x - pathX(z)) < 1.7) continue;
+      // Perto da trilha crescem as flores do modelo (`hero-flower.ts`); as
+      // geradas ficam dali para fora, onde são vistas de longe.
+      if (Math.abs(x - pathX(z)) < HERO_FAR - 2.5) continue;
       list.push([
         x,
         index,

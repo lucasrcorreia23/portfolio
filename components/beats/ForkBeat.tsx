@@ -1,6 +1,6 @@
-import Link from "next/link";
 import type { Beat } from "./beats";
 import { BeatReveal } from "./BeatReveal";
+import { ForkLink } from "./ForkLink";
 
 type ForkBeatProps = {
   beat: Beat;
@@ -29,10 +29,10 @@ export function ForkBeat({ beat, href, lead, enter, onward, count }: ForkBeatPro
           {lead}
         </p>
         <div data-veil className="flex w-fit flex-col gap-3">
-          <Link href={href} className="fork-enter type-mono text-label w-fit">
+          <ForkLink href={href} className="fork-enter type-mono text-label w-fit">
             {enter} <span aria-hidden="true">→</span>{" "}
             <span className="text-hud">+{String(count).padStart(2, "0")}</span>
-          </Link>
+          </ForkLink>
           <p className="type-mono text-hud text-mist">
             {onward} <span aria-hidden="true">↓</span>
           </p>

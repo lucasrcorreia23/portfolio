@@ -185,11 +185,33 @@ function syncBed(): void {
 /** Lê a escolha salva. Chamado pelo controle depois de montar. */
 export function hydrateAudioPreference(): void {
   try {
+    // O som nasce ligado: só fica mudo para quem o desligou.
     const stored = window.localStorage.getItem(PREFERENCE_KEY);
-    if (stored === "on" && muted) setAudioMuted(false, false);
+    if (stored !== "off" && muted) setAudioMuted(false, false);
   } catch {
     // Armazenamento bloqueado: continua desligado.
   }
+}
+
+/**
+ * O navegador só deixa o som começar depois de um gesto. A trilha é pedida
+ * assim que o site abre (onde o navegador permitir, ela já toca ao fim do
+ * loading) e, onde não permitir, começa no primeiro clique, toque ou tecla.
+ */
+export function armAudio(): () => void {
+  const start = () => {
+    if (!muted) unlockAudio();
+  };
+  const events = ["pointerdown", "keydown", "touchend"] as const;
+  const once = () => {
+    start();
+    for (const name of events) window.removeEventListener(name, once);
+  };
+  for (const name of events) window.addEventListener(name, once, { passive: true });
+  start();
+  return () => {
+    for (const name of events) window.removeEventListener(name, once);
+  };
 }
 
 export function subscribeToAudioPreference(listener: () => void): () => void {

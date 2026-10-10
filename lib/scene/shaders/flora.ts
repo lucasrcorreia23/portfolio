@@ -166,6 +166,77 @@ void main() {
 }
 `;
 
+/**
+ * A flor de perto: o modelo com a textura dele. A folha fica escura, como a
+ * relva; a pétala emite, na cor da flor (ciano ou rosa), com o desenho da
+ * textura por baixo. O alfa da textura recorta as folhas.
+ */
+export const HERO_VERT = /* glsl */ `
+${FOG_UNIFORMS_GLSL}
+${HEIGHT_GLSL}
+attribute vec3 aOffset;
+attribute vec4 aSeed;
+attribute float aWarm;
+varying vec2 vUv;
+varying vec3 vTint;
+varying vec3 vGlow;
+varying float vFog;
+varying vec3 vFogColor;
+
+${FOG_GLSL}
+${WIND_GLSL}
+
+void main() {
+  vec2 xz = aOffset.xz;
+  vec3 base = vec3(xz.x, terrainHeight(xz), xz.y);
+  float c = cos(aSeed.y);
+  float s = sin(aSeed.y);
+  vec3 local = vec3(position.x * c - position.z * s, position.y, position.x * s + position.z * c) * aSeed.x;
+  // O vento dobra a planta a partir da base, mais na ponta.
+  float along = clamp(position.y / 0.143, 0.0, 1.0);
+  local.xz += windAt(base, uTime + aSeed.z * 4.0) * along * along * aSeed.x * 0.11;
+  vec3 world = base + local;
+
+  vec4 view = viewMatrix * vec4(world, 1.0);
+  float depth = -view.z;
+
+  float cluster = uEmitters[int(aOffset.y)].w;
+  float bright = (0.6 + 0.4 * aSeed.w) * (0.5 + 0.5 * cluster) * uGlow;
+  vTint = mix(uCyan, uRose * vec3(1.0, 0.85, 0.95), aWarm) * 3.4 * bright;
+  vGlow = floraGlow(base + vec3(0.0, 0.5, 0.0));
+  vUv = uv;
+
+  vec3 fogged = applyFog(vec3(0.0), depth, world);
+  vFogColor = fogColorAt(depth, world);
+  float lum = dot(vFogColor, vec3(0.3333));
+  vFog = lum > 1e-5 ? clamp(dot(fogged, vec3(0.3333)) / lum, 0.0, 1.0) : 0.0;
+
+  gl_Position = projectionMatrix * view;
+}
+`;
+
+export const HERO_FRAG = /* glsl */ `
+uniform sampler2D uMap;
+uniform vec3 uTeal;
+varying vec2 vUv;
+varying vec3 vTint;
+varying vec3 vGlow;
+varying float vFog;
+varying vec3 vFogColor;
+
+void main() {
+  vec4 texel = texture(uMap, vUv);
+  if (texel.a < 0.5) discard;
+  // Na textura a pétala é amarela e a folha é verde: o vermelho as separa
+  // (em luz linear: ~0,5 na pétala, ~0,07 na folha).
+  float petal = smoothstep(0.14, 0.3, texel.r);
+  float detail = dot(texel.rgb, vec3(0.3333));
+  vec3 leaf = uTeal * 0.5 * detail + vGlow * 0.28 * detail;
+  vec3 color = mix(leaf, vTint * (0.6 + 1.2 * detail), petal);
+  gl_FragColor = vec4(mix(color, vFogColor, vFog), 1.0);
+}
+`;
+
 export const SPORE_VERT = /* glsl */ `
 ${FOG_UNIFORMS_GLSL}
 uniform vec2 uResolution;
