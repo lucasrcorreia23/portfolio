@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import type { ReactNode } from "react";
+import { emitCue } from "@/lib/audio/field-store";
 import { useReducedMotion } from "@/lib/capabilities/use-reduced-motion";
 import { getScrollProgress, subscribeToScroll } from "@/lib/scroll/scroll-store";
 import { runReadouts } from "@/lib/text/readout";
@@ -36,7 +37,9 @@ export function BeatReveal({
   const ref = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotion();
 
-  useEffect(() => {
+  // Antes da pintura: um bloco que monta já apagado (a legenda, a cada parada)
+  // não pode aparecer inteiro por um quadro.
+  useLayoutEffect(() => {
     const node = ref.current;
     if (node === null) return;
 
@@ -55,6 +58,8 @@ export function BeatReveal({
       if (first && next) return;
       node.setAttribute("data-lit", String(next));
       runReadouts(node, next);
+      // O som é da luz: só toca onde há título acendendo.
+      if (next && node.querySelector(".glyph") !== null) emitCue("text");
     };
 
     write(getScrollProgress());

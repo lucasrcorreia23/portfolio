@@ -132,7 +132,7 @@
      títulos acendem letra a letra, o mono entra como leitura de instrumento
      (`lib/text/readout.ts`) e os parágrafos saem da névoa. Quem dá a deixa
      escreve `data-lit`; sem ele o texto está inteiro. `--wait` atrasa um bloco
-     em relação à deixa. Apagar é sempre um corte. */
+     em relação à deixa. */
   .glyph-word {
     display: inline-block;
     white-space: nowrap;
@@ -141,17 +141,21 @@
   [data-lit="false"] [data-readout],
   [data-lit="false"] .fog-in {
     opacity: 0;
-    transition: opacity var(--dur-cut) linear;
+    transition:
+      opacity 360ms ease-out,
+      filter 360ms ease-out;
   }
   .beat-stage [data-lit="false"] a:not(.card-link) {
     pointer-events: none;
   }
+  /* A luz corre pelo título como uma onda (`--o`), e cada letra passa do
+     brilho antes de assentar na cor do texto. */
   [data-lit="true"] .glyph {
-    animation: ignite 900ms var(--ease-strong) both;
-    animation-delay: calc(var(--wait, 0ms) + var(--o) * 620ms);
+    animation: ignite 1500ms ease-out both;
+    animation-delay: calc(var(--wait, 0ms) + var(--o) * 520ms);
   }
   [data-lit="true"] [data-readout] {
-    transition: opacity var(--dur-cut) linear var(--wait, 0ms);
+    transition: opacity 300ms ease-out var(--wait, 0ms);
   }
   [data-lit="false"] .fog-in {
     filter: blur(0.5rem);
@@ -165,18 +169,21 @@
     0% {
       opacity: 0;
       color: var(--cyan);
-      text-shadow: 0 0 0.4em var(--cyan);
-      animation-timing-function: linear;
+      filter: blur(0.1em);
+      text-shadow: 0 0 0.6em var(--cyan);
+      animation-timing-function: ease-in-out;
     }
-    14% {
+    30% {
       opacity: 1;
-      color: var(--cyan);
+      color: color-mix(in oklab, var(--cyan), white 55%);
+      filter: blur(0);
       text-shadow:
-        0 0 0.06em var(--cyan),
-        0 0 0.4em var(--cyan);
+        0 0 0.1em var(--cyan),
+        0 0 0.7em var(--cyan);
     }
     100% {
       opacity: 1;
+      filter: blur(0);
     }
   }
 

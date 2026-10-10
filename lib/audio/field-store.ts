@@ -12,7 +12,7 @@
  *   do duto naquele ponto e a névoa. A garganta fecha, o rio abre.
  * - `pressure`, 0 a 1: quanta massa do bando está perto da câmera, pesada pela
  *   energia — a mesma conta do rig de luz, vinda do proxy da CPU.
- * - os **cues**: atravessar um card, abrir um case. O baque do portão não passa
+ * - os **cues**: atravessar um card, abrir um case, um título acendendo. O baque do portão não passa
  *   por aqui: ele nasce no próprio gesto.
  */
 
@@ -34,7 +34,7 @@ export function getSoundField(): Readonly<SoundField> {
   return field;
 }
 
-export type SoundCue = { kind: "card" | "case"; pan: number };
+export type SoundCue = { kind: "card" | "case" | "text"; pan: number };
 
 const cueListeners = new Set<(cue: SoundCue) => void>();
 

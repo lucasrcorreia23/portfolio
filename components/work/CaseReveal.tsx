@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 import { useSceneMode } from "@/lib/capabilities/use-scene-mode";
+import { emitCue } from "@/lib/audio/field-store";
 import { runReadouts } from "@/lib/text/readout";
 import {
   getCaseState,
@@ -72,6 +73,7 @@ export function CaseReveal({ children }: { children: ReactNode }) {
     if (!held.current) return;
     node.setAttribute("data-lit", "true");
     runReadouts(node, true);
+    emitCue("text");
   }, [arriving, mode]);
 
   return (
