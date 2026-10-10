@@ -96,12 +96,12 @@ void main() {
   // vidro cobre a placa inteira, e esse laço por pixel não se vê aqui.
   vec3 air = mix(uAbyss, uDeep * 0.55, 0.6) + astroAir(mirror);
   vec3 flora = floraGlow(vWorld + mirror * 5.0);
-  vec3 color = (air + flora * 0.08) * fresnel;
+  vec3 color = (air * 3.0 + flora * 0.25) * fresnel;
 
   // As bordas pegam um pouco mais de luz, como a aresta de uma chapa de vidro.
   vec2 edge = min(vUv, 1.0 - vUv) * vec2(${PANEL_ASPECT.toFixed(2)}, 1.0);
   float rim = 1.0 - smoothstep(0.0, 0.035, min(edge.x, edge.y));
-  color += (air + flora * 0.08) * rim * 0.25;
+  color += (air * 2.0 + flora * 0.2) * rim * 0.6;
 
   // Aditivo: a névoa não tinge, ela apaga. E na leitura do case o vidro some.
   color *= (1.0 - fogAmount(vDepth, vWorld)) * (1.0 - uRecess);
