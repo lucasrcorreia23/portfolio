@@ -61,6 +61,9 @@ type SceneWorldProps = {
 
 /** Quanto o primeiro quadro espera pelas plantas, no máximo. */
 const PLANTS_WAIT_MS = 4000;
+/** Até onde o ponteiro gira o olhar, em radianos: para os lados e na vertical. */
+const LOOK_YAW = 0.52;
+const LOOK_PITCH = 0.2;
 
 const RIGHT = new Vector3();
 const VIEW = new Vector3();
@@ -161,17 +164,20 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
     );
     shared.caseRecess.value = inCase;
 
-    // A resposta ao ponteiro: o olhar cede um pouco para o lado dele. Some no
-    // modo calmo e dentro de um case, onde nada se mexe.
+    // Olhar em volta: o ponteiro gira o olhar para o lado dele, até uns 30
+    // graus na borda da tela. Perto do centro quase nada se move (a resposta
+    // é quadrática), para a leitura ficar parada. Some no modo calmo e dentro
+    // de um case, onde nada se mexe.
     if (!still) {
       const pointer = getPointer();
       const amount = 1 - inCase;
-      sway.current.x = damp(sway.current.x, pointer.x * amount, 2.2, dt);
-      sway.current.y = damp(sway.current.y, pointer.y * amount, 2.2, dt);
-      VIEW.subVectors(pose.target, pose.position).normalize();
-      RIGHT.crossVectors(VIEW, UP).normalize();
-      pose.target.addScaledVector(RIGHT, sway.current.x * 1.4);
-      pose.target.y -= sway.current.y * 0.8;
+      sway.current.x = damp(sway.current.x, pointer.x * Math.abs(pointer.x) * amount, 2.2, dt);
+      sway.current.y = damp(sway.current.y, pointer.y * Math.abs(pointer.y) * amount, 2.2, dt);
+      VIEW.subVectors(pose.target, pose.position);
+      const reach = VIEW.length();
+      RIGHT.crossVectors(VIEW.normalize(), UP).normalize();
+      pose.target.addScaledVector(RIGHT, Math.tan(sway.current.x * LOOK_YAW) * reach);
+      pose.target.y -= Math.tan(sway.current.y * LOOK_PITCH) * reach;
       pose.position.addScaledVector(RIGHT, sway.current.x * 0.25);
     }
 
