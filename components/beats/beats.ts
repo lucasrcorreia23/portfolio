@@ -4,7 +4,7 @@
  * `from`/`to` são a faixa de progresso; `vh`/`mobileVh` a altura da seção em
  * viewports. Os totais são somas desta tabela, nunca constantes digitadas.
  */
-export const BEAT_IDS = ["impact", "intro", "cases", "cta"] as const;
+export const BEAT_IDS = ["impact", "intro", "cases", "vitrine", "cta"] as const;
 
 export type BeatId = (typeof BEAT_IDS)[number];
 
@@ -19,8 +19,10 @@ export type Beat = {
 export const BEATS: readonly Beat[] = [
   { id: "impact", from: 0.0, to: 0.16, vh: 1.8, mobileVh: 1.5 },
   { id: "intro", from: 0.16, to: 0.34, vh: 2.4, mobileVh: 2.4 },
-  { id: "cases", from: 0.34, to: 0.88, vh: 9.6, mobileVh: 7.8 },
-  { id: "cta", from: 0.88, to: 1.0, vh: 2.0, mobileVh: 2.0 },
+  { id: "cases", from: 0.34, to: 0.8, vh: 9.6, mobileVh: 7.8 },
+  // A bifurcação: depois dos cases, o desvio que leva à vitrine.
+  { id: "vitrine", from: 0.8, to: 0.9, vh: 2.2, mobileVh: 2.0 },
+  { id: "cta", from: 0.9, to: 1.0, vh: 2.0, mobileVh: 2.0 },
 ] as const;
 
 const round2 = (value: number) => Math.round(value * 100) / 100;

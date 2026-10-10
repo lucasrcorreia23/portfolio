@@ -16,6 +16,9 @@ uniform vec3  uVoid;
 uniform vec3  uAbyss;
 uniform vec3  uDeep;
 uniform vec3  uCyan;
+uniform vec3  uRose;
+uniform float uEmitterWarm[${MAX_EMITTERS}];
+uniform float uFlash;
 uniform float uFogDensity;
 uniform float uTime;
 uniform vec4  uEmitters[${MAX_EMITTERS}];
@@ -72,22 +75,34 @@ float floraLight(vec3 worldPos) {
   return total * uGlow;
 }
 
+/** A mesma luz, com a cor de cada mancha: do ciano ao rosa. */
+vec3 floraGlow(vec3 worldPos) {
+  vec3 total = vec3(0.0);
+  for (int i = 0; i < ${MAX_EMITTERS}; i++) {
+    vec4 e = uEmitters[i];
+    if (e.w <= 0.0) continue;
+    vec3 d = e.xyz - worldPos;
+    total += mix(uCyan, uRose, uEmitterWarm[i]) * (e.w / (1.0 + dot(d, d) * 0.035));
+  }
+  return total * uGlow;
+}
+
 /**
  * A flora vista através da névoa: quanto do raio da câmera até o ponto passa
  * perto de um aglomerado. É o halo no ar em volta de cada mancha de flores.
  */
-float floraScatter(vec3 worldPos) {
+vec3 floraScatter(vec3 worldPos) {
   vec3 ray = worldPos - cameraPosition;
   float len = max(length(ray), 1e-3);
   vec3 dir = ray / len;
-  float total = 0.0;
+  vec3 total = vec3(0.0);
   for (int i = 0; i < ${MAX_EMITTERS}; i++) {
     vec4 e = uEmitters[i];
     if (e.w <= 0.0) continue;
     vec3 toE = e.xyz - cameraPosition;
     float t = clamp(dot(toE, dir), 0.0, len);
     vec3 d = toE - dir * t;
-    total += e.w * exp(-dot(d, d) * 0.012) * smoothstep(0.0, 14.0, t);
+    total += mix(uCyan, uRose, uEmitterWarm[i]) * e.w * exp(-dot(d, d) * 0.012) * smoothstep(0.0, 14.0, t);
   }
   return total * uGlow;
 }
@@ -97,7 +112,9 @@ vec3 fogColorAt(float viewDepth, vec3 worldPos) {
   // Três paradas: o fundo, a profundidade média e a linha do horizonte.
   vec3 fogColor = mix(uVoid, uAbyss, smoothstep(0.0, 0.25, depth01));
   fogColor = mix(fogColor, uDeep * 0.55, smoothstep(0.35, 1.0, depth01) * 0.6);
-  fogColor += uCyan * 0.06 * floraScatter(worldPos);
+  fogColor += 0.06 * floraScatter(worldPos);
+  // As descargas acendem o ar inteiro por um instante, mais longe do que perto.
+  fogColor += mix(uRose, vec3(1.0), 0.45) * 0.05 * uFlash * smoothstep(0.05, 0.6, depth01);
   return fogColor;
 }
 

@@ -27,6 +27,7 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
     deep: { value: new Color(palette.deep) },
     teal: { value: new Color(palette.teal) },
     cyan: { value: new Color(palette.cyan) },
+    rose: { value: new Color(palette.rose) },
     mist: { value: new Color(palette.mist) },
 
     exposure: { value: 1.15 },
@@ -40,6 +41,12 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
     emitters: {
       value: Array.from({ length: MAX_EMITTERS }, () => new Vector4()),
     },
+    /** Quanto de cada mancha é rosa, 0 a 1: é a cor da luz dela. */
+    emitterWarm: { value: Array.from({ length: MAX_EMITTERS }, () => 0) },
+    /** O clarão das descargas elétricas no ar, 0 a 1. */
+    flash: { value: 0 },
+    /** Há uma rajada de descargas agora, 0 ou 1. */
+    storm: { value: 0 },
     /** Ganho geral da emissão, 0 a 1: sobe na revelação do Impacto. */
     glow: { value: 1 },
 
@@ -71,6 +78,9 @@ export function fogUniforms(shared: SharedUniforms) {
     uAbyss: shared.abyss,
     uDeep: shared.deep,
     uCyan: shared.cyan,
+    uRose: shared.rose,
+    uEmitterWarm: shared.emitterWarm,
+    uFlash: shared.flash,
     uFogDensity: shared.fogDensity,
     uTime: shared.time,
     uEmitters: shared.emitters,

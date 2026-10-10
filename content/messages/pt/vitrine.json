@@ -1,5 +1,9 @@
 {
   "title": "Vitrine",
   "filter": "Tipo",
-  "all": "Tudo"
+  "all": "Tudo",
+  "label": "Bifurcação",
+  "lead": "Há mais trabalho fora da trilha.",
+  "enter": "Entrar na vitrine",
+  "onward": "ou siga para o contato"
 }

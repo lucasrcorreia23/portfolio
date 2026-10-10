@@ -41,7 +41,7 @@ void main() {
   vec3 base = mix(uDeep * 0.05, uTeal * 0.09, mat * 0.6 + fine * 0.4);
   float sky = 0.35 + 0.65 * clamp(n.y, 0.0, 1.0);
   vec3 color = base * sky;
-  color += uCyan * floraLight(vWorld + vec3(0.0, 0.6, 0.0)) * (0.05 + 0.06 * fine);
+  color += floraGlow(vWorld + vec3(0.0, 0.6, 0.0)) * (0.05 + 0.06 * fine);
   gl_FragColor = vec4(applyFog(color, vDepth, vWorld), 1.0);
 }
 `;
@@ -90,7 +90,7 @@ void main() {
   // Neutra e fosca: duas cores de estrutura, a de cima um passo mais clara.
   vec3 base = mix(uDeep, uTeal, 0.35 + 0.4 * clamp(n.y, 0.0, 1.0)) * 0.34;
   // A flora a alcança de leve, sem cor própria: é reflexo, não emissão.
-  base += uCyan * floraLight(world.xyz) * 0.035;
+  base += floraGlow(world.xyz) * 0.035;
   vColor = applyFog(base, -view.z, world.xyz);
   gl_Position = projectionMatrix * view;
 }
@@ -101,6 +101,60 @@ varying vec3 vColor;
 
 void main() {
   gl_FragColor = vec4(vColor, 1.0);
+}
+`;
+
+/** Quantos segmentos tem cada descarga. */
+export const ARC_SEGMENTS = 18;
+
+/**
+ * As descargas elétricas: um fio quebrado entre dois pontos altos da
+ * indústria, redesenhado várias vezes por segundo e visível só em rajadas.
+ * É a única coisa da indústria que acende, e acende em rosa quase branco.
+ */
+export const ARC_VERT = /* glsl */ `
+${FOG_UNIFORMS_GLSL}
+uniform float uStorm;
+attribute vec3 aFrom;
+attribute vec3 aTo;
+attribute vec2 aArc;
+varying float vAlpha;
+
+float arcHash(vec3 p) {
+  p = fract(p * 0.1031);
+  p += dot(p, p.yzx + 33.33);
+  return fract((p.x + p.y) * p.z);
+}
+
+void main() {
+  float t = aArc.x;
+  float seed = aArc.y;
+  // O desenho do raio muda em degraus: é o que o faz tremer em vez de ondular.
+  float beat = floor(uTime * 22.0);
+  vec3 jitter = vec3(
+    arcHash(vec3(t * 37.0, seed, beat)),
+    arcHash(vec3(t * 53.0, seed + 3.1, beat)),
+    arcHash(vec3(t * 71.0, seed + 7.7, beat))
+  ) - 0.5;
+  float span = length(aTo - aFrom);
+  vec3 world = mix(aFrom, aTo, t) + jitter * span * 0.09 * sin(t * 3.14159);
+  world.y -= span * 0.05 * sin(t * 3.14159);
+
+  // Cada descarga dispara em algumas rajadas, e pisca dentro delas.
+  float chosen = step(0.5, arcHash(vec3(seed, floor(uTime * 0.6), 1.0)));
+  float flicker = step(0.35, arcHash(vec3(seed, beat, 2.0)));
+  vec4 view = viewMatrix * vec4(world, 1.0);
+  vAlpha = uStorm * chosen * flicker * exp(-uFogDensity * 0.35 * max(-view.z, 0.0));
+  gl_Position = vAlpha <= 0.001 ? vec4(2.0, 2.0, 2.0, 1.0) : projectionMatrix * view;
+}
+`;
+
+export const ARC_FRAG = /* glsl */ `
+uniform vec3 uRose;
+varying float vAlpha;
+
+void main() {
+  gl_FragColor = vec4(mix(uRose, vec3(1.0), 0.5) * 3.2 * vAlpha, 1.0);
 }
 `;
 

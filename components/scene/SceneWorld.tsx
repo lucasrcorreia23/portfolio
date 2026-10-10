@@ -181,6 +181,24 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
       );
     }
 
+    for (let i = 0; i < patches.length; i += 1) {
+      shared.emitterWarm.value[i] = patches[i]?.warm ?? 0;
+    }
+
+    // --- a eletricidade -----------------------------------------------------
+    // Rajadas curtas, de tempos em tempos: as descargas saltam entre as torres
+    // e o ar inteiro acende um instante. No modo calmo e na leitura, nada.
+    {
+      const t = shared.time.value;
+      const slot = Math.floor(t * 0.6);
+      const roll = Math.sin(slot * 91.7) * 43758.5453;
+      const active = !still && roll - Math.floor(roll) > 0.45 && reveal > 0.9;
+      shared.storm.value = active ? 1 - inCase : 0;
+      const pulse = Math.sin(Math.floor(t * 22) * 12.9898) * 43758.5453;
+      const spark = active && pulse - Math.floor(pulse) > 0.55 ? 1 - inCase : 0;
+      shared.flash.value = damp(shared.flash.value, spark, spark > 0 ? 40 : 9, dt);
+    }
+
     // --- véu de legibilidade ------------------------------------------------
     writeVeilBoxes(readVeilBoxes(), shared.veilBox.value, shared.veilF.value);
 

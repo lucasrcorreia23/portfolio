@@ -114,7 +114,10 @@ export const STOP_Z: readonly number[] = Array.from(
   (_, index) => Z_CASES - STOP_LEAD - index * STOP_SPACING,
 );
 
-const Z_CTA = Z_CASES - STOP_COUNT * STOP_SPACING;
+/** Onde os cases acabam, e o trecho da bifurcação antes do CTA. */
+const Z_FORK = Z_CASES - STOP_COUNT * STOP_SPACING;
+const FORK_LENGTH = 30;
+const Z_CTA = Z_FORK - FORK_LENGTH;
 export const Z_END = Z_CTA - Z_END_EXTRA;
 
 /** Quanto a câmera desacelera no meio de uma parada: 0.35× ali, 1.65× entre. */
@@ -140,7 +143,12 @@ export function cameraZ(progress: number): number {
     const eased = t + (STOP_SLOW * Math.sin(2 * Math.PI * t)) / (2 * Math.PI);
     return Z_CASES - index * STOP_SPACING - STOP_SPACING * eased;
   }
-  const t = (progress - cases.to) / (1 - cases.to);
+  const fork = beatOf("vitrine");
+  if (progress < fork.to) {
+    const t = (progress - fork.from) / (fork.to - fork.from);
+    return Z_FORK - FORK_LENGTH * t;
+  }
+  const t = (progress - fork.to) / (1 - fork.to);
   return Z_CTA + (Z_END - Z_CTA) * t;
 }
 
@@ -186,6 +194,33 @@ export function panelPlacement(index: number): Placement {
   };
 }
 
+/* --------------------------------------------------------------- bifurcação */
+
+/**
+ * A parede da vitrine: um desvio à esquerda da trilha, depois do último case.
+ * A câmera não vai até lá; ela olha, e quem decide ir é a pessoa.
+ */
+export function vitrineWall(): Placement {
+  const z = Z_FORK - FORK_LENGTH * 0.72;
+  const x = pathX(z) - 27;
+  const camZ = Z_FORK - FORK_LENGTH * 0.35;
+  const camX = pathX(camZ);
+  return {
+    x,
+    y: heightAt(x, z) + 5.2,
+    z,
+    yaw: Math.atan2(camX - x, camZ - z),
+  };
+}
+
+/** Quanto a câmera olha para o desvio: sobe no meio do trecho e solta no fim. */
+export function forkWeight(progress: number): number {
+  const fork = beatOf("vitrine");
+  if (progress <= fork.from || progress >= fork.to) return 0;
+  const t = (progress - fork.from) / (fork.to - fork.from);
+  return smooth(t / 0.4) * (1 - smooth((t - 0.72) / 0.28));
+}
+
 /* -------------------------------------------------------------------- flora */
 
 export type Patch = {
@@ -200,6 +235,8 @@ export type Patch = {
   light: number;
   /** A parada a que a mancha pertence, ou −1. */
   stop: number;
+  /** Quanto da mancha é rosa, 0 a 1. */
+  warm: number;
 };
 
 /**
@@ -208,9 +245,9 @@ export type Patch = {
  */
 export function floraPatches(): readonly Patch[] {
   const patches: Patch[] = [
-    { x: pathX(-22) + 8, z: -22, rx: 25, rz: 24, count: 1250, light: 1.6, stop: -1 },
-    { x: pathX(0) - 19, z: 2, rx: 10, rz: 10, count: 260, light: 0.7, stop: -1 },
-    { x: pathX(-54) + 13, z: -54, rx: 11, rz: 10, count: 320, light: 0.95, stop: -1 },
+    { x: pathX(-22) + 8, z: -22, rx: 25, rz: 24, count: 1250, light: 1.6, stop: -1, warm: 0.14 },
+    { x: pathX(0) - 19, z: 2, rx: 10, rz: 10, count: 300, light: 0.95, stop: -1, warm: 0.85 },
+    { x: pathX(-54) + 13, z: -54, rx: 11, rz: 10, count: 320, light: 0.95, stop: -1, warm: 0.55 },
   ];
   for (let index = 0; index < STOP_COUNT; index += 1) {
     const panel = panelPlacement(index);
@@ -222,6 +259,8 @@ export function floraPatches(): readonly Patch[] {
       count: 210,
       light: 1,
       stop: index,
+      // Alternadas: uma parada fria, uma com o rosa junto.
+      warm: index % 2 === 0 ? 0.12 : 0.5,
     });
   }
   patches.push({
@@ -232,6 +271,19 @@ export function floraPatches(): readonly Patch[] {
     count: 520,
     light: 1.7,
     stop: -1,
+    warm: 0.3,
+  });
+  // O desvio da vitrine: um rastro rosa que sai da trilha até a parede.
+  const wall = vitrineWall();
+  patches.push({
+    x: wall.x + 7,
+    z: wall.z + 3,
+    rx: 11,
+    rz: 6,
+    count: 360,
+    light: 1.3,
+    stop: -1,
+    warm: 0.72,
   });
   return patches;
 }

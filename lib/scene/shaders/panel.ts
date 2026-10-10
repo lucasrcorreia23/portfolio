@@ -37,7 +37,7 @@ void main() {
   vec3 plate = texture(uMap, vUv).rgb;
   // Uma tela apagada: a placa se lê pela luz da flora em volta e por um
   // mínimo próprio, para o texto dela não sumir no escuro.
-  vec3 color = plate * (0.5 + 0.35 * clamp(floraLight(vWorld), 0.0, 1.5));
+  vec3 color = plate * (0.5 + 0.35 * clamp(floraGlow(vWorld), 0.0, 1.5));
 
   // O ponto de emissão do placeholder.
   vec2 d = (vUv - uDot.xy) * vec2(${PANEL_ASPECT.toFixed(2)}, 1.0);

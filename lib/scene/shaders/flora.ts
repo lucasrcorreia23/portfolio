@@ -61,8 +61,9 @@ void main() {
 
   // Escura na base, estrutura na ponta; a flora a tinge onde chega.
   vec3 color = mix(uDeep * 0.06, uTeal * 0.2, along) * (0.6 + 0.6 * aSeed.w);
-  float light = floraLight(base + vec3(0.0, 0.5, 0.0));
-  color += uCyan * light * (0.03 + 0.2 * along * along);
+  vec3 glow = floraGlow(base + vec3(0.0, 0.5, 0.0));
+  float light = dot(glow, vec3(0.3333));
+  color += glow * (0.03 + 0.2 * along * along);
   // O brilho fino da relva: poucas pontas, mudando devagar.
   float glint = step(0.955, fract(aSeed.w * 43.7 + floor(uTime * 0.5 + aSeed.z * 7.0) * 0.137));
   color += uMist * 0.05 * glint * along * (0.3 + light);
@@ -87,6 +88,7 @@ uniform vec3 uTeal;
 attribute vec3 aOffset;
 attribute vec4 aSeed;
 attribute float aPart;
+attribute float aWarm;
 varying vec3 vBase;
 varying vec3 vEmission;
 varying vec3 vNormal;
@@ -112,8 +114,12 @@ void main() {
     world = base + vec3(position.x * 0.018, along * height, position.z * 0.018);
     world.xz += sway * along * along;
   } else {
-    // A cabeça: acompanha a ponta da haste.
-    world = base + vec3(0.0, height, 0.0) + position * radius;
+    // A cabeça: acompanha a ponta da haste, girada por flor.
+    float ca = cos(aSeed.z * 6.2832);
+    float sa = sin(aSeed.z * 6.2832);
+    vec3 turned = vec3(position.x * ca - position.z * sa, position.y, position.x * sa + position.z * ca);
+    n = vec3(normal.x * ca - normal.z * sa, normal.y, normal.x * sa + normal.z * ca);
+    world = base + vec3(0.0, height, 0.0) + turned * radius;
     world.xz += sway;
   }
 
@@ -124,8 +130,9 @@ void main() {
   // está o trabalho.
   float cluster = uEmitters[int(aOffset.y)].w;
   float bright = (0.55 + 0.45 * aSeed.w) * (0.45 + 0.55 * cluster) * uGlow;
-  // Do ciano ao quase branco, com algumas mais azuis.
+  // Ciano, com algumas mais azuis; e as rosas, que são o calor do campo.
   vec3 tint = mix(uCyan, uCyan * vec3(0.55, 0.78, 1.05), step(0.72, aSeed.z));
+  tint = mix(tint, uRose * vec3(1.0, 0.85, 0.95), aWarm);
   vEmission = aPart < 0.5 ? tint * 0.1 * position.y * bright : tint * 4.2 * bright;
   vBase = aPart < 0.5 ? uTeal * 0.1 : vec3(0.0);
   vNormal = n;
@@ -151,10 +158,9 @@ varying vec3 vFogColor;
 
 void main() {
   vec3 n = normalize(vNormal);
-  float facing = clamp(dot(n, normalize(vView)), 0.0, 1.0);
-  // As pétalas: uma espiral desenhada pela normal, sem geometria a mais.
-  float petals = 0.62 + 0.38 * sin(atan(n.z, n.x) * 3.0 + n.y * 5.0);
-  vec3 emission = vEmission * (0.3 + 0.7 * facing) * petals;
+  // As pétalas são vistas dos dois lados: a de trás acende menos.
+  float facing = abs(dot(n, normalize(vView)));
+  vec3 emission = vEmission * (0.28 + 0.72 * facing);
   vec3 color = vBase + emission;
   gl_FragColor = vec4(mix(color, vFogColor, vFog), 1.0);
 }

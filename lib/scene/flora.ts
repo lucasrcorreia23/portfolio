@@ -1,7 +1,6 @@
 import {
   BufferAttribute,
   BufferGeometry,
-  IcosahedronGeometry,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
   Sphere,
@@ -84,9 +83,49 @@ export function createFlowerGeometry(): {
   geometry: InstancedBufferGeometry;
   count: number;
 } {
-  const head = new IcosahedronGeometry(1, 0);
-  const headPositions = head.getAttribute("position").array as Float32Array;
-  head.dispose();
+  // A cabeça: duas coroas de pétalas e um miolo. Cada pétala é um losango
+  // dobrado (4 triângulos), aberto para fora; a coroa de dentro fica em pé.
+  const head: number[] = [];
+  const headNormals: number[] = [];
+  const petal = (angle: number, open: number, length: number, width: number) => {
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    // No plano da pétala: `out` aponta para fora, `up` para cima.
+    const at = (out: number, up: number, side: number): [number, number, number] => [
+      c * out - s * side,
+      up,
+      s * out + c * side,
+    ];
+    const lean = Math.cos(open);
+    const rise = Math.sin(open);
+    const base = at(0.12, 0, 0);
+    const left = at(0.12 + length * 0.55 * lean, length * 0.55 * rise, -width);
+    const right = at(0.12 + length * 0.55 * lean, length * 0.55 * rise, width);
+    const mid = at(0.12 + length * 0.5 * lean, length * 0.5 * rise - 0.12, 0);
+    const tip = at(0.12 + length * lean * 1.05, length * rise * 0.9, 0);
+    const normal: [number, number, number] = [c * rise * -1, lean, s * rise * -1];
+    for (const triangle of [
+      [base, left, mid],
+      [base, mid, right],
+      [left, tip, mid],
+      [mid, tip, right],
+    ]) {
+      for (const vertex of triangle) {
+        head.push(...vertex);
+        headNormals.push(...normal);
+      }
+    }
+  };
+  for (let k = 0; k < 5; k += 1) petal((k / 5) * Math.PI * 2, 0.5, 1.15, 0.42);
+  for (let k = 0; k < 3; k += 1) petal((k / 3) * Math.PI * 2 + 0.6, 1.15, 0.85, 0.34);
+  // O miolo: uma pirâmide pequena, para a flor ter centro vista de cima.
+  for (let k = 0; k < 4; k += 1) {
+    const a = (k / 4) * Math.PI * 2;
+    const b = ((k + 1) / 4) * Math.PI * 2;
+    head.push(Math.cos(a) * 0.2, 0.1, Math.sin(a) * 0.2, 0, 0.42, 0, Math.cos(b) * 0.2, 0.1, Math.sin(b) * 0.2);
+    for (let v = 0; v < 3; v += 1) headNormals.push(0, 1, 0);
+  }
+  const headPositions = new Float32Array(head);
 
   // A haste: duas faixas cruzadas, 4 triângulos.
   const stem = [
@@ -103,8 +142,7 @@ export function createFlowerGeometry(): {
     parts[i] = 0;
   });
   positions.set(headPositions, stem.length * 3);
-  // Normal suave (a própria posição): a cabeça lê como bulbo, não como gema.
-  normals.set(headPositions, stem.length * 3);
+  normals.set(headNormals, stem.length * 3);
   parts.fill(1, stem.length);
 
   const geometry = new InstancedBufferGeometry();
@@ -127,9 +165,10 @@ export function createFlowerGeometry(): {
         index,
         z,
         0.55 + random() * 1.25, // altura
-        0.09 + random() * 0.11, // raio da cabeça
+        0.2 + random() * 0.2, // raio da cabeça
         random(), // fase e matiz
         random(), // brilho
+        random() < patch.warm ? 1 : 0, // rosa
       ]);
     }
     return list;
@@ -152,10 +191,13 @@ export function createFlowerGeometry(): {
 
   const offsets = new Float32Array(all.length * 3);
   const seeds = new Float32Array(all.length * 4);
+  const warm = new Float32Array(all.length);
   all.forEach((item, i) => {
     offsets.set(item.slice(0, 3), i * 3);
     seeds.set(item.slice(3, 7), i * 4);
+    warm[i] = item[7] ?? 0;
   });
+  geometry.setAttribute("aWarm", new InstancedBufferAttribute(warm, 1));
   geometry.setAttribute("aOffset", new InstancedBufferAttribute(offsets, 3));
   geometry.setAttribute("aSeed", new InstancedBufferAttribute(seeds, 4));
   geometry.instanceCount = all.length;

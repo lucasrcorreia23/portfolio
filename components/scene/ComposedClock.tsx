@@ -16,6 +16,7 @@ const COMPOSITION_AT: Record<BeatId, number> = {
   impact: 0.12,
   intro: 0.25,
   cases: stopProgress(0),
+  vitrine: 0.845,
   cta: 0.97,
 };
 

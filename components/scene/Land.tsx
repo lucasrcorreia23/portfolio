@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import {
+  AdditiveBlending,
   BackSide,
   BufferAttribute,
   BufferGeometry,
@@ -12,6 +13,9 @@ import {
 } from "three";
 import { createIndustry } from "@/lib/scene/industry";
 import {
+  ARC_FRAG,
+  ARC_SEGMENTS,
+  ARC_VERT,
   BEACON_FRAG,
   BEACON_VERT,
   INDUSTRY_FRAG,
@@ -45,7 +49,39 @@ export function Land({ shared }: { shared: SharedUniforms }) {
     beacons.setAttribute("position", new BufferAttribute(positions, 3));
     beacons.setAttribute("aPhase", new BufferAttribute(phases, 1));
 
+    // As descargas: cada uma é uma linha de segmentos entre dois pontos.
+    const pairs = industry.arcs.length / 6;
+    const arcVertices = pairs * ARC_SEGMENTS * 2;
+    const from = new Float32Array(arcVertices * 3);
+    const to = new Float32Array(arcVertices * 3);
+    const arc = new Float32Array(arcVertices * 2);
+    for (let i = 0; i < pairs; i += 1) {
+      for (let k = 0; k < ARC_SEGMENTS; k += 1) {
+        for (let end = 0; end < 2; end += 1) {
+          const v = (i * ARC_SEGMENTS + k) * 2 + end;
+          from.set(industry.arcs.subarray(i * 6, i * 6 + 3), v * 3);
+          to.set(industry.arcs.subarray(i * 6 + 3, i * 6 + 6), v * 3);
+          arc[v * 2] = (k + end) / ARC_SEGMENTS;
+          arc[v * 2 + 1] = i * 1.37 + 0.5;
+        }
+      }
+    }
+    const arcs = new BufferGeometry();
+    arcs.setAttribute("position", new BufferAttribute(new Float32Array(arcVertices * 3), 3));
+    arcs.setAttribute("aFrom", new BufferAttribute(from, 3));
+    arcs.setAttribute("aTo", new BufferAttribute(to, 3));
+    arcs.setAttribute("aArc", new BufferAttribute(arc, 2));
+
     return {
+      arcGeometry: arcs,
+      arcMaterial: new ShaderMaterial({
+        uniforms: { ...fog, uStorm: shared.storm },
+        vertexShader: ARC_VERT,
+        fragmentShader: ARC_FRAG,
+        blending: AdditiveBlending,
+        transparent: true,
+        depthWrite: false,
+      }),
       skyGeometry: new SphereGeometry(320, 24, 12),
       skyMaterial: new ShaderMaterial({
         uniforms: { ...fog },
@@ -104,6 +140,11 @@ export function Land({ shared }: { shared: SharedUniforms }) {
       <mesh
         geometry={built.industryGeometry}
         material={built.industryMaterial}
+        frustumCulled={false}
+      />
+      <lineSegments
+        geometry={built.arcGeometry}
+        material={built.arcMaterial}
         frustumCulled={false}
       />
       <points

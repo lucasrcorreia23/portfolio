@@ -165,7 +165,19 @@
     font-weight: 500;
   }
 
-  /* O e-mail do CTA: o único acento quente do site. */
+  /* A entrada da vitrine: o desvio da trilha, na cor do rastro que leva a ela. */
+  .fork-enter {
+    color: var(--rose);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.35em;
+  }
+  .fork-enter:hover,
+  .fork-enter:focus-visible {
+    color: var(--mist);
+  }
+
+  /* O e-mail do CTA: o acento quente do site. */
   .cta-email {
     font-size: clamp(1.125rem, 2.6vw, 2.5rem);
     letter-spacing: 0.04em;

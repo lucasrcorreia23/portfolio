@@ -2,10 +2,12 @@ import { Vector3 } from "three";
 import { beatOf } from "@/components/beats/beats";
 import {
   cameraZ,
+  forkWeight,
   heightAt,
   panelPlacement,
   pathX,
   stopWeight,
+  vitrineWall,
 } from "./world";
 
 /**
@@ -70,6 +72,15 @@ export function cameraPose(progress: number, out: CameraPose): CameraPose {
     out.target.lerp(PANEL, weight);
     // E a câmera sobe até a altura do painel, para lê-lo de frente.
     out.position.y = lerp(out.position.y, panel.y - 0.5, weight * 0.8);
+  }
+  // Na bifurcação o olhar cede para o desvio da vitrine, sem a câmera sair
+  // da trilha: é um convite, não uma curva.
+  const fork = forkWeight(progress);
+  if (fork > 0) {
+    const wall = vitrineWall();
+    PANEL.set(wall.x + 4, wall.y - 1.2, wall.z);
+    out.target.lerp(PANEL, fork * 0.85);
+    out.position.y += 1.2 * fork;
   }
   return out;
 }

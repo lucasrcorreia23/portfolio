@@ -11,7 +11,7 @@ import {
 } from "three";
 import { PANEL_HEIGHT, PANEL_WIDTH } from "./case-pose";
 import { STOP_COUNT } from "./stops";
-import { heightAt, panelPlacement, pathX, STOP_Z, Z_END } from "./world";
+import { heightAt, panelPlacement, pathX, STOP_Z, vitrineWall, Z_END } from "./world";
 
 /**
  * A indústria: torres, tanques, tubulação e os pórticos que sustentam os
@@ -121,6 +121,9 @@ function gantry(index: number, parts: Part[], beacons: number[]): void {
   );
 }
 
+/** O topo da antena de cada torre: de onde as descargas saem. */
+const towerTops: number[] = [];
+
 /** Uma torre: fuste afilado, plataformas e uma antena. */
 function tower(x: number, z: number, height: number, radius: number, parts: Part[], beacons: number[]): void {
   const base = ground(x, z) - 1;
@@ -129,6 +132,7 @@ function tower(x: number, z: number, height: number, radius: number, parts: Part
     parts.push(place(new CylinderGeometry(radius * 1.25, radius * 1.25, 0.35, 10, 1), x, base + height * at, z));
   }
   parts.push(place(new CylinderGeometry(0.08, 0.14, height * 0.28, 5, 1), x, base + height * 1.14, z));
+  towerTops.push(x, base + height * 1.28, z);
   beacons.push(x, base + height * 1.28, z, 0.6 + (height % 0.4));
   beacons.push(x + radius * 1.25, base + height * 0.66, z, 0.1);
 }
@@ -160,8 +164,70 @@ function pipeline(z: number, fromX: number, toX: number, lift: number, slant: nu
   }
 }
 
+/** Quantas placas a parede da vitrine tem: colunas × linhas. */
+export const WALL_COLUMNS = 5;
+export const WALL_ROWS = 3;
+export const WALL_CELL = { width: 2.4, height: 1.5, gap: 0.5 };
+
+/**
+ * A parede da vitrine: uma estrutura larga com quinze placas pequenas, uma por
+ * item. É o que a câmera vê ao olhar para o desvio.
+ */
+function wall(parts: Part[], beacons: number[], arcs: number[]): void {
+  const place3 = vitrineWall();
+  const yaw = place3.yaw;
+  const rightX = Math.cos(yaw);
+  const rightZ = -Math.sin(yaw);
+  const span = WALL_COLUMNS * WALL_CELL.width + (WALL_COLUMNS - 1) * WALL_CELL.gap;
+  const tall = WALL_ROWS * WALL_CELL.height + (WALL_ROWS - 1) * WALL_CELL.gap;
+  const top = place3.y + tall / 2 + 0.7;
+
+  for (let column = 0; column <= WALL_COLUMNS; column += 1) {
+    const along = -span / 2 - WALL_CELL.gap / 2 + column * (WALL_CELL.width + WALL_CELL.gap);
+    const x = place3.x + rightX * along;
+    const z = place3.z + rightZ * along;
+    const base = ground(x, z) - 0.4;
+    const height = top - base + (column % 5 === 0 ? 2.4 : 0.4);
+    parts.push(place(new BoxGeometry(0.16, height, 0.16), x, base + height / 2, z, 0, yaw, 0));
+    if (column % 5 === 0) {
+      beacons.push(x, base + height + 0.06, z, 0.7);
+      arcs.push(x, base + height, z);
+    }
+  }
+  for (let row = 0; row <= WALL_ROWS; row += 1) {
+    const y = place3.y - tall / 2 - WALL_CELL.gap / 2 + row * (WALL_CELL.height + WALL_CELL.gap);
+    parts.push(place(new BoxGeometry(span + 1, 0.1, 0.1), place3.x, y, place3.z, 0, yaw, 0));
+  }
+  for (let row = 0; row < WALL_ROWS; row += 1) {
+    for (let column = 0; column < WALL_COLUMNS; column += 1) {
+      const along = -span / 2 + WALL_CELL.width / 2 + column * (WALL_CELL.width + WALL_CELL.gap);
+      const y = place3.y + tall / 2 - WALL_CELL.height / 2 - row * (WALL_CELL.height + WALL_CELL.gap);
+      parts.push(
+        place(
+          new BoxGeometry(WALL_CELL.width, WALL_CELL.height, 0.06),
+          place3.x + rightX * along,
+          y,
+          place3.z + rightZ * along,
+          0,
+          yaw,
+          0,
+        ),
+      );
+      // Um ponto por placa: os itens da vitrine, acesos de longe.
+      beacons.push(
+        place3.x + rightX * (along - 0.7) + Math.sin(yaw) * 0.08,
+        y - 0.35,
+        place3.z + rightZ * (along - 0.7) + Math.cos(yaw) * 0.08,
+        0.3,
+      );
+    }
+  }
+}
+
 export type Industry = {
   geometry: BufferGeometry;
+  /** Entre que pontos as descargas elétricas saltam: pares de xyz. */
+  arcs: Float32Array;
   /** As luzes indicadoras: xyz e a fase de cada uma. */
   beacons: Float32Array;
 };
@@ -169,6 +235,8 @@ export type Industry = {
 export function createIndustry(): Industry {
   const parts: Part[] = [];
   const beacons: number[] = [];
+  const tops: number[] = [];
+  towerTops.length = 0;
 
   for (let index = 0; index < STOP_COUNT; index += 1) gantry(index, parts, beacons);
 
@@ -199,5 +267,34 @@ export function createIndustry(): Industry {
   pipeline(STOP_Z[3]! - 17, -100, 100, 8.2, 12, parts);
   pipeline(STOP_Z[5]! - 20, -100, 100, 7, -8, parts);
 
-  return { geometry: merge(parts), beacons: new Float32Array(beacons) };
+  wall(parts, beacons, tops);
+
+  // As descargas: entre o topo de cada torre e o da vizinha mais próxima.
+  tops.push(...towerTops);
+  const arcs: number[] = [];
+  for (let i = 0; i < tops.length; i += 3) {
+    let best = -1;
+    let bestDistance = Infinity;
+    for (let j = 0; j < tops.length; j += 3) {
+      if (j === i) continue;
+      const d = Math.hypot(
+        (tops[j] ?? 0) - (tops[i] ?? 0),
+        (tops[j + 1] ?? 0) - (tops[i + 1] ?? 0),
+        (tops[j + 2] ?? 0) - (tops[i + 2] ?? 0),
+      );
+      if (d < bestDistance && d > 4) {
+        bestDistance = d;
+        best = j;
+      }
+    }
+    if (best >= 0 && bestDistance < 70) {
+      arcs.push(...tops.slice(i, i + 3), ...tops.slice(best, best + 3));
+    }
+  }
+
+  return {
+    geometry: merge(parts),
+    beacons: new Float32Array(beacons),
+    arcs: new Float32Array(arcs),
+  };
 }

@@ -4,10 +4,12 @@ import { BeatSection } from "@/components/beats/BeatSection";
 import { BEATS } from "@/components/beats/beats";
 import { CaseCaption } from "@/components/beats/CaseCaption";
 import { CtaBeat } from "@/components/beats/CtaBeat";
+import { ForkBeat } from "@/components/beats/ForkBeat";
 import { ImpactBeat } from "@/components/beats/ImpactBeat";
 import { IntroBeat } from "@/components/beats/IntroBeat";
 import { StationList } from "@/components/beats/StationList";
 import { Gate } from "@/components/gate/Gate";
+import { VITRINE } from "@/content/vitrine";
 import { getCases } from "@/lib/cases";
 import { alternatesFor, localizePath } from "@/lib/i18n/config";
 import { requireLocale } from "@/lib/i18n/locale";
@@ -72,6 +74,16 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
                 <CaseCaption captions={captions} />
                 <StationList stations={stations} enterLabel={t("cases.enter")} />
               </div>
+            ) : null}
+            {beat.id === "vitrine" ? (
+              <ForkBeat
+                beat={beat}
+                href={localizePath("/vitrine", typed)}
+                lead={t("vitrine.lead")}
+                enter={t("vitrine.enter")}
+                onward={t("vitrine.onward")}
+                count={VITRINE.length}
+              />
             ) : null}
             {beat.id === "cta" ? (
               <CtaBeat
