@@ -24,9 +24,9 @@ import {
 } from "./world";
 
 /**
- * A indústria: tubulação gerada de primitivas e tanques vindos de modelos,
- * mesclados numa geometria só (um draw call). Ela é silhueta: neutra, fosca,
- * sem emissão. As chaminés são outra geometria, com a textura do modelo. Os pórticos que sustentam os painéis
+ * A indústria de fundo. Os tanques (modelos) e a tubulação (primitivas) são
+ * uma geometria com chapa enferrujada; as chaminés, outra, com a textura do
+ * modelo; a estrutura da parede da vitrine é silhueta, sem textura. Os pórticos que sustentam os painéis
  * saem daqui com textura.
  */
 
@@ -37,6 +37,8 @@ function ground(x: number, z: number): number {
 
 /** Quantos metros uma volta de textura cobre no pórtico. */
 const GANTRY_TILE = 1.2;
+/** E nos tanques e na tubulação, que são grandes e ficam longe. */
+const HULL_TILE = 3;
 
 /** Os dois montantes do pórtico de uma parada: onde pisam e até onde sobem. */
 function gantryPosts(index: number) {
@@ -192,7 +194,9 @@ function model(source: Model | undefined, x: number, z: number, yaw: number, par
     base = Math.min(base, ground(x + dx * reach, z + dz * reach));
   }
   base -= sink;
-  parts.push(place(source.geometry.clone().scale(scale, scale, scale), x, base, z, 0, yaw, 0));
+  const geometry = source.geometry.clone().scale(scale, scale, scale);
+  // Quem não traz UV do modelo recebe a projeção de caixa, em metros.
+  parts.push(place(geometry.hasAttribute("uv") ? geometry : projectUv(geometry, HULL_TILE), x, base, z, 0, yaw, 0));
   return base + source.tall * scale;
 }
 
@@ -223,15 +227,15 @@ function pipeline(z: number, fromX: number, toX: number, lift: number, slant: nu
   let low = Infinity;
   for (let x = fromX; x <= toX; x += 6) low = Math.min(low, ground(x, z));
   const y = Math.max(low, ground(pathX(z), z)) + lift;
-  parts.push(place(new CylinderGeometry(0.42, 0.42, length, 8, 1), midX, y, z + slant / 2, 0, -yaw, Math.PI / 2));
-  parts.push(place(new CylinderGeometry(0.2, 0.2, length, 6, 1), midX, y + 0.72, z + slant / 2 + 0.3, 0, -yaw, Math.PI / 2));
+  parts.push(place(projectUv(new CylinderGeometry(0.42, 0.42, length, 8, 1), HULL_TILE), midX, y, z + slant / 2, 0, -yaw, Math.PI / 2));
+  parts.push(place(projectUv(new CylinderGeometry(0.2, 0.2, length, 6, 1), HULL_TILE), midX, y + 0.72, z + slant / 2 + 0.3, 0, -yaw, Math.PI / 2));
   for (let x = fromX + 6; x < toX; x += 13) {
     // Nenhum cavalete no meio da trilha.
     if (Math.abs(x - pathX(z)) < 5) continue;
     const pz = z + (slant * (x - fromX)) / (toX - fromX);
     const foot = ground(x, pz) - 0.5;
-    parts.push(place(new BoxGeometry(0.22, y - foot, 0.22), x, (y + foot) / 2, pz));
-    parts.push(place(new BoxGeometry(1.6, 0.14, 0.3), x, y - 0.5, pz));
+    parts.push(place(projectUv(new BoxGeometry(0.22, y - foot, 0.22), HULL_TILE), x, (y + foot) / 2, pz));
+    parts.push(place(projectUv(new BoxGeometry(1.6, 0.14, 0.3), HULL_TILE), x, y - 0.5, pz));
   }
 }
 
@@ -268,12 +272,13 @@ function wall(parts: Part[], beacons: number[], arcs: number[]): void {
 }
 
 /**
- * O que as chaminés acrescentam ao material das chapas. Elas ficam longe de
- * toda mancha de flora e dentro da névoa: são escuras, mas pegam o clarão das
- * descargas e, com um alcance maior que o das placas, a cor das plantas.
+ * O que a indústria de fundo acrescenta ao material das chapas. Ela fica
+ * longe de toda mancha de flora e dentro da névoa: é escura, mas pega o
+ * clarão das descargas e, com um alcance maior que o das placas, a cor das
+ * plantas. Chaminés, tanques e tubulação recebem a mesma luz.
  */
-export const STACK_EXTENSION: PbrExtension = {
-  key: "chamine",
+export const BACKDROP_EXTENSION: PbrExtension = {
+  key: "industria",
   fragmentLights: /* glsl */ `
 {
   vec3 stackNormal = transformDirectionByInverseViewMatrix(geometryNormal, viewMatrix);
@@ -302,7 +307,10 @@ gl_FragColor.rgb = applyFog(min(gl_FragColor.rgb, vec3(0.9)), vViewPosition.z, v
 };
 
 export type Industry = {
+  /** A silhueta sem textura: a estrutura da parede da vitrine. */
   geometry: BufferGeometry;
+  /** Os tanques e a tubulação, com UV. */
+  hull: BufferGeometry;
   /** As chaminés, com UV: têm material próprio. */
   stacks: BufferGeometry;
   /** Entre que pontos as descargas elétricas saltam: pares de xyz. */
@@ -313,6 +321,7 @@ export type Industry = {
 
 export function createIndustry(models: IndustryModels): Industry {
   const parts: Part[] = [];
+  const hullParts: Part[] = [];
   const stackParts: Part[] = [];
   const beacons: number[] = [];
   const tops: number[] = [];
@@ -329,9 +338,9 @@ export function createIndustry(models: IndustryModels): Industry {
   // O complexo do Impacto: o que a câmera vê em silhueta ao sair da névoa.
   stacks(models.stack, -52, -118, 62, 1.9, stackParts, beacons);
   stacks(models.stack, 48, -128, 54, 2.7, stackParts, beacons);
-  model(models.tanks, -73, -84, 0.5, parts);
-  model(models.oilTank, 58, -66, 2.2, parts);
-  model(models.rustTank, 74, -74, 0, parts);
+  model(models.tanks, -73, -84, 0.5, hullParts);
+  model(models.oilTank, 58, -66, 2.2, hullParts);
+  model(models.rustTank, 74, -74, 0, hullParts);
 
   // Ao longo dos cases, dos dois lados, cada vez mais longe.
   for (let index = 0; index < STOP_COUNT; index += 1) {
@@ -339,9 +348,9 @@ export function createIndustry(models: IndustryModels): Industry {
     const left = index % 2 === 0;
     stacks(models.stack, pathX(z) + (left ? -46 : 52) - index * 2, z - 8, 30 + ((index * 17) % 26), index * 0.9, stackParts, beacons, left ? 3 : 1);
     // O conjunto grande fica na última parada, atrás da parede da vitrine.
-    if (index === STOP_COUNT - 1) model(models.tanks, pathX(z) - 61, z + 6, 2.4, parts);
-    else if (index % 2 === 1) model(models.oilTank, pathX(z) - 58, z + 6, index * 1.3, parts, 0.9 + index * 0.06);
-    else model(models.rustTank, pathX(z) + 66, z - 2, index * 1.3, parts, 0.9 + index * 0.08);
+    if (index === STOP_COUNT - 1) model(models.tanks, pathX(z) - 61, z + 6, 2.4, hullParts);
+    else if (index % 2 === 1) model(models.oilTank, pathX(z) - 58, z + 6, index * 1.3, hullParts, 0.9 + index * 0.06);
+    else model(models.rustTank, pathX(z) + 66, z - 2, index * 1.3, hullParts, 0.9 + index * 0.08);
   }
   // O fim da trilha: um último grupo atrás da mancha do CTA.
   // Depois da borda do terreno não há chão para esconder a base: elas descem.
@@ -353,11 +362,11 @@ export function createIndustry(models: IndustryModels): Industry {
   }
 
   // A tubulação que atravessa o campo: a câmera passa por baixo da primeira.
-  pipeline(-66, -96, 96, 6.4, 10, parts);
-  pipeline(STOP_Z[1]! - 16, -100, 100, 7.5, -14, parts);
-  pipeline(STOP_Z[3]! - 17, -100, 100, 8.2, 12, parts);
+  pipeline(-66, -96, 96, 6.4, 10, hullParts);
+  pipeline(STOP_Z[1]! - 16, -100, 100, 7.5, -14, hullParts);
+  pipeline(STOP_Z[3]! - 17, -100, 100, 8.2, 12, hullParts);
   // A última passa depois da parede da vitrine, nunca entre ela e a câmera.
-  pipeline(STOP_Z[5]! - 52, -100, 100, 7, -8, parts);
+  pipeline(STOP_Z[5]! - 52, -100, 100, 7, -8, hullParts);
 
   wall(parts, beacons, tops);
 
@@ -386,6 +395,7 @@ export function createIndustry(models: IndustryModels): Industry {
 
   return {
     geometry: merge(parts),
+    hull: merge(hullParts, true),
     stacks: merge(stackParts, true),
     beacons: new Float32Array(beacons),
     arcs: new Float32Array(arcs),

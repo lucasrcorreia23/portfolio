@@ -15,8 +15,8 @@ import {
   createIndustry,
   type IndustryModels,
   loadIndustryModels,
+  BACKDROP_EXTENSION,
   markIndustrySettled,
-  STACK_EXTENSION,
 } from "@/lib/scene/industry";
 import { whenEntered } from "@/lib/scene/late-assets";
 import { createPbrMaterial, disposePbrMaterial, loadPbrSet } from "@/lib/scene/pbr";
@@ -37,31 +37,35 @@ import { createTerrainGeometry } from "@/lib/scene/terrain";
 import { fogUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
 
 /**
- * O que não emite: o céu, o terreno, a indústria, as chaminés, as descargas
- * e as luzes indicadoras dela. Seis draw calls.
+ * O que não emite: o céu, o terreno, a indústria (silhueta, tanques e
+ * chaminés), as descargas e as luzes indicadoras dela. Sete draw calls.
  */
 export function Land({ shared }: { shared: SharedUniforms }) {
   const sky = useRef<Mesh>(null);
   const gl = useThree((state) => state.gl);
 
-  // As chaminés nascem com texturas de um pixel, para o programa compilar
-  // com o resto; as do modelo chegam depois do loading.
-  const stackMaterial = useMemo(() => {
-    const material = createPbrMaterial(shared, STACK_EXTENSION);
-    // Concreto: o modelo traz o fator de metal em zero.
-    material.metalness = 0;
-    return material;
+  // As chaminés, os tanques e a tubulação nascem com texturas de um pixel,
+  // para os programas compilarem com o resto; as de verdade chegam depois do
+  // loading. Nada aqui é metal polido: o fator de metal fica em zero.
+  const backdrop = useMemo(() => {
+    const stacks = createPbrMaterial(shared, BACKDROP_EXTENSION);
+    const hull = createPbrMaterial(shared, BACKDROP_EXTENSION);
+    stacks.metalness = 0;
+    hull.metalness = 0;
+    return { stacks, hull };
   }, [shared]);
   useEffect(() => {
     let alive = true;
-    void whenEntered()
-      .then(() => loadPbrSet(gl, stackMaterial, "chamine", () => alive))
-      .catch(() => {});
+    void whenEntered().then(() => {
+      void loadPbrSet(gl, backdrop.stacks, "chamine", () => alive).catch(() => {});
+      void loadPbrSet(gl, backdrop.hull, "green_metal_rust", () => alive).catch(() => {});
+    });
     return () => {
       alive = false;
-      disposePbrMaterial(stackMaterial);
+      disposePbrMaterial(backdrop.stacks);
+      disposePbrMaterial(backdrop.hull);
     };
-  }, [gl, stackMaterial]);
+  }, [gl, backdrop]);
 
   // Os tanques e as chaminés chegam por arquivo. Se não chegarem, a silhueta
   // sai sem eles: ainda há torres e tubulação.
@@ -114,7 +118,7 @@ export function Land({ shared }: { shared: SharedUniforms }) {
     arcs.setAttribute("aTo", new BufferAttribute(to, 3));
     arcs.setAttribute("aArc", new BufferAttribute(arc, 2));
 
-    return { geometry: made.geometry, stacks: made.stacks, beacons, arcs };
+    return { geometry: made.geometry, hull: made.hull, stacks: made.stacks, beacons, arcs };
   }, [models]);
 
   useEffect(() => {
@@ -196,7 +200,8 @@ export function Land({ shared }: { shared: SharedUniforms }) {
             material={built.industryMaterial}
             frustumCulled={false}
           />
-          <mesh geometry={industry.stacks} material={stackMaterial} frustumCulled={false} />
+          <mesh geometry={industry.hull} material={backdrop.hull} frustumCulled={false} />
+          <mesh geometry={industry.stacks} material={backdrop.stacks} frustumCulled={false} />
           <lineSegments
             geometry={industry.arcs}
             material={built.arcMaterial}
