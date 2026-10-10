@@ -13,26 +13,36 @@ import {
 import { floraPatches, pathX } from "./world";
 
 /**
- * A flor de perto: um modelo fotogramétrico (Flower Empodium, Poly Haven,
- * CC0 — ver `public/models/CREDITS.md`), instanciado em volta da trilha, que é
- * onde a câmera passa rente. Longe dela ficam as flores geradas em código.
+ * As flores: um modelo fotogramétrico (Flower Empodium, Poly Haven, CC0 — ver
+ * `public/models/CREDITS.md`), instanciado nas manchas de flora. A forma é a
+ * da planta de verdade; a cor é a da cena (pétala que emite, folha escura).
  *
- * O arquivo é o que `scripts/extract-flower.mjs` tira do GLB: uma variante da
- * planta e a textura de cor com alfa.
+ * Os arquivos são o que `scripts/extract-flower.mjs` tira do GLB: duas
+ * variantes com flor aberta e a textura de cor com alfa. Um draw call por
+ * variante.
  */
 
-/** Quantas flores de perto existem no nível alto de qualidade. */
-export const HERO_MAX = 300;
-/** A faixa em volta da trilha em que elas crescem, em metros. */
-export const HERO_NEAR = 1.9;
-export const HERO_FAR = 6.5;
-/** A planta tem 14 cm: aqui ela é flora de outro planeta. */
-const HERO_SCALE = 10;
+/** As duas com flor e a de folhagem, com a fração das posições que cada uma ocupa. */
+const VARIANTS = [
+  { url: "/models/flor-a.bin", density: 0.12 },
+  { url: "/models/flor-c.bin", density: 0.12 },
+  { url: "/models/flor-e.bin", density: 0.42 },
+] as const;
 
-export type HeroFlower = {
+/** A planta tem um palmo de altura: aqui ela é flora de outro planeta. */
+const TALL_MIN = 1.4;
+const TALL_MAX = 2.8;
+
+export type FlowerVariant = {
   geometry: InstancedBufferGeometry;
-  texture: Texture;
   count: number;
+  /** A altura do modelo, em metros: o vento dobra a planta por ela. */
+  tall: number;
+};
+
+export type Flowers = {
+  variants: FlowerVariant[];
+  texture: Texture;
 };
 
 function mulberry(seed: number): () => number {
@@ -46,17 +56,18 @@ function mulberry(seed: number): () => number {
   };
 }
 
-export async function loadHeroFlower(): Promise<HeroFlower> {
-  const [buffer, texture] = await Promise.all([
-    fetch("/models/flor.bin").then((response) => {
-      if (!response.ok) throw new Error("flor.bin");
-      return response.arrayBuffer();
-    }),
-    new TextureLoader().loadAsync("/models/flor.png"),
-  ]);
+async function loadVariant(
+  url: string,
+  density: number,
+  seed: number,
+): Promise<FlowerVariant> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(url);
+  const buffer = await response.arrayBuffer();
 
   const [vertices = 0, indices = 0] = new Uint32Array(buffer, 0, 2);
-  let offset = 8;
+  const tall = new Float32Array(buffer, 8, 1)[0] ?? 0.2;
+  let offset = 12;
   const take = (size: number) => {
     const array = new Float32Array(buffer, offset, vertices * size);
     offset += vertices * size * 4;
@@ -66,40 +77,49 @@ export async function loadHeroFlower(): Promise<HeroFlower> {
   geometry.setAttribute("position", new BufferAttribute(take(3), 3));
   geometry.setAttribute("normal", new BufferAttribute(take(3), 3));
   geometry.setAttribute("uv", new BufferAttribute(take(2), 2));
-  geometry.setIndex(new BufferAttribute(new Uint16Array(buffer, offset, indices), 1));
+  geometry.setIndex(
+    new BufferAttribute(new Uint16Array(buffer.slice(offset, offset + indices * 2)), 1),
+  );
 
-  // O glTF tem a origem do UV em cima: a textura não é virada.
-  texture.flipY = false;
-  texture.colorSpace = SRGBColorSpace;
-  texture.minFilter = LinearMipmapLinearFilter;
-  texture.magFilter = LinearFilter;
-
-  // Em volta da trilha, dentro das manchas: perto das paradas e do Impacto.
+  // As instâncias são intercaladas entre as manchas, para que cortar a
+  // contagem (níveis de qualidade) rareie todas por igual.
   const patches = floraPatches();
-  const random = mulberry(211);
+  const random = mulberry(seed);
+  const perPatch = patches.map((patch, index) => {
+    const list: number[][] = [];
+    const wanted = Math.round(patch.count * density);
+    let guard = 0;
+    while (list.length < wanted && guard < wanted * 8) {
+      guard += 1;
+      const angle = random() * Math.PI * 2;
+      const radius = Math.pow(random(), 0.7);
+      const x = patch.x + Math.cos(angle) * radius * patch.rx;
+      const z = patch.z + Math.sin(angle) * radius * patch.rz;
+      // Nenhuma flor no meio da trilha: a câmera não atravessa a planta.
+      if (Math.abs(x - pathX(z)) < 1.8) continue;
+      list.push([
+        x,
+        index,
+        z,
+        (TALL_MIN + random() * (TALL_MAX - TALL_MIN)) / tall,
+        random() * Math.PI * 2,
+        random(),
+        random(),
+        random() < patch.warm ? 1 : 0,
+      ]);
+    }
+    return list;
+  });
   const items: number[][] = [];
-  let guard = 0;
-  while (items.length < HERO_MAX && guard < HERO_MAX * 60) {
-    guard += 1;
-    const index = Math.floor(random() * patches.length);
-    const patch = patches[index];
-    if (patch === undefined) continue;
-    const angle = random() * Math.PI * 2;
-    const radius = Math.sqrt(random());
-    const x = patch.x + Math.cos(angle) * radius * patch.rx;
-    const z = patch.z + Math.sin(angle) * radius * patch.rz;
-    const off = Math.abs(x - pathX(z));
-    if (off < HERO_NEAR || off > HERO_FAR) continue;
-    items.push([
-      x,
-      index,
-      z,
-      HERO_SCALE * (0.75 + random() * 0.6),
-      random() * Math.PI * 2,
-      random(),
-      random(),
-      random() < patch.warm ? 1 : 0,
-    ]);
+  const longest = Math.max(...perPatch.map((list) => list.length));
+  for (let k = 0; k < longest; k += 1) {
+    for (const list of perPatch) {
+      const step = list.length / longest;
+      for (let i = Math.floor(k * step); i < Math.floor((k + 1) * step); i += 1) {
+        const item = list[i];
+        if (item !== undefined) items.push(item);
+      }
+    }
   }
 
   const offsets = new Float32Array(items.length * 3);
@@ -116,5 +136,20 @@ export async function loadHeroFlower(): Promise<HeroFlower> {
   geometry.instanceCount = items.length;
   geometry.boundingSphere = new Sphere(new Vector3(), 1e5);
 
-  return { geometry, texture, count: items.length };
+  return { geometry, count: items.length, tall };
+}
+
+export async function loadFlowers(): Promise<Flowers> {
+  const [texture, ...variants] = await Promise.all([
+    new TextureLoader().loadAsync("/models/flor.png"),
+    ...VARIANTS.map((variant, index) =>
+      loadVariant(variant.url, variant.density, 211 + index * 97),
+    ),
+  ]);
+  // O glTF tem a origem do UV em cima: a textura não é virada.
+  texture.flipY = false;
+  texture.colorSpace = SRGBColorSpace;
+  texture.minFilter = LinearMipmapLinearFilter;
+  texture.magFilter = LinearFilter;
+  return { variants, texture };
 }

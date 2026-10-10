@@ -3,20 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { AdditiveBlending, DoubleSide, ShaderMaterial, Vector2, Vector3 } from "three";
-import {
-  createFlowerGeometry,
-  createGrassGeometry,
-  createSporeGeometry,
-} from "@/lib/scene/flora";
-import { loadHeroFlower, type HeroFlower } from "@/lib/scene/hero-flower";
+import { createGrassGeometry, createSporeGeometry } from "@/lib/scene/flora";
+import { loadFlowers, type Flowers } from "@/lib/scene/hero-flower";
 import { getQuality, GRASS_MAX, SPORES_MAX } from "@/lib/scene/quality";
 import {
   FLOWER_FRAG,
   FLOWER_VERT,
   GRASS_FRAG,
   GRASS_VERT,
-  HERO_FRAG,
-  HERO_VERT,
   SPORE_FRAG,
   SPORE_VERT,
 } from "@/lib/scene/shaders/flora";
@@ -26,17 +20,15 @@ import { fogUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
 const FORWARD = new Vector3();
 
 /**
- * A flora: relva, flores e esporos. Três draw calls, um por tipo, e é tudo que
- * emite luz na cena.
+ * A flora: relva, flores e esporos. Um draw call por tipo de planta (a relva e
+ * as duas variantes da flor) e um para os esporos. É tudo que emite luz.
  */
 export function Flora({ shared }: { shared: SharedUniforms }) {
   const built = useMemo(() => {
     const fog = fogUniforms(shared);
     const height = createHeightTexture();
-    const flowers = createFlowerGeometry();
     return {
       height,
-      flowerCount: flowers.count,
       grassGeometry: createGrassGeometry(),
       grassMaterial: new ShaderMaterial({
         uniforms: {
@@ -48,13 +40,6 @@ export function Flora({ shared }: { shared: SharedUniforms }) {
         },
         vertexShader: GRASS_VERT,
         fragmentShader: GRASS_FRAG,
-        side: DoubleSide,
-      }),
-      flowerGeometry: flowers.geometry,
-      flowerMaterial: new ShaderMaterial({
-        uniforms: { ...fog, uHeight: { value: height }, uTeal: shared.teal },
-        vertexShader: FLOWER_VERT,
-        fragmentShader: FLOWER_FRAG,
         side: DoubleSide,
       }),
       sporeGeometry: createSporeGeometry(),
@@ -82,54 +67,61 @@ export function Flora({ shared }: { shared: SharedUniforms }) {
       held.height.dispose();
       held.grassGeometry.dispose();
       held.grassMaterial.dispose();
-      held.flowerGeometry.dispose();
-      held.flowerMaterial.dispose();
       held.sporeGeometry.dispose();
       held.sporeMaterial.dispose();
     };
   }, [built]);
 
-  // A flor de perto chega depois: é um arquivo. Até lá, e se ele faltar, o
-  // campo é só o das flores geradas.
-  const [hero, setHero] = useState<HeroFlower | null>(null);
+  // As flores são um modelo: chegam por arquivo, depois da relva.
+  const [flowers, setFlowers] = useState<Flowers | null>(null);
   useEffect(() => {
     let alive = true;
-    let loaded: HeroFlower | null = null;
-    loadHeroFlower().then(
-      (flower) => {
-        loaded = flower;
-        if (alive) setHero(flower);
-        else {
-          flower.geometry.dispose();
-          flower.texture.dispose();
-        }
+    let loaded: Flowers | null = null;
+    const release = (held: Flowers) => {
+      held.texture.dispose();
+      for (const variant of held.variants) variant.geometry.dispose();
+    };
+    loadFlowers().then(
+      (result) => {
+        loaded = result;
+        if (alive) setFlowers(result);
+        else release(result);
       },
       () => {},
     );
     return () => {
       alive = false;
-      loaded?.geometry.dispose();
-      loaded?.texture.dispose();
+      if (loaded !== null) release(loaded);
     };
   }, []);
-  const heroMaterial = useMemo(
+
+  const flowerMaterials = useMemo(
     () =>
-      hero === null
-        ? null
-        : new ShaderMaterial({
-            uniforms: {
-              ...fogUniforms(shared),
-              uHeight: { value: built.height },
-              uMap: { value: hero.texture },
-              uTeal: shared.teal,
-            },
-            vertexShader: HERO_VERT,
-            fragmentShader: HERO_FRAG,
-            side: DoubleSide,
-          }),
-    [hero, shared, built],
+      flowers === null
+        ? []
+        : flowers.variants.map(
+            (variant) =>
+              new ShaderMaterial({
+                uniforms: {
+                  ...fogUniforms(shared),
+                  uHeight: { value: built.height },
+                  uMap: { value: flowers.texture },
+                  uTeal: shared.teal,
+                  uTall: { value: variant.tall },
+                },
+                vertexShader: FLOWER_VERT,
+                fragmentShader: FLOWER_FRAG,
+                side: DoubleSide,
+              }),
+          ),
+    [flowers, shared, built],
   );
-  useEffect(() => () => heroMaterial?.dispose(), [heroMaterial]);
+  useEffect(
+    () => () => {
+      for (const material of flowerMaterials) material.dispose();
+    },
+    [flowerMaterials],
+  );
 
   useFrame((state) => {
     // O ladrilho de relva e o volume dos esporos ficam à frente da câmera.
@@ -145,10 +137,11 @@ export function Flora({ shared }: { shared: SharedUniforms }) {
     // O nível de qualidade só escreve contagens.
     const quality = getQuality();
     built.grassGeometry.instanceCount = Math.floor(GRASS_MAX * quality.grass);
-    built.flowerGeometry.instanceCount = Math.floor(built.flowerCount * quality.flowers);
     built.sporeGeometry.setDrawRange(0, Math.floor(SPORES_MAX * quality.spores));
-    if (hero !== null) {
-      hero.geometry.instanceCount = Math.floor(hero.count * quality.flowers);
+    if (flowers !== null) {
+      for (const variant of flowers.variants) {
+        variant.geometry.instanceCount = Math.floor(variant.count * quality.flowers);
+      }
     }
   }, -8);
 
@@ -159,14 +152,19 @@ export function Flora({ shared }: { shared: SharedUniforms }) {
         material={built.grassMaterial}
         frustumCulled={false}
       />
-      <mesh
-        geometry={built.flowerGeometry}
-        material={built.flowerMaterial}
-        frustumCulled={false}
-      />
-      {hero === null || heroMaterial === null ? null : (
-        <mesh geometry={hero.geometry} material={heroMaterial} frustumCulled={false} />
-      )}
+      {flowers === null
+        ? null
+        : flowers.variants.map((variant, index) => {
+            const material = flowerMaterials[index];
+            return material === undefined ? null : (
+              <mesh
+                key={index}
+                geometry={variant.geometry}
+                material={material}
+                frustumCulled={false}
+              />
+            );
+          })}
       <points
         geometry={built.sporeGeometry}
         material={built.sporeMaterial}

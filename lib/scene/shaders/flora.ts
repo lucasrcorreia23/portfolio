@@ -81,101 +81,17 @@ void main() {
 }
 `;
 
+/**
+ * As flores: o modelo da planta com a textura dele. A forma é a de verdade; a
+ * cor é a da cena — a pétala emite, em ciano ou rosa, com o desenho da textura
+ * por baixo, e a folha fica escura como a relva. O alfa recorta as folhas.
+ */
 export const FLOWER_VERT = /* glsl */ `
 ${FOG_UNIFORMS_GLSL}
 ${HEIGHT_GLSL}
-uniform vec3 uTeal;
 attribute vec3 aOffset;
 attribute vec4 aSeed;
-attribute float aPart;
-attribute float aWarm;
-varying vec3 vBase;
-varying vec3 vEmission;
-varying vec3 vNormal;
-varying vec3 vView;
-varying float vFog;
-varying vec3 vFogColor;
-
-${FOG_GLSL}
-${WIND_GLSL}
-
-void main() {
-  vec2 xz = aOffset.xz;
-  vec3 base = vec3(xz.x, terrainHeight(xz), xz.y);
-  float height = aSeed.x;
-  float radius = aSeed.y;
-  vec2 sway = windAt(base, uTime + aSeed.z * 4.0) * height * 0.8;
-
-  vec3 world;
-  vec3 n = normal;
-  if (aPart < 0.5) {
-    // A haste: fina, e dobra com o vento do meio para cima.
-    float along = position.y;
-    world = base + vec3(position.x * 0.018, along * height, position.z * 0.018);
-    world.xz += sway * along * along;
-  } else {
-    // A cabeça: acompanha a ponta da haste, girada por flor.
-    float ca = cos(aSeed.z * 6.2832);
-    float sa = sin(aSeed.z * 6.2832);
-    vec3 turned = vec3(position.x * ca - position.z * sa, position.y, position.x * sa + position.z * ca);
-    n = vec3(normal.x * ca - normal.z * sa, normal.y, normal.x * sa + normal.z * ca);
-    world = base + vec3(0.0, height, 0.0) + turned * radius;
-    world.xz += sway;
-  }
-
-  vec4 view = viewMatrix * vec4(world, 1.0);
-  float depth = -view.z;
-
-  // A força da mancha a que a flor pertence: é o que faz o campo acender onde
-  // está o trabalho.
-  float cluster = uEmitters[int(aOffset.y)].w;
-  float bright = (0.55 + 0.45 * aSeed.w) * (0.45 + 0.55 * cluster) * uGlow;
-  // Ciano, com algumas mais azuis; e as rosas, que são o calor do campo.
-  vec3 tint = mix(uCyan, uCyan * vec3(0.55, 0.78, 1.05), step(0.72, aSeed.z));
-  tint = mix(tint, uRose * vec3(1.0, 0.85, 0.95), aWarm);
-  vEmission = aPart < 0.5 ? tint * 0.1 * position.y * bright : tint * 4.2 * bright;
-  vBase = aPart < 0.5 ? uTeal * 0.1 : vec3(0.0);
-  vNormal = n;
-  vView = normalize(cameraPosition - world);
-
-  // A névoa: a quantidade e a cor, para o fragmento misturar.
-  vec3 fogged = applyFog(vec3(0.0), depth, world);
-  vFogColor = fogColorAt(depth, world);
-  float lum = dot(vFogColor, vec3(0.3333));
-  vFog = lum > 1e-5 ? clamp(dot(fogged, vec3(0.3333)) / lum, 0.0, 1.0) : 0.0;
-
-  gl_Position = projectionMatrix * view;
-}
-`;
-
-export const FLOWER_FRAG = /* glsl */ `
-varying vec3 vBase;
-varying vec3 vEmission;
-varying vec3 vNormal;
-varying vec3 vView;
-varying float vFog;
-varying vec3 vFogColor;
-
-void main() {
-  vec3 n = normalize(vNormal);
-  // As pétalas são vistas dos dois lados: a de trás acende menos.
-  float facing = abs(dot(n, normalize(vView)));
-  vec3 emission = vEmission * (0.28 + 0.72 * facing);
-  vec3 color = vBase + emission;
-  gl_FragColor = vec4(mix(color, vFogColor, vFog), 1.0);
-}
-`;
-
-/**
- * A flor de perto: o modelo com a textura dele. A folha fica escura, como a
- * relva; a pétala emite, na cor da flor (ciano ou rosa), com o desenho da
- * textura por baixo. O alfa da textura recorta as folhas.
- */
-export const HERO_VERT = /* glsl */ `
-${FOG_UNIFORMS_GLSL}
-${HEIGHT_GLSL}
-attribute vec3 aOffset;
-attribute vec4 aSeed;
+uniform float uTall;
 attribute float aWarm;
 varying vec2 vUv;
 varying vec3 vTint;
@@ -193,8 +109,8 @@ void main() {
   float s = sin(aSeed.y);
   vec3 local = vec3(position.x * c - position.z * s, position.y, position.x * s + position.z * c) * aSeed.x;
   // O vento dobra a planta a partir da base, mais na ponta.
-  float along = clamp(position.y / 0.143, 0.0, 1.0);
-  local.xz += windAt(base, uTime + aSeed.z * 4.0) * along * along * aSeed.x * 0.11;
+  float along = clamp(position.y / uTall, 0.0, 1.0);
+  local.xz += windAt(base, uTime + aSeed.z * 4.0) * along * along * aSeed.x * uTall * 0.7;
   vec3 world = base + local;
 
   vec4 view = viewMatrix * vec4(world, 1.0);
@@ -202,7 +118,9 @@ void main() {
 
   float cluster = uEmitters[int(aOffset.y)].w;
   float bright = (0.6 + 0.4 * aSeed.w) * (0.5 + 0.5 * cluster) * uGlow;
-  vTint = mix(uCyan, uRose * vec3(1.0, 0.85, 0.95), aWarm) * 3.4 * bright;
+  // Ciano, com algumas mais azuis; e as rosas, que são o calor do campo.
+  vec3 tint = mix(uCyan, uCyan * vec3(0.55, 0.78, 1.05), step(0.72, aSeed.z));
+  vTint = mix(tint, uRose * vec3(1.0, 0.85, 0.95), aWarm) * 5.0 * bright;
   vGlow = floraGlow(base + vec3(0.0, 0.5, 0.0));
   vUv = uv;
 
@@ -215,7 +133,7 @@ void main() {
 }
 `;
 
-export const HERO_FRAG = /* glsl */ `
+export const FLOWER_FRAG = /* glsl */ `
 uniform sampler2D uMap;
 uniform vec3 uTeal;
 varying vec2 vUv;
@@ -231,8 +149,9 @@ void main() {
   // (em luz linear: ~0,5 na pétala, ~0,07 na folha).
   float petal = smoothstep(0.14, 0.3, texel.r);
   float detail = dot(texel.rgb, vec3(0.3333));
-  vec3 leaf = uTeal * 0.5 * detail + vGlow * 0.28 * detail;
-  vec3 color = mix(leaf, vTint * (0.6 + 1.2 * detail), petal);
+  // A folha pega a luz das flores em volta: é o que dá corpo à planta.
+  vec3 leaf = uTeal * 0.6 * detail + vGlow * 0.9 * detail;
+  vec3 color = mix(leaf, vTint * (0.5 + 1.1 * detail), petal);
   gl_FragColor = vec4(mix(color, vFogColor, vFog), 1.0);
 }
 `;
