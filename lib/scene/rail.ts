@@ -8,6 +8,8 @@ import {
   pathX,
   stopWeight,
   vitrineWall,
+  WALL_SPAN,
+  WALL_TALL,
 } from "./world";
 
 /**
@@ -73,8 +75,8 @@ export function cameraPose(progress: number, out: CameraPose): CameraPose {
     // E a câmera sobe até a altura do painel, para lê-lo de frente.
     out.position.y = lerp(out.position.y, panel.y - 0.5, weight * 0.8);
   }
-  // Na bifurcação o olhar cede para o desvio da vitrine, sem a câmera sair
-  // da trilha: é um convite, não uma curva.
+  // Na vitrine o olhar cede para a parede de telas; a aproximação vem depois,
+  // em `applyWallApproach`.
   const fork = forkWeight(progress);
   if (fork > 0) {
     const wall = vitrineWall();
@@ -97,19 +99,43 @@ export function applyReveal(pose: CameraPose, reveal: number): void {
   pose.target.y += 1.5 * back;
 }
 
+/** A folga em volta das telas no enquadramento da parede, em unidades. */
+const WALL_MARGIN = 0.9;
+/** Quanto da largura da tela fica livre nas pontas: à esquerda mora a HUD. */
+const WALL_LEAD = 0.14;
+const WALL_TRAIL = 0.05;
+
 /**
- * O voo até a vitrine, 0 a 1, por cima da pose: a câmera sai da trilha e
- * para de frente para a parede, perto o bastante para as placas encherem o
- * quadro.
+ * A câmera diante da parede da vitrine, por cima da pose. `amount` (0 a 1) é
+ * o desvio: a trilha chega de frente para as telas, à distância em que as
+ * linhas enchem a altura do quadro. `pan` (0 a 1) é o percurso: o scroll
+ * arrasta a câmera da primeira à última coluna.
  */
-export function applyVitrineFlight(pose: CameraPose, amount: number): void {
+export function applyWallApproach(
+  pose: CameraPose,
+  amount: number,
+  pan: number,
+  aspect: number,
+): void {
   if (amount <= 0) return;
   const wall = vitrineWall();
+  const half = Math.tan((CAMERA_FOV * Math.PI) / 360);
+  const distance = (WALL_TALL + WALL_MARGIN) / (2 * half);
+  // Meia largura do que a câmera vê no plano da parede.
+  const reach = distance * half * aspect;
+  let first = -WALL_SPAN / 2 + reach * (1 - 2 * WALL_LEAD);
+  let last = WALL_SPAN / 2 - reach * (1 - 2 * WALL_TRAIL);
+  // Uma janela tão larga que a parede cabe inteira: a câmera fica no meio.
+  if (first > last) first = last = (first + last) / 2;
+  const along = lerp(first, last, pan);
+
   const nx = Math.sin(wall.yaw);
   const nz = Math.cos(wall.yaw);
-  PANEL.set(wall.x + nx * 8.5, wall.y - 0.4, wall.z + nz * 8.5);
+  const x = wall.x + Math.cos(wall.yaw) * along;
+  const z = wall.z - Math.sin(wall.yaw) * along;
+  PANEL.set(x + nx * distance, wall.y, z + nz * distance);
   pose.position.lerp(PANEL, amount);
-  PANEL.set(wall.x, wall.y - 0.2, wall.z);
+  PANEL.set(x, wall.y, z);
   pose.target.lerp(PANEL, amount);
 }
 
@@ -122,10 +148,14 @@ export const REVEAL_GLOW = 0.12;
 /** Densidade da névoa ao longo da descida. */
 export function fogAt(progress: number): number {
   const impact = beatOf("impact");
-  const cta = beatOf("cta");
   const open = smooth(progress / impact.to);
-  const end = smooth((progress - cta.from) / (1 - cta.from));
-  return lerp(0.02, 0.017, open) - 0.003 * end;
+  return lerp(0.02, 0.017, open) - 0.003 * astroAt(progress);
+}
+
+/** O fim da trilha, 0 a 1: o ar abre e o astro nasce atrás do horizonte. */
+export function astroAt(progress: number): number {
+  const cta = beatOf("cta");
+  return smooth((progress - cta.from) / (1 - cta.from));
 }
 
 /** Abertura da profundidade de campo, 0 a 1: abre nas paradas, no painel. */

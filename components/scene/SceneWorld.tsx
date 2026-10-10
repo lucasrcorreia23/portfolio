@@ -8,11 +8,13 @@ import { clamp01, damp, easeStrong } from "@/lib/motion";
 import { getEntry } from "@/lib/preload/entered";
 import { createCaseDrive } from "@/lib/scene/case-drive";
 import { CASE_FOG } from "@/lib/scene/case-pose";
+import { plantsSettled } from "@/lib/scene/plants";
 import { getPointer, installPointer } from "@/lib/scene/pointer";
 import {
   apertureAt,
   applyReveal,
-  applyVitrineFlight,
+  applyWallApproach,
+  astroAt,
   cameraPose,
   createCameraPose,
   fogAt,
@@ -23,9 +25,14 @@ import {
 import { sceneSettings } from "@/lib/scene/settings";
 import { createSharedUniforms } from "@/lib/scene/uniforms";
 import { readVeilBoxes, writeVeilBoxes } from "@/lib/scene/veil";
-import { floraPatches, heightAt, stopWeight } from "@/lib/scene/world";
+import {
+  floraPatches,
+  forkWeight,
+  heightAt,
+  stopWeight,
+  wallPan,
+} from "@/lib/scene/world";
 import { useScrollProgress } from "@/lib/scroll/use-scroll-progress";
-import { isFlyingToVitrine } from "@/lib/work/vitrine-flight";
 import { ComposedClock } from "./ComposedClock";
 import { Composer } from "./Composer";
 import { Flora } from "./Flora";
@@ -34,6 +41,7 @@ import { Panels } from "./Panels";
 import { QualityGovernor } from "./QualityGovernor";
 import type { ScenePanel } from "./Scene";
 import { SceneClock } from "./SceneClock";
+import { Wall } from "./Wall";
 
 type SceneWorldProps = {
   panels: readonly ScenePanel[];
@@ -42,6 +50,9 @@ type SceneWorldProps = {
   /** O `<canvas>`, para o corte de 120 ms do modo calmo. */
   canvasRef: { current: HTMLCanvasElement | null };
 };
+
+/** Quanto o primeiro quadro espera pelas plantas, no máximo. */
+const PLANTS_WAIT_MS = 4000;
 
 const RIGHT = new Vector3();
 const VIEW = new Vector3();
@@ -72,7 +83,6 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
   const focusRef = useRef(20);
   const focusRangeRef = useRef(34);
   const sway = useRef({ x: 0, y: 0 });
-  const flight = useRef(0);
   /** Os programas compilaram: até lá o compositor não desenha. */
   const readyRef = useRef(false);
 
@@ -87,7 +97,14 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
       // precisa ser desenhada agora. O relógio calmo redesenha no resize.
       if (instant) window.dispatchEvent(new Event("resize"));
     };
-    gl.compileAsync(scene, camera).then(done, done);
+    // As plantas chegam por arquivo: espera por elas (com um teto, para uma
+    // rede ruim não segurar o site) e só então compila tudo de uma vez.
+    const ceiling = new Promise<void>((resolve) => {
+      window.setTimeout(resolve, PLANTS_WAIT_MS);
+    });
+    void Promise.race([plantsSettled, ceiling])
+      .then(() => gl.compileAsync(scene, camera))
+      .then(done, done);
     return () => {
       cancelled = true;
     };
@@ -114,9 +131,15 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
     cameraPose(progress, pose);
     applyReveal(pose, reveal);
 
-    // O voo até a vitrine, quando a pessoa escolhe o desvio.
-    flight.current = damp(flight.current, isFlyingToVitrine() ? 1 : 0, 2.6, dt);
-    applyVitrineFlight(pose, easeStrong(flight.current));
+    // Na vitrine a trilha desvia: a câmera chega perto da parede de telas.
+    const fork = forkWeight(progress);
+    applyWallApproach(
+      pose,
+      fork,
+      wallPan(progress),
+      state.size.width / Math.max(state.size.height, 1),
+    );
+    shared.fork.value = fork;
 
     // A travessia para o case é misturada aqui dentro, por cima da trilha.
     const inCase = caseDrive.update(
@@ -133,7 +156,7 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
     // modo calmo e dentro de um case, onde nada se mexe.
     if (!still) {
       const pointer = getPointer();
-      const amount = (1 - inCase) * (1 - flight.current);
+      const amount = 1 - inCase;
       sway.current.x = damp(sway.current.x, pointer.x * amount, 2.2, dt);
       sway.current.y = damp(sway.current.y, pointer.y * amount, 2.2, dt);
       VIEW.subVectors(pose.target, pose.position).normalize();
@@ -166,6 +189,10 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
       : damp(shared.fogDensity.value, fog, 3, dt);
     shared.glow.value =
       (REVEAL_GLOW + (1 - REVEAL_GLOW) * reveal) * (1 - 0.45 * inCase);
+    const astro = astroAt(progress) * reveal * (1 - inCase);
+    shared.astro.value = still
+      ? astro
+      : damp(shared.astro.value, astro, 3, dt);
 
     // --- a luz: a flora, mais forte na parada em que a câmera está ---------
     const stop = stopWeight(progress);
@@ -231,6 +258,7 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
       <Land shared={shared} />
       <Flora shared={shared} />
       <Panels shared={shared} panels={panels} />
+      <Wall shared={shared} />
       <Composer
         shared={shared}
         readyRef={readyRef}

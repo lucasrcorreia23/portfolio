@@ -20,10 +20,14 @@ export const BEATS: readonly Beat[] = [
   { id: "impact", from: 0.0, to: 0.16, vh: 1.8, mobileVh: 1.5 },
   { id: "intro", from: 0.16, to: 0.34, vh: 2.4, mobileVh: 2.4 },
   { id: "cases", from: 0.34, to: 0.8, vh: 9.6, mobileVh: 7.8 },
-  // A bifurcação: depois dos cases, o desvio que leva à vitrine.
-  { id: "vitrine", from: 0.8, to: 0.9, vh: 2.2, mobileVh: 2.0 },
+  // A vitrine: depois dos cases, a trilha desvia até a parede de telas e a
+  // câmera a percorre de ponta a ponta.
+  { id: "vitrine", from: 0.8, to: 0.9, vh: 4.4, mobileVh: 4.0 },
   { id: "cta", from: 0.9, to: 1.0, vh: 2.0, mobileVh: 2.0 },
 ] as const;
+
+/** O progresso em que a câmera chega à parede da vitrine, nas primeiras telas. */
+export const VITRINE_PROGRESS = 0.82;
 
 const round2 = (value: number) => Math.round(value * 100) / 100;
 

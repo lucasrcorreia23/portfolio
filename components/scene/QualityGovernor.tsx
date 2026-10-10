@@ -32,10 +32,11 @@ function median(samples: number[]): number {
 /**
  * Escolhe o nível de qualidade pelo tempo de quadro medido.
  *
- * A cena nasce no nível médio. Depois da revelação do Impacto, os três
- * primeiros segundos decidem: com folga ela sobe para o alto, sem folga desce.
- * Dali em diante a medição continua em janelas de dois segundos e só derruba
- * — nunca sobe de novo, para o nível não oscilar.
+ * A cena nasce no nível de `initialTier()` (alto num computador, médio no
+ * resto). Depois da revelação do Impacto, os três primeiros segundos decidem:
+ * sem folga ela desce; quem nasceu no médio e tem folga sobe. Dali em diante
+ * a medição continua em janelas de dois segundos e só derruba — nunca sobe de
+ * novo, para o nível não oscilar.
  *
  * A troca espera o fim da revelação de propósito: a resolução não pode estalar
  * no meio do único momento de espetáculo.

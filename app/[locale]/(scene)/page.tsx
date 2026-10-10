@@ -4,7 +4,6 @@ import { BeatSection } from "@/components/beats/BeatSection";
 import { BEATS } from "@/components/beats/beats";
 import { CaseCaption } from "@/components/beats/CaseCaption";
 import { CtaBeat } from "@/components/beats/CtaBeat";
-import { ForkBeat } from "@/components/beats/ForkBeat";
 import { ImpactBeat } from "@/components/beats/ImpactBeat";
 import { IntroBeat } from "@/components/beats/IntroBeat";
 import { StationList } from "@/components/beats/StationList";
@@ -76,20 +75,18 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
               </div>
             ) : null}
             {beat.id === "vitrine" ? (
-              <ForkBeat
-                beat={beat}
-                href={localizePath("/vitrine", typed)}
-                lead={t("vitrine.lead")}
-                enter={t("vitrine.enter")}
-                onward={t("vitrine.onward")}
-                count={VITRINE.length}
-              />
+              // A vitrine é a parede de telas da cena. Em DOM, só os nomes,
+              // para leitor de tela.
+              <ul className="sr-only">
+                {VITRINE.map((item) => (
+                  <li key={item.name}>{item.name}</li>
+                ))}
+              </ul>
             ) : null}
             {beat.id === "cta" ? (
               <CtaBeat
                 beat={beat}
                 line={t("cta.line")}
-                labels={{ email: t("cta.email"), profiles: t("cta.profiles") }}
                 profileNames={{
                   linkedin: t("nav.profiles.linkedin"),
                   github: t("nav.profiles.github"),

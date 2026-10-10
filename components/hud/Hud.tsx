@@ -1,8 +1,6 @@
-import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { beatOf } from "@/components/beats/beats";
+import { beatOf, VITRINE_PROGRESS } from "@/components/beats/beats";
 import { CaseReturn } from "@/components/work/CaseReturn";
-import { localizePath } from "@/lib/i18n/config";
 import { requireLocale } from "@/lib/i18n/locale";
 import { STOP_COUNT } from "@/lib/scene/stops";
 import { AudioToggle } from "./AudioToggle";
@@ -39,14 +37,14 @@ export async function Hud() {
     >
       <nav aria-label={t("label")} className="flex flex-col gap-2">
         <NavJump progress={0} anchor="impact" className={LINK}>
-          LRC
+          {t("home")}
         </NavJump>
         <NavJump progress={beatOf("cases").from} anchor="cases" className={LINK}>
           {t("cases")}
         </NavJump>
-        <Link href={localizePath("/vitrine", locale)} className={LINK}>
+        <NavJump progress={VITRINE_PROGRESS} anchor="vitrine" className={LINK}>
           {t("vitrine")}
-        </Link>
+        </NavJump>
         <NavJump progress={1} anchor="cta" className={LINK}>
           {t("contact")}
         </NavJump>

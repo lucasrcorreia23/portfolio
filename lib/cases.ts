@@ -14,8 +14,8 @@ import type { PaletteToken } from "./palette";
  */
 
 /**
- * Os cases publicados, **nesta ordem**: é a ordem das paradas da trilha, da
- * vitrine e do "próximo case". Um `.mdx` fora desta lista continua no
+ * Os cases publicados, **nesta ordem**: é a ordem das paradas da trilha e do
+ * "próximo case". Um `.mdx` fora desta lista continua no
  * repositório e não tem rota (hoje: `nestle` e `zoomtecnologia`).
  *
  * `title` sobrepõe o do frontmatter sem tocar no arquivo.

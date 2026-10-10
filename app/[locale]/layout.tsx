@@ -87,7 +87,7 @@ export default async function LocaleLayout({
           comprimidos de diferença medida. */}
       {/* A cena mora em `app/[locale]/(scene)/layout.tsx`, o grupo que cobre a
           home e `/work/[slug]`: o canvas atravessa vivo a navegação para o
-          case. A vitrine fica fora dele, sem 3D. */}
+          case. */}
       {/* **Sem `bg-void` aqui.** Quem pinta o fundo é o `html`
           (`styles/globals.css`), e a diferença não é de gosto: a camada da cena
           é `-z-10`, e a ordem de pintura do CSS põe camadas de z negativo

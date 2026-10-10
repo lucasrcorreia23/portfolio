@@ -6,10 +6,10 @@
   "position": {
     "product": "Design de produto",
     "engineering": "Engenharia de front-end",
-    "brand": "Sistema de marca"
+    "brand": "Sistemas de marca"
   },
   "manifesto": {
-    "one": "Desenho produto e escrevo o front-end do que desenho. Não é versatilidade: a decisão de interface e o custo de construí-la são a mesma conversa, e separá-las em duas cadeiras inventa um terceiro problema.",
-    "two": "O trabalho que me interessa tem domínio difícil — prontuário clínico, contratação de energia, treino de vendas. Ali a tela é a menor parte: o que decide é a regra, o estado e o caso que ninguém desenhou."
+    "one": "Desenho o produto e implemento o front-end do que desenho. A decisão de interface e o custo de construí-la são tratados no mesmo lugar.",
+    "two": "Atuo em domínios complexos: prontuário clínico, contratação de energia, treinamento de vendas. Nesses contextos a tela é a menor parte do trabalho; o que define o produto são as regras de negócio, os estados e os casos de exceção."
   }
 }

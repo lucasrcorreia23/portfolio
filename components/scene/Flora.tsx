@@ -4,7 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { AdditiveBlending, DoubleSide, ShaderMaterial, Vector2, Vector3 } from "three";
 import { createGrassGeometry, createSporeGeometry } from "@/lib/scene/flora";
-import { loadFlowers, type Flowers } from "@/lib/scene/hero-flower";
+import {
+  loadPlants,
+  markPlantsSettled,
+  SPECIES,
+  type Plants,
+} from "@/lib/scene/plants";
 import { getQuality, GRASS_MAX, SPORES_MAX } from "@/lib/scene/quality";
 import {
   FLOWER_FRAG,
@@ -18,10 +23,13 @@ import { createHeightTexture } from "@/lib/scene/terrain";
 import { fogUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
 
 const FORWARD = new Vector3();
+/** Até onde, à frente e atrás da câmera, uma zona de flora é desenhada. */
+const AHEAD = 85;
+const BEHIND = 28;
 
 /**
- * A flora: relva, flores e esporos. Um draw call por tipo de planta (a relva e
- * as duas variantes da flor) e um para os esporos. É tudo que emite luz.
+ * A flora: relva, plantas e esporos. Um draw call por tipo de planta e por zona
+ * da trilha, e um para os esporos. É tudo que emite luz.
  */
 export function Flora({ shared }: { shared: SharedUniforms }) {
   const built = useMemo(() => {
@@ -72,22 +80,23 @@ export function Flora({ shared }: { shared: SharedUniforms }) {
     };
   }, [built]);
 
-  // As flores são um modelo: chegam por arquivo, depois da relva.
-  const [flowers, setFlowers] = useState<Flowers | null>(null);
+  // As plantas são modelos: chegam por arquivo, depois da relva.
+  const [plants, setPlants] = useState<Plants | null>(null);
   useEffect(() => {
     let alive = true;
-    let loaded: Flowers | null = null;
-    const release = (held: Flowers) => {
-      held.texture.dispose();
-      for (const variant of held.variants) variant.geometry.dispose();
+    let loaded: Plants | null = null;
+    const release = (held: Plants) => {
+      for (const texture of Object.values(held.textures)) texture.dispose();
+      for (const batch of held.batches) batch.geometry.dispose();
     };
-    loadFlowers().then(
+    loadPlants().then(
       (result) => {
         loaded = result;
-        if (alive) setFlowers(result);
+        if (alive) setPlants(result);
         else release(result);
       },
-      () => {},
+      // Sem os arquivos a cena segue só com a relva: ninguém fica esperando.
+      () => markPlantsSettled(),
     );
     return () => {
       alive = false;
@@ -95,33 +104,43 @@ export function Flora({ shared }: { shared: SharedUniforms }) {
     };
   }, []);
 
-  const flowerMaterials = useMemo(
+  const plantMaterials = useMemo(
     () =>
-      flowers === null
+      plants === null
         ? []
-        : flowers.variants.map(
-            (variant) =>
-              new ShaderMaterial({
-                uniforms: {
-                  ...fogUniforms(shared),
-                  uHeight: { value: built.height },
-                  uMap: { value: flowers.texture },
-                  uTeal: shared.teal,
-                  uTall: { value: variant.tall },
-                },
-                vertexShader: FLOWER_VERT,
-                fragmentShader: FLOWER_FRAG,
-                side: DoubleSide,
-              }),
-          ),
-    [flowers, shared, built],
+        : plants.batches.map((batch) => {
+            const species = SPECIES[batch.species];
+            return new ShaderMaterial({
+              uniforms: {
+                ...fogUniforms(shared),
+                uHeight: { value: built.height },
+                uMap: { value: plants.textures[batch.species] },
+                uTeal: shared.teal,
+                uTall: { value: batch.tall },
+                uPetal: { value: new Vector2(species.petal[0], species.petal[1]) },
+                uEmit: { value: species.emit },
+                uSway: { value: species.sway },
+                uLeaf: { value: species.leaf },
+              },
+              vertexShader: FLOWER_VERT,
+              fragmentShader: FLOWER_FRAG,
+              side: DoubleSide,
+            });
+          }),
+    [plants, shared, built],
   );
   useEffect(
     () => () => {
-      for (const material of flowerMaterials) material.dispose();
+      for (const material of plantMaterials) material.dispose();
     },
-    [flowerMaterials],
+    [plantMaterials],
   );
+
+  // Avisa depois do commit: as malhas das plantas já estão na cena quando o
+  // laço mestre compila os shaders.
+  useEffect(() => {
+    if (plants !== null) markPlantsSettled();
+  }, [plants, plantMaterials]);
 
   useFrame((state) => {
     // O ladrilho de relva e o volume dos esporos ficam à frente da câmera.
@@ -138,9 +157,15 @@ export function Flora({ shared }: { shared: SharedUniforms }) {
     const quality = getQuality();
     built.grassGeometry.instanceCount = Math.floor(GRASS_MAX * quality.grass);
     built.sporeGeometry.setDrawRange(0, Math.floor(SPORES_MAX * quality.spores));
-    if (flowers !== null) {
-      for (const variant of flowers.variants) {
-        variant.geometry.instanceCount = Math.floor(variant.count * quality.flowers);
+    if (plants !== null) {
+      // A zona longe da câmera não é desenhada: a névoa já a esconde, e é o
+      // que impede o mundo inteiro de ir para a GPU a cada quadro.
+      const z = state.camera.position.z;
+      for (const batch of plants.batches) {
+        const visible = z - batch.nearZ < AHEAD && batch.farZ - z < BEHIND;
+        batch.geometry.instanceCount = visible
+          ? Math.floor(batch.count * quality.flowers)
+          : 0;
       }
     }
   }, -8);
@@ -152,14 +177,14 @@ export function Flora({ shared }: { shared: SharedUniforms }) {
         material={built.grassMaterial}
         frustumCulled={false}
       />
-      {flowers === null
+      {plants === null
         ? null
-        : flowers.variants.map((variant, index) => {
-            const material = flowerMaterials[index];
+        : plants.batches.map((batch, index) => {
+            const material = plantMaterials[index];
             return material === undefined ? null : (
               <mesh
                 key={index}
-                geometry={variant.geometry}
+                geometry={batch.geometry}
                 material={material}
                 frustumCulled={false}
               />

@@ -1,9 +1,7 @@
 /**
- * A vitrine: tudo o que aparece em `/vitrine`, num arquivo só.
- *
- * Campo vazio não aparece na tela. `slug` liga o item à rota de um case; sem
- * ele o item não tem link. O filtro por `type` só é desenhado quando houver
- * mais de um tipo cadastrado.
+ * A vitrine: os itens da parede de telas da cena, num arquivo só. Não há
+ * página: a parede mostra as telas, e o nome dos itens vai em DOM só para
+ * leitor de tela. `year`, `discipline`, `type` e `slug` não são desenhados hoje.
  */
 export type VitrineItem = {
   name: string;
@@ -11,6 +9,12 @@ export type VitrineItem = {
   discipline?: string;
   type?: string;
   slug?: string;
+  /**
+   * As telas do item na parede da vitrine: caminhos de imagem em `public/`,
+   * 16 por 10. Sem isto o item entra com placeholders, e as telas que sobram
+   * na parede são divididas entre os itens sem telas próprias.
+   */
+  screens?: readonly string[];
 };
 
 export const VITRINE: readonly VitrineItem[] = [

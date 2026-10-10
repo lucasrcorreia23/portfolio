@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useThree } from "@react-three/fiber";
-import { beatAt } from "@/components/beats/beats";
+import { beatAt, VITRINE_PROGRESS } from "@/components/beats/beats";
 import type { BeatId } from "@/components/beats/beats";
 import { DURATION } from "@/lib/motion";
 import { stopAt, stopProgress } from "@/lib/scene/stops";
@@ -16,7 +16,7 @@ const COMPOSITION_AT: Record<BeatId, number> = {
   impact: 0.12,
   intro: 0.25,
   cases: stopProgress(0),
-  vitrine: 0.845,
+  vitrine: VITRINE_PROGRESS,
   cta: 0.97,
 };
 

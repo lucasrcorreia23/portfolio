@@ -11,7 +11,19 @@ import {
 } from "three";
 import { PANEL_HEIGHT, PANEL_WIDTH } from "./case-pose";
 import { STOP_COUNT } from "./stops";
-import { heightAt, panelPlacement, pathX, STOP_Z, vitrineWall, Z_END } from "./world";
+import {
+  heightAt,
+  panelPlacement,
+  pathX,
+  STOP_Z,
+  vitrineWall,
+  WALL_CELL,
+  WALL_COLUMNS,
+  WALL_ROWS,
+  WALL_SPAN,
+  WALL_TALL,
+  Z_END,
+} from "./world";
 
 /**
  * A indústria: torres, tanques, tubulação e os pórticos que sustentam os
@@ -125,9 +137,11 @@ function gantry(index: number, parts: Part[], beacons: number[]): void {
 const towerTops: number[] = [];
 
 /** Uma torre: fuste afilado, plataformas e uma antena. */
-function tower(x: number, z: number, height: number, radius: number, parts: Part[], beacons: number[]): void {
+function tower(x: number, z: number, height: number, radius: number, parts: Part[], beacons: number[], foot = 0): void {
   const base = ground(x, z) - 1;
   parts.push(place(new CylinderGeometry(radius * 0.55, radius, height, 10, 1), x, base + height / 2, z));
+  // Depois da borda do terreno não há chão para esconder a base: o fuste desce.
+  if (foot > 0) parts.push(place(new CylinderGeometry(radius, radius, foot, 10, 1), x, base - foot / 2, z));
   for (const at of [0.38, 0.66, 0.9]) {
     parts.push(place(new CylinderGeometry(radius * 1.25, radius * 1.25, 0.35, 10, 1), x, base + height * at, z));
   }
@@ -164,22 +178,17 @@ function pipeline(z: number, fromX: number, toX: number, lift: number, slant: nu
   }
 }
 
-/** Quantas placas a parede da vitrine tem: colunas × linhas. */
-export const WALL_COLUMNS = 5;
-export const WALL_ROWS = 3;
-export const WALL_CELL = { width: 2.4, height: 1.5, gap: 0.5 };
-
 /**
- * A parede da vitrine: uma estrutura larga com quinze placas pequenas, uma por
- * item. É o que a câmera vê ao olhar para o desvio.
+ * A estrutura da parede da vitrine: os postes e as travessas. As quinze
+ * placas, uma por item, são desenhadas pela `Wall` (`components/scene`).
  */
 function wall(parts: Part[], beacons: number[], arcs: number[]): void {
   const place3 = vitrineWall();
   const yaw = place3.yaw;
   const rightX = Math.cos(yaw);
   const rightZ = -Math.sin(yaw);
-  const span = WALL_COLUMNS * WALL_CELL.width + (WALL_COLUMNS - 1) * WALL_CELL.gap;
-  const tall = WALL_ROWS * WALL_CELL.height + (WALL_ROWS - 1) * WALL_CELL.gap;
+  const span = WALL_SPAN;
+  const tall = WALL_TALL;
   const top = place3.y + tall / 2 + 0.7;
 
   for (let column = 0; column <= WALL_COLUMNS; column += 1) {
@@ -187,9 +196,10 @@ function wall(parts: Part[], beacons: number[], arcs: number[]): void {
     const x = place3.x + rightX * along;
     const z = place3.z + rightZ * along;
     const base = ground(x, z) - 0.4;
-    const height = top - base + (column % 5 === 0 ? 2.4 : 0.4);
+    const end = column === 0 || column === WALL_COLUMNS;
+    const height = top - base + (end ? 2.4 : 0.4);
     parts.push(place(new BoxGeometry(0.16, height, 0.16), x, base + height / 2, z, 0, yaw, 0));
-    if (column % 5 === 0) {
+    if (end) {
       beacons.push(x, base + height + 0.06, z, 0.7);
       arcs.push(x, base + height, z);
     }
@@ -197,30 +207,6 @@ function wall(parts: Part[], beacons: number[], arcs: number[]): void {
   for (let row = 0; row <= WALL_ROWS; row += 1) {
     const y = place3.y - tall / 2 - WALL_CELL.gap / 2 + row * (WALL_CELL.height + WALL_CELL.gap);
     parts.push(place(new BoxGeometry(span + 1, 0.1, 0.1), place3.x, y, place3.z, 0, yaw, 0));
-  }
-  for (let row = 0; row < WALL_ROWS; row += 1) {
-    for (let column = 0; column < WALL_COLUMNS; column += 1) {
-      const along = -span / 2 + WALL_CELL.width / 2 + column * (WALL_CELL.width + WALL_CELL.gap);
-      const y = place3.y + tall / 2 - WALL_CELL.height / 2 - row * (WALL_CELL.height + WALL_CELL.gap);
-      parts.push(
-        place(
-          new BoxGeometry(WALL_CELL.width, WALL_CELL.height, 0.06),
-          place3.x + rightX * along,
-          y,
-          place3.z + rightZ * along,
-          0,
-          yaw,
-          0,
-        ),
-      );
-      // Um ponto por placa: os itens da vitrine, acesos de longe.
-      beacons.push(
-        place3.x + rightX * (along - 0.7) + Math.sin(yaw) * 0.08,
-        y - 0.35,
-        place3.z + rightZ * (along - 0.7) + Math.cos(yaw) * 0.08,
-        0.3,
-      );
-    }
   }
 }
 
@@ -258,14 +244,15 @@ export function createIndustry(): Industry {
     else tank(pathX(z) + 66, z - 2, 8, 5 + index, parts);
   }
   // O fim da trilha: um último grupo atrás da mancha do CTA.
-  tower(pathX(Z_END) - 30, Z_END - 44, 58, 4.2, parts, beacons);
-  tower(pathX(Z_END) + 36, Z_END - 52, 42, 3.2, parts, beacons);
+  tower(pathX(Z_END) - 30, Z_END - 44, 58, 4.2, parts, beacons, 30);
+  tower(pathX(Z_END) + 36, Z_END - 52, 42, 3.2, parts, beacons, 30);
 
   // A tubulação que atravessa o campo: a câmera passa por baixo da primeira.
   pipeline(-66, -96, 96, 6.4, 10, parts);
   pipeline(STOP_Z[1]! - 16, -100, 100, 7.5, -14, parts);
   pipeline(STOP_Z[3]! - 17, -100, 100, 8.2, 12, parts);
-  pipeline(STOP_Z[5]! - 20, -100, 100, 7, -8, parts);
+  // A última passa depois da parede da vitrine, nunca entre ela e a câmera.
+  pipeline(STOP_Z[5]! - 52, -100, 100, 7, -8, parts);
 
   wall(parts, beacons, tops);
 

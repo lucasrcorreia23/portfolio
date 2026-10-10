@@ -62,6 +62,8 @@ varying vec3 vWorld;
 
 ${FOG_GLSL}
 
+const vec3 MOON_DIR = normalize(vec3(-0.216, 0.13, -0.968));
+
 void main() {
   vec3 dir = normalize(vWorld - cameraPosition);
   // O horizonte é a cor da névoa distante, e ele fecha para o fundo acima:
@@ -71,6 +73,65 @@ void main() {
   float up = smoothstep(-0.04, 0.42, dir.y + (n - 0.5) * 0.12);
   vec3 color = mix(horizon, mix(uAbyss, uVoid, 0.55), up);
   color = mix(color, uVoid, smoothstep(0.3, 0.9, dir.y));
+  // No fim da trilha a noite fecha um pouco em cima, e o fundo ganha uma
+  // claridade pálida rente ao horizonte, só do lado do astro: atrás do texto
+  // o céu fica escuro, para o véu de leitura não ter o que apagar.
+  float az = atan(dir.x, -dir.z);
+  color *= 1.0 - 0.3 * uAstro;
+  vec3 pale = mix(uCyan, uRose, 0.4) * 0.5 + 0.35;
+  color += pale * 0.12 * exp(-max(dir.y + 0.14, 0.0) * 7.0) * smoothstep(0.2, 0.5, az) * uAstro;
+
+  // O astro do fim da trilha: um crescente rosa com a borda fria, nascendo
+  // atrás do horizonte. A base dele some na névoa, como tudo que está longe.
+  float away = acos(clamp(dot(dir, ASTRO_DIR), -1.0, 1.0));
+  float radius = 0.15;
+  float disc = 1.0 - smoothstep(radius - 0.004, radius + 0.004, away);
+  // A normal da esfera vista de frente, para a luz vir de um lado só.
+  vec3 side = normalize(cross(ASTRO_DIR, vec3(0.0, 1.0, 0.0)));
+  vec3 top = cross(side, ASTRO_DIR);
+  vec2 p = vec2(dot(dir, side), dot(dir, top)) / sin(radius);
+  vec3 normal = vec3(p, sqrt(max(1.0 - dot(p, p), 0.0)));
+  vec3 sun = normalize(vec3(0.7, 0.6, 0.1));
+  float lit = smoothstep(0.05, 0.9, dot(normal, sun));
+  float bands = sceneNoise(vec3(p.x * 1.4, p.y * 6.0, 3.0) + normal * 1.5);
+  vec3 body = mix(color * 0.7, uRose * (0.55 + 0.45 * bands), lit);
+  body += uCyan * 1.3 * pow(1.0 - normal.z, 3.0) * (0.12 + 0.88 * lit);
+  // Está longe: o ar fica entre ele e a câmera.
+  body = mix(body, color, 0.22);
+  float sunk = smoothstep(-0.1, 0.06, dir.y);
+  color = mix(color, body, disc * sunk * uAstro);
+  // O halo: fino, logo fora da borda.
+  color += uRose * 0.2 * exp(-max(away - radius, 0.0) * 22.0) * (1.0 - disc) * sunk * uAstro;
+
+  // A lua: muito ao fundo, quase da cor do céu, como uma sombra nele. Um
+  // resto da luz azul da flora vaza por trás, de um lado só.
+  float moonAway = acos(clamp(dot(dir, MOON_DIR), -1.0, 1.0));
+  float moonRadius = 0.028;
+  float moon = 1.0 - smoothstep(moonRadius - 0.003, moonRadius + 0.003, moonAway);
+  vec3 moonSide = normalize(cross(MOON_DIR, vec3(0.0, 1.0, 0.0)));
+  vec2 q = vec2(dot(dir, moonSide), dot(dir, cross(moonSide, MOON_DIR)));
+  float lean = max(dot(normalize(q + 1e-5), normalize(vec2(0.6, 0.8))), 0.0);
+  color += uCyan * 0.022 * lean * exp(-max(moonAway - moonRadius, 0.0) * 70.0) * uAstro;
+  color = mix(color, color * 0.66, moon * uAstro);
+
+  // As serras ao longe, do lado oposto ao astro: duas cristas frias, da cor
+  // da flora, com o ar aceso por cima. A base delas também some na névoa.
+  // A altura é fixa: o que cresce com a chegada é o quanto a névoa as deixa ver.
+  float reach = smoothstep(0.14, -0.5, az);
+  float cold = reach * uAstro;
+  float ridgeA = sceneNoise(vec3(az * 5.0, 1.7, 0.0)) * 0.62 + sceneNoise(vec3(az * 19.0, 4.1, 0.0)) * 0.26
+    + sceneNoise(vec3(az * 53.0, 8.4, 0.0)) * 0.12;
+  float ridgeB = sceneNoise(vec3(az * 8.0 + 9.0, 6.3, 0.0)) * 0.6 + sceneNoise(vec3(az * 31.0, 2.2, 0.0)) * 0.28
+    + sceneNoise(vec3(az * 71.0, 5.5, 0.0)) * 0.12;
+  float crestA = -0.16 + 0.34 * ridgeA * reach;
+  float crestB = -0.16 + 0.19 * ridgeB * reach;
+  vec3 blue = uCyan * vec3(0.5, 0.78, 1.05);
+  color += blue * 0.05 * exp(-max(dir.y - crestA, 0.0) * 30.0) * cold;
+  float inA = smoothstep(crestA + 0.002, crestA - 0.002, dir.y);
+  color = mix(color, blue * mix(0.1, 0.05, smoothstep(0.0, 0.2, crestA - dir.y)), inA * cold);
+  float inB = smoothstep(crestB + 0.002, crestB - 0.002, dir.y);
+  color = mix(color, blue * mix(0.04, 0.015, smoothstep(0.0, 0.14, crestB - dir.y)), inB * cold);
+
   gl_FragColor = vec4(color, 1.0);
 }
 `;

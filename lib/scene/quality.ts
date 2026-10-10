@@ -27,7 +27,19 @@ export const QUALITY: Readonly<Record<QualityTier, Quality>> = {
 export const GRASS_MAX = 128_000;
 export const SPORES_MAX = 2400;
 
-let current: Quality = QUALITY.medium;
+/**
+ * Onde a cena nasce. Num computador ela já começa no nível alto, e a medição
+ * só a derruba: subir depois dobraria as plantas no meio do Impacto, à vista.
+ * Em tela pequena ou máquina de poucos núcleos ela nasce no médio.
+ */
+function initialTier(): QualityTier {
+  if (typeof window === "undefined") return "medium";
+  const compact = window.matchMedia("(max-width: 767px)").matches;
+  const cores = navigator.hardwareConcurrency ?? 4;
+  return !compact && cores >= 8 ? "high" : "medium";
+}
+
+let current: Quality = QUALITY[initialTier()];
 const listeners = new Set<(quality: Quality) => void>();
 
 export function getQuality(): Quality {

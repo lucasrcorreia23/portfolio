@@ -49,6 +49,8 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
     storm: { value: 0 },
     /** Ganho geral da emissão, 0 a 1: sobe na revelação do Impacto. */
     glow: { value: 1 },
+    /** Quanto o astro do fim da trilha já nasceu atrás do horizonte, 0 a 1. */
+    astro: { value: 0 },
 
     /** Os painéis dos cases: xyz do centro em mundo, w = giro em torno de Y. */
     panels: { value: Array.from({ length: STOP_COUNT }, () => new Vector4()) },
@@ -65,6 +67,9 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
       value: Array.from({ length: MAX_VEIL_BOXES }, () => new Vector4()),
     },
     veilF: { value: Array.from({ length: MAX_VEIL_BOXES }, () => 0) },
+
+    /** Quanto a câmera está diante da parede da vitrine, 0 a 1: as telas acendem. */
+    fork: { value: 0 },
 
     /** Quanto a cena recuou para virar fundo de leitura de um case, 0 a 1. */
     caseRecess: { value: 0 },
@@ -85,6 +90,7 @@ export function fogUniforms(shared: SharedUniforms) {
     uTime: shared.time,
     uEmitters: shared.emitters,
     uGlow: shared.glow,
+    uAstro: shared.astro,
   };
 }
 

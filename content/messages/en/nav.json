@@ -3,9 +3,9 @@
   "open": "Open menu",
   "close": "Close menu",
   "menu": "Menu",
-  "home": "Home",
-  "cases": "Cases",
-  "vitrine": "Showcase",
+  "home": "About",
+  "cases": "Projects",
+  "vitrine": "Gallery",
   "contact": "Contact",
   "profiles": {
     "linkedin": "LinkedIn",

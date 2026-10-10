@@ -1,4 +1,5 @@
 import { HEIGHT_GLSL } from "../terrain";
+import { TERRAIN } from "../world";
 import { FOG_GLSL, FOG_UNIFORMS_GLSL } from "./fog";
 
 /**
@@ -44,6 +45,11 @@ void main() {
   vec2 xz = uFocus + cell;
   // Some na borda do ladrilho, em vez de aparecer de repente.
   float edge = 1.0 - smoothstep(${(GRASS_TILE * 0.36).toFixed(1)}, ${(GRASS_TILE * 0.5).toFixed(1)}, length(cell));
+  // E não cresce fora do terreno: depois da borda não há chão embaixo dela.
+  vec2 lo = vec2(${TERRAIN.minX.toFixed(1)}, ${TERRAIN.minZ.toFixed(1)});
+  vec2 hi = vec2(${TERRAIN.maxX.toFixed(1)}, ${TERRAIN.maxZ.toFixed(1)});
+  vec2 inside = smoothstep(lo, lo + 2.0, xz) * (1.0 - smoothstep(hi - 2.0, hi, xz));
+  edge *= inside.x * inside.y;
 
   vec3 base = vec3(xz.x, terrainHeight(xz), xz.y);
   float height = aSeed.x * edge;
@@ -92,9 +98,13 @@ ${HEIGHT_GLSL}
 attribute vec3 aOffset;
 attribute vec4 aSeed;
 uniform float uTall;
+uniform float uEmit;
+uniform float uSway;
 attribute float aWarm;
 varying vec2 vUv;
 varying vec3 vTint;
+varying vec3 vHue;
+varying float vAlong;
 varying vec3 vGlow;
 varying float vFog;
 varying vec3 vFogColor;
@@ -110,7 +120,9 @@ void main() {
   vec3 local = vec3(position.x * c - position.z * s, position.y, position.x * s + position.z * c) * aSeed.x;
   // O vento dobra a planta a partir da base, mais na ponta.
   float along = clamp(position.y / uTall, 0.0, 1.0);
-  local.xz += windAt(base, uTime + aSeed.z * 4.0) * along * along * aSeed.x * uTall * 0.7;
+  // Um pouco enterrada: planta e pedra saem do chão, não pousam nele.
+  local.y -= 0.04 * aSeed.x * uTall;
+  local.xz += windAt(base, uTime + aSeed.z * 4.0) * along * along * aSeed.x * uTall * 0.7 * uSway;
   vec3 world = base + local;
 
   vec4 view = viewMatrix * vec4(world, 1.0);
@@ -120,7 +132,11 @@ void main() {
   float bright = (0.6 + 0.4 * aSeed.w) * (0.5 + 0.5 * cluster) * uGlow;
   // Ciano, com algumas mais azuis; e as rosas, que são o calor do campo.
   vec3 tint = mix(uCyan, uCyan * vec3(0.55, 0.78, 1.05), step(0.72, aSeed.z));
-  vTint = mix(tint, uRose * vec3(1.0, 0.85, 0.95), aWarm) * 5.0 * bright;
+  vec3 hue = mix(tint, uRose * vec3(1.0, 0.85, 0.95), aWarm);
+  vTint = hue * 5.0 * bright * uEmit;
+  // A cor da própria planta, para a folha: fraca, e mais viva na ponta.
+  vHue = hue * (0.55 + 0.45 * cluster) * uGlow;
+  vAlong = along;
   vGlow = floraGlow(base + vec3(0.0, 0.5, 0.0));
   vUv = uv;
 
@@ -136,8 +152,12 @@ void main() {
 export const FLOWER_FRAG = /* glsl */ `
 uniform sampler2D uMap;
 uniform vec3 uTeal;
+uniform vec2 uPetal;
+uniform float uLeaf;
 varying vec2 vUv;
 varying vec3 vTint;
+varying vec3 vHue;
+varying float vAlong;
 varying vec3 vGlow;
 varying float vFog;
 varying vec3 vFogColor;
@@ -145,12 +165,15 @@ varying vec3 vFogColor;
 void main() {
   vec4 texel = texture(uMap, vUv);
   if (texel.a < 0.5) discard;
-  // Na textura a pétala é amarela e a folha é verde: o vermelho as separa
-  // (em luz linear: ~0,5 na pétala, ~0,07 na folha).
-  float petal = smoothstep(0.14, 0.3, texel.r);
+  // Em toda espécie a pétala é quente (amarela, laranja) e a folha é verde:
+  // o vermelho menos o azul as separa, com o limiar de cada uma.
+  float petal = smoothstep(uPetal.x, uPetal.y, texel.r - texel.b);
   float detail = dot(texel.rgb, vec3(0.3333));
   // A folha pega a luz das flores em volta: é o que dá corpo à planta.
-  vec3 leaf = uTeal * 0.6 * detail + vGlow * 0.9 * detail;
+  vec3 leaf = uTeal * 0.34 * detail + vGlow * 0.6 * detail;
+  // A folha não é só sombra: ela guarda um resto da cor da planta, que sobe
+  // da base para a ponta. É o que separa uma planta viva de um galho seco.
+  leaf += vHue * uLeaf * detail * (0.07 + 0.42 * vAlong * vAlong);
   vec3 color = mix(leaf, vTint * (0.5 + 1.1 * detail), petal);
   gl_FragColor = vec4(mix(color, vFogColor, vFog), 1.0);
 }

@@ -9,7 +9,7 @@
     "brand": "Brand systems"
   },
   "manifesto": {
-    "one": "I design product and I write the front-end of what I design. That isn't range: the interface decision and the cost of building it are one conversation, and splitting them across two chairs invents a third problem.",
-    "two": "The work I want has a hard domain — clinical records, energy contracts, sales training. There the screen is the smallest part: what decides is the rule, the state, and the case nobody drew."
+    "one": "I design the product and build the front-end of what I design. Interface decisions and the cost of building them are handled in one place.",
+    "two": "I work in complex domains: clinical records, energy contracting, sales training. There, the screen is the smallest part of the work; business rules, states and edge cases define the product."
   }
 }

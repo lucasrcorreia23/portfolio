@@ -3,6 +3,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { VITRINE_PROGRESS } from "@/components/beats/beats";
+import { NavJump } from "@/components/hud/NavJump";
 import { Glyphs } from "@/components/text/Glyphs";
 import { CaseReturn } from "@/components/work/CaseReturn";
 import { CaseExit } from "@/components/work/CaseExit";
@@ -175,12 +177,13 @@ export default async function CasePage({
               <span aria-hidden="true"> →</span>
             </Link>
           )}
-          <Link
-            href={localizePath("/vitrine", typed)}
+          <NavJump
+            progress={VITRINE_PROGRESS}
+            anchor="vitrine"
             className="case-foot-link"
           >
             {tNav("vitrine")}
-          </Link>
+          </NavJump>
         </footer>
       </CaseReveal>
     </main>

@@ -18,7 +18,6 @@ const ROUTES = [
   { name: "home (/)", file: "en.html" },
   { name: "home (/pt)", file: "pt.html" },
   { name: "case (/work/decision-suite)", file: "en/work/decision-suite.html" },
-  { name: "vitrine (/vitrine)", file: "en/vitrine.html" },
 ];
 
 // O chunk da cena é achado por conteúdo: o renderer do three e um nome de

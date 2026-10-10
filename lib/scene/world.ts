@@ -198,7 +198,7 @@ export function panelPlacement(index: number): Placement {
 
 /**
  * A parede da vitrine: um desvio à esquerda da trilha, depois do último case.
- * A câmera não vai até lá; ela olha, e quem decide ir é a pessoa.
+ * A câmera chega perto dela com o scroll e volta para a trilha.
  */
 export function vitrineWall(): Placement {
   const z = Z_FORK - FORK_LENGTH * 0.72;
@@ -213,15 +213,60 @@ export function vitrineWall(): Placement {
   };
 }
 
-/** Quanto a câmera olha para o desvio: sobe no meio do trecho e solta no fim. */
+/**
+ * As telas da parede: colunas × linhas. São telas, não itens — um projeto
+ * ocupa várias (ver `wallScreens`). A parede é uma faixa comprida: a câmera
+ * enquadra a altura inteira e percorre as colunas.
+ */
+export const WALL_COLUMNS = 15;
+export const WALL_ROWS = 3;
+export const WALL_CELL = { width: 1.44, height: 0.9, gap: 0.28 };
+export const WALL_SPAN = WALL_COLUMNS * WALL_CELL.width + (WALL_COLUMNS - 1) * WALL_CELL.gap;
+export const WALL_TALL = WALL_ROWS * WALL_CELL.height + (WALL_ROWS - 1) * WALL_CELL.gap;
+
+/** Em que fração do trecho a câmera chega à parede e em qual a solta. */
+const FORK_ARRIVE = 0.2;
+const FORK_LEAVE = 0.84;
+
+/** Quanto a câmera está no desvio: chega logo, fica e solta no fim. */
 export function forkWeight(progress: number): number {
   const fork = beatOf("vitrine");
   if (progress <= fork.from || progress >= fork.to) return 0;
   const t = (progress - fork.from) / (fork.to - fork.from);
-  return smooth(t / 0.4) * (1 - smooth((t - 0.72) / 0.28));
+  return smooth(t / FORK_ARRIVE) * (1 - smooth((t - FORK_LEAVE) / (1 - FORK_LEAVE)));
+}
+
+/** Quanto da parede a câmera já percorreu, 0 a 1: o scroll a arrasta, linear. */
+export function wallPan(progress: number): number {
+  const fork = beatOf("vitrine");
+  const t = (progress - fork.from) / (fork.to - fork.from);
+  return Math.min(1, Math.max(0, (t - FORK_ARRIVE) / (FORK_LEAVE - FORK_ARRIVE)));
 }
 
 /* -------------------------------------------------------------------- flora */
+
+/** As espécies de planta. Os modelos e o desenho de cada uma estão em `plants.ts`. */
+export type SpeciesId =
+  | "empodium"
+  | "gazania"
+  | "celandine"
+  | "rooibos"
+  | "boulder"
+  | "stone";
+
+/** A receita de uma mancha: que fração das posições dela cada espécie ocupa. */
+type Mix = Partial<Record<SpeciesId, number>>;
+
+/** A flor alta e fria. */
+const TALL: Mix = { empodium: 0.62, celandine: 0.14 };
+/** A margarida baixa, onde o rosa aparece. */
+const LOW: Mix = { gazania: 0.4, empodium: 0.3, celandine: 0.1 };
+
+/**
+ * As três zonas da trilha, pelos limites em Z: Impacto e Introdução, Cases, e
+ * a Bifurcação com o CTA. A flora de uma zona longe da câmera não é desenhada.
+ */
+export const ZONE_EDGES: readonly number[] = [1e4, Z_CASES - 8, Z_FORK + 6, -1e4];
 
 export type Patch = {
   /** O centro da mancha e os raios dela. */
@@ -237,6 +282,8 @@ export type Patch = {
   stop: number;
   /** Quanto da mancha é rosa, 0 a 1. */
   warm: number;
+  /** Que plantas crescem ali. Cada trecho da trilha tem a flora dele. */
+  mix: Mix;
 };
 
 /**
@@ -245,9 +292,12 @@ export type Patch = {
  */
 export function floraPatches(): readonly Patch[] {
   const patches: Patch[] = [
-    { x: pathX(-22) + 8, z: -22, rx: 25, rz: 24, count: 1250, light: 1.6, stop: -1, warm: 0.14 },
-    { x: pathX(0) - 19, z: 2, rx: 10, rz: 10, count: 300, light: 0.95, stop: -1, warm: 0.85 },
-    { x: pathX(-54) + 13, z: -54, rx: 11, rz: 10, count: 320, light: 0.95, stop: -1, warm: 0.55 },
+    { x: pathX(-22) + 6, z: -22, rx: 32, rz: 24, count: 1500, light: 1.6, stop: -1, warm: 0.14, mix: { empodium: 0.52, gazania: 0.03, celandine: 0.05 } },
+    // O primeiro plano do Impacto: a câmera abre de cima, e sem isto a metade
+    // de baixo do quadro é relva vazia.
+    { x: pathX(10) + 3, z: 9, rx: 30, rz: 13, count: 800, light: 1.2, stop: -1, warm: 0.3, mix: { empodium: 0.34, gazania: 0.12, celandine: 0.08 } },
+    { x: pathX(0) - 19, z: 2, rx: 10, rz: 10, count: 300, light: 0.95, stop: -1, warm: 0.85, mix: LOW },
+    { x: pathX(-54) + 13, z: -54, rx: 11, rz: 10, count: 320, light: 0.95, stop: -1, warm: 0.55, mix: { celandine: 0.42, empodium: 0.2 } },
   ];
   for (let index = 0; index < STOP_COUNT; index += 1) {
     const panel = panelPlacement(index);
@@ -261,17 +311,21 @@ export function floraPatches(): readonly Patch[] {
       stop: index,
       // Alternadas: uma parada fria, uma com o rosa junto.
       warm: index % 2 === 0 ? 0.12 : 0.5,
+      // Cada case tem a flora dele: as paradas alternam a alta e a baixa.
+      mix: index % 2 === 0 ? TALL : LOW,
     });
   }
   patches.push({
-    x: pathX(Z_END - 16) + 1,
+    // À direita da trilha: o texto do CTA fica à esquerda, sobre o campo escuro.
+    x: pathX(Z_END - 16) + 11,
     z: Z_END - 16,
-    rx: 15,
+    rx: 9,
     rz: 12,
     count: 520,
-    light: 1.7,
+    light: 1.3,
     stop: -1,
-    warm: 0.3,
+    warm: 0.55,
+    mix: { empodium: 0.3, gazania: 0.4, celandine: 0.2 },
   });
   // O desvio da vitrine: um rastro rosa que sai da trilha até a parede.
   const wall = vitrineWall();
@@ -284,6 +338,7 @@ export function floraPatches(): readonly Patch[] {
     light: 1.3,
     stop: -1,
     warm: 0.72,
+    mix: { gazania: 0.55, empodium: 0.1 },
   });
   return patches;
 }
