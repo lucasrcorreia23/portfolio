@@ -27,6 +27,7 @@ import {
   VEIL_SOLVE_FRAG,
 } from "@/lib/scene/shaders/post";
 import { markScenePainted } from "@/lib/scene/scene-painted";
+import { getQuality } from "@/lib/scene/quality";
 import { sceneSettings } from "@/lib/scene/settings";
 import { veilUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
 import { MAX_VEIL_BOXES, VEIL_CEILING } from "@/lib/scene/veil";
@@ -333,6 +334,13 @@ export function Composer({
   useFrame((state) => {
     if (!readyRef.current) return;
     const renderer = state.gl;
+    // O nível baixo de qualidade não tem profundidade de campo.
+    const dof = settings.dof && getQuality().dof;
+    const counting = process.env.NODE_ENV !== "production" && settings.stats;
+    if (counting) {
+      renderer.info.autoReset = false;
+      renderer.info.reset();
+    }
     const previousAutoClear = renderer.autoClear;
     renderer.autoClear = false;
 
@@ -343,14 +351,14 @@ export function Composer({
 
     const aperture = apertureRef.current;
     shared.exposure.value = EXPOSURE;
-    rig.depthUniforms.uAperture.value = settings.dof ? aperture : 0;
+    rig.depthUniforms.uAperture.value = dof ? aperture : 0;
     rig.depthUniforms.uFocus.value = focusRef.current;
     rig.depthUniforms.uFocusRange.value = focusRangeRef.current;
 
     // --- profundidade de campo, kernel duplo --------------------------------
     // Desligada, as duas passadas são puladas inteiras. Com a abertura em zero
     // também: nada desfoca, e o composite lê o quadro nítido.
-    if (settings.dof && aperture > 0.001) {
+    if (dof && aperture > 0.001) {
       setUniform(rig.dof, "uSource", rig.scene.texture);
       setVec2(rig.dof, "uTexel", TEXEL.set(1 / rig.dofA.width, 1 / rig.dofA.height));
       setVec2(rig.dof, "uDirection", HORIZONTAL);
@@ -444,10 +452,19 @@ export function Composer({
     setUniform(
       rig.composite,
       "uDofEnabled",
-      settings.dof && aperture > 0.001 ? 1 : 0,
+      dof && aperture > 0.001 ? 1 : 0,
     );
 
     blit(renderer, rig.composite, null);
+    if (counting) {
+      // Só em desenvolvimento, com `?stats=1`: o que este quadro custou.
+      (window as unknown as { __sceneStats?: unknown }).__sceneStats = {
+        calls: renderer.info.render.calls,
+        triangles: renderer.info.render.triangles,
+        tier: getQuality().tier,
+        dpr: renderer.getPixelRatio(),
+      };
+    }
     // O loading espera por isto para fechar.
     markScenePainted();
 

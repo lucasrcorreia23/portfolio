@@ -29,6 +29,7 @@ import { Composer } from "./Composer";
 import { Flora } from "./Flora";
 import { Land } from "./Land";
 import { Panels } from "./Panels";
+import { QualityGovernor } from "./QualityGovernor";
 import type { ScenePanel } from "./Scene";
 import { SceneClock } from "./SceneClock";
 
@@ -201,6 +202,7 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
       ) : (
         <SceneClock />
       )}
+      <QualityGovernor still={still} />
       <Land shared={shared} />
       <Flora shared={shared} />
       <Panels shared={shared} panels={panels} />
