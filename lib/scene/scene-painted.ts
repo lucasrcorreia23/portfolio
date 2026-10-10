@@ -1,33 +1,39 @@
 /**
- * "A cena já pintou um quadro" — o fio entre o compositor e o portão.
+ * "A cena pintou": o fio do compositor para o loading.
  *
- * Fica fora do React e **não importa nada**, pelo mesmo motivo do
- * `readout-store`: quem lê é o portão, que está na rota inicial, e quem escreve
- * é o compositor, que está no chunk da cena. Um import de three aqui levaria a
- * cena inteira para a rota inicial.
+ * O `import()` do chunk resolver não basta — o código chegou, os shaders não.
+ * O compositor chama `markScenePainted()` depois do primeiro quadro composto,
+ * que é quando todo programa já compilou. Sem WebGL a cena nunca pinta, e quem
+ * espera é liberado por `markSceneUnavailable()`.
  *
- * O portão precisa disto e não da tarefa `scene` do preload: o `import()`
- * resolver significa que o código chegou, não que o WebGL compilou os shaders e
- * desenhou. Abrir as frestas antes disso mostraria o fundo vazio do
- * `SceneGate` — um retângulo preto onde devia estar a câmara.
+ * Sem imports: a rota inicial lê este módulo.
  */
-
 let painted = false;
 const listeners = new Set<() => void>();
 
-export function markScenePainted(): void {
+function settle(): void {
   if (painted) return;
   painted = true;
   for (const listener of listeners) listener();
+  listeners.clear();
+}
+
+export function markScenePainted(): void {
+  settle();
+}
+
+/** O modo sem WebGL: não há o que esperar. */
+export function markSceneUnavailable(): void {
+  settle();
 }
 
 export function isScenePainted(): boolean {
   return painted;
 }
 
-export function subscribeScenePainted(listener: () => void): () => void {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
+export function whenScenePainted(): Promise<void> {
+  if (painted) return Promise.resolve();
+  return new Promise((resolve) => {
+    listeners.add(resolve);
+  });
 }

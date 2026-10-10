@@ -1,5 +1,6 @@
 import { prepareAudio } from "@/lib/audio/audio-context";
 import { loadScene } from "@/lib/scene/load-scene";
+import { whenScenePainted } from "@/lib/scene/scene-painted";
 import { loadScrollDriver } from "@/lib/scroll/load-driver";
 
 /**
@@ -26,7 +27,7 @@ import { loadScrollDriver } from "@/lib/scroll/load-driver";
  * nome. O teto global continua como último recurso.
  */
 
-export type PreloadTaskId = "fonts" | "scroll" | "audio" | "scene";
+export type PreloadTaskId = "fonts" | "scroll" | "audio" | "scene" | "shaders";
 
 type PreloadTask = {
   id: PreloadTaskId;
@@ -54,7 +55,10 @@ const TASKS: readonly PreloadTask[] = [
   // veneziana está fechada e a espera é o que ele existe para cobrir. Peso 4
   // contra 1 das outras porque o peso é proporcional ao que a tarefa custa em
   // rede, e este chunk custa uma ordem de grandeza a mais.
-  { id: "scene", weight: 4, start: () => loadScene() },
+  { id: "scene", weight: 3, start: () => loadScene() },
+  // Os shaders: a cena compila todos os programas ao montar e avisa quando o
+  // primeiro quadro composto saiu. Sem WebGL, quem avisa é o `SceneGate`.
+  { id: "shaders", weight: 3, start: () => whenScenePainted() },
 ];
 
 const TOTAL_WEIGHT = TASKS.reduce((total, task) => total + task.weight, 0);
@@ -124,7 +128,7 @@ export function runPreload(onProgress: (progress: number) => void): () => void {
     // tem por que ocupar o console de ninguém.
     if (outcome !== "pronto") {
       console.warn(
-        `[preload] "${task.id}" ${outcome} em ${Math.round(performance.now() - started)} ms — o portão abre assim mesmo.`,
+        `[preload] "${task.id}" ${outcome} em ${Math.round(performance.now() - started)} ms — o loading fecha assim mesmo.`,
       );
     }
 

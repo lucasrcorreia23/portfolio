@@ -5,10 +5,11 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CaseReturn } from "@/components/work/CaseReturn";
 import { CaseExit } from "@/components/work/CaseExit";
 import { CaseReveal } from "@/components/work/CaseReveal";
-import { caseSummary, getCaseSlugs, getRiverCases, loadCase } from "@/lib/cases";
+import { Placeholder } from "@/components/work/Placeholder";
+import { caseSummary, getCaseSlugs, getCases, loadCase } from "@/lib/cases";
 import { alternatesFor, localizePath } from "@/lib/i18n/config";
 import { requireLocale } from "@/lib/i18n/locale";
-import { CARD_COVER_ASPECT } from "@/lib/scene/card-layout";
+import { PANEL_ASPECT } from "@/lib/scene/stops";
 import { caseComponents } from "@/lib/work/mdx-case";
 
 /** Os slugs vêm do disco; qualquer outro é 404, sem render dinâmico. */
@@ -41,7 +42,6 @@ export async function generateMetadata({
     openGraph: {
       title: t("workTitle", { title: frontmatter.title }),
       description: caseSummary(frontmatter, locale),
-      images: [frontmatter.coverSrc],
     },
   };
 }
@@ -82,47 +82,31 @@ export default async function CasePage({
   if (!slugs.includes(slug)) notFound();
 
   const { frontmatter, Content, sizes } = await loadCase(slug);
-  const t = await getTranslations("work");
-  const tHud = await getTranslations("hud");
+  const t = await getTranslations("cases");
+  const tNav = await getTranslations("nav");
 
-  const cover = sizes[frontmatter.coverSrc];
-  const coverAlt =
-    frontmatter.media.find((item) => item.src === frontmatter.cover)?.[
-      typed === "pt" ? "alt_pt" : "alt_en"
-    ] ?? t("case.cover", { title: frontmatter.title });
-
-  // O próximo posto da curadoria, para o case não ser um beco sem saída. Ele
-  // dá a volta no fim: o sétimo aponta para o primeiro, porque o rio é uma
-  // ordem editorial e não uma paginação.
-  const river = await getRiverCases();
-  const here = river.findIndex((entry) => entry.slug === slug);
-  const next = here < 0 ? undefined : river[(here + 1) % river.length];
+  const cases = await getCases();
+  const here = cases.findIndex((entry) => entry.slug === slug);
+  const next = here < 0 ? undefined : cases[(here + 1) % cases.length];
 
   return (
     <main className="case px-6 pb-32 pt-24 md:pl-56 md:pr-12">
       <CaseExit />
       <CaseReveal>
+        {/* A capa é o mesmo placeholder que o painel da cena desenha: é o
+            retângulo dela que a travessia lê para saber onde encaixar. */}
         <figure
           data-case-cover
           className="case-cover"
-          style={{ aspectRatio: String(CARD_COVER_ASPECT) }}
+          style={{ aspectRatio: String(PANEL_ASPECT) }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={frontmatter.coverSrc}
-            alt={coverAlt}
-            {...(cover === undefined
-              ? {}
-              : { width: cover.width, height: cover.height })}
-            fetchPriority="high"
-            decoding="async"
-          />
+          <Placeholder name={frontmatter.title} index={Math.max(here, 0)} />
         </figure>
 
         <div className="case-head">
           <p className="type-mono text-hud text-mist w-fit" data-veil>
-            {frontmatter.client} · {frontmatter.year} · {tHud("lexicon.station")}{" "}
-            {String(frontmatter.river_rank).padStart(3, "0")}
+            {String(Math.max(here, 0) + 1).padStart(2, "0")} · {frontmatter.client} ·{" "}
+            {frontmatter.year}
           </p>
 
           <h1 data-veil className="type-display text-display-2 mt-4 w-fit">
@@ -147,17 +131,9 @@ export default async function CasePage({
           </dl>
         </div>
 
-        {/* Névoa parada e texto imóvel: nada aqui reage ao scroll
-            (DIRECTION.md §4). A única coisa que se move na tela é o organismo,
-            atrás, desacelerado. */}
         <article className="case-body">
-          {/* A âncora do véu do corpo: uma caixa só, da largura da medida de
-              leitura, cobrindo o artigo inteiro. Ela é aparada pela janela em
-              `readVeilBoxes`, então o que chega ao compositor é a fatia visível
-              da coluna — que é literalmente o "véu ancorado à coluna de texto"
-              do DIRECTION.md §5. As figuras ficam **fora** dela de propósito:
-              elas são mais largas que a medida, e o que precisa de proteção é o
-              texto. */}
+          {/* A âncora do véu do corpo: uma caixa da largura da medida de
+              leitura, aparada pela janela em `readVeilBoxes`. */}
           <span aria-hidden="true" data-veil className="case-veil" />
           <Content
             components={caseComponents({
@@ -185,10 +161,10 @@ export default async function CasePage({
             </Link>
           )}
           <Link
-            href={localizePath("/work", typed)}
+            href={localizePath("/vitrine", typed)}
             className="case-foot-link"
           >
-            {t("archive.title")}
+            {tNav("vitrine")}
           </Link>
         </footer>
       </CaseReveal>

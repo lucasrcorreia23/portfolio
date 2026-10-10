@@ -1,27 +1,9 @@
 /**
- * O compositor.
+ * O compositor, escrito à mão: cena → DOF → bloom → véu → composite.
  *
- * ## Por que ele é escrito à mão, e não é o `@react-three/postprocessing`
- *
- * O PROJECT.md §5 lista essa biblioteca na stack, e o mesmo §5 fixa o teto de
- * **350 kB comprimidos** para o chunk da cena. Os dois não cabem juntos, e onde
- * a §5 briga consigo mesma ganha o lado que tem número.
- *
- * O `@react-three/postprocessing@3.1.1` exporta um barril só —
- * `"exports": "./dist/index.js"`, sem importação profunda — e esse arquivo
- * importa `n8ao` no topo. O `n8ao` não declara `sideEffects`, então o bundler
- * não pode descartá-lo com segurança: são ~50 kB comprimidos de SSAO que esta
- * cena nunca usa, mais ~110 kB do `postprocessing` inteiro. Verificado no
- * `node_modules`, não estimado.
- *
- * O que está aqui substitui isso por ~200 linhas, reaproveitando o triângulo de
- * tela cheia que a simulação do bando já exigia. E resolve um problema que a
- * biblioteca não resolveria: o véu de legibilidade do DIRECTION.md §5 é uma
- * conta em **luz linear** (`L_saída = (1 − f)·L_cena + f·L_névoa`), e ela
- * precisa acontecer antes do tonemap. Numa pilha de efeitos encadeados o véu
- * resolveria para uma luminância que a passada seguinte muda.
- *
- * Ordem das passadas: cena → DOF → bloom → raios → véu → composite.
+ * Uma biblioteca de pós custaria ~160 kB do teto de 350 kB do chunk da cena.
+ * O bloom só pega o que passa do limiar em HDR linear, ou seja o que emite: a
+ * flora e os esporos. A indústria e o terreno ficam abaixo dele.
  */
 
 import { MAX_VEIL_BOXES, VEIL_FALLOFF } from "../veil";
@@ -53,27 +35,9 @@ float viewDepthAt(vec2 uv) {
 uniform float uFocus;
 uniform float uFocusRange;
 uniform float uAperture;
-uniform float uNearBlur;
-/**
- * Quanto a peça nítida é impedida de sangrar no fundo borrado, 0 a 1 (rodada
- * 13). O gather é pelo CoC do centro: um pixel do fundo desfocado ao lado de
- * um card em foco puxava a cor do card para fora da borda — um halo em volta
- * de cada peça do rio, medido como anel 20 px mais claro que a parede ao lado
- * só com a DOF ligada. Com a guarda, uma amostra **mais perto e mais nítida**
- * que o centro perde o peso. Ligada pela rampa do rio, para o desfoque da
- * Emergência não mudar.
- */
-uniform float uLeakGuard;
 
 float cocFromDepth(float depth) {
-  float far = clamp(abs(depth - uFocus) / uFocusRange, 0.0, 1.0) * uAperture;
-  // **O campo próximo desfoca sempre** (rodada 12), com a abertura aberta ou
-  // fechada: o que passa a menos de 2.5 unidades da lente é mancha, não forma.
-  // Com a abertura em zero de 0.155 a ~0.44, um corpo perto da lente saía
-  // nítido na Identidade e em Quem sou. Nada mais chega tão perto da câmera
-  // nesta descida: a parede graduada de Quem sou fica a 3.2 unidades.
-  float near = 0.3 * uNearBlur * (1.0 - smoothstep(0.6, 2.5, depth));
-  return max(far, near);
+  return clamp(abs(depth - uFocus) / uFocusRange, 0.0, 1.0) * uAperture;
 }
 
 float cocAt(vec2 uv) {
@@ -135,24 +99,9 @@ void main() {
     // 3.13 ela chega a 0.6% na borda e o produto volta a ser redondo; o passo
     // subiu na mesma razão, então o raio do borrão não mudou.
     float w = exp(-offset * offset / 19.6);
-    vec2 a = vUv + step * offset;
-    vec2 b = vUv - step * offset;
-    float wa = w;
-    float wb = w;
-    if (uLeakGuard > 0.0) {
-      float da = viewDepthAt(a);
-      float db = viewDepthAt(b);
-      // Sem step(): a variável local do passo já se chama step e esconde a
-      // função — o shader não compilava e a DOF saía preta (visto na
-      // Emergência, onde tudo é desfoque).
-      float nearerA = da < centerDepth - 0.5 ? 1.0 : 0.0;
-      float nearerB = db < centerDepth - 0.5 ? 1.0 : 0.0;
-      wa *= 1.0 - uLeakGuard * nearerA * (1.0 - clamp(cocFromDepth(da) / coc, 0.0, 1.0));
-      wb *= 1.0 - uLeakGuard * nearerB * (1.0 - clamp(cocFromDepth(db) / coc, 0.0, 1.0));
-    }
-    total += texture(uSource, a) * wa;
-    total += texture(uSource, b) * wb;
-    weightSum += wa + wb;
+    total += texture(uSource, vUv + step * offset) * w;
+    total += texture(uSource, vUv - step * offset) * w;
+    weightSum += 2.0 * w;
   }
 
   fragColor = total / weightSum;
@@ -258,72 +207,6 @@ void main() {
 }
 `;
 
-/** Quantas fontes de raios uma passada resolve: a montante e três lanternas. */
-export const RAY_LIGHTS = 4;
-
-/**
- * **Os raios de luz na névoa** (rodada 22).
- *
- * A névoa já tinha a luz das fontes — o halo da fonte a montante
- * (`sourceHalo`, em `fog.ts`) e as auras das lanternas —, mas como um brilho
- * que nada atravessa: um corpo passando diante da fonte não deixava sombra no
- * ar. Num lugar úmido e escuro o que denuncia a luz é justamente isso, a
- * lâmina de ar aceso cortada por quem passa na frente.
- *
- * Por pixel e por fonte, a passada anda pela reta da tela até a fonte e conta
- * quantas amostras veem **através** até ela — profundidade da amostra além da
- * profundidade da fonte. O brilho em volta da fonte é multiplicado por essa
- * fração: onde nada está na frente é o halo de sempre, e onde um corpo, uma
- * letra ou um card corta a reta sobra uma faixa escura saindo dele, radial à
- * fonte. É o espalhamento de um raio só, sem marcha de volume, e custa doze
- * leituras de profundidade por fonte em meia resolução.
- *
- * Fraco de propósito: a maior parte do quadro recebe menos de um centésimo de
- * luz linear daqui. Somado antes do tonemap, e medido pelo véu (a semente dele
- * soma este alvo), então o texto continua protegido.
- */
-export const RAYS_FRAG = /* glsl */ `
-uniform vec4  uRayLight[${RAY_LIGHTS}];
-uniform vec3  uRayColor[${RAY_LIGHTS}];
-uniform float uRayRadius[${RAY_LIGHTS}];
-uniform float uAspect;
-
-${DEPTH_GLSL}
-
-in vec2 vUv;
-out vec4 fragColor;
-
-const int RAY_TAPS = 12;
-
-void main() {
-  float jitter = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
-  vec3 total = vec3(0.0);
-  for (int k = 0; k < ${RAY_LIGHTS}; k++) {
-    vec4 light = uRayLight[k];
-    if (light.w <= 0.0) continue;
-    vec2 d = light.xy - vUv;
-    float len = length(d * vec2(uAspect, 1.0)) / uRayRadius[k];
-    float reach = exp(-len * len);
-    if (reach < 0.01) continue;
-    float seen = 0.0;
-    for (int i = 0; i < RAY_TAPS; i++) {
-      vec2 uv = vUv + d * ((float(i) + jitter) / float(RAY_TAPS));
-      // Fora da tela não há o que ocluir: a fonte fora do quadro ainda acende
-      // o ar dentro dele.
-      if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) {
-        seen += 1.0;
-        continue;
-      }
-      float sd = viewDepthAt(uv);
-      seen += smoothstep(light.z - 2.5, light.z - 0.6, sd);
-    }
-    seen /= float(RAY_TAPS);
-    total += uRayColor[k] * light.w * reach * seen * seen;
-  }
-  fragColor = vec4(total, 1.0);
-}
-`;
-
 /* ---------------------------------------------------------------------------
  * O véu de legibilidade
  *
@@ -380,7 +263,6 @@ void main() {
 export const VEIL_SEED_FRAG = /* glsl */ `
 uniform sampler2D uSource;
 uniform sampler2D uBloom;
-uniform sampler2D uRays;
 uniform vec2  uTexel;
 uniform float uBloomStrength;
 uniform float uExposure;
@@ -390,21 +272,16 @@ out vec4 fragColor;
 
 void main() {
   float peak = 0.0;
-  // O mínimo também (rodada 18): de manhã o texto é escuro, e quem ameaça o
-  // contraste é o pixel mais escuro atrás dele, não o mais claro.
-  float trough = 1.0;
   for (int y = 0; y < 4; y++) {
     for (int x = 0; x < 4; x++) {
       vec2 uv = vUv + (vec2(float(x), float(y)) - 1.5) * uTexel;
-      vec3 c = texture(uSource, uv).rgb + texture(uBloom, uv).rgb * uBloomStrength
-        + texture(uRays, uv).rgb;
+      vec3 c = texture(uSource, uv).rgb + texture(uBloom, uv).rgb * uBloomStrength;
       c = vec3(1.0) - exp(-c * uExposure);
       float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
       peak = max(peak, l);
-      trough = min(trough, l);
     }
   }
-  fragColor = vec4(peak, trough, 0.0, 1.0);
+  fragColor = vec4(peak, 0.0, 0.0, 1.0);
 }
 `;
 
@@ -418,16 +295,13 @@ out vec4 fragColor;
 
 void main() {
   float peak = 0.0;
-  float trough = 1.0;
   for (int y = 0; y < 4; y++) {
     for (int x = 0; x < 4; x++) {
       vec2 uv = vUv + (vec2(float(x), float(y)) - 1.5) * uTexel;
-      vec2 t = texture(uSource, uv).rg;
-      peak = max(peak, t.r);
-      trough = min(trough, t.g);
+      peak = max(peak, texture(uSource, uv).r);
     }
   }
-  fragColor = vec4(peak, trough, 0.0, 1.0);
+  fragColor = vec4(peak, 0.0, 0.0, 1.0);
 }
 `;
 
@@ -448,8 +322,6 @@ uniform float uVeilF[${MAX_VEIL_BOXES}];
 uniform float uCeiling;
 uniform float uFogLuma;
 uniform float uFall;
-uniform float uDawn;
-uniform float uFloor;
 
 out vec4 fragColor;
 
@@ -459,14 +331,11 @@ void main() {
   float on  = uVeilF[index];
 
   float peak = 0.0;
-  float trough = 1.0;
   if (on > 0.0) {
     for (int y = 0; y < 16; y++) {
       for (int x = 0; x < 24; x++) {
         vec2 t = vec2((float(x) + 0.5) / 24.0, (float(y) + 0.5) / 16.0);
-        vec2 f = texture(uField, clamp(mix(box.xy, box.zw, t), 0.0, 1.0)).rg;
-        peak = max(peak, f.r);
-        trough = min(trough, f.g);
+        peak = max(peak, texture(uField, clamp(mix(box.xy, box.zw, t), 0.0, 1.0)).r);
       }
     }
   }
@@ -474,11 +343,6 @@ void main() {
   float solved = peak > uCeiling
     ? clamp((peak - uCeiling) / max(peak - uFogLuma, 1e-4), 0.0, 1.0)
     : 0.0;
-  // De manhã o portão abre quando algo **escuro** passa atrás do texto.
-  float dawnSolved = trough < uFloor
-    ? clamp((uFloor - trough) / max(uFogLuma - trough, 1e-4), 0.0, 1.0)
-    : 0.0;
-  solved = mix(solved, dawnSolved, uDawn);
   solved *= on;
 
   // Sobe no quadro, desce devagar. Um quadro sem véu é um quadro ilegível;
@@ -507,7 +371,6 @@ export const COMPOSITE_FRAG = /* glsl */ `
 uniform sampler2D uScene;
 uniform sampler2D uBlurred;
 uniform sampler2D uBloom;
-uniform sampler2D uRays;
 uniform vec2  uResolution;
 uniform float uBloomStrength;
 uniform float uGrain;
@@ -523,8 +386,6 @@ uniform float     uVeilF[${MAX_VEIL_BOXES}];
 uniform sampler2D uVeilSolved;
 uniform vec3      uVoid;
 uniform float     uVeilCeiling;
-uniform float     uVeilFloor;
-uniform float     uDawn;
 
 ${DEPTH_GLSL}
 ${HASH_GLSL}
@@ -593,17 +454,6 @@ vec3 applyVeil(vec3 color, vec2 uv) {
   float amount = veilAmount(uv);
   if (amount <= 0.0) return color;
   float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
-  // **De manhã o véu levanta o escuro** (rodada 18), pelo espelho do joelho:
-  // acima de 1.6× o piso nada muda, abaixo disso o pixel é erguido para perto
-  // do piso sem cruzá-lo. O que sobe é luz neutra somada, então o matiz do
-  // corpo que passa continua lá, mais claro.
-  if (uDawn > 0.5) {
-    float kneeD = uVeilFloor * 1.6;
-    if (luma >= kneeD) return color;
-    float roomD = kneeD - uVeilFloor;
-    float lifted = kneeD - roomD * (1.0 - exp(-(kneeD - luma) / roomD));
-    return mix(color, color + vec3(lifted - luma), amount);
-  }
   float knee = uVeilCeiling * 0.55;
   if (luma <= knee) return color;
   float room = uVeilCeiling - knee;
@@ -624,8 +474,6 @@ void main() {
   vec3 color = sampleFocused(uv, blend).rgb;
 
   color += texture(uBloom, uv).rgb * uBloomStrength;
-  // Os raios de luz na névoa (rodada 22), em luz linear como o bloom.
-  color += texture(uRays, uv).rgb;
 
   // Tonemap exponencial: preserva o pé da curva, que é onde esta cena vive, e
   // segura os cachos quentes sem lavar a cor deles.

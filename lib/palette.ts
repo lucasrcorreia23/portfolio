@@ -25,18 +25,9 @@ export type PaletteToken = (typeof PALETTE_TOKENS)[number];
 export type Palette = Readonly<Record<PaletteToken, string>>;
 
 let cached: Palette | null = null;
-/** O tema em que a paleta em cache foi lida (rodada 18: há dois). */
-let cachedFor: string | null = null;
 
-/**
- * Lê a paleta do `<html>`. O resultado é memoizado **por tema**: desde a
- * rodada 18 há o amanhecer (`data-theme="dawn"`), e a troca relê os tokens.
- */
 export function readPalette(): Palette {
-  const theme =
-    typeof document === "undefined" ? null : document.documentElement.getAttribute("data-theme");
-  if (cached !== null && cachedFor === theme) return cached;
-
+  if (cached !== null) return cached;
   if (typeof window === "undefined") {
     throw new Error(
       "readPalette() só roda no cliente: a paleta vive em styles/tokens.css e é lida do DOM.",
@@ -55,6 +46,5 @@ export function readPalette(): Palette {
   });
 
   cached = Object.fromEntries(entries) as Palette;
-  cachedFor = theme;
   return cached;
 }

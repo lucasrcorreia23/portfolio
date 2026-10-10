@@ -1,0 +1,23 @@
+{
+  "label": "Navegação",
+  "open": "Abrir menu",
+  "close": "Fechar menu",
+  "menu": "Menu",
+  "home": "Início",
+  "cases": "Cases",
+  "vitrine": "Vitrine",
+  "contact": "Contato",
+  "profiles": {
+    "linkedin": "LinkedIn",
+    "github": "GitHub",
+    "x": "X"
+  },
+  "audio": {
+    "label": "Som",
+    "on": "ON",
+    "off": "OFF"
+  },
+  "language": "Idioma",
+  "rule": "Trilha",
+  "stop": "Ir para o case {index}"
+}

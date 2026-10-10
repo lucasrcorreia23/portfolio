@@ -9,15 +9,15 @@
 
 :root {
   /* Paleta — PROJECT.md §3.1 */
-  --void: #030a12; /* fundo absoluto, o começo e o fim */
-  --abyss: #071624; /* profundidade média */
-  --deep: #0c2b3e; /* estrutura submersa */
-  --teal: #16a5b8; /* cor primária do organismo */
-  --cyan: #5ce1e6; /* realce, luz próxima */
-  --rose: #f58ba8; /* corpo do cardume */
-  --coral: #ff7a4d; /* calor, ponto de fuga */
-  --peach: #ffc8a2; /* luz mais alta */
-  --mist: #dce9ec; /* texto sobre escuro */
+  --void: #06090d; /* fundo */
+  --abyss: #0c1419; /* profundidade média */
+  --deep: #1b2a30; /* estrutura, a mais escura */
+  --teal: #2e4047; /* estrutura, a mais clara */
+  --cyan: #9eebff; /* emissão: flora e esporos */
+  --rose: #6f8f99; /* neutro frio (só para o `accent` dos cases) */
+  --coral: #e8552d; /* o único acento quente: o CTA */
+  --peach: #d7dcde; /* neutro claro (só para o `accent` dos cases) */
+  --mist: #c9d1d3; /* texto */
 
   /* Durações — DIRECTION.md §4/§5. Não existe duração linear no projeto;
      toda transição usa --ease-strong (declarado no @theme abaixo). */
@@ -78,30 +78,6 @@
   --display-1-max: 100rem;
 }
 
-/* ---------------------------------------------------------------------------
- * Amanhecer — rodada 18 (decisão do Lucas, 2026-09-30).
- *
- * A mesma câmara em outra hora do dia: os nove tokens com os mesmos nomes e os
- * mesmos papéis, em valores de manhã. O fundo é uma névoa quente clara (nunca
- * `#FFFFFF`, que continua proibido), o texto é escuro, e o organismo fica mais
- * saturado e mais escuro que o ar — sobre claro, a luz se lê como cor, não como
- * brilho. `--mist` continua sendo "a cor do texto", e é por isso que ela
- * escurece.
- *
- * Quem escreve o atributo é o script antes da hidratação no layout raiz e o
- * controle da HUD (`lib/theme.ts`). A cena relê a paleta na troca.
- * ------------------------------------------------------------------------ */
-:root[data-theme="dawn"] {
-  --void: #c9bfb0;
-  --abyss: #d6cdbf;
-  --deep: #93a7a8;
-  --teal: #0f7e8c;
-  --cyan: #1a9aab;
-  --rose: #c74f72;
-  --coral: #d8552a;
-  --peach: #e9964f;
-  --mist: #0c1d27;
-}
 
 /* ---------------------------------------------------------------------------
  * Aliases para o Tailwind.
@@ -180,17 +156,7 @@
   --text-body-sm: clamp(0.875rem, 0.8333rem + 0.1852vw, 1rem);
   --text-body-sm--line-height: 1.55;
 
-  /* Leitura do portão — o único lugar do site onde a mono é grande.
-     Não contradiz o PROJECT.md §3.2 ("mono em tamanho pequeno"): aquilo
-     descreve a mono como HUD, e o portão não tem HUD nem display. O
-     DIRECTION.md §4 é explícito — "Só mono, DOM, nítida" —, então a mono é a
-     única tipografia do quadro e carrega o papel de display sozinha.
-     Tracking positivo mesmo grande, porque continua sendo instrumento. */
-  --text-readout: clamp(3rem, 12vw, 11rem);
-  --text-readout--line-height: 0.86;
-  --text-readout--letter-spacing: 0.02em;
-  --text-readout--font-weight: 500;
-
+  
   /* HUD e cotas — mono, caixa alta, tracking positivo, corpo pequeno.
      Fixos de propósito: a régua da HUD não deve crescer com a viewport.
      O tom baixo vem daqui, nunca de opacidade (DIRECTION.md §5). */

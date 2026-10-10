@@ -2,15 +2,14 @@
 
 import { useEffect, useId, useState } from "react";
 import type { ReactNode } from "react";
-import { useScrollProgress } from "@/lib/scroll/use-scroll-progress";
 
 type HudPanelProps = {
   /** Nome acessível da região inteira. */
   label: string;
   openLabel: string;
   closeLabel: string;
-  /** `EST.` — o acionador continua sendo um instrumento, não um menu. */
-  stationLabel: string;
+  /** O rótulo do acionador no mobile. */
+  menuLabel: string;
   children: ReactNode;
 };
 
@@ -40,16 +39,11 @@ export function HudPanel({
   label,
   openLabel,
   closeLabel,
-  stationLabel,
+  menuLabel,
   children,
 }: HudPanelProps) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
-  const { value: progress } = useScrollProgress({ steps: 100 });
-  const station = Math.round(progress * 1000)
-    .toString()
-    .padStart(4, "0");
-
   useEffect(() => {
     if (!open) return;
     const onKey = (event: KeyboardEvent) => {
@@ -88,9 +82,7 @@ export function HudPanel({
         onClick={() => setOpen((value) => !value)}
         className="type-mono text-hud text-mist flex w-fit items-center gap-3 md:hidden"
       >
-        <span className="tabular-nums">
-          {stationLabel} {station}
-        </span>
+        <span>{menuLabel}</span>
         <span aria-hidden="true">{open ? "−" : "+"}</span>
       </button>
 

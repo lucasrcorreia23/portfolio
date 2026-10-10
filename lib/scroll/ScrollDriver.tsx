@@ -6,7 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis, { type VirtualScrollData } from "lenis";
 import { useReducedMotion } from "@/lib/capabilities/use-reduced-motion";
 import { LENIS_LERP } from "@/lib/motion";
-import { riverReadings } from "@/lib/scene/river-readings";
+import { stops } from "@/lib/scene/stops";
 import { descentFromScroll, scrollFromDescent } from "./descent-map";
 import { publishFrame } from "./frame-bus";
 import {
@@ -18,24 +18,12 @@ import {
 } from "./scroll-store";
 
 /**
- * O rio tem água (rodada 14, revista): perto de cada card a rolagem fica mais
- * densa, e quando a mão para, a página assenta devagar na leitura mais
- * próxima.
- *
- * A primeira versão travava: um gesto virava uma viagem de duração fixa até o
- * card vizinho e o resto do gesto era engolido. Resolvia o pulo de cases, mas o
- * Lucas a leu como radical e não natural — e tudo neste projeto precisa
- * refletir o mundo real. Então nada é engolido e nada tem duração fixa:
- *
- * - `RIVER_VISCOSITY` é quanto um gesto rende em cima de um card (metade), e
- *   ele sobe até o cheio no meio da passagem — a rolagem desacelera onde há o
- *   que ver, como a câmera, que também desacelera ali (`RIVER_SLOW`, em
- *   `curve.ts`);
- * - depois de `SETTLE_QUIET_MS` sem roda e com a página parada, ela deriva até
- *   a leitura mais próxima pelo próprio `lerp` do Lenis, bem mais baixo que o
- *   da rolagem (`SETTLE_LERP`): um assentamento, não um estalo.
+ * As paradas da trilha puxam a rolagem, sem trava: perto de cada case a roda
+ * rende menos (`STOP_VISCOSITY`), e quando a mão para a página assenta devagar
+ * na parada mais próxima pelo próprio `lerp` do Lenis (`SETTLE_LERP`). Nada é
+ * engolido e nada tem duração fixa.
  */
-const RIVER_VISCOSITY = 0.5;
+const STOP_VISCOSITY = 0.5;
 const SETTLE_QUIET_MS = 420;
 const SETTLE_LERP = 0.028;
 
@@ -86,13 +74,11 @@ export default function ScrollDriver() {
       };
     }
 
-    // **O rio tem água.** Ver `RIVER_VISCOSITY`. As leituras são as da curva
-    // (`riverReadings`); no toque a rolagem é nativa e só a desaceleração da
-    // câmera vale. Dentro de um case a rolagem é do artigo, e nada muda.
+    // No toque a rolagem é nativa: ali só a desaceleração da trilha age.
     let lastWheel = 0;
     let settled = true;
     const nearestReading = (here: number) => {
-      const readings = riverReadings();
+      const readings = stops();
       const interval = readings.length > 1 ? readings[1]! - readings[0]! : 1;
       let best = readings[0] ?? 0;
       for (const at of readings) if (Math.abs(at - here) < Math.abs(best - here)) best = at;
@@ -109,7 +95,7 @@ export default function ScrollDriver() {
       const d = Math.abs(here - best) / (interval / 2);
       if (d > 1) return true;
       const t = d * d * (3 - 2 * d);
-      data.deltaY *= RIVER_VISCOSITY + (1 - RIVER_VISCOSITY) * t;
+      data.deltaY *= STOP_VISCOSITY + (1 - STOP_VISCOSITY) * t;
       return true;
     };
 

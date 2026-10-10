@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Script from "next/script";
-import { THEME_SCRIPT } from "@/lib/theme";
 import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Hud } from "@/components/hud/Hud";
@@ -81,18 +80,14 @@ export default async function LocaleLayout({
   return (
     // `suppressHydrationWarning` só no `<html>`: o `THEME_SCRIPT` escreve
     // `data-theme` antes da hidratação, de propósito.
-    <html lang={locale} className={fontVariables} suppressHydrationWarning>
+    <html lang={locale} className={fontVariables}>
       {/* Sem `NextIntlClientProvider`: nenhum componente de cliente deste
           projeto traduz. As strings são resolvidas no servidor e descem como
           props, o que mantém o formatador ICU fora do navegador — 13 kB
-          comprimidos de diferença medida. Ver AGENTS.md, "Orçamento de JS". */}
-      {/* A cena **não** mora aqui, e não é mais porque "só a home tem descida":
-          ela mora em `app/[locale]/(scene)/layout.tsx`, um grupo de rotas que
-          cobre `/` e `/work/[slug]` e deixa `/work` de fora. O acervo continua
-          sem 3D (DIRECTION.md §4) e o canvas atravessa vivo a navegação da home
-          para o case, que é o que a transição contínua exige. O motivo original
-          — um link direto de case não pagar 350 kB no caminho crítico —
-          continua respeitado pelo `import()` memoizado de `loadScene()`. */}
+          comprimidos de diferença medida. */}
+      {/* A cena mora em `app/[locale]/(scene)/layout.tsx`, o grupo que cobre a
+          home e `/work/[slug]`: o canvas atravessa vivo a navegação para o
+          case. A vitrine fica fora dele, sem 3D. */}
       {/* **Sem `bg-void` aqui.** Quem pinta o fundo é o `html`
           (`styles/globals.css`), e a diferença não é de gosto: a camada da cena
           é `-z-10`, e a ordem de pintura do CSS põe camadas de z negativo
@@ -103,10 +98,6 @@ export default async function LocaleLayout({
       <body className="text-mist">
         <Script id="restore-scroll" strategy="beforeInteractive">
           {RESTORE_SCRIPT}
-        </Script>
-        {/* A hora do dia, antes da primeira pintura (ver `lib/theme.ts`). */}
-        <Script id="theme" strategy="beforeInteractive">
-          {THEME_SCRIPT}
         </Script>
         <ScrollProvider>
           <Hud />

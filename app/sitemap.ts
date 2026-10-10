@@ -10,7 +10,7 @@ import { alternatesFor, LOCALES, SITE_URL } from "@/lib/i18n/config";
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const slugs = await getCaseSlugs();
-  const paths = ["/", "/work", ...slugs.map((slug) => `/work/${slug}`)];
+  const paths = ["/", "/vitrine", ...slugs.map((slug) => `/work/${slug}`)];
 
   return paths.flatMap((path) =>
     LOCALES.map((locale) => {

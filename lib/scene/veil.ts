@@ -282,12 +282,3 @@ export function writeVeilBoxes(
     strengthUniform[i] = 1;
   }
 }
-
-/**
- * **O piso do véu no amanhecer** (rodada 18). No tema claro o texto é escuro
- * (`--mist` do amanhecer, #0c1d27, L ≈ 0.011), e o que ameaça o contraste não é
- * luz atrás dele: é um corpo escuro passando. Então o véu troca de lado — em
- * vez de um teto, um piso de luminância sob o texto, `5.5 · (0.011 + 0.05) −
- * 0.05`, mais a mesma margem do grão (0.03).
- */
-export const VEIL_FLOOR_DAWN = VEIL_TARGET_CONTRAST * (0.0111 + 0.05) - 0.05 + 0.03;

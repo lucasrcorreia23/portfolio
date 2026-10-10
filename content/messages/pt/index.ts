@@ -1,12 +1,12 @@
 import type enMessages from "../en";
-import about from "./about.json";
-import emergence from "./emergence.json";
-import gate from "./gate.json";
-import hud from "./hud.json";
-import identity from "./identity.json";
+import cases from "./cases.json";
+import cta from "./cta.json";
+import impact from "./impact.json";
+import intro from "./intro.json";
+import loading from "./loading.json";
 import meta from "./meta.json";
-import surface from "./surface.json";
-import work from "./work.json";
+import nav from "./nav.json";
+import vitrine from "./vitrine.json";
 
 /**
  * A anotação com o tipo do dicionário inglês é o teste: uma chave que exista
@@ -14,13 +14,13 @@ import work from "./work.json";
  */
 const messages: typeof enMessages = {
   meta,
-  gate,
-  emergence,
-  identity,
-  about,
-  work,
-  surface,
-  hud,
+  loading,
+  impact,
+  intro,
+  cases,
+  cta,
+  vitrine,
+  nav,
 };
 
 export default messages;

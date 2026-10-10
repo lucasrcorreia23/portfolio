@@ -5,13 +5,14 @@ import { usePathname } from "next/navigation";
 import { useSceneMode } from "@/lib/capabilities/use-scene-mode";
 import { stripLocale } from "@/lib/i18n/config";
 import { loadScene, type SceneComponent } from "@/lib/scene/load-scene";
-import type { RiverCard } from "@/lib/scene/river-content";
+import { markSceneUnavailable } from "@/lib/scene/scene-painted";
+import type { ScenePanel } from "./Scene";
 import { setCaseRoute } from "@/lib/work/case-transition";
 import { ScenePoster } from "./ScenePoster";
 
 type SceneGateProps = {
-  specimen: string;
-  river: readonly RiverCard[];
+  /** Os cases, na ordem das paradas da trilha. */
+  panels: readonly ScenePanel[];
 };
 
 /** `/work/<slug>` → `<slug>`; qualquer outra rota do grupo → `null`. */
@@ -38,7 +39,7 @@ function caseSlugOf(pathname: string): string | null {
  * dentro do case, uma navegação abortada. Todos passam por `pathname`, e
  * nenhum passa pelo clique. Ver `lib/work/case-transition.ts`.
  */
-export function SceneGate({ specimen, river }: SceneGateProps) {
+export function SceneGate({ panels }: SceneGateProps) {
   const mode = useSceneMode();
   const pathname = usePathname();
   const [Scene, setScene] = useState<SceneComponent | null>(null);
@@ -54,11 +55,13 @@ export function SceneGate({ specimen, river }: SceneGateProps) {
   useEffect(() => {
     const slug = caseSlugOf(pathname);
     const index =
-      slug === null ? -1 : river.findIndex((card) => card.slug === slug);
+      slug === null ? -1 : panels.findIndex((panel) => panel.slug === slug);
     setCaseRoute(slug, index);
-  }, [pathname, river]);
+  }, [pathname, panels]);
 
   useEffect(() => {
+    // Sem WebGL a cena nunca pinta: o loading não pode ficar esperando por ela.
+    if (mode === "poster") markSceneUnavailable();
     if (mode !== "driven" && mode !== "composed") return;
     let cancelled = false;
     loadScene().then(
@@ -82,11 +85,7 @@ export function SceneGate({ specimen, river }: SceneGateProps) {
           um case a cena é névoa parada nos dois modos, e ali o fundo é o void. */}
       {mode === "poster" && stripLocale(pathname) === "/" ? <ScenePoster /> : null}
       {Scene === null ? null : (
-        <Scene
-          specimen={specimen}
-          river={river}
-          composed={mode === "composed"}
-        />
+        <Scene panels={panels} composed={mode === "composed"} />
       )}
     </div>
   );

@@ -1,0 +1,15 @@
+{
+  "label": "Introduction",
+  "first": "Lucas",
+  "last": "Correia",
+  "fullName": "Lucas Rodrigues Correia",
+  "position": {
+    "product": "Product design",
+    "engineering": "Front-end engineering",
+    "brand": "Brand systems"
+  },
+  "manifesto": {
+    "one": "I design product and I write the front-end of what I design. That isn't range: the interface decision and the cost of building it are one conversation, and splitting them across two chairs invents a third problem.",
+    "two": "The work I want has a hard domain — clinical records, energy contracts, sales training. There the screen is the smallest part: what decides is the rule, the state, and the case nobody drew."
+  }
+}

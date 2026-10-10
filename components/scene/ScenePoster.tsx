@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef } from "react";
 import { beatAt } from "@/components/beats/beats";
 import { VEIL_CEILING } from "@/lib/scene/veil";
 import { useScrollProgress } from "@/lib/scroll/use-scroll-progress";
-import { getTheme, subscribeToTheme } from "@/lib/theme";
 
 /**
  * O modo sem WebGL — PROJECT.md §5: "Sem WebGL, entra um poster estático por
@@ -38,7 +37,6 @@ export function ScenePoster() {
   const { value } = useScrollProgress({ steps: 200 });
   const beat = beatAt(value).id;
   // Rodada 18: há um conjunto de posters por hora do dia.
-  const theme = useSyncExternalStore(subscribeToTheme, getTheme, () => "night" as const);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -51,7 +49,7 @@ export function ScenePoster() {
       "#000";
     const image = new Image();
     image.decoding = "async";
-    image.src = `/posters/${beat}${theme === "dawn" ? "-dawn" : ""}.webp`;
+    image.src = `/posters/${beat}.webp`;
 
     // A luminância do poster num mapa de 1/8 — lido uma vez por imagem, e não
     // a cada quadro. Cada célula guarda o **máximo** do bloco, pelo mesmo motivo
@@ -162,7 +160,7 @@ export function ScenePoster() {
       window.removeEventListener("resize", schedule);
       if (frame !== 0) window.cancelAnimationFrame(frame);
     };
-  }, [beat, theme]);
+  }, [beat]);
 
   return <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />;
 }

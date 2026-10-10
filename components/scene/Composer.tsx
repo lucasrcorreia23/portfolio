@@ -9,15 +9,10 @@ import {
   GLSL3,
   HalfFloatType,
   LinearFilter,
-  Matrix4,
   NearestFilter,
   UnsignedIntType,
   Vector2,
-  Vector3,
-  Vector4,
   WebGLRenderTarget,
-  type Camera,
-  type PerspectiveCamera,
   type ShaderMaterial,
 } from "three";
 import { blit, createPassMaterial } from "@/lib/scene/gpu";
@@ -27,17 +22,14 @@ import {
   BLOOM_UP_FRAG,
   COMPOSITE_FRAG,
   DOF_FRAG,
-  RAY_LIGHTS,
-  RAYS_FRAG,
   VEIL_REDUCE_FRAG,
   VEIL_SEED_FRAG,
   VEIL_SOLVE_FRAG,
 } from "@/lib/scene/shaders/post";
-import { APERTURE_Y, LOUVER_Z } from "@/lib/scene/chamber-plan";
 import { markScenePainted } from "@/lib/scene/scene-painted";
 import { sceneSettings } from "@/lib/scene/settings";
 import { veilUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
-import { MAX_VEIL_BOXES, VEIL_CEILING, VEIL_FLOOR_DAWN } from "@/lib/scene/veil";
+import { MAX_VEIL_BOXES, VEIL_CEILING } from "@/lib/scene/veil";
 
 /** Níveis da cadeia de bloom, a partir de meia resolução. */
 const BLOOM_LEVELS = 5;
@@ -57,22 +49,12 @@ const VEIL_LEVELS = 3;
 const BLOOM_STRENGTH = 0.55;
 const EXPOSURE = 1.15;
 
-/**
- * A força dos raios de luz na névoa (rodada 22, `RAYS_FRAG`), por fonte. A da
- * fonte a montante multiplica `sourceStrength` (0.05 a 0.1 até a Superfície);
- * a das lanternas multiplica a intensidade de cada uma. O raio de alcance é em
- * unidades de mundo, projetado pela distância: uma lanterna longe acende um
- * pedaço menor de tela.
- */
-const SOURCE_RAY_GAIN = 0.35;
-const SOURCE_RAY_RADIUS = 0.26;
-const LAMP_RAY_GAIN = 0.014;
-const LAMP_RAY_REACH = 2.2;
-
-/** L de `--void`, a cor para a qual o véu mistura. Lida do próprio uniform. */
+/** L de `--void`, o fundo contra o qual o véu resolve. */
 function fogLuminance(shared: SharedUniforms): number {
   const c = shared.void.value;
-  return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+  const l = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+  // Depois do tonemap, que é onde o véu compara.
+  return 1 - Math.exp(-l * EXPOSURE);
 }
 
 type ComposerProps = {
@@ -81,29 +63,19 @@ type ComposerProps = {
   apertureRef: { readonly current: number };
   /** Distância da câmera ao ponto em foco, em unidades de mundo. */
   focusRef: { readonly current: number };
-  /**
-   * Profundidade do plano nítido, em unidades de mundo — o denominador do
-   * círculo de confusão. Ela é do beat, não do compositor: no rio ela fecha
-   * para separar cards vizinhos em profundidade (`focusRangeAt`, em `curve.ts`).
-   */
+  /** Profundidade do plano nítido, em unidades de mundo. */
   focusRangeRef: { readonly current: number };
 };
 
 /**
- * O compositor: cena → DOF → bloom → composite.
+ * O compositor: cena → DOF → bloom → véu → composite.
  *
- * Ver `lib/scene/shaders/post.ts` para por que ele é escrito à mão em vez de
- * usar o `@react-three/postprocessing`.
+ * Ele desliga o render automático do R3F ao se inscrever com prioridade 1: a
+ * única coisa que chega na tela é o que este componente compõe.
  *
- * **Ele desliga o render automático do R3F ao se inscrever com prioridade 1.**
- * O R3F só desenha a cena por conta própria quando nenhum `useFrame` pediu
- * prioridade positiva; a partir daí a única coisa que chega na tela é o que
- * este componente compõe. A simulação do bando roda em −5 e portanto antes.
- *
- * **A profundidade sai de uma `DepthTexture` anexada ao alvo multiamostrado.**
- * O three resolve o buffer de profundidade junto com a cor no blit de
- * multiamostragem, então dá para ter antisserrilhado geométrico *e* o
- * círculo de confusão por pixel — que era a escolha difícil aqui.
+ * A profundidade sai de uma `DepthTexture` anexada ao alvo multiamostrado; o
+ * three a resolve junto com a cor, então há antisserrilhado e círculo de
+ * confusão por pixel ao mesmo tempo.
  */
 export function Composer({
   shared,
@@ -149,8 +121,6 @@ export function Composer({
       uFocus: { value: 20 },
       uFocusRange: { value: 26 },
       uAperture: { value: 0 },
-      uNearBlur: { value: 1 },
-      uLeakGuard: { value: 0 },
     };
 
     const dof = createPassMaterial(
@@ -168,9 +138,8 @@ export function Composer({
       BLOOM_THRESHOLD_FRAG,
       {
         uSource: { value: scene.texture },
-        // Alto de propósito. A cena escreve HDR linear; as paredes ficam perto
-        // de 0.05 e os corpos em cruzeiro perto de 0.4. Só um cacho comprimido
-        // e acelerado passa daqui — "bloom não é o efeito, é o transbordo".
+        // Só o que emite passa: a flora e os esporos escrevem acima de 1 em
+        // HDR linear; terreno, relva e indústria ficam abaixo.
         uThreshold: { value: 1.05 },
         uSoftKnee: { value: 0.55 },
       },
@@ -227,15 +196,11 @@ export function Composer({
       target.texture.magFilter = NearestFilter;
     }
 
-    // Os raios, em meia resolução — são luz espalhada, sem borda para perder.
-    const rays = makeColorTarget(0);
-
     const veilSeed = createPassMaterial(
       VEIL_SEED_FRAG,
       {
         uSource: { value: scene.texture },
         uBloom: { value: bloom[0]?.texture ?? null },
-        uRays: { value: rays.texture },
         uTexel: { value: new Vector2() },
         uBloomStrength: { value: BLOOM_STRENGTH },
         uExposure: shared.exposure,
@@ -258,22 +223,8 @@ export function Composer({
         uVeilF: shared.veilF,
         uCeiling: { value: VEIL_CEILING },
         uFogLuma: { value: fogLuminance(shared) },
-        uDawn: shared.dawn,
-        uFloor: { value: VEIL_FLOOR_DAWN },
         // Descida em ~16 quadros (0.27 s). Ver o docblock do véu em post.ts.
         uFall: { value: 0.06 },
-      },
-      GLSL3,
-    );
-
-    const raysPass = createPassMaterial(
-      RAYS_FRAG,
-      {
-        uRayLight: { value: Array.from({ length: RAY_LIGHTS }, () => new Vector4()) },
-        uRayColor: { value: Array.from({ length: RAY_LIGHTS }, () => new Vector3()) },
-        uRayRadius: { value: new Array<number>(RAY_LIGHTS).fill(0.1) },
-        uAspect: { value: 1 },
-        ...depthUniforms,
       },
       GLSL3,
     );
@@ -284,7 +235,6 @@ export function Composer({
         uScene: { value: scene.texture },
         uBlurred: { value: dofB.texture },
         uBloom: { value: bloom[0]?.texture ?? null },
-        uRays: { value: rays.texture },
         uResolution: shared.resolution,
         uBloomStrength: { value: BLOOM_STRENGTH },
         uGrain: { value: 0.045 },
@@ -295,8 +245,6 @@ export function Composer({
         // passada em que o bloom já pousou. Ver `shaders/post.ts`.
         ...veilUniforms(shared),
         uVeilCeiling: { value: VEIL_CEILING },
-        uVeilFloor: { value: VEIL_FLOOR_DAWN },
-        uDawn: shared.dawn,
         ...depthUniforms,
       },
       GLSL3,
@@ -316,8 +264,6 @@ export function Composer({
       veilSeed,
       veilReduce,
       veilSolver,
-      rays,
-      raysPass,
       composite,
       depthUniforms,
     };
@@ -333,7 +279,6 @@ export function Composer({
       for (const target of held.bloom) target.dispose();
       for (const target of held.veilField) target.dispose();
       for (const target of held.veilSolve) target.dispose();
-      held.rays.dispose();
       for (const material of [
         held.dof,
         held.threshold,
@@ -342,7 +287,6 @@ export function Composer({
         held.veilSeed,
         held.veilReduce,
         held.veilSolver,
-        held.raysPass,
         held.composite,
       ]) {
         material.dispose();
@@ -358,7 +302,6 @@ export function Composer({
     rig.scene.setSize(width, height);
     rig.dofA.setSize(Math.max(1, width >> 1), Math.max(1, height >> 1));
     rig.dofB.setSize(Math.max(1, width >> 1), Math.max(1, height >> 1));
-    rig.rays.setSize(Math.max(1, width >> 1), Math.max(1, height >> 1));
     rig.bloom.forEach((target, level) => {
       const shift = level + 1;
       target.setSize(
@@ -395,34 +338,15 @@ export function Composer({
     renderer.render(state.scene, state.camera);
 
     const aperture = apertureRef.current;
-    // O amanhecer (rodada 18): mais exposição, e a luminância do fundo — que o
-    // véu usa como alvo — relida da paleta, que troca com o tema.
-    shared.exposure.value = EXPOSURE * (1 + 0.15 * shared.dawn.value);
-    const fogLuma = rig.veilSolver.uniforms["uFogLuma"];
-    if (fogLuma !== undefined) {
-      const c = shared.void.value;
-      const l = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
-      fogLuma.value = 1 - Math.exp(-l * shared.exposure.value);
-    }
+    shared.exposure.value = EXPOSURE;
     rig.depthUniforms.uAperture.value = settings.dof ? aperture : 0;
-    // O campo próximo sai dentro do case, com a mesma rampa do voo: o
-    // DIRECTION.md §3 desliga a DOF nas rotas de case, e isso vale para ele.
-    rig.depthUniforms.uNearBlur.value = settings.dof ? 1 - shared.caseRecess.value : 0;
-    rig.depthUniforms.uLeakGuard.value = shared.cardAmount.value;
     rig.depthUniforms.uFocus.value = focusRef.current;
     rig.depthUniforms.uFocusRange.value = focusRangeRef.current;
 
     // --- profundidade de campo, kernel duplo --------------------------------
-    // Ela é a primeira coisa da lista de corte do DIRECTION.md §3, então o
-    // desligamento pula as duas passadas inteiras — e não só zera a força.
-    // É isso que faz a medição A/B medir o custo dela, e não o custo de
-    // multiplicar por zero.
-    //
-    // **Com a abertura em zero ela continua rodando** (rodada 12): o campo
-    // próximo desfoca sempre (ver `cocAt` em `shaders/post.ts`), e um corpo a
-    // uma unidade da lente não pode sair nítido só porque o beat fechou o
-    // diafragma. Onde nada está perto, o fragmento sai no primeiro `if`.
-    if (settings.dof) {
+    // Desligada, as duas passadas são puladas inteiras. Com a abertura em zero
+    // também: nada desfoca, e o composite lê o quadro nítido.
+    if (settings.dof && aperture > 0.001) {
       setUniform(rig.dof, "uSource", rig.scene.texture);
       setVec2(rig.dof, "uTexel", TEXEL.set(1 / rig.dofA.width, 1 / rig.dofA.height));
       setVec2(rig.dof, "uDirection", HORIZONTAL);
@@ -460,26 +384,8 @@ export function Composer({
       blit(renderer, rig.up, target);
     }
 
-    // --- os raios de luz na névoa -------------------------------------------
-    // Antes do véu: a semente dele soma este alvo, e o texto fica protegido
-    // também da luz que os raios acrescentam.
-    if (settings.rays) {
-      writeRayLights(rig.raysPass, state.camera, shared);
-      blit(renderer, rig.raysPass, rig.rays);
-    }
-
     // --- o véu de legibilidade ----------------------------------------------
-    // Depois do bloom de propósito: o que ele mede é a luminância que vai para
-    // a tela, e o bloom é justamente o que espalha a luz de um corpo que está
-    // **fora** da caixa para dentro dela. Ver o bloco do véu em post.ts.
-    //
-    // **`?veil=0` pula as quatro passadas inteiras.** Diferente de DOF, cards e
-    // descolamento, aqui não há shader a recompilar — cada passada já é um
-    // material e uma chamada de `blit()` à parte, então "desligado" é
-    // simplesmente não emitir as chamadas. `uVeilSolved` fica apontando para o
-    // que já estava lá (o alvo nasce zerado), e o composite lê `f = 0`: sem
-    // escurecimento, o que não importa numa rodada de banco. Ver o docblock de
-    // `veil` em `lib/scene/settings.ts`.
+    // Depois do bloom: o que ele mede é a luminância que vai para a tela.
     if (settings.veil) {
       const seedTarget = rig.veilField[0];
       if (seedTarget !== undefined && first !== undefined) {
@@ -523,9 +429,7 @@ export function Composer({
     setUniform(rig.composite, "uBlurred", rig.dofB.texture);
     if (first !== undefined) setUniform(rig.composite, "uBloom", first.texture);
 
-    // Grão animado por quadro. A semente muda sempre, e a intensidade respira
-    // entre 0.03 e 0.06 — a faixa do PROJECT.md §3.1, e a razão de não existir
-    // PNG de ruído neste projeto.
+    // Grão animado por quadro, entre 0.03 e 0.06.
     const time = shared.time.value;
     setUniform(rig.composite, "uGrainSeed", (time * 977) % 1000);
     setUniform(
@@ -536,99 +440,17 @@ export function Composer({
     setUniform(
       rig.composite,
       "uDofEnabled",
-      settings.dof ? 1 : 0,
+      settings.dof && aperture > 0.001 ? 1 : 0,
     );
 
     blit(renderer, rig.composite, null);
-    // O portão espera por isto para abrir as frestas para a câmara.
+    // O loading espera por isto para fechar.
     markScenePainted();
 
     renderer.autoClear = previousAutoClear;
   }, 1);
 
   return null;
-}
-
-const RAY_SOURCE = new Vector3(0, APERTURE_Y, LOUVER_Z);
-const RAY_POINT = new Vector3();
-const RAY_VIEW = new Matrix4();
-const RAY_CANDIDATES: { index: number; depth: number; score: number }[] = [];
-
-/**
- * Escolhe as fontes dos raios deste quadro e as projeta na tela: a fonte a
- * montante sempre, e as três lanternas que mais acendem o quadro (intensidade
- * sobre profundidade). Fonte atrás da câmera, ou perto demais da lente, sai.
- */
-function writeRayLights(
-  material: ShaderMaterial,
-  camera: Camera,
-  shared: SharedUniforms,
-): void {
-  const lights = material.uniforms["uRayLight"]?.value as Vector4[] | undefined;
-  const colors = material.uniforms["uRayColor"]?.value as Vector3[] | undefined;
-  const radii = material.uniforms["uRayRadius"]?.value as number[] | undefined;
-  const aspect = material.uniforms["uAspect"];
-  if (lights === undefined || colors === undefined || radii === undefined) return;
-  const perspective = camera as PerspectiveCamera;
-  if (aspect !== undefined) aspect.value = perspective.aspect ?? 1;
-  // Metade da altura da tela, em unidades de mundo a uma unidade da lente.
-  const focal = perspective.projectionMatrix.elements[5] ?? 1;
-  RAY_VIEW.copy(camera.matrixWorldInverse);
-  // O ar é claro de manhã: a luz no ar mal se vê contra ele.
-  const dawn = 1 - 0.6 * shared.dawn.value;
-
-  const place = (slot: number, world: Vector3, strength: number, radius: number) => {
-    const light = lights[slot];
-    if (light === undefined) return false;
-    RAY_POINT.copy(world).applyMatrix4(RAY_VIEW);
-    const depth = -RAY_POINT.z;
-    if (depth < 1.5 || strength <= 0) {
-      light.w = 0;
-      return false;
-    }
-    RAY_POINT.copy(world).project(camera);
-    light.set(RAY_POINT.x * 0.5 + 0.5, RAY_POINT.y * 0.5 + 0.5, depth, strength);
-    radii[slot] = radius;
-    return true;
-  };
-
-  // A fonte a montante. Na Superfície quem entra é a luz de fora, pelas
-  // lâminas das frestas (`BEAM_*`); os raios dela não se somam àquelas.
-  const source = shared.sourceStrength.value * (1 - shared.outside.value) * dawn;
-  if (place(0, RAY_SOURCE, SOURCE_RAY_GAIN * source, SOURCE_RAY_RADIUS)) {
-    const c = shared.sourceColor.value;
-    colors[0]?.set(c.r, c.g, c.b);
-  }
-
-  const lamps = shared.lamps.value;
-  RAY_CANDIDATES.length = 0;
-  lamps.forEach((lamp, index) => {
-    if (lamp.w <= 0) return;
-    RAY_POINT.set(lamp.x, lamp.y, lamp.z).applyMatrix4(RAY_VIEW);
-    const depth = -RAY_POINT.z;
-    // Perto da lente não há raio a ver, há a própria lanterna.
-    if (depth < 5) return;
-    RAY_CANDIDATES.push({ index, depth, score: lamp.w / depth });
-  });
-  RAY_CANDIDATES.sort((a, b) => b.score - a.score);
-  for (let slot = 1; slot < RAY_LIGHTS; slot += 1) {
-    const pick = RAY_CANDIDATES[slot - 1];
-    const lamp = pick === undefined ? undefined : lamps[pick.index];
-    if (pick === undefined || lamp === undefined) {
-      const light = lights[slot];
-      if (light !== undefined) light.w = 0;
-      continue;
-    }
-    const depth = pick.depth;
-    RAY_POINT.set(lamp.x, lamp.y, lamp.z);
-    // Teto de 0.14 da tela: uma lanterna rente à lente com alcance proporcional
-    // acendia um terço do quadro, e isso não lia como raio, lia como véu.
-    const radius = Math.min(0.14, Math.max(0.03, (LAMP_RAY_REACH / depth) * focal * 0.5));
-    if (place(slot, RAY_POINT, LAMP_RAY_GAIN * lamp.w * dawn, radius)) {
-      const c = shared.lampColor.value[pick.index];
-      if (c !== undefined) colors[slot]?.set(c.r, c.g, c.b);
-    }
-  }
 }
 
 const HORIZONTAL = new Vector2(1, 0);

@@ -1,0 +1,23 @@
+{
+  "label": "Navigation",
+  "open": "Open menu",
+  "close": "Close menu",
+  "menu": "Menu",
+  "home": "Home",
+  "cases": "Cases",
+  "vitrine": "Showcase",
+  "contact": "Contact",
+  "profiles": {
+    "linkedin": "LinkedIn",
+    "github": "GitHub",
+    "x": "X"
+  },
+  "audio": {
+    "label": "Sound",
+    "on": "ON",
+    "off": "OFF"
+  },
+  "language": "Language",
+  "rule": "Rail",
+  "stop": "Go to case {index}"
+}

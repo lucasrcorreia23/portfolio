@@ -1,30 +1,25 @@
-import about from "./about.json";
-import emergence from "./emergence.json";
-import gate from "./gate.json";
-import hud from "./hud.json";
-import identity from "./identity.json";
+import cases from "./cases.json";
+import cta from "./cta.json";
+import impact from "./impact.json";
+import intro from "./intro.json";
+import loading from "./loading.json";
 import meta from "./meta.json";
-import surface from "./surface.json";
-import work from "./work.json";
+import nav from "./nav.json";
+import vitrine from "./vitrine.json";
 
 /**
- * O dicionário é separado por beat: um arquivo por momento da descida
- * (DIRECTION.md §4), mais `hud` — que está na tela o tempo todo — e `meta`,
- * que é o que o `<head>` consome.
- *
- * Este arquivo é o shape canônico: `lib/i18n/augment.d.ts` deriva o tipo
- * `Messages` daqui, então uma chave que exista em `en` e falte em `pt`
- * (ou vice-versa) vira erro de tipo, não string faltando em produção.
+ * O dicionário inglês é o shape canônico: `lib/i18n/augment.d.ts` deriva o
+ * tipo `Messages` daqui, e o português é anotado com ele.
  */
 const messages = {
   meta,
-  gate,
-  emergence,
-  identity,
-  about,
-  work,
-  surface,
-  hud,
+  loading,
+  impact,
+  intro,
+  cases,
+  cta,
+  vitrine,
+  nav,
 };
 
 export default messages;
