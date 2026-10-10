@@ -3,7 +3,7 @@ import { beatHoldVh, type Beat } from "./beats";
 
 type BeatSectionProps = {
   beat: Beat;
-  /** Rótulo do beat, em mono — o único texto que a casca já carrega. */
+  /** Rótulo do beat, visível só para leitor de tela. */
   label: string;
   children?: ReactNode;
 };
@@ -43,17 +43,12 @@ export function BeatSection({ beat, label, children }: BeatSectionProps) {
       }
       className="relative flex flex-col justify-start px-6 py-24 md:px-12"
     >
-      {/* Rótulo, não título: é uma etiqueta de estação em mono. Deixá-lo
-          como <p> nomeando a seção via aria-labelledby mantém a ordem de
-          cabeçalhos limpa para o h1 que vive dentro do beat de Identidade. */}
-      {/* `data-veil` porque isto é texto sobre a cena como qualquer outro: o
-          rótulo de estação carrega informação e a luz por trás dele muda a cada
-          quadro. `w-fit` para a caixa ancorada ser a do texto e não a da
-          seção inteira — ver `EmergenceBeat.tsx`. */}
+      {/* Rótulo só para leitor de tela: nomeia a seção via aria-labelledby, sem
+          aparecer. Como <p>, mantém a ordem de cabeçalhos limpa para o h1 que
+          vive dentro do beat de Identidade. */}
       <p
         id={`${beat.id}-label`}
-        data-veil
-        className="type-mono text-hud text-mist w-fit"
+        className="sr-only"
         data-range={`${beat.from.toFixed(2)}–${beat.to.toFixed(2)}`}
       >
         {label}
