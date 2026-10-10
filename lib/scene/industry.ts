@@ -201,8 +201,8 @@ function model(source: Model | undefined, x: number, z: number, yaw: number, par
 }
 
 /**
- * Três chaminés em fila, de alturas diferentes, ou só a mais alta (`count`).
- * Ela leva a luz do topo e é dela que as descargas saem.
+ * Até três chaminés em fila, de alturas diferentes (`count`). A mais alta
+ * leva a luz do topo e é dela que as descargas saem.
  */
 function stacks(source: Model | undefined, x: number, z: number, height: number, yaw: number, parts: Part[], beacons: number[], count = 3): void {
   if (source === undefined) return;
@@ -336,8 +336,8 @@ export function createIndustry(models: IndustryModels): Industry {
   }
 
   // O complexo do Impacto: o que a câmera vê em silhueta ao sair da névoa.
-  stacks(models.stack, -52, -118, 62, 1.9, stackParts, beacons);
-  stacks(models.stack, 48, -128, 54, 2.7, stackParts, beacons);
+  stacks(models.stack, -52, -118, 62, 1.9, stackParts, beacons, 2);
+  stacks(models.stack, 48, -128, 54, 2.7, stackParts, beacons, 2);
   model(models.tanks, -73, -84, 0.5, hullParts);
   model(models.oilTank, 58, -66, 2.2, hullParts);
   model(models.rustTank, 74, -74, 0, hullParts);
@@ -346,7 +346,7 @@ export function createIndustry(models: IndustryModels): Industry {
   for (let index = 0; index < STOP_COUNT; index += 1) {
     const z = (STOP_Z[index] ?? 0) - 14;
     const left = index % 2 === 0;
-    stacks(models.stack, pathX(z) + (left ? -46 : 52) - index * 2, z - 8, 30 + ((index * 17) % 26), index * 0.9, stackParts, beacons, left ? 3 : 1);
+    stacks(models.stack, pathX(z) + (left ? -46 : 52) - index * 2, z - 8, 30 + ((index * 17) % 26), index * 0.9, stackParts, beacons, 1);
     // O conjunto grande fica na última parada, atrás da parede da vitrine.
     if (index === STOP_COUNT - 1) model(models.tanks, pathX(z) - 61, z + 6, 2.4, hullParts);
     else if (index % 2 === 1) model(models.oilTank, pathX(z) - 58, z + 6, index * 1.3, hullParts, 0.9 + index * 0.06);

@@ -27,8 +27,9 @@ const MODELS = [
   { id: "tanques", glb: "public/models/large_industrial_storage_tanks.glb", tall: 11.5, triangles: 1000 },
   { id: "tanque-oleo", glb: "public/models/old_oil_tank.glb", tall: 10, triangles: 450 },
   { id: "tanque-ferrugem", glb: "public/models/rusted_tank_storage.glb", tall: 11, triangles: 300 },
-  // O GLB traz a mesma chaminé três vezes: sai uma, a cena coloca o trio.
-  { id: "chamine", glb: "public/models/industrial_smoke_stacks.glb", tall: 34.6, triangles: 72, first: true, uv: true, maps: "chamine" },
+  // O GLB traz a mesma chaminé três vezes: sai uma. Abaixo de uns 200
+  // triângulos o fuste se rompe, então o limite aqui é o erro, não a contagem.
+  { id: "chamine", glb: "public/models/industrial_smoke_stacks.glb", tall: 34.6, triangles: 96, error: 0.004, first: true, uv: true, maps: "chamine" },
   // As duas do fim da trilha a câmera vê de perto: levam mais detalhe.
   { id: "chamine-perto", glb: "public/models/industrial_smoke_stacks.glb", tall: 34.6, triangles: 300, first: true, uv: true },
 ];
@@ -132,7 +133,7 @@ for (const model of MODELS) {
         [0.5, 0.5],
         null,
         model.triangles * 3,
-        0.2,
+        model.error ?? 0.2,
         ["Prune"],
       )
     : MeshoptSimplifier.simplify(new Uint32Array(indices), source, 3, model.triangles * 3, 0.2, ["Prune"]);
