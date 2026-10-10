@@ -23,7 +23,7 @@ Fonte de cada uma: https://polyhaven.com/a/<nome da pasta>
 
 | conjunto | mapas | lado | papel |
 |---|---|---:|---|
-| metal_plate | diff, nor_gl, arm, disp | 1024 (disp 512) | moldura da placa |
+| metal_plate_02 | diff, nor_gl, arm, disp | 1024 (disp 512) | moldura da placa |
 | corrugated_iron_02 | diff, nor_gl, arm | 512 | verso da placa |
 | green_metal_rust | diff, nor_gl, arm | 512 | estrutura do pórtico |
 | concrete_wall_006 | diff, nor_gl, arm | 512 | sapatas do pórtico |

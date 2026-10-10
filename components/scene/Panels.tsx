@@ -29,8 +29,8 @@ const LIVE_DISTANCE = 26;
 const LIVE_MIN_WIDTH = 120;
 
 /**
- * Os painéis dos cases, um por parada. Cada um é uma placa com o placeholder
- * do case, sustentada pelo pórtico da `industry`.
+ * As imagens dos cases, uma por parada: o placeholder do case, atrás do vidro
+ * da placa. A moldura, o vidro e o pórtico são da `Plates`.
  *
  * O clique não é raycast: o link de verdade do case (`StationList`) é
  * posicionado por quadro sobre o retângulo do painel na tela. É o mesmo

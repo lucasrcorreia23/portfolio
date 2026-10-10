@@ -135,14 +135,18 @@ vec3 fogColorAt(float viewDepth, vec3 worldPos) {
   return fogColor;
 }
 
-vec3 applyFog(vec3 color, float viewDepth, vec3 worldPos) {
+/** Quanto da névoa fica entre a câmera e o ponto, 0 a 1. */
+float fogAmount(float viewDepth, vec3 worldPos) {
   float n = sceneNoise(worldPos * 0.045 + vec3(0.0, 0.0, uTime * 0.02));
   n = n * 0.7 + sceneNoise(worldPos * 0.17) * 0.3;
   // Névoa de chão: mais densa embaixo, medida no meio do raio.
   float midY = mix(cameraPosition.y, worldPos.y, 0.5);
   float low = exp(-max(midY, 0.0) * 0.16);
   float density = uFogDensity * (0.35 + 0.9 * low) * (0.6 + 0.8 * n);
-  float amount = 1.0 - exp(-density * max(viewDepth, 0.0));
-  return mix(color, fogColorAt(viewDepth, worldPos), clamp(amount, 0.0, 1.0));
+  return clamp(1.0 - exp(-density * max(viewDepth, 0.0)), 0.0, 1.0);
+}
+
+vec3 applyFog(vec3 color, float viewDepth, vec3 worldPos) {
+  return mix(color, fogColorAt(viewDepth, worldPos), fogAmount(viewDepth, worldPos));
 }
 `;

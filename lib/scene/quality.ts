@@ -15,12 +15,16 @@ export type Quality = {
   flowers: number;
   spores: number;
   dof: boolean;
+  /** O vidro das placas, a paralaxe de altura da chapa e a porta que se move. */
+  glass: boolean;
+  parallax: boolean;
+  door: boolean;
 };
 
 export const QUALITY: Readonly<Record<QualityTier, Quality>> = {
-  high: { tier: "high", dpr: 2, grass: 1, flowers: 1, spores: 1, dof: true },
-  medium: { tier: "medium", dpr: 1.5, grass: 0.24, flowers: 0.5, spores: 0.75, dof: true },
-  low: { tier: "low", dpr: 1, grass: 0.28, flowers: 0.55, spores: 0.4, dof: false },
+  high: { tier: "high", dpr: 2, grass: 1, flowers: 1, spores: 1, dof: true, glass: true, parallax: true, door: true },
+  medium: { tier: "medium", dpr: 1.5, grass: 0.24, flowers: 0.5, spores: 0.75, dof: true, glass: true, parallax: true, door: true },
+  low: { tier: "low", dpr: 1, grass: 0.28, flowers: 0.55, spores: 0.4, dof: false, glass: false, parallax: false, door: false },
 };
 
 /** O que as geometrias alocam: é a contagem do nível alto. */

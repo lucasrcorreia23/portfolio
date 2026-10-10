@@ -1,15 +1,11 @@
 import {
   BoxGeometry,
-  BufferAttribute,
-  BufferGeometry,
+  type BufferGeometry,
   CylinderGeometry,
-  Euler,
-  Matrix4,
-  Quaternion,
   SphereGeometry,
-  Vector3,
 } from "three";
 import { PANEL_HEIGHT, PANEL_WIDTH } from "./case-pose";
+import { merge, place, projectUv, type Part } from "./parts";
 import { STOP_COUNT } from "./stops";
 import {
   heightAt,
@@ -26,111 +22,105 @@ import {
 } from "./world";
 
 /**
- * A indústria: torres, tanques, tubulação e os pórticos que sustentam os
- * painéis, gerados de primitivas e mesclados numa geometria só (um draw call).
- * Ela é silhueta: neutra, fosca, sem emissão.
+ * A indústria: torres, tanques e tubulação, gerados de primitivas e mesclados
+ * numa geometria só (um draw call). Ela é silhueta: neutra, fosca, sem
+ * emissão. Os pórticos que sustentam os painéis saem daqui com textura.
  */
-
-type Part = { geometry: BufferGeometry; matrix: Matrix4 };
-
-const POSITION = new Vector3();
-const SCALE = new Vector3(1, 1, 1);
-const ROTATION = new Quaternion();
-const EULER = new Euler();
-
-function place(
-  geometry: BufferGeometry,
-  x: number,
-  y: number,
-  z: number,
-  rx = 0,
-  ry = 0,
-  rz = 0,
-): Part {
-  POSITION.set(x, y, z);
-  ROTATION.setFromEuler(EULER.set(rx, ry, rz));
-  return { geometry, matrix: new Matrix4().compose(POSITION, ROTATION, SCALE) };
-}
-
-function merge(parts: readonly Part[]): BufferGeometry {
-  let total = 0;
-  const flat = parts.map((part) => {
-    const geometry = part.geometry.index === null ? part.geometry.clone() : part.geometry.toNonIndexed();
-    geometry.applyMatrix4(part.matrix);
-    total += geometry.getAttribute("position").count;
-    return geometry;
-  });
-  const positions = new Float32Array(total * 3);
-  const normals = new Float32Array(total * 3);
-  let offset = 0;
-  for (const geometry of flat) {
-    positions.set(geometry.getAttribute("position").array, offset);
-    normals.set(geometry.getAttribute("normal").array, offset);
-    offset += geometry.getAttribute("position").count * 3;
-    geometry.dispose();
-  }
-  for (const part of parts) part.geometry.dispose();
-  const merged = new BufferGeometry();
-  merged.setAttribute("position", new BufferAttribute(positions, 3));
-  merged.setAttribute("normal", new BufferAttribute(normals, 3));
-  merged.computeBoundingSphere();
-  return merged;
-}
 
 /** Um ponto no chão. */
 function ground(x: number, z: number): number {
   return heightAt(x, z);
 }
 
-/** O pórtico de uma parada: dois montantes, travessas e a moldura do painel. */
-function gantry(index: number, parts: Part[], beacons: number[]): void {
+/** Quantos metros uma volta de textura cobre no pórtico. */
+const GANTRY_TILE = 1.2;
+
+/** Os dois montantes do pórtico de uma parada: onde pisam e até onde sobem. */
+function gantryPosts(index: number) {
+  const panel = panelPlacement(index);
+  const half = PANEL_WIDTH / 2 + 0.34;
+  const top = panel.y + PANEL_HEIGHT / 2 + 0.5;
+  return [-1, 1].map((side) => {
+    const x = panel.x + Math.cos(panel.yaw) * half * side;
+    const z = panel.z - Math.sin(panel.yaw) * half * side;
+    const base = ground(x, z) - 0.4;
+    return { x, z, base, height: top - base + 1.1 };
+  });
+}
+
+/**
+ * O pórtico de uma parada: dois montantes e duas travessas em perfil I, a
+ * caixa de equipamento e o duto. A estrutura é de aço e as sapatas, de
+ * concreto: vão em listas separadas porque cada uma tem o material dela.
+ */
+function gantry(index: number, steel: Part[], concrete: Part[]): void {
   const panel = panelPlacement(index);
   const yaw = panel.yaw;
   const rightX = Math.cos(yaw);
   const rightZ = -Math.sin(yaw);
   const half = PANEL_WIDTH / 2 + 0.34;
   const top = panel.y + PANEL_HEIGHT / 2 + 0.5;
+  const box = (width: number, height: number, depth: number) =>
+    projectUv(new BoxGeometry(width, height, depth), GANTRY_TILE);
 
-  for (const side of [-1, 1]) {
-    const x = panel.x + rightX * half * side;
-    const z = panel.z + rightZ * half * side;
-    const base = ground(x, z) - 0.4;
-    const height = top - base + 1.1;
-    parts.push(place(new BoxGeometry(0.2, height, 0.2), x, base + height / 2, z, 0, yaw, 0));
-    parts.push(place(new BoxGeometry(0.9, 0.16, 0.9), x, base + 0.48, z, 0, yaw, 0));
+  // Um perfil em I de pé, com a alma virada para a câmera: duas abas e a alma.
+  const post = (x: number, z: number, y: number, height: number) => {
+    for (const side of [-1, 1]) {
+      steel.push(
+        place(box(0.03, height, 0.2), x + rightX * 0.085 * side, y, z + rightZ * 0.085 * side, 0, yaw, 0),
+      );
+    }
+    steel.push(place(box(0.14, height, 0.024), x, y, z, 0, yaw, 0));
+  };
+  // E um deitado, de montante a montante: as abas em cima e embaixo.
+  const beam = (y: number, length: number, tall: number, deep: number) => {
+    for (const side of [-1, 1]) {
+      steel.push(place(box(length, 0.03, deep), panel.x, y + (tall / 2 - 0.015) * side, panel.z, 0, yaw, 0));
+    }
+    steel.push(place(box(length, tall - 0.06, 0.024), panel.x, y, panel.z, 0, yaw, 0));
+  };
+
+  for (const { x, z, base, height } of gantryPosts(index)) {
+    post(x, z, base + height / 2, height);
+    concrete.push(place(box(0.9, 0.16, 0.9), x, base + 0.48, z, 0, yaw, 0));
+    // A chapa de base do montante, sobre a sapata.
+    steel.push(place(box(0.42, 0.03, 0.42), x, base + 0.575, z, 0, yaw, 0));
     // A mão-francesa, para trás.
     const backX = x - Math.sin(yaw) * 1.5;
     const backZ = z - Math.cos(yaw) * 1.5;
-    parts.push(
-      place(new BoxGeometry(0.1, 4.6, 0.1), (x + backX) / 2, base + 2.1, (z + backZ) / 2, -0.66, yaw, 0),
-    );
-    beacons.push(x, base + height + 0.08, z, index % 2 === 0 ? 0.2 : 0.8);
+    steel.push(place(box(0.1, 4.6, 0.1), (x + backX) / 2, base + 2.1, (z + backZ) / 2, -0.66, yaw, 0));
   }
   // As travessas: uma em cima, outra embaixo do painel.
-  parts.push(place(new BoxGeometry(half * 2 + 0.6, 0.18, 0.18), panel.x, top, panel.z, 0, yaw, 0));
-  parts.push(
-    place(new BoxGeometry(half * 2 + 0.2, 0.1, 0.1), panel.x, panel.y - PANEL_HEIGHT / 2 - 0.3, panel.z, 0, yaw, 0),
-  );
-  // A placa de fundo, um nada atrás do painel: sem ela ele flutuaria.
-  parts.push(
-    place(
-      new BoxGeometry(PANEL_WIDTH + 0.24, PANEL_HEIGHT + 0.24, 0.08),
-      panel.x - Math.sin(yaw) * 0.09,
-      panel.y,
-      panel.z - Math.cos(yaw) * 0.09,
-      0,
-      yaw,
-      0,
-    ),
-  );
+  beam(top, half * 2 + 0.6, 0.2, 0.18);
+  beam(panel.y - PANEL_HEIGHT / 2 - 0.3, half * 2 + 0.2, 0.12, 0.1);
   // Uma caixa de equipamento e o duto que sai dela para o chão.
   const boxX = panel.x + rightX * (half + 1.1);
   const boxZ = panel.z + rightZ * (half + 1.1);
   const boxY = ground(boxX, boxZ);
-  parts.push(place(new BoxGeometry(0.8, 1.3, 0.6), boxX, boxY + 0.65, boxZ, 0, yaw, 0));
-  parts.push(
-    place(new CylinderGeometry(0.07, 0.07, 6, 6), boxX - Math.sin(yaw) * 3, boxY + 0.5, boxZ - Math.cos(yaw) * 3, Math.PI / 2, yaw, 0),
+  steel.push(place(box(0.8, 1.3, 0.6), boxX, boxY + 0.65, boxZ, 0, yaw, 0));
+  steel.push(
+    place(
+      projectUv(new CylinderGeometry(0.07, 0.07, 6, 6), GANTRY_TILE),
+      boxX - Math.sin(yaw) * 3,
+      boxY + 0.5,
+      boxZ - Math.cos(yaw) * 3,
+      Math.PI / 2,
+      yaw,
+      0,
+    ),
   );
+}
+
+/**
+ * Os pórticos das paradas, com coordenada de textura: são o único pedaço da
+ * indústria que a câmera lê de perto, então têm material próprio e ficam fora
+ * da silhueta mesclada (ver `Plates`).
+ */
+export function createGantries(): { steel: BufferGeometry; concrete: BufferGeometry } {
+  const steel: Part[] = [];
+  const concrete: Part[] = [];
+  for (let index = 0; index < STOP_COUNT; index += 1) gantry(index, steel, concrete);
+  return { steel: merge(steel, true), concrete: merge(concrete, true) };
 }
 
 /** O topo da antena de cada torre: de onde as descargas saem. */
@@ -224,7 +214,12 @@ export function createIndustry(): Industry {
   const tops: number[] = [];
   towerTops.length = 0;
 
-  for (let index = 0; index < STOP_COUNT; index += 1) gantry(index, parts, beacons);
+  // Os pórticos são desenhados à parte; daqui saem só as luzes do topo deles.
+  for (let index = 0; index < STOP_COUNT; index += 1) {
+    for (const post of gantryPosts(index)) {
+      beacons.push(post.x, post.base + post.height + 0.08, post.z, index % 2 === 0 ? 0.2 : 0.8);
+    }
+  }
 
   // O complexo do Impacto: o que a câmera vê em silhueta ao sair da névoa.
   tower(-34, -96, 46, 3.4, parts, beacons);

@@ -29,8 +29,8 @@ import { createTerrainGeometry } from "@/lib/scene/terrain";
 import { fogUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
 
 /**
- * O que não emite: o céu, o terreno, a indústria e as luzes indicadoras dela.
- * Quatro draw calls.
+ * O que não emite: o céu, o terreno, a indústria, as descargas e as luzes
+ * indicadoras dela. Cinco draw calls.
  */
 export function Land({ shared }: { shared: SharedUniforms }) {
   const sky = useRef<Mesh>(null);

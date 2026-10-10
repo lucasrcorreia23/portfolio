@@ -20,10 +20,14 @@ const CLI = ["--yes", "@gltf-transform/cli@4.5.1"];
 /** Os conjuntos em uso, o lado em pixels e os mapas de cada um. */
 const SETS = [
   // A moldura é o que a câmera lê de perto: 1k, e a altura para a paralaxe.
-  { id: "metal_plate", size: 1024, maps: ["diff", "nor_gl", "arm"], extra: { disp: 512 } },
+  // A cor da fonte é ferrugem quente, que à noite lê como madeira: ela vira um
+  // aço frio e mais claro. As emendas e os rebites da chapa ficam.
+  { id: "metal_plate_02", size: 1024, maps: ["diff", "nor_gl", "arm"], extra: { disp: 512 }, steel: true },
   { id: "corrugated_iron_02", size: 512, maps: ["diff", "nor_gl", "arm"] },
-  { id: "green_metal_rust", size: 512, maps: ["diff", "nor_gl", "arm"] },
-  { id: "concrete_wall_006", size: 512, maps: ["diff", "nor_gl", "arm"] },
+  // A tinta verde da estrutura e o amarelado do concreto ficam, com metade da
+  // cor: a indústria é neutra.
+  { id: "green_metal_rust", size: 512, maps: ["diff", "nor_gl", "arm"], muted: true },
+  { id: "concrete_wall_006", size: 512, maps: ["diff", "nor_gl", "arm"], muted: true },
 ];
 
 const work = mkdtempSync(path.join(tmpdir(), "assets-"));
@@ -74,8 +78,12 @@ for (const set of SETS) {
   ];
   for (const [map, size] of maps) {
     const out = `${TEXTURES}/${set.id}_${map}.webp`;
-    await sharp(`public/textures/${set.id}/${set.id}_${map}_1k.jpg`)
-      .resize(size, size)
+    let image = sharp(`public/textures/${set.id}/${set.id}_${map}_1k.jpg`).resize(size, size);
+    if (set.steel && map === "diff") {
+      image = image.modulate({ saturation: 0.12, brightness: 1.9 }).tint({ r: 150, g: 166, b: 178 });
+    }
+    if (set.muted && map === "diff") image = image.modulate({ saturation: 0.5 });
+    await image
       // A normal não tolera o borrão de croma: qualidade alta e croma inteiro.
       .webp(map === "nor_gl" ? { quality: 90, smartSubsample: true } : { quality: 80 })
       .toFile(out);
