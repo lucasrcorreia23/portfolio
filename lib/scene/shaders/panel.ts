@@ -92,7 +92,9 @@ void main() {
 
   // O que o vidro devolve: o ar ao longe na direção refletida e a flora que
   // está do lado de cá da placa. De frente quase nada; de esguelha, mais.
-  vec3 air = fogColorAt(120.0, vWorld + mirror * 120.0);
+  // O ar é a cor da névoa distante, sem o halo da flora ao longo do raio: o
+  // vidro cobre a placa inteira, e esse laço por pixel não se vê aqui.
+  vec3 air = mix(uAbyss, uDeep * 0.55, 0.6) + astroAir(mirror);
   vec3 flora = floraGlow(vWorld + mirror * 5.0);
   vec3 color = (air + flora * 0.08) * fresnel;
 

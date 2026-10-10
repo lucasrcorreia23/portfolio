@@ -84,20 +84,25 @@ void main() {
   color += pale * 0.12 * exp(-max(dir.y + 0.14, 0.0) * 7.0) * smoothstep(-0.12, 0.18, toward) * uAstro;
 
   // O planeta: uma esfera grande e distante, meio encoberta pelo horizonte.
-  // Sóbrio, das cores da indústria; a única coisa fria e clara nele é o fio de
-  // atmosfera na borda. A base some na névoa, como tudo que está longe.
+  // Duas luzes, as mesmas do céu em volta: o rosa de um lado e, do outro, o
+  // azul das serras e do fundo, que enche a sombra em vez de deixá-la chapada.
+  // A base some na névoa, como tudo que está longe.
   float away = acos(clamp(dot(dir, uAstroDir), -1.0, 1.0));
   float radius = uPlanet.y;
-  if (uPlanet.x > 0.001 && away < radius * 1.5) {
-    float disc = 1.0 - smoothstep(radius - 0.002, radius + 0.002, away);
-    // A normal da esfera vista de frente, para a luz vir de um lado só.
+  if (uPlanet.x > 0.001 && away < radius * 2.0) {
+    float disc = 1.0 - smoothstep(radius - 0.003, radius + 0.003, away);
+    // A normal da esfera vista de frente.
     vec3 side = normalize(cross(uAstroDir, vec3(0.0, 1.0, 0.0)));
     vec3 top = cross(side, uAstroDir);
     vec2 p = vec2(dot(dir, side), dot(dir, top)) / sin(radius);
     vec3 normal = vec3(p, sqrt(max(1.0 - dot(p, p), 0.0)));
-    vec3 sun = normalize(vec3(-0.72, 0.5, 0.3));
-    // O terminador: uma linha estreita entre o dia e a noite.
-    float lit = smoothstep(-0.03, 0.09, dot(normal, sun));
+    // A luz rosa vem de cima, à direita; a azul, de baixo, à esquerda. Nenhuma
+    // tem linha de sombra: uma vai cedendo para a outra ao longo da esfera.
+    vec3 sun = normalize(vec3(0.62, 0.55, 0.56));
+    vec3 sky = normalize(vec3(-0.8, -0.3, 0.52));
+    float lit = smoothstep(-0.3, 0.85, dot(normal, sun));
+    float fill = smoothstep(-0.2, 1.0, dot(normal, sky));
+    vec3 blue = uCyan * vec3(0.5, 0.78, 1.05);
 
     // As faixas: ruído esticado ao longo dos paralelos, num eixo inclinado,
     // girando tão devagar que só se nota de uma visita para a outra.
@@ -106,20 +111,24 @@ void main() {
     float bend = sceneNoise(vec3(lon * 1.3, q.y * 3.0, 7.0)) - 0.5;
     float bands = sceneNoise(vec3(lon * 0.5 + 4.0, (q.y + bend * 0.1) * 9.0, 2.0)) * 0.65
       + sceneNoise(vec3(lon * 1.7, (q.y + bend * 0.16) * 24.0, 5.0)) * 0.35;
+    float tone = 0.45 + 0.55 * smoothstep(0.2, 0.8, bands);
 
-    vec3 tone = mix(uDeep, mix(uTeal, uMist, 0.4), smoothstep(0.25, 0.8, bands));
-    vec3 day = tone * (0.28 + 0.44 * max(dot(normal, sun), 0.0)) * (0.55 + 0.45 * normal.z);
-    vec3 body = mix(color * 0.55, day, lit);
-    // A atmosfera: um fio frio na borda, mais claro do lado do dia.
-    vec3 cold = mix(uCyan, uMist, 0.55);
-    body += cold * 0.3 * pow(1.0 - normal.z, 5.0) * (0.1 + 0.9 * lit);
+    // A esfera escurece para a borda: é o que a faz ter volume.
+    float round = 0.5 + 0.5 * normal.z;
+    vec3 body = mix(uRose, uMist, 0.12) * tone * lit * round;
+    body += blue * (0.1 + 0.16 * tone) * fill * (1.0 - 0.75 * lit) * round;
+    // A atmosfera: um fio na borda, da cor da luz que bate ali.
+    float rim = pow(1.0 - normal.z, 4.0);
+    body += (mix(uRose, uMist, 0.45) * 0.55 * lit + blue * 0.5 * fill * (1.0 - lit)) * rim;
     // Está longe: o ar fica entre ele e a câmera.
-    body = mix(body, color, 0.2);
+    body = mix(body, color, 0.24);
     float sunk = smoothstep(-0.1, 0.06, dir.y) * uPlanet.x;
     color = mix(color, body, disc * sunk);
-    // E o mesmo fio logo fora da borda, do lado da luz.
-    float dayside = 0.15 + 0.85 * smoothstep(-0.2, 0.6, dot(normalize(p + 1e-5), normalize(sun.xy)));
-    color += cold * 0.1 * exp(-max(away - radius, 0.0) * 90.0) * (1.0 - disc) * dayside * sunk;
+    // O halo logo fora da borda: rosa do lado da luz, azul do outro, fino.
+    vec2 out2 = normalize(p + 1e-5);
+    float warmSide = smoothstep(-0.3, 0.8, dot(out2, normalize(sun.xy)));
+    float glow = exp(-max(away - radius, 0.0) * 34.0) * (1.0 - disc) * sunk;
+    color += (uRose * 0.16 * warmSide + blue * 0.07 * (1.0 - warmSide)) * glow;
   }
 
   // As serras ao longe, do lado oposto ao planeta: duas cristas frias, da cor
