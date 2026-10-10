@@ -22,8 +22,8 @@ import {
 } from "./world";
 
 /**
- * A indústria: torres e tubulação geradas de primitivas, tanques e chaminés
- * vindos de modelos, tudo mesclado numa geometria só (um draw call). Ela é
+ * A indústria: tubulação gerada de primitivas, tanques e chaminés vindos de
+ * modelos, tudo mesclado numa geometria só (um draw call). Ela é
  * silhueta: neutra, fosca, sem emissão. Os pórticos que sustentam os painéis
  * saem daqui com textura.
  */
@@ -124,23 +124,8 @@ export function createGantries(): { steel: BufferGeometry; concrete: BufferGeome
   return { steel: merge(steel, true), concrete: merge(concrete, true) };
 }
 
-/** O topo da antena de cada torre: de onde as descargas saem. */
+/** O topo das chaminés mais altas: de onde as descargas saem. */
 const towerTops: number[] = [];
-
-/** Uma torre: fuste afilado, plataformas e uma antena. */
-function tower(x: number, z: number, height: number, radius: number, parts: Part[], beacons: number[], foot = 0): void {
-  const base = ground(x, z) - 1;
-  parts.push(place(new CylinderGeometry(radius * 0.55, radius, height, 10, 1), x, base + height / 2, z));
-  // Depois da borda do terreno não há chão para esconder a base: o fuste desce.
-  if (foot > 0) parts.push(place(new CylinderGeometry(radius, radius, foot, 10, 1), x, base - foot / 2, z));
-  for (const at of [0.38, 0.66, 0.9]) {
-    parts.push(place(new CylinderGeometry(radius * 1.25, radius * 1.25, 0.35, 10, 1), x, base + height * at, z));
-  }
-  parts.push(place(new CylinderGeometry(0.08, 0.14, height * 0.28, 5, 1), x, base + height * 1.14, z));
-  towerTops.push(x, base + height * 1.28, z);
-  beacons.push(x, base + height * 1.28, z, 0.6 + (height % 0.4));
-  beacons.push(x + radius * 1.25, base + height * 0.66, z, 0.1);
-}
 
 /**
  * Os modelos da silhueta: só a forma, decimada, de pé sobre y = 0 e já em
@@ -151,6 +136,7 @@ const MODEL_FILES = {
   oilTank: "tanque-oleo",
   rustTank: "tanque-ferrugem",
   stack: "chamine",
+  nearStack: "chamine-perto",
 } as const;
 type ModelId = keyof typeof MODEL_FILES;
 type Model = { geometry: BufferGeometry; tall: number; reach: number };
@@ -193,14 +179,14 @@ export function markIndustrySettled(): void {
  * Um modelo pousado no terreno, girado e em escala. Pisa no ponto mais baixo
  * da própria planta, para nada flutuar na encosta. Devolve a altura do topo.
  */
-function model(source: Model | undefined, x: number, z: number, yaw: number, parts: Part[], scale = 1): number {
+function model(source: Model | undefined, x: number, z: number, yaw: number, parts: Part[], scale = 1, sink = 0.4): number {
   if (source === undefined) return ground(x, z);
   const reach = source.reach * scale * 0.7;
   let base = ground(x, z);
   for (const [dx, dz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
     base = Math.min(base, ground(x + dx * reach, z + dz * reach));
   }
-  base -= 0.4;
+  base -= sink;
   parts.push(place(source.geometry.clone().scale(scale, scale, scale), x, base, z, 0, yaw, 0));
   return base + source.tall * scale;
 }
@@ -299,10 +285,10 @@ export function createIndustry(models: IndustryModels): Industry {
   }
 
   // O complexo do Impacto: o que a câmera vê em silhueta ao sair da névoa.
-  tower(-34, -96, 46, 3.4, parts, beacons);
-  tower(-52, -118, 62, 4.6, parts, beacons);
-  tower(48, -128, 54, 3.8, parts, beacons);
-  tower(70, -92, 34, 3, parts, beacons);
+  stacks(models.stack, -34, -96, 46, 0.4, parts, beacons);
+  stacks(models.stack, -52, -118, 62, 1.9, parts, beacons);
+  stacks(models.stack, 48, -128, 54, 2.7, parts, beacons);
+  stacks(models.stack, 70, -92, 34, 1.1, parts, beacons);
   model(models.tanks, -73, -84, 0.5, parts);
   model(models.oilTank, 58, -66, 2.2, parts);
   model(models.rustTank, 74, -74, 0, parts);
@@ -318,8 +304,13 @@ export function createIndustry(models: IndustryModels): Industry {
     else model(models.rustTank, pathX(z) + 66, z - 2, index * 1.3, parts, 0.9 + index * 0.08);
   }
   // O fim da trilha: um último grupo atrás da mancha do CTA.
-  tower(pathX(Z_END) - 30, Z_END - 44, 58, 4.2, parts, beacons, 30);
-  tower(pathX(Z_END) + 36, Z_END - 52, 42, 3.2, parts, beacons, 30);
+  // Depois da borda do terreno não há chão para esconder a base: elas descem.
+  for (const [x, z, height, yaw] of [[pathX(Z_END) - 30, Z_END - 44, 58, 0.8], [pathX(Z_END) + 36, Z_END - 52, 42, 2.5]] as const) {
+    const scale = (height + 30) / (models.nearStack?.tall ?? 1);
+    const top = model(models.nearStack, x, z, yaw, parts, scale, 30);
+    towerTops.push(x, top, z);
+    beacons.push(x, top, z, 0.6 + (height % 0.4));
+  }
 
   // A tubulação que atravessa o campo: a câmera passa por baixo da primeira.
   pipeline(-66, -96, 96, 6.4, 10, parts);

@@ -24,6 +24,8 @@ const MODELS = [
   { id: "tanque-ferrugem", glb: "public/models/rusted_tank_storage.glb", tall: 11, triangles: 300 },
   // O GLB traz a mesma chaminé três vezes: sai uma, a cena coloca o trio.
   { id: "chamine", glb: "public/models/industrial_smoke_stacks.glb", tall: 34.6, triangles: 72, first: true },
+  // As duas do fim da trilha a câmera vê de perto: levam mais detalhe.
+  { id: "chamine-perto", glb: "public/models/industrial_smoke_stacks.glb", tall: 34.6, triangles: 300, first: true },
 ];
 
 await MeshoptSimplifier.ready;
