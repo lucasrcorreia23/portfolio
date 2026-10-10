@@ -94,6 +94,22 @@ export async function startSoundBed(
 
   source.connect(lowpass).connect(band).connect(gain).connect(destination);
 
+  // O bordão: duas senoides graves numa quinta, uma delas desafinada um nada
+  // para o batimento lento. Entra com a abertura do ar e cresce nas paradas.
+  const drone = context.createGain();
+  drone.gain.value = 0;
+  const voices = [55, 82.6, 110.3].map((frequency, index) => {
+    const oscillator = context.createOscillator();
+    oscillator.type = "sine";
+    oscillator.frequency.value = frequency;
+    const level = context.createGain();
+    level.gain.value = [1, 0.55, 0.22][index] ?? 0.2;
+    oscillator.connect(level).connect(drone);
+    oscillator.start();
+    return { oscillator, level };
+  });
+  drone.connect(destination);
+
   // A cada quadro de rolagem e a cada 100 ms — a pressão do bando muda sem
   // ninguém rolar. `setTargetAtTime` amortece tudo: nada no som dá degrau.
   const update = () => {
@@ -105,9 +121,9 @@ export async function startSoundBed(
     const cutoff = (160 + 1500 * openness * openness) * (1 - 0.55 * pressure);
     lowpass.frequency.setTargetAtTime(Math.max(90, cutoff), now, 0.35);
     band.frequency.setTargetAtTime(90 + 260 * progress, now, 0.8);
-    const forming = Math.min(1, progress / 0.16);
-    const level = 0.012 + 0.03 * forming + 0.025 * pressure;
+    const level = 0.01 + 0.03 * openness + 0.02 * pressure;
     gain.gain.setTargetAtTime(level, now, 0.5);
+    drone.gain.setTargetAtTime(0.012 * openness + 0.014 * pressure, now, 1.4);
   };
   const stopScroll = subscribeToScroll(update);
   const timer = window.setInterval(update, 100);
@@ -129,11 +145,18 @@ export async function startSoundBed(
       window.clearInterval(timer);
       const now = context.currentTime;
       gain.gain.setTargetAtTime(0, now, 0.2);
+      drone.gain.setTargetAtTime(0, now, 0.2);
       window.setTimeout(() => {
         source.disconnect();
         lowpass.disconnect();
         band.disconnect();
         gain.disconnect();
+        for (const voice of voices) {
+          voice.oscillator.stop();
+          voice.oscillator.disconnect();
+          voice.level.disconnect();
+        }
+        drone.disconnect();
       }, 1200);
     },
   };

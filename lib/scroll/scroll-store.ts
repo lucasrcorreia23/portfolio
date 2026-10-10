@@ -152,6 +152,11 @@ export function requestScrollTo(progress: number): void {
   pendingScrollTo = clamp01(progress);
 }
 
+/** Há um pedido de rolagem esperando? Quem pede por omissão cede a ele. */
+export function hasScrollRequest(): boolean {
+  return pendingScrollTo !== null;
+}
+
 /**
  * Consumido pelo driver, dentro do ticker. Devolve `null` quando não há nada.
  *

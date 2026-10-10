@@ -38,6 +38,8 @@ export function StationList({ stations, enterLabel }: StationListProps) {
             aria-label={`${enterLabel}: ${station.title} — ${station.client}, ${station.year}`}
             onFocus={(event) => setCardFocus(index, event.currentTarget)}
             onBlur={(event) => clearCardFocus(event.currentTarget)}
+            onPointerEnter={(event) => setCardFocus(index, event.currentTarget)}
+            onPointerLeave={(event) => clearCardFocus(event.currentTarget)}
             onClick={() => {
               enterCase(station.slug, index, getScrollProgress());
             }}

@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { stripLocale } from "@/lib/i18n/config";
 import { getCaseState } from "@/lib/work/case-transition";
 import { loadScrollDriver } from "./load-driver";
-import { requestScrollTo, setScrollRole } from "./scroll-store";
+import { hasScrollRequest, requestScrollTo, setScrollRole } from "./scroll-store";
 
 /**
  * A casca do driver de scroll. Fica no layout, renderiza os filhos na hora e
@@ -61,6 +61,9 @@ export function ScrollProvider({ children }: { children: ReactNode }) {
     // retido até o driver remedir (ver `consumeScrollRequest`).
     if (!descent) return;
     const state = getCaseState();
+    // Um pedido explícito (um link da navegação) vale mais que a volta à
+    // parada de onde se saiu.
+    if (hasScrollRequest()) return;
     if (state.phase !== "river" && state.returnProgress !== null) {
       requestScrollTo(state.returnProgress);
     }

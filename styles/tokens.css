@@ -44,38 +44,6 @@
    * isso é físico: encolher o corpo para caber 60 caracteres num aparelho de
    * 390 px seria trocar uma regra de ritmo por texto pequeno demais para ler. */
   --measure: 54ch;
-
-  /* -----------------------------------------------------------------------
-   * Entradas da escala de display.
-   *
-   * O maior título precisa ocupar no mínimo 80% da largura da viewport
-   * (PROJECT.md §3.2). Isso não é uma constante: depende de quantos
-   * caracteres a linha tem. Então o tamanho é *resolvido* a partir da
-   * contagem de caracteres da linha mais longa, e não escolhido a olho.
-   *
-   *   F = fill × 100vw ÷ (chars × advance)
-   *
-   * --display-advance é a largura média de avanço de um caractere caixa-alta
-   * da display, em em, já com o tracking negativo descontado. Um valor
-   * subestimado aqui produz fonte maior, nunca menor — erra para o lado
-   * seguro da regra dos 80%.
-   *
-   * Largura resultante = 100vw × fill × (avanço real ÷ --display-advance).
-   * Com fill 0.84 e advance 0.74, a regra dos 80% se sustenta enquanto o
-   * avanço real ficar em [0.705, 0.881] em — e o Archivo Expanded em caixa
-   * alta fica em torno de 0.80. Fora dessa banda, ajuste --display-advance,
-   * não o tamanho.
-   *
-   * Quem consome define --display-chars com o número de caracteres da linha
-   * mais longa. O padrão 7 cobre "CORREIA".
-   * -------------------------------------------------------------------- */
-  --display-fill: 0.84;
-  --display-advance: 0.74;
-  --display-chars: 7;
-  --display-1-min: 3rem;
-  /* O teto só entraria em jogo numa viewport de ~10.000px: a 16.2vw,
-     100rem são atingidos a 9877px. Existe para o clamp ser um clamp. */
-  --display-1-max: 100rem;
 }
 
 
@@ -119,17 +87,7 @@
 @theme {
   --ease-strong: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* Display 1 — o corpo de prova. Único passo cujo tamanho é resolvido a
-     partir da largura da viewport e da contagem de caracteres. */
-  --text-display-1: clamp(
-    var(--display-1-min),
-    calc(var(--display-fill) * 100vw / var(--display-chars) / var(--display-advance)),
-    var(--display-1-max)
-  );
-  --text-display-1--line-height: 0.82;
-  --text-display-1--letter-spacing: -0.035em;
-  --text-display-1--font-weight: 800;
-
+  
   /* Display 2 — títulos de case e cabeças de beat. 40px → 120px. */
   --text-display-2: clamp(2.5rem, 0.8333rem + 7.4074vw, 7.5rem);
   --text-display-2--line-height: 0.88;

@@ -5,7 +5,7 @@ import { useThree } from "@react-three/fiber";
 import { beatAt } from "@/components/beats/beats";
 import type { BeatId } from "@/components/beats/beats";
 import { DURATION } from "@/lib/motion";
-import { stopProgress } from "@/lib/scene/stops";
+import { stopAt, stopProgress } from "@/lib/scene/stops";
 import { getScrollProgress, subscribeToScroll } from "@/lib/scroll/scroll-store";
 
 /**
@@ -18,6 +18,18 @@ const COMPOSITION_AT: Record<BeatId, number> = {
   cases: stopProgress(0),
   cta: 0.97,
 };
+
+/**
+ * Qual composição um progresso pede. Dentro dos Cases há uma por parada: a
+ * legenda em DOM troca de case, e o painel atrás dela tem que ser o mesmo.
+ */
+function compositionFor(progress: number): { key: string; at: number } {
+  const id = beatAt(progress).id;
+  const stop = id === "cases" ? stopAt(progress) : -1;
+  return stop >= 0
+    ? { key: `cases-${stop}`, at: stopProgress(stop) }
+    : { key: id, at: COMPOSITION_AT[id] };
+}
 
 type ComposedClockProps = {
   /** O progresso da composição atual, lido pelo laço mestre. */
@@ -34,7 +46,7 @@ export function ComposedClock({ composedRef, canvasRef }: ComposedClockProps) {
   const advance = useThree((state) => state.advance);
   const clock = useThree((state) => state.clock);
   const gl = useThree((state) => state.gl);
-  const current = useRef<BeatId | null>(null);
+  const current = useRef<string | null>(null);
   const elapsed = useRef(0);
 
   useEffect(() => {
@@ -46,8 +58,8 @@ export function ComposedClock({ composedRef, canvasRef }: ComposedClockProps) {
     const canvas = canvasRef.current;
     let timer = 0;
 
-    const compose = (id: BeatId) => {
-      composedRef.current = COMPOSITION_AT[id];
+    const compose = (at: number) => {
+      composedRef.current = at;
       // Dois quadros: o primeiro escreve a pose e os uniforms, o segundo
       // desenha com as caixas do véu já lidas do DOM do momento novo.
       elapsed.current += 1;
@@ -56,26 +68,26 @@ export function ComposedClock({ composedRef, canvasRef }: ComposedClockProps) {
       advance(elapsed.current);
     };
 
-    const cut = (id: BeatId) => {
+    const cut = (at: number) => {
       if (canvas === null) {
-        compose(id);
+        compose(at);
         return;
       }
       canvas.style.opacity = "0";
       window.clearTimeout(timer);
       timer = window.setTimeout(() => {
-        compose(id);
+        compose(at);
         canvas.style.opacity = "1";
       }, DURATION.cut * 1000);
     };
 
     const evaluate = (progress: number) => {
-      const id = beatAt(progress).id;
-      if (id === current.current) return;
+      const wanted = compositionFor(progress);
+      if (wanted.key === current.current) return;
       const first = current.current === null;
-      current.current = id;
-      if (first) compose(id);
-      else cut(id);
+      current.current = wanted.key;
+      if (first) compose(wanted.at);
+      else cut(wanted.at);
     };
 
     if (canvas !== null) {

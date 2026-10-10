@@ -28,6 +28,7 @@ import { ComposedClock } from "./ComposedClock";
 import { Composer } from "./Composer";
 import { Flora } from "./Flora";
 import { Land } from "./Land";
+import { Panels } from "./Panels";
 import type { ScenePanel } from "./Scene";
 import { SceneClock } from "./SceneClock";
 
@@ -47,7 +48,7 @@ const UP = new Vector3(0, 1, 0);
  * O laço mestre: o único lugar que lê o progresso do scroll e o transforma em
  * câmera, névoa e luz. Prioridade −10, antes de tudo o mais.
  */
-export function SceneWorld({ instant, canvasRef }: SceneWorldProps) {
+export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
   const { camera, gl, scene } = useThree();
   const { ref: scrollRef } = useScrollProgress();
   const settings = sceneSettings();
@@ -76,13 +77,17 @@ export function SceneWorld({ instant, canvasRef }: SceneWorldProps) {
   useEffect(() => {
     let cancelled = false;
     const done = () => {
-      if (!cancelled) readyRef.current = true;
+      if (cancelled) return;
+      readyRef.current = true;
+      // No modo calmo não há laço: a composição que esperava os shaders
+      // precisa ser desenhada agora. O relógio calmo redesenha no resize.
+      if (instant) window.dispatchEvent(new Event("resize"));
     };
     gl.compileAsync(scene, camera).then(done, done);
     return () => {
       cancelled = true;
     };
-  }, [gl, scene, camera]);
+  }, [gl, scene, camera, instant]);
 
   useFrame((state, delta) => {
     const dt = Math.min(delta, 1 / 30);
@@ -198,6 +203,7 @@ export function SceneWorld({ instant, canvasRef }: SceneWorldProps) {
       )}
       <Land shared={shared} />
       <Flora shared={shared} />
+      <Panels shared={shared} panels={panels} />
       <Composer
         shared={shared}
         readyRef={readyRef}

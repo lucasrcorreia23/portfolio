@@ -61,6 +61,7 @@ export function Flora({ shared }: { shared: SharedUniforms }) {
           uResolution: shared.resolution,
           uVeilBox: shared.veilBox,
           uVeilF: shared.veilF,
+          uPanelRect: shared.panelRect,
           uBoxCenter: { value: new Vector3() },
         },
         vertexShader: SPORE_VERT,

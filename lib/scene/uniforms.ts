@@ -47,6 +47,12 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
     panels: { value: Array.from({ length: STOP_COUNT }, () => new Vector4()) },
     panelCount: { value: 0 },
 
+    /**
+     * O retângulo do painel mais próximo na tela, em UV, ou zerado: os esporos
+     * nunca passam na frente dele.
+     */
+    panelRect: { value: new Vector4() },
+
     /** As caixas de texto do DOM, em UV de tela, e se cada uma existe. */
     veilBox: {
       value: Array.from({ length: MAX_VEIL_BOXES }, () => new Vector4()),

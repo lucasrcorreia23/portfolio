@@ -165,6 +165,7 @@ ${FOG_UNIFORMS_GLSL}
 uniform vec2 uResolution;
 uniform vec4 uVeilBox[8];
 uniform float uVeilF[8];
+uniform vec4 uPanelRect;
 uniform vec3 uBoxCenter;
 attribute vec4 aSeed;
 varying float vAlpha;
@@ -195,6 +196,11 @@ void main() {
     if (uVeilF[i] <= 0.0) continue;
     vec2 d = max(uVeilBox[i].xy - uv, uv - uVeilBox[i].zw);
     alpha *= smoothstep(0.0, 0.05, max(d.x, d.y));
+  }
+  // Nem sobre o painel: o retângulo dele na tela, com uma margem.
+  if (uPanelRect.z > uPanelRect.x) {
+    vec2 d = max(uPanelRect.xy - uv, uv - uPanelRect.zw);
+    alpha *= smoothstep(0.0, 0.04, max(d.x, d.y));
   }
   alpha *= exp(-uFogDensity * 0.5 * depth) * uGlow * (0.4 + 0.6 * aSeed.w);
 

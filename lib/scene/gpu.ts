@@ -1,17 +1,12 @@
 import {
   BufferAttribute,
   BufferGeometry,
-  ClampToEdgeWrapping,
-  FloatType,
   Mesh,
-  NearestFilter,
   NoBlending,
-  NoColorSpace,
   OrthographicCamera,
   Scene,
   ShaderMaterial,
   WebGLRenderTarget,
-  type RenderTargetOptions,
   type WebGLRenderer,
 } from "three";
 
@@ -80,66 +75,6 @@ export function blit(
   gl.setRenderTarget(previousTarget);
 }
 
-/**
- * Alvo de dados para a simulação: RGBA32F, sem filtro, sem mipmap, sem
- * profundidade.
- *
- * **`NearestFilter` nos dois filtros, e explicitamente.** O padrão de
- * `minFilter` é linear, e filtrar textura de ponto flutuante exige
- * `OES_texture_float_linear`, que é uma extensão à parte e falta em boa parte
- * das GPUs móveis. O three **não lança** nesse caso: ele avisa no console e
- * amarra `LINEAR` assim mesmo. O modo de falha seria uma simulação
- * silenciosamente corrompida, que é o pior tipo — por isso os dois filtros
- * estão escritos aqui, e não herdados.
- */
-const DATA_TARGET_OPTIONS: RenderTargetOptions = {
-  type: FloatType,
-  minFilter: NearestFilter,
-  magFilter: NearestFilter,
-  wrapS: ClampToEdgeWrapping,
-  wrapT: ClampToEdgeWrapping,
-  colorSpace: NoColorSpace,
-  depthBuffer: false,
-  stencilBuffer: false,
-  generateMipmaps: false,
-};
-
-export function createDataTarget(size: number): WebGLRenderTarget {
-  return new WebGLRenderTarget(size, size, DATA_TARGET_OPTIONS);
-}
-
-/**
- * Alvo retangular, para o assado do campo de distância do corpo de prova.
- *
- * `createDataTarget` é quadrado porque a textura da simulação é quadrada por
- * construção (16.384 = 128²). A peça não é: sete letras num corpo de 2.79
- * dão um retângulo de razão ~4:1, e um alvo quadrado ou desperdiçaria 75% dos
- * texels ou esmagaria a resolução vertical.
- *
- * **O filtro é argumento, e a escolha certa não é a de `createDataTarget`.**
- * Ali `NearestFilter` é obrigatório porque filtrar ponto flutuante de 32 bits
- * exige `OES_texture_float_linear`, que falta em boa parte das GPUs móveis. O
- * campo final é **meio-float**, e filtrar meio-float é core no WebGL2 — então
- * ele pode e deve ser linear: o gradiente que o escoamento lê precisa ser
- * contínuo entre texels, senão a força de separação degrau a cada 0.0176 de
- * unidade e o bando ganha uma escada invisível.
- */
-export function createFieldTarget(
-  width: number,
-  height: number,
-  options: RenderTargetOptions,
-): WebGLRenderTarget {
-  return new WebGLRenderTarget(width, height, {
-    wrapS: ClampToEdgeWrapping,
-    wrapT: ClampToEdgeWrapping,
-    colorSpace: NoColorSpace,
-    depthBuffer: false,
-    stencilBuffer: false,
-    generateMipmaps: false,
-    ...options,
-  });
-}
-
 /** O material de uma passada de tela cheia: sem profundidade, sem blend. */
 export function createPassMaterial(
   fragmentShader: string,
@@ -156,8 +91,4 @@ export function createPassMaterial(
   });
   material.glslVersion = glslVersion;
   return material;
-}
-
-export function disposeFullscreenPlumbing(): void {
-  FULLSCREEN_TRIANGLE.dispose();
 }

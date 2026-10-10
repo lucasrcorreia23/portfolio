@@ -38,7 +38,7 @@ type PreloadTask = {
 
 const TASKS: readonly PreloadTask[] = [
   // As duas famílias do projeto. Sem elas o primeiro texto da descida é
-  // desenhado com a métrica errada — e é a fonte real que o `DisplayLine`
+  // desenhado com a métrica errada — e é a fonte real que o nome
   // mede para resolver a regra dos 80%.
   { id: "fonts", weight: 1, start: () => document.fonts.ready },
   // O driver de scroll: gsap, ScrollTrigger e lenis. É o que faz a descida

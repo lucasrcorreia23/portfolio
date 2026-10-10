@@ -108,8 +108,75 @@
     pointer-events: none;
   }
 
+  /* --- Os momentos --------------------------------------------------------
+     Cada seção é alta (vários viewports) e o conteúdo dela fica preso à
+     janela enquanto a seção passa: é a cena que anda, o texto fica.
+     Nada esmaece e nada translada: as entradas são recorte, com cada pixel
+     visível já na cor cheia. `--reveal` vai de 0 a 1 pelo `BeatReveal`; o
+     padrão é 1, para o conteúdo aparecer inteiro sem JavaScript. */
+  .beat-stage {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100svh;
+    margin-top: -6rem;
+    padding: 6rem 0 0;
+    pointer-events: none;
+  }
+  .beat-stage a:not(.card-link),
+  .beat-stage button {
+    pointer-events: auto;
+  }
   .beat-reveal {
     --reveal: 1;
+  }
+  /* Entra de cima para baixo. */
+  .beat-in {
+    clip-path: inset(0 0 calc((1 - var(--reveal)) * 100%) 0);
+  }
+  /* Sai para a direita: o convite do Impacto some quando a descida começa. */
+  .beat-out {
+    clip-path: inset(0 0 0 calc(var(--reveal) * 100%));
+    padding-bottom: 12svh;
+  }
+
+  /* O nome: a display em duas linhas, do mesmo corpo. */
+  .intro-name {
+    font-size: clamp(3.25rem, 11vw, 15rem);
+    line-height: 0.84;
+    letter-spacing: -0.035em;
+    font-weight: 800;
+  }
+  .intro-line {
+    --line-reveal: clamp(0, calc((var(--reveal) - var(--line) * 0.25) / 0.75), 1);
+    clip-path: inset(calc((1 - var(--line-reveal)) * 100%) 0 0 0);
+  }
+
+  /* A legenda da parada: o índice em mono grande, cruzando a cena. */
+  .case-caption {
+    width: fit-content;
+    clip-path: inset(0 calc((1 - var(--reveal, 1)) * 100%) 0 0);
+  }
+  .case-caption-index {
+    font-size: clamp(4rem, 9vw, 9.5rem);
+    line-height: 0.8;
+    letter-spacing: -0.04em;
+    font-weight: 500;
+  }
+
+  /* O e-mail do CTA: o único acento quente do site. */
+  .cta-email {
+    font-size: clamp(1.125rem, 2.6vw, 2.5rem);
+    letter-spacing: 0.04em;
+    color: var(--coral);
+    text-transform: none;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.3em;
+  }
+  .cta-email:hover {
+    color: var(--mist);
   }
 
   [data-beat] {
@@ -151,18 +218,25 @@
     transform-origin: 0 0;
   }
 
+  /* Com a cena viva, o link do case em foco é a área de clique do painel:
+     quem escreve a posição e o tamanho é o laço dos painéis. */
+  .card-link[data-live="true"] {
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  /* Sem cena não há painel: os links aparecem como lista. */
+  html:not([data-scene-mode="driven"]):not([data-scene-mode="composed"])
+    .card-link {
+    position: static;
+    opacity: 1;
+    pointer-events: auto;
+    padding: 0.35rem 0;
+  }
+  html:not([data-scene-mode="driven"]):not([data-scene-mode="composed"])
+    .card-link:hover,
   html:not([data-scene-mode="driven"]):not([data-scene-mode="composed"])
     .card-link:focus-visible {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: auto;
-    height: auto;
-    transform: none;
-    opacity: 1;
-    padding-left: 0.875rem;
     color: var(--cyan);
-    box-shadow: inset 1px 0 0 var(--cyan);
   }
 
   .case {
