@@ -152,10 +152,44 @@ export function fogAt(progress: number): number {
   return lerp(0.02, 0.017, open) - 0.003 * astroAt(progress);
 }
 
-/** O fim da trilha, 0 a 1: o ar abre e o astro nasce atrás do horizonte. */
+/** O fim da trilha, 0 a 1: o ar abre e o horizonte clareia. */
 export function astroAt(progress: number): number {
   const cta = beatOf("cta");
   return smooth((progress - cta.from) / (1 - cta.from));
+}
+
+/**
+ * Quanto o planeta aparece, 0 a 1: na Introdução e no CTA. Entre os dois a
+ * névoa o esconde, para ele nunca ficar atrás de uma placa.
+ */
+export function planetAt(progress: number): number {
+  const impact = beatOf("impact");
+  const intro = beatOf("intro");
+  const rise = smooth((progress - impact.to * 0.6) / (impact.to * 0.6));
+  const set = 1 - smooth((progress - (intro.to - 0.05)) / 0.07);
+  return Math.max(rise * set, astroAt(progress));
+}
+
+/** O olhar da câmera na Introdução e no CTA, em graus: um pouco à esquerda. */
+const PLANET_HEADING = -5.5;
+/** Quanto à direita do olhar o planeta fica, no máximo, e a altura dele. */
+const PLANET_ASIDE = 19;
+const PLANET_LIFT = 2.5;
+const PLANET_RADIUS = 0.15;
+
+/**
+ * Onde o planeta fica no céu e o tamanho dele, para a proporção da tela.
+ * Numa tela larga ele fica à direita, longe do texto e da primeira placa.
+ * Numa tela estreita esse lugar está fora do quadro: ele vem para a borda
+ * direita e encolhe, e o que se vê é a metade dele. Devolve o raio.
+ */
+export function planetPlace(aspect: number, out: Vector3): number {
+  const half = Math.atan(Math.tan((CAMERA_FOV * Math.PI) / 360) * aspect);
+  const aside = Math.min((PLANET_ASIDE * Math.PI) / 180, half);
+  const azimuth = (PLANET_HEADING * Math.PI) / 180 + aside;
+  const lift = (PLANET_LIFT * Math.PI) / 180;
+  out.set(Math.sin(azimuth) * Math.cos(lift), Math.sin(lift), -Math.cos(azimuth) * Math.cos(lift));
+  return Math.min(PLANET_RADIUS, half * 0.6);
 }
 
 /** Abertura da profundidade de campo, 0 a 1: abre nas paradas, no painel. */

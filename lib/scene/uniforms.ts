@@ -1,4 +1,4 @@
-import { Color, Vector2, Vector4, type Texture } from "three";
+import { Color, Vector2, Vector3, Vector4, type Texture } from "three";
 import { readPalette, type Palette } from "@/lib/palette";
 import { STOP_COUNT } from "./stops";
 import { MAX_VEIL_BOXES } from "./veil";
@@ -49,8 +49,12 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
     storm: { value: 0 },
     /** Ganho geral da emissão, 0 a 1: sobe na revelação do Impacto. */
     glow: { value: 1 },
-    /** Quanto o astro do fim da trilha já nasceu atrás do horizonte, 0 a 1. */
+    /** Quanto o ar do fim da trilha já abriu, 0 a 1: a claridade do horizonte. */
     astro: { value: 0 },
+    /** Para onde o planeta fica no céu, em mundo. Depende da proporção da tela. */
+    astroDir: { value: new Vector3(0, 0, -1) },
+    /** O planeta: x = quanto a névoa o deixa ver, 0 a 1; y = o raio, em radianos. */
+    planet: { value: new Vector2(0, 0.15) },
 
     /** Os painéis dos cases: xyz do centro em mundo, w = giro em torno de Y. */
     panels: { value: Array.from({ length: STOP_COUNT }, () => new Vector4()) },
@@ -94,6 +98,7 @@ export function fogUniforms(shared: SharedUniforms) {
     uEmitters: shared.emitters,
     uGlow: shared.glow,
     uAstro: shared.astro,
+    uAstroDir: shared.astroDir,
   };
 }
 

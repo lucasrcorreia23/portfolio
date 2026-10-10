@@ -20,6 +20,8 @@ import {
   cameraPose,
   createCameraPose,
   fogAt,
+  planetAt,
+  planetPlace,
   REVEAL_FOG,
   REVEAL_GLOW,
   REVEAL_MS,
@@ -198,6 +200,13 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
     shared.astro.value = still
       ? astro
       : damp(shared.astro.value, astro, 3, dt);
+
+    // O planeta: onde ele fica depende da proporção da tela.
+    const planet = planetAt(progress) * reveal * (1 - inCase);
+    shared.planet.value.set(
+      still ? planet : damp(shared.planet.value.x, planet, 3, dt),
+      planetPlace(state.size.width / Math.max(state.size.height, 1), shared.astroDir.value),
+    );
 
     // --- a luz: a flora, mais forte na parada em que a câmera está ---------
     const stop = stopWeight(progress);

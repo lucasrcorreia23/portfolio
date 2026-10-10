@@ -24,6 +24,7 @@ uniform float uTime;
 uniform vec4  uEmitters[${MAX_EMITTERS}];
 uniform float uGlow;
 uniform float uAstro;
+uniform vec3  uAstroDir;
 `;
 
 export const FOG_GLSL = /* glsl */ `
@@ -108,17 +109,15 @@ vec3 floraScatter(vec3 worldPos) {
   return total * uGlow;
 }
 
-// Para onde fica o astro do fim da trilha: adiante, à direita, baixo no céu.
-const vec3 ASTRO_DIR = normalize(vec3(0.315, 0.02, -0.949));
-
 /**
- * O ar que o astro acende: rosa em volta dele, cedendo para o ciano ao longo
- * do horizonte. É a mesma cor no céu e na névoa distante do terreno.
+ * O ar em volta do planeta no fim da trilha: um resto de rosa largo, cedendo
+ * para o ciano ao longo do horizonte. É a mesma cor no céu e na névoa distante
+ * do terreno. uAstroDir é para onde o planeta fica (planetPlace, em rail.ts).
  */
 vec3 astroAir(vec3 dir) {
-  float near = max(dot(dir, ASTRO_DIR), 0.0);
+  float near = max(dot(dir, uAstroDir), 0.0);
   float low = exp(-abs(dir.y) * 5.5);
-  vec3 air = uRose * (0.2 * pow(near, 26.0) + 0.012 * pow(near, 5.0));
+  vec3 air = uRose * 0.012 * pow(near, 5.0);
   air += uCyan * 0.015 * pow(near, 1.5) * low;
   return air * uAstro;
 }
