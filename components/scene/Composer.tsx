@@ -59,6 +59,8 @@ function fogLuminance(shared: SharedUniforms): number {
 
 type ComposerProps = {
   shared: SharedUniforms;
+  /** Falso enquanto os programas da cena compilam: nada é desenhado até lá. */
+  readyRef: { readonly current: boolean };
   /** Abertura da DOF, 0 (navalha) a 1, já resolvida pelo laço mestre. */
   apertureRef: { readonly current: number };
   /** Distância da câmera ao ponto em foco, em unidades de mundo. */
@@ -79,6 +81,7 @@ type ComposerProps = {
  */
 export function Composer({
   shared,
+  readyRef,
   apertureRef,
   focusRef,
   focusRangeRef,
@@ -328,6 +331,7 @@ export function Composer({
   }, [camera, rig]);
 
   useFrame((state) => {
+    if (!readyRef.current) return;
     const renderer = state.gl;
     const previousAutoClear = renderer.autoClear;
     renderer.autoClear = false;

@@ -97,7 +97,7 @@ vec3 fogColorAt(float viewDepth, vec3 worldPos) {
   // Três paradas: o fundo, a profundidade média e a linha do horizonte.
   vec3 fogColor = mix(uVoid, uAbyss, smoothstep(0.0, 0.25, depth01));
   fogColor = mix(fogColor, uDeep * 0.55, smoothstep(0.35, 1.0, depth01) * 0.6);
-  fogColor += uCyan * 0.035 * floraScatter(worldPos);
+  fogColor += uCyan * 0.06 * floraScatter(worldPos);
   return fogColor;
 }
 

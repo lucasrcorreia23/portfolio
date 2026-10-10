@@ -52,6 +52,9 @@ export function SceneClock() {
     let previous = 0;
 
     const step = (deltaMs: number) => {
+      // Aba oculta: nada é desenhado. O passo é limitado, então a volta não
+      // dá salto.
+      if (document.hidden) return;
       elapsed += Math.min(deltaMs / 1000, MAX_STEP_S);
       advance(elapsed);
     };
