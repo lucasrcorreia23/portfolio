@@ -239,6 +239,26 @@
     color: var(--cyan);
   }
 
+  /* A vitrine: uma grade de placas 16 por 10. */
+  .vitrine-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+    gap: 3rem 2rem;
+    max-width: 82rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .vitrine-image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+  }
+  .vitrine-link:hover .text-label,
+  .vitrine-link:focus-visible .text-label {
+    color: var(--cyan);
+  }
+
   .case {
     --case-wide: 68rem;
   }
