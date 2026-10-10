@@ -156,14 +156,14 @@ function playCue(context: AudioContext, destination: AudioNode, cue: SoundCue): 
 
   if (cue.kind === "text") {
     // Um título acendendo: um chiado fino que sobe e um tom que se apaga
-    // devagar, no limite do audível.
+    // devagar, baixo mas presente.
     source.buffer = freshNoise(context, 1.4);
     filter.type = "bandpass";
     filter.Q.value = 5;
     filter.frequency.setValueAtTime(1600, now);
     filter.frequency.exponentialRampToValueAtTime(5200, now + 0.9);
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.012, now + 0.25);
+    gain.gain.exponentialRampToValueAtTime(0.05, now + 0.25);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.35);
     source.connect(filter).connect(gain).connect(pan).connect(destination);
     source.start(now);
@@ -175,7 +175,7 @@ function playCue(context: AudioContext, destination: AudioNode, cue: SoundCue): 
     tone.frequency.setValueAtTime(880, now);
     tone.frequency.exponentialRampToValueAtTime(1320, now + 0.5);
     toneGain.gain.setValueAtTime(0.0001, now);
-    toneGain.gain.exponentialRampToValueAtTime(0.006, now + 0.12);
+    toneGain.gain.exponentialRampToValueAtTime(0.02, now + 0.12);
     toneGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.3);
     tone.connect(toneGain).connect(pan);
     tone.start(now);
