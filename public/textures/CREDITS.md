@@ -15,3 +15,15 @@ e `_disp` (altura, para deslocamento ou paralaxe).
 | brushed_concrete | bases e piso industrial | Dario Barresi, Dimitrios Savva |
 
 Fonte de cada uma: https://polyhaven.com/a/<nome da pasta>
+
+## Em uso na cena
+
+`scripts/compress-assets.mjs` grava em `public/textures/cena/` os mapas que o site carrega, em WebP
+(normal em q90, o resto em q80). As pastas com os JPG ficam como fonte.
+
+| conjunto | mapas | lado | papel |
+|---|---|---:|---|
+| metal_plate | diff, nor_gl, arm, disp | 1024 (disp 512) | moldura da placa |
+| corrugated_iron_02 | diff, nor_gl, arm | 512 | verso da placa |
+| green_metal_rust | diff, nor_gl, arm | 512 | estrutura do pórtico |
+| concrete_wall_006 | diff, nor_gl, arm | 512 | sapatas do pórtico |

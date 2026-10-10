@@ -5,6 +5,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { getEntry } from "@/lib/preload/entered";
 import {
   getQuality,
+  setFrameMs,
   setQuality,
   subscribeToQuality,
   type QualityTier,
@@ -87,6 +88,7 @@ export function QualityGovernor({ still }: { still: boolean }) {
     if (now - windowStart.current < span || samples.current.length < 20) return;
 
     const typical = median(samples.current);
+    setFrameMs(typical);
     samples.current.length = 0;
     windowStart.current = now;
     const tier = getQuality().tier;

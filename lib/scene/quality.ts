@@ -52,6 +52,17 @@ export function setQuality(tier: QualityTier): void {
   for (const listener of listeners) listener(current);
 }
 
+/** A mediana de quadro da última janela medida, em ms; 0 antes da primeira. */
+let frameMs = 0;
+
+export function getFrameMs(): number {
+  return frameMs;
+}
+
+export function setFrameMs(ms: number): void {
+  frameMs = ms;
+}
+
 export function subscribeToQuality(listener: (quality: Quality) => void): () => void {
   listeners.add(listener);
   return () => {

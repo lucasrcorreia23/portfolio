@@ -49,3 +49,6 @@ Os `_low.glb` são os boulders decimados (59 mil → 708 e 109 mil → 654 triâ
 |---|---:|---:|---|
 | rollershutter_door.glb | 1.104 | 2.3 | MP |
 | overhead_crane.glb | 89.964 | 7.3 | Timothy3D |
+
+`scripts/compress-assets.mjs` grava em `public/models/industria/` o que o site carrega: `porta.glb` é a
+`rollershutter_door` sem a cópia grafitada, com a geometria em meshopt e as texturas em WebP 1k.

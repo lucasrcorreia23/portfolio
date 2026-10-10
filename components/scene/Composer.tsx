@@ -27,7 +27,7 @@ import {
   VEIL_SOLVE_FRAG,
 } from "@/lib/scene/shaders/post";
 import { markScenePainted } from "@/lib/scene/scene-painted";
-import { getQuality } from "@/lib/scene/quality";
+import { getFrameMs, getQuality } from "@/lib/scene/quality";
 import { sceneSettings } from "@/lib/scene/settings";
 import { veilUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
 import { MAX_VEIL_BOXES, VEIL_CEILING } from "@/lib/scene/veil";
@@ -463,6 +463,7 @@ export function Composer({
         triangles: renderer.info.render.triangles,
         tier: getQuality().tier,
         dpr: renderer.getPixelRatio(),
+        frame: getFrameMs(),
       };
     }
     // O loading espera por isto para fechar.
