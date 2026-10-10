@@ -7,25 +7,30 @@
 //
 // Saída em public/models/industria/:
 //   <nome>.bin  cabeçalho (vértices em uint32, altura em float32), depois
-//               posições e normais em float32, três vértices por triângulo
+//               posições e normais em float32, três vértices por triângulo;
+//               as chaminés levam também o UV, no fim
+// e, em public/textures/cena/, os três mapas da chaminé (cor, normal e
+// oclusão/rugosidade/metal), como vêm no GLB.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { MeshoptSimplifier } from "meshoptimizer";
 import { Matrix4, Quaternion, Vector3 } from "three";
 
 const OUT = "public/models/industria";
+const TEXTURES = "public/textures/cena";
 
 /**
  * `tall` é a altura final em metros e `triangles`, o teto de cada cópia: a
- * silhueta inteira precisa caber no orçamento de triângulos da cena.
+ * indústria inteira precisa caber no orçamento de triângulos da cena. Com
+ * `uv` o modelo guarda a coordenada de textura e `maps` grava os mapas dele.
  */
 const MODELS = [
   { id: "tanques", glb: "public/models/large_industrial_storage_tanks.glb", tall: 11.5, triangles: 1000 },
   { id: "tanque-oleo", glb: "public/models/old_oil_tank.glb", tall: 10, triangles: 450 },
   { id: "tanque-ferrugem", glb: "public/models/rusted_tank_storage.glb", tall: 11, triangles: 300 },
   // O GLB traz a mesma chaminé três vezes: sai uma, a cena coloca o trio.
-  { id: "chamine", glb: "public/models/industrial_smoke_stacks.glb", tall: 34.6, triangles: 72, first: true },
+  { id: "chamine", glb: "public/models/industrial_smoke_stacks.glb", tall: 34.6, triangles: 72, first: true, uv: true, maps: "chamine" },
   // As duas do fim da trilha a câmera vê de perto: levam mais detalhe.
-  { id: "chamine-perto", glb: "public/models/industrial_smoke_stacks.glb", tall: 34.6, triangles: 300, first: true },
+  { id: "chamine-perto", glb: "public/models/industrial_smoke_stacks.glb", tall: 34.6, triangles: 300, first: true, uv: true },
 ];
 
 await MeshoptSimplifier.ready;
@@ -62,7 +67,10 @@ for (const model of MODELS) {
   // Os triângulos de todos os nós, já no espaço do modelo: as hierarquias
   // vêm com rotações e escalas aninhadas. Vértices iguais viram um só.
   const positions = [];
+  const uvs = [];
+  const keys = [];
   const indices = [];
+  let material = null;
   const welded = new Map();
   const point = new Vector3();
   let done = false;
@@ -84,18 +92,25 @@ for (const model of MODELS) {
         if ((primitive.mode ?? 4) !== 4) continue;
         if (json.materials?.[primitive.material]?.alphaMode === "BLEND") continue;
         const position = read(primitive.attributes.POSITION);
+        const uv = model.uv ? read(primitive.attributes.TEXCOORD_0) : null;
+        material ??= json.materials?.[primitive.material] ?? null;
         const order =
           primitive.indices === undefined
             ? position.map((_, i) => i).slice(0, position.length / 3)
             : read(primitive.indices);
         for (const i of order) {
           point.set(position[i * 3], position[i * 3 + 1], position[i * 3 + 2]).applyMatrix4(world);
-          const key = `${point.x.toFixed(4)},${point.y.toFixed(4)},${point.z.toFixed(4)}`;
+          const where = `${point.x.toFixed(4)},${point.y.toFixed(4)},${point.z.toFixed(4)}`;
+          // Com textura, a emenda do UV separa os vértices.
+          const key = uv === null ? where : `${where},${uv[i * 2].toFixed(4)},${uv[i * 2 + 1].toFixed(4)}`;
           let at = welded.get(key);
           if (at === undefined) {
             at = positions.length / 3;
             welded.set(key, at);
             positions.push(point.x, point.y, point.z);
+            keys.push(where);
+            // A origem do UV do glTF é em cima; a das texturas da cena, embaixo.
+            if (uv !== null) uvs.push(uv[i * 2], 1 - uv[i * 2 + 1]);
           }
           indices.push(at);
         }
@@ -107,14 +122,20 @@ for (const model of MODELS) {
   for (const root of json.scenes[json.scene ?? 0].nodes) visit(root, new Matrix4());
 
   const source = new Float32Array(positions);
-  const [simple] = MeshoptSimplifier.simplify(
-    new Uint32Array(indices),
-    source,
-    3,
-    model.triangles * 3,
-    0.2,
-    ["Prune"],
-  );
+  const [simple] = model.uv
+    ? MeshoptSimplifier.simplifyWithAttributes(
+        new Uint32Array(indices),
+        source,
+        3,
+        new Float32Array(uvs),
+        2,
+        [0.5, 0.5],
+        null,
+        model.triangles * 3,
+        0.2,
+        ["Prune"],
+      )
+    : MeshoptSimplifier.simplify(new Uint32Array(indices), source, 3, model.triangles * 3, 0.2, ["Prune"]);
 
   // De pé sobre y = 0, centrado em XZ, na altura pedida.
   const min = [Infinity, Infinity, Infinity];
@@ -146,22 +167,24 @@ for (const model of MODELS) {
     if (normal.lengthSq() === 0) continue;
     const face = { corners: [a, b, c], ids: [simple[i], simple[i + 1], simple[i + 2]], normal };
     faces.push(face);
-    for (const id of face.ids) around.set(id, [...(around.get(id) ?? []), face]);
+    for (const id of face.ids) around.set(keys[id], [...(around.get(keys[id]) ?? []), face]);
   }
   const outPositions = new Float32Array(faces.length * 9);
   const outNormals = new Float32Array(faces.length * 9);
+  const outUvs = new Float32Array(model.uv ? faces.length * 6 : 0);
   const limit = Math.cos((50 * Math.PI) / 180);
   faces.forEach((face, f) => {
     const flat = face.normal.clone().normalize();
     face.corners.forEach((corner, k) => {
       const smooth = new Vector3();
-      for (const other of around.get(face.ids[k])) {
+      for (const other of around.get(keys[face.ids[k]])) {
         // A normal sem normalizar pesa pela área da face.
         if (other.normal.clone().normalize().dot(flat) > limit) smooth.add(other.normal);
       }
       smooth.normalize();
       outPositions.set([corner.x, corner.y, corner.z], f * 9 + k * 3);
       outNormals.set([smooth.x, smooth.y, smooth.z], f * 9 + k * 3);
+      if (model.uv) outUvs.set([uvs[face.ids[k] * 2], uvs[face.ids[k] * 2 + 1]], f * 6 + k * 2);
     });
   });
 
@@ -170,8 +193,27 @@ for (const model of MODELS) {
   header.writeFloatLE(model.tall, 4);
   writeFileSync(
     `${OUT}/${model.id}.bin`,
-    Buffer.concat([header, Buffer.from(outPositions.buffer), Buffer.from(outNormals.buffer)]),
+    Buffer.concat([
+      header,
+      Buffer.from(outPositions.buffer),
+      Buffer.from(outNormals.buffer),
+      Buffer.from(outUvs.buffer),
+    ]),
   );
+  if (model.maps && material !== null) {
+    const slots = {
+      diff: material.pbrMetallicRoughness.baseColorTexture,
+      nor_gl: material.normalTexture,
+      arm: material.pbrMetallicRoughness.metallicRoughnessTexture,
+    };
+    for (const [name, slot] of Object.entries(slots)) {
+      const texture = json.textures[slot.index];
+      const image = json.images[texture.extensions?.EXT_texture_webp?.source ?? texture.source];
+      const view = json.bufferViews[image.bufferView];
+      const start = view.byteOffset ?? 0;
+      writeFileSync(`${TEXTURES}/${model.maps}_${name}.webp`, bin.subarray(start, start + view.byteLength));
+    }
+  }
   console.log(
     `${model.id}: ${indices.length / 3} → ${faces.length} triângulos, ` +
       `${((max[0] - min[0]) * scale).toFixed(1)} × ${model.tall} × ${((max[2] - min[2]) * scale).toFixed(1)} m`,

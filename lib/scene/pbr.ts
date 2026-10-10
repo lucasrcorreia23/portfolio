@@ -122,7 +122,7 @@ const FRAGMENT_LIGHTS = /* glsl */ `
 `;
 
 const FRAGMENT_FOG = /* glsl */ `
-gl_FragColor.rgb = applyFog(min(gl_FragColor.rgb, vec3(${CEILING.toFixed(2)})), vViewPosition.z, vPbrWorld);
+gl_FragColor.rgb = applyPlateFog(min(gl_FragColor.rgb, vec3(${CEILING.toFixed(2)})), vViewPosition.z, vPbrWorld);
 `;
 
 function pixel(r: number, g: number, b: number, colorSpace: ColorSpace): DataTexture {
@@ -143,6 +143,10 @@ export type PbrExtension = {
   fragmentPars?: string;
   /** No começo do `main` do fragmento. */
   fragmentStart?: string;
+  /** Depois das luzes da cena: mais luz sobre `irradiance` e `reflectedLight`. */
+  fragmentLights?: string;
+  /** No lugar da névoa das placas, que escurece com a distância. */
+  fragmentFog?: string;
 };
 
 export type PbrMaterial = MeshStandardMaterial & {
@@ -189,8 +193,11 @@ export function createPbrMaterial(
         `#include <normalmap_pars_fragment>\n${FRAGMENT_PARS}${extension?.fragmentPars ?? ""}`,
       )
       .replace("void main() {", `void main() {\n${extension?.fragmentStart ?? ""}\npbrUv = pbrParallaxUv();`)
-      .replace("#include <lights_fragment_begin>", `#include <lights_fragment_begin>\n${FRAGMENT_LIGHTS}`)
-      .replace("#include <fog_fragment>", FRAGMENT_FOG);
+      .replace(
+        "#include <lights_fragment_begin>",
+        `#include <lights_fragment_begin>\n${FRAGMENT_LIGHTS}${extension?.fragmentLights ?? ""}`,
+      )
+      .replace("#include <fog_fragment>", extension?.fragmentFog ?? FRAGMENT_FOG);
   };
   return material;
 }
@@ -200,7 +207,9 @@ export type PbrSet =
   | "metal_plate_02"
   | "corrugated_iron_02"
   | "green_metal_rust"
-  | "concrete_wall_006";
+  | "concrete_wall_006"
+  // Os mapas do modelo da chaminé (`scripts/extract-industry.mjs`).
+  | "chamine";
 
 let loader: ImageBitmapLoader | null = null;
 

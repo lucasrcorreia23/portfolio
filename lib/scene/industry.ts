@@ -5,8 +5,10 @@ import {
   CylinderGeometry,
 } from "three";
 import { PANEL_HEIGHT, PANEL_WIDTH } from "./case-pose";
+import type { PbrExtension } from "./pbr";
 import { merge, place, projectUv, type Part } from "./parts";
 import { STOP_COUNT } from "./stops";
+import { MAX_EMITTERS } from "./uniforms";
 import {
   heightAt,
   panelPlacement,
@@ -22,9 +24,9 @@ import {
 } from "./world";
 
 /**
- * A indústria: tubulação gerada de primitivas, tanques e chaminés vindos de
- * modelos, tudo mesclado numa geometria só (um draw call). Ela é
- * silhueta: neutra, fosca, sem emissão. Os pórticos que sustentam os painéis
+ * A indústria: tubulação gerada de primitivas e tanques vindos de modelos,
+ * mesclados numa geometria só (um draw call). Ela é silhueta: neutra, fosca,
+ * sem emissão. As chaminés são outra geometria, com a textura do modelo. Os pórticos que sustentam os painéis
  * saem daqui com textura.
  */
 
@@ -151,6 +153,9 @@ async function loadModel(file: string): Promise<Model> {
   const geometry = new BufferGeometry();
   geometry.setAttribute("position", new BufferAttribute(new Float32Array(buffer, 8, vertices * 3), 3));
   geometry.setAttribute("normal", new BufferAttribute(new Float32Array(buffer, 8 + vertices * 12, vertices * 3), 3));
+  if (buffer.byteLength >= 8 + vertices * 32) {
+    geometry.setAttribute("uv", new BufferAttribute(new Float32Array(buffer, 8 + vertices * 24, vertices * 2), 2));
+  }
   geometry.computeBoundingBox();
   const box = geometry.boundingBox;
   const reach = box === null ? 0 : Math.max(box.max.x, box.max.z);
@@ -262,8 +267,44 @@ function wall(parts: Part[], beacons: number[], arcs: number[]): void {
   }
 }
 
+/**
+ * O que as chaminés acrescentam ao material das chapas. Elas ficam longe de
+ * toda mancha de flora e dentro da névoa: são escuras, mas pegam o clarão das
+ * descargas e, com um alcance maior que o das placas, a cor das plantas.
+ */
+export const STACK_EXTENSION: PbrExtension = {
+  key: "chamine",
+  fragmentLights: /* glsl */ `
+{
+  vec3 stackNormal = transformDirectionByInverseViewMatrix(geometryNormal, viewMatrix);
+  vec3 stackFlash = mix(uRose, vec3(1.0), 0.45) * uFlash * (0.6 + 0.4 * stackNormal.y) * 0.5;
+  irradiance += stackFlash * PI;
+  radiance += stackFlash;
+  // O ar em volta também ilumina: o lado do planeta sai rosado, o outro, frio.
+  vec3 stackAir = fogColorAt(vViewPosition.z, vPbrWorld) * 7.0 + uDeep * 1.5;
+  irradiance += stackAir * PI;
+  radiance += stackAir * 0.5;
+  for (int i = 0; i < ${MAX_EMITTERS}; i++) {
+    vec4 e = uEmitters[i];
+    if (e.w <= 0.0) continue;
+    vec3 toLight = e.xyz - vPbrWorld;
+    float reach = length(toLight);
+    vec3 light = mix(uCyan, uRose, uEmitterWarm[i]) * uGlow * e.w / (1.0 + reach * reach * 0.004);
+    reflectedLight.directDiffuse += light * saturate(dot(stackNormal, toLight / reach)) * 4.0
+      * BRDF_Lambert(material.diffuseContribution);
+  }
+}
+`,
+  // Sem o escurecimento das placas: quem as apaga ao longe é só a névoa.
+  fragmentFog: /* glsl */ `
+gl_FragColor.rgb = applyFog(min(gl_FragColor.rgb, vec3(0.9)), vViewPosition.z, vPbrWorld);
+`,
+};
+
 export type Industry = {
   geometry: BufferGeometry;
+  /** As chaminés, com UV: têm material próprio. */
+  stacks: BufferGeometry;
   /** Entre que pontos as descargas elétricas saltam: pares de xyz. */
   arcs: Float32Array;
   /** As luzes indicadoras: xyz e a fase de cada uma. */
@@ -272,6 +313,7 @@ export type Industry = {
 
 export function createIndustry(models: IndustryModels): Industry {
   const parts: Part[] = [];
+  const stackParts: Part[] = [];
   const beacons: number[] = [];
   const tops: number[] = [];
   towerTops.length = 0;
@@ -285,10 +327,10 @@ export function createIndustry(models: IndustryModels): Industry {
   }
 
   // O complexo do Impacto: o que a câmera vê em silhueta ao sair da névoa.
-  stacks(models.stack, -34, -96, 46, 0.4, parts, beacons);
-  stacks(models.stack, -52, -118, 62, 1.9, parts, beacons);
-  stacks(models.stack, 48, -128, 54, 2.7, parts, beacons);
-  stacks(models.stack, 70, -92, 34, 1.1, parts, beacons);
+  stacks(models.stack, -34, -96, 46, 0.4, stackParts, beacons);
+  stacks(models.stack, -52, -118, 62, 1.9, stackParts, beacons);
+  stacks(models.stack, 48, -128, 54, 2.7, stackParts, beacons);
+  stacks(models.stack, 70, -92, 34, 1.1, stackParts, beacons);
   model(models.tanks, -73, -84, 0.5, parts);
   model(models.oilTank, 58, -66, 2.2, parts);
   model(models.rustTank, 74, -74, 0, parts);
@@ -297,7 +339,7 @@ export function createIndustry(models: IndustryModels): Industry {
   for (let index = 0; index < STOP_COUNT; index += 1) {
     const z = (STOP_Z[index] ?? 0) - 14;
     const left = index % 2 === 0;
-    stacks(models.stack, pathX(z) + (left ? -46 : 52) - index * 2, z - 8, 30 + ((index * 17) % 26), index * 0.9, parts, beacons);
+    stacks(models.stack, pathX(z) + (left ? -46 : 52) - index * 2, z - 8, 30 + ((index * 17) % 26), index * 0.9, stackParts, beacons);
     // O conjunto grande fica na última parada, atrás da parede da vitrine.
     if (index === STOP_COUNT - 1) model(models.tanks, pathX(z) - 61, z + 6, 2.4, parts);
     else if (index % 2 === 1) model(models.oilTank, pathX(z) - 58, z + 6, index * 1.3, parts, 0.9 + index * 0.06);
@@ -307,7 +349,7 @@ export function createIndustry(models: IndustryModels): Industry {
   // Depois da borda do terreno não há chão para esconder a base: elas descem.
   for (const [x, z, height, yaw] of [[pathX(Z_END) - 30, Z_END - 44, 58, 0.8], [pathX(Z_END) + 36, Z_END - 52, 42, 2.5]] as const) {
     const scale = (height + 30) / (models.nearStack?.tall ?? 1);
-    const top = model(models.nearStack, x, z, yaw, parts, scale, 30);
+    const top = model(models.nearStack, x, z, yaw, stackParts, scale, 30);
     towerTops.push(x, top, z);
     beacons.push(x, top, z, 0.6 + (height % 0.4));
   }
@@ -346,6 +388,7 @@ export function createIndustry(models: IndustryModels): Industry {
 
   return {
     geometry: merge(parts),
+    stacks: merge(stackParts, true),
     beacons: new Float32Array(beacons),
     arcs: new Float32Array(arcs),
   };
