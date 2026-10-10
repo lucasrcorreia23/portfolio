@@ -9,6 +9,7 @@ import { getEntry } from "@/lib/preload/entered";
 import { createCaseDrive } from "@/lib/scene/case-drive";
 import { DOOR_STOPS } from "@/lib/scene/door";
 import { CASE_FOG } from "@/lib/scene/case-pose";
+import { industrySettled } from "@/lib/scene/industry";
 import { plantsSettled } from "@/lib/scene/plants";
 import { getQuality } from "@/lib/scene/quality";
 import { getPointer, installPointer } from "@/lib/scene/pointer";
@@ -104,12 +105,13 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
       // precisa ser desenhada agora. O relógio calmo redesenha no resize.
       if (instant) window.dispatchEvent(new Event("resize"));
     };
-    // As plantas chegam por arquivo: espera por elas (com um teto, para uma
-    // rede ruim não segurar o site) e só então compila tudo de uma vez.
+    // As plantas e a silhueta da indústria chegam por arquivo: espera por
+    // elas (com um teto, para uma rede ruim não segurar o site) e só então
+    // compila tudo de uma vez.
     const ceiling = new Promise<void>((resolve) => {
       window.setTimeout(resolve, PLANTS_WAIT_MS);
     });
-    void Promise.race([plantsSettled, ceiling])
+    void Promise.race([Promise.all([plantsSettled, industrySettled]), ceiling])
       .then(() => gl.compileAsync(scene, camera))
       .then(done, done);
     return () => {

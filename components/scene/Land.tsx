@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import {
   AdditiveBlending,
@@ -11,7 +11,12 @@ import {
   SphereGeometry,
   type Mesh,
 } from "three";
-import { createIndustry } from "@/lib/scene/industry";
+import {
+  createIndustry,
+  type IndustryModels,
+  loadIndustryModels,
+  markIndustrySettled,
+} from "@/lib/scene/industry";
 import {
   ARC_FRAG,
   ARC_SEGMENTS,
@@ -35,22 +40,36 @@ import { fogUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
 export function Land({ shared }: { shared: SharedUniforms }) {
   const sky = useRef<Mesh>(null);
 
-  const built = useMemo(() => {
-    const fog = fogUniforms(shared);
-    const industry = createIndustry();
+  // Os tanques e as chaminés chegam por arquivo. Se não chegarem, a silhueta
+  // sai sem eles: ainda há torres e tubulação.
+  const [models, setModels] = useState<IndustryModels | null>(null);
+  useEffect(() => {
+    let alive = true;
+    loadIndustryModels().then(
+      (loaded) => alive && setModels(loaded),
+      () => alive && setModels({}),
+    );
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const industry = useMemo(() => {
+    if (models === null) return null;
+    const made = createIndustry(models);
     const beacons = new BufferGeometry();
-    const count = industry.beacons.length / 4;
+    const count = made.beacons.length / 4;
     const positions = new Float32Array(count * 3);
     const phases = new Float32Array(count);
     for (let i = 0; i < count; i += 1) {
-      positions.set(industry.beacons.subarray(i * 4, i * 4 + 3), i * 3);
-      phases[i] = industry.beacons[i * 4 + 3] ?? 0;
+      positions.set(made.beacons.subarray(i * 4, i * 4 + 3), i * 3);
+      phases[i] = made.beacons[i * 4 + 3] ?? 0;
     }
     beacons.setAttribute("position", new BufferAttribute(positions, 3));
     beacons.setAttribute("aPhase", new BufferAttribute(phases, 1));
 
     // As descargas: cada uma é uma linha de segmentos entre dois pontos.
-    const pairs = industry.arcs.length / 6;
+    const pairs = made.arcs.length / 6;
     const arcVertices = pairs * ARC_SEGMENTS * 2;
     const from = new Float32Array(arcVertices * 3);
     const to = new Float32Array(arcVertices * 3);
@@ -59,8 +78,8 @@ export function Land({ shared }: { shared: SharedUniforms }) {
       for (let k = 0; k < ARC_SEGMENTS; k += 1) {
         for (let end = 0; end < 2; end += 1) {
           const v = (i * ARC_SEGMENTS + k) * 2 + end;
-          from.set(industry.arcs.subarray(i * 6, i * 6 + 3), v * 3);
-          to.set(industry.arcs.subarray(i * 6 + 3, i * 6 + 6), v * 3);
+          from.set(made.arcs.subarray(i * 6, i * 6 + 3), v * 3);
+          to.set(made.arcs.subarray(i * 6 + 3, i * 6 + 6), v * 3);
           arc[v * 2] = (k + end) / ARC_SEGMENTS;
           arc[v * 2 + 1] = i * 1.37 + 0.5;
         }
@@ -72,8 +91,20 @@ export function Land({ shared }: { shared: SharedUniforms }) {
     arcs.setAttribute("aTo", new BufferAttribute(to, 3));
     arcs.setAttribute("aArc", new BufferAttribute(arc, 2));
 
+    return { geometry: made.geometry, beacons, arcs };
+  }, [models]);
+
+  useEffect(() => {
+    if (industry === null) return;
+    markIndustrySettled();
+    return () => {
+      for (const item of Object.values(industry)) item.dispose();
+    };
+  }, [industry]);
+
+  const built = useMemo(() => {
+    const fog = fogUniforms(shared);
     return {
-      arcGeometry: arcs,
       arcMaterial: new ShaderMaterial({
         uniforms: { ...fog, uStorm: shared.storm },
         vertexShader: ARC_VERT,
@@ -96,13 +127,11 @@ export function Land({ shared }: { shared: SharedUniforms }) {
         vertexShader: TERRAIN_VERT,
         fragmentShader: TERRAIN_FRAG,
       }),
-      industryGeometry: industry.geometry,
       industryMaterial: new ShaderMaterial({
         uniforms: { ...fog, uTeal: shared.teal },
         vertexShader: INDUSTRY_VERT,
         fragmentShader: INDUSTRY_FRAG,
       }),
-      beaconGeometry: beacons,
       beaconMaterial: new ShaderMaterial({
         uniforms: { ...fog, uResolution: shared.resolution, uMist: shared.mist },
         vertexShader: BEACON_VERT,
@@ -137,21 +166,25 @@ export function Land({ shared }: { shared: SharedUniforms }) {
         material={built.terrainMaterial}
         frustumCulled={false}
       />
-      <mesh
-        geometry={built.industryGeometry}
-        material={built.industryMaterial}
-        frustumCulled={false}
-      />
-      <lineSegments
-        geometry={built.arcGeometry}
-        material={built.arcMaterial}
-        frustumCulled={false}
-      />
-      <points
-        geometry={built.beaconGeometry}
-        material={built.beaconMaterial}
-        frustumCulled={false}
-      />
+      {industry !== null && (
+        <>
+          <mesh
+            geometry={industry.geometry}
+            material={built.industryMaterial}
+            frustumCulled={false}
+          />
+          <lineSegments
+            geometry={industry.arcs}
+            material={built.arcMaterial}
+            frustumCulled={false}
+          />
+          <points
+            geometry={industry.beacons}
+            material={built.beaconMaterial}
+            frustumCulled={false}
+          />
+        </>
+      )}
     </>
   );
 }

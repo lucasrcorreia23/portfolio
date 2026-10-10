@@ -1,8 +1,8 @@
 import {
   BoxGeometry,
-  type BufferGeometry,
+  BufferAttribute,
+  BufferGeometry,
   CylinderGeometry,
-  SphereGeometry,
 } from "three";
 import { PANEL_HEIGHT, PANEL_WIDTH } from "./case-pose";
 import { merge, place, projectUv, type Part } from "./parts";
@@ -22,9 +22,10 @@ import {
 } from "./world";
 
 /**
- * A indústria: torres, tanques e tubulação, gerados de primitivas e mesclados
- * numa geometria só (um draw call). Ela é silhueta: neutra, fosca, sem
- * emissão. Os pórticos que sustentam os painéis saem daqui com textura.
+ * A indústria: torres e tubulação geradas de primitivas, tanques e chaminés
+ * vindos de modelos, tudo mesclado numa geometria só (um draw call). Ela é
+ * silhueta: neutra, fosca, sem emissão. Os pórticos que sustentam os painéis
+ * saem daqui com textura.
  */
 
 /** Um ponto no chão. */
@@ -141,11 +142,86 @@ function tower(x: number, z: number, height: number, radius: number, parts: Part
   beacons.push(x + radius * 1.25, base + height * 0.66, z, 0.1);
 }
 
-/** Um tanque baixo e largo, com escada em anel. */
-function tank(x: number, z: number, radius: number, height: number, parts: Part[]): void {
-  const base = ground(x, z) - 0.6;
-  parts.push(place(new CylinderGeometry(radius, radius, height, 14, 1), x, base + height / 2, z));
-  parts.push(place(new SphereGeometry(radius, 14, 5, 0, Math.PI * 2, 0, Math.PI / 2), x, base + height, z, 0, 0, 0));
+/**
+ * Os modelos da silhueta: só a forma, decimada, de pé sobre y = 0 e já em
+ * metros (`scripts/extract-industry.mjs`).
+ */
+const MODEL_FILES = {
+  tanks: "tanques",
+  oilTank: "tanque-oleo",
+  rustTank: "tanque-ferrugem",
+  stack: "chamine",
+} as const;
+type ModelId = keyof typeof MODEL_FILES;
+type Model = { geometry: BufferGeometry; tall: number; reach: number };
+export type IndustryModels = Partial<Record<ModelId, Model>>;
+
+async function loadModel(file: string): Promise<Model> {
+  const response = await fetch(`/models/industria/${file}.bin`);
+  if (!response.ok) throw new Error(file);
+  const buffer = await response.arrayBuffer();
+  const [vertices = 0] = new Uint32Array(buffer, 0, 1);
+  const [tall = 1] = new Float32Array(buffer, 4, 1);
+  const geometry = new BufferGeometry();
+  geometry.setAttribute("position", new BufferAttribute(new Float32Array(buffer, 8, vertices * 3), 3));
+  geometry.setAttribute("normal", new BufferAttribute(new Float32Array(buffer, 8 + vertices * 12, vertices * 3), 3));
+  geometry.computeBoundingBox();
+  const box = geometry.boundingBox;
+  const reach = box === null ? 0 : Math.max(box.max.x, box.max.z);
+  return { geometry, tall, reach };
+}
+
+export async function loadIndustryModels(): Promise<IndustryModels> {
+  const ids = Object.keys(MODEL_FILES) as ModelId[];
+  const loaded = await Promise.all(ids.map((id) => loadModel(MODEL_FILES[id])));
+  return Object.fromEntries(ids.map((id, i) => [id, loaded[i]])) as IndustryModels;
+}
+
+/**
+ * "A silhueta está montada": ela aparece desde a abertura, então o primeiro
+ * quadro espera por ela como espera pelas plantas (ver `SceneWorld`).
+ */
+let settleIndustry: () => void = () => {};
+export const industrySettled: Promise<void> = new Promise((resolve) => {
+  settleIndustry = resolve;
+});
+export function markIndustrySettled(): void {
+  settleIndustry();
+}
+
+/**
+ * Um modelo pousado no terreno, girado e em escala. Pisa no ponto mais baixo
+ * da própria planta, para nada flutuar na encosta. Devolve a altura do topo.
+ */
+function model(source: Model | undefined, x: number, z: number, yaw: number, parts: Part[], scale = 1): number {
+  if (source === undefined) return ground(x, z);
+  const reach = source.reach * scale * 0.7;
+  let base = ground(x, z);
+  for (const [dx, dz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
+    base = Math.min(base, ground(x + dx * reach, z + dz * reach));
+  }
+  base -= 0.4;
+  parts.push(place(source.geometry.clone().scale(scale, scale, scale), x, base, z, 0, yaw, 0));
+  return base + source.tall * scale;
+}
+
+/**
+ * Três chaminés em fila, de alturas diferentes. A mais alta leva a luz do
+ * topo e é dela que as descargas saem.
+ */
+function stacks(source: Model | undefined, x: number, z: number, height: number, yaw: number, parts: Part[], beacons: number[]): void {
+  if (source === undefined) return;
+  const scale = height / source.tall;
+  const gap = 4.6 * scale;
+  [1, 0.86, 0.72].forEach((share, i) => {
+    const sx = x + Math.cos(yaw) * gap * (i - 1);
+    const sz = z - Math.sin(yaw) * gap * (i - 1);
+    const top = model(source, sx, sz, yaw + i * 2.1, parts, scale * share);
+    if (i === 0) {
+      towerTops.push(sx, top, sz);
+      beacons.push(sx, top, sz, 0.6 + (height % 0.4));
+    } else if (i === 1) beacons.push(sx, top, sz, 0.1);
+  });
 }
 
 /** Um duto elevado, de um lado ao outro do campo, sobre cavaletes. */
@@ -208,7 +284,7 @@ export type Industry = {
   beacons: Float32Array;
 };
 
-export function createIndustry(): Industry {
+export function createIndustry(models: IndustryModels): Industry {
   const parts: Part[] = [];
   const beacons: number[] = [];
   const tops: number[] = [];
@@ -217,7 +293,8 @@ export function createIndustry(): Industry {
   // Os pórticos são desenhados à parte; daqui saem só as luzes do topo deles.
   for (let index = 0; index < STOP_COUNT; index += 1) {
     for (const post of gantryPosts(index)) {
-      beacons.push(post.x, post.base + post.height + 0.08, post.z, index % 2 === 0 ? 0.2 : 0.8);
+      // Fase acima de 1: a luz escurece de longe junto com a placa (BEACON_VERT).
+      beacons.push(post.x, post.base + post.height + 0.08, post.z, index % 2 === 0 ? 2.2 : 2.8);
     }
   }
 
@@ -226,17 +303,19 @@ export function createIndustry(): Industry {
   tower(-52, -118, 62, 4.6, parts, beacons);
   tower(48, -128, 54, 3.8, parts, beacons);
   tower(70, -92, 34, 3, parts, beacons);
-  tank(-70, -84, 9, 8, parts);
-  tank(58, -66, 7, 6, parts);
-  tank(74, -74, 5, 9, parts);
+  model(models.tanks, -73, -84, 0.5, parts);
+  model(models.oilTank, 58, -66, 2.2, parts);
+  model(models.rustTank, 74, -74, 0, parts);
 
   // Ao longo dos cases, dos dois lados, cada vez mais longe.
   for (let index = 0; index < STOP_COUNT; index += 1) {
     const z = (STOP_Z[index] ?? 0) - 14;
     const left = index % 2 === 0;
-    tower(pathX(z) + (left ? -46 : 52) - index * 2, z - 8, 30 + ((index * 17) % 26), 2.6 + (index % 3) * 0.6, parts, beacons);
-    if (index % 2 === 1) tank(pathX(z) - 58, z + 6, 6 + index, 7, parts);
-    else tank(pathX(z) + 66, z - 2, 8, 5 + index, parts);
+    stacks(models.stack, pathX(z) + (left ? -46 : 52) - index * 2, z - 8, 30 + ((index * 17) % 26), index * 0.9, parts, beacons);
+    // O conjunto grande fica na última parada, atrás da parede da vitrine.
+    if (index === STOP_COUNT - 1) model(models.tanks, pathX(z) - 61, z + 6, 2.4, parts);
+    else if (index % 2 === 1) model(models.oilTank, pathX(z) - 58, z + 6, index * 1.3, parts, 0.9 + index * 0.06);
+    else model(models.rustTank, pathX(z) + 66, z - 2, index * 1.3, parts, 0.9 + index * 0.08);
   }
   // O fim da trilha: um último grupo atrás da mancha do CTA.
   tower(pathX(Z_END) - 30, Z_END - 44, 58, 4.2, parts, beacons, 30);
