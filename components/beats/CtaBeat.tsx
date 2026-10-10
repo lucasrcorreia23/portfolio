@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+import { Glyphs } from "@/components/text/Glyphs";
 import { EMAIL, PROFILES } from "@/lib/contact";
 import type { Beat } from "./beats";
 import { BeatReveal } from "./BeatReveal";
@@ -5,34 +7,37 @@ import { BeatReveal } from "./BeatReveal";
 type CtaBeatProps = {
   beat: Beat;
   line: string;
-  labels: { email: string; profiles: string };
   profileNames: Record<"linkedin" | "github" | "x", string>;
 };
 
 /**
- * O CTA: o contato, sem formulário. O e-mail é o único elemento do site no
- * acento quente.
+ * O CTA: o contato, sem formulário. A frase acende; o e-mail e os perfis
+ * entram como leitura.
  */
-export function CtaBeat({ beat, line, labels, profileNames }: CtaBeatProps) {
+export function CtaBeat({ beat, line, profileNames }: CtaBeatProps) {
   const span = beat.to - beat.from;
   return (
     <div className="beat-stage justify-end pb-[14svh]">
-      <BeatReveal
-        from={beat.from + span * 0.15}
-        to={beat.from + span * 0.75}
-        className="beat-reveal beat-in flex flex-col gap-8"
-      >
+      <BeatReveal from={beat.from + span * 0.3} className="flex flex-col gap-8">
         <p data-veil className="type-display text-display-3 w-fit">
-          {line}
+          <span className="sr-only">{line}</span>
+          <Glyphs text={line} />
         </p>
-        <div data-veil className="flex w-fit flex-col gap-2">
-          <p className="type-mono text-hud-sm text-mist">{labels.email}</p>
-          <a href={`mailto:${EMAIL}`} className="cta-email type-mono w-fit">
-            {EMAIL}
-          </a>
-        </div>
-        <div data-veil className="flex w-fit flex-col gap-2">
-          <p className="type-mono text-hud-sm text-mist">{labels.profiles}</p>
+        <a
+          data-veil
+          data-readout
+          href={`mailto:${EMAIL}`}
+          className="cta-email type-mono w-fit"
+          style={{ "--wait": "500ms" } as CSSProperties}
+        >
+          {EMAIL}
+        </a>
+        <div
+          data-veil
+          data-readout
+          className="w-fit"
+          style={{ "--wait": "650ms" } as CSSProperties}
+        >
           <ul className="flex gap-6">
             {PROFILES.map((profile) => (
               <li key={profile.id}>

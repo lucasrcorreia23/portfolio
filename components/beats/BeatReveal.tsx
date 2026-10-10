@@ -3,43 +3,33 @@
 import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { useReducedMotion } from "@/lib/capabilities/use-reduced-motion";
-import { clamp01, easeStrong } from "@/lib/motion";
 import { getScrollProgress, subscribeToScroll } from "@/lib/scroll/scroll-store";
+import { runReadouts } from "@/lib/text/readout";
 
 type BeatRevealProps = {
-  /** Progresso normalizado onde a revelação começa. */
+  /** Progresso normalizado a partir do qual o bloco está aceso. */
   from: number;
-  /** Progresso normalizado onde ela termina. */
-  to: number;
+  /** Progresso em que ele apaga. Sem ele, fica aceso até o fim. */
+  to?: number;
   className?: string;
   children: ReactNode;
 };
 
+/** Folga para o estado não piscar com o scroll parado na borda. */
+const EDGE = 0.008;
+
 /**
- * Publica `--reveal` (0 a 1, já com `easeStrong`) no próprio elemento, a cada
- * quadro, e não renderiza nada além dos filhos.
+ * O gatilho da entrada dos textos: escreve `data-lit` no próprio elemento
+ * quando o progresso cruza a faixa, e só então. A entrada toca no tempo dela,
+ * em CSS (`styles/globals.css`), e desfaz ao voltar; o scroll só dá a deixa.
  *
- * **Por que uma custom property e não estado.** O progresso muda a cada quadro
- * e nenhum consumidor aqui precisa de um `render` por quadro — é a mesma razão
- * pela qual o contador do portão escreve `textContent` em vez de `setState`. A
- * revelação vira CSS: quem desenha lê `var(--reveal)`, e o React sai do
- * caminho depois da montagem.
- *
- * **Por que não é `fade-up` de 20 px.** O PROJECT.md §3.3 veta isso pelo nome e
- * pede entrada própria por seção. `--reveal` é só a variável; a entrada
- * específica de cada beat mora no CSS que a consome (`styles/globals.css`) —
- * o nome da Emergência aperta o tracking como uma leitura assentando, e as
- * linhas da Identidade são varridas de cima para baixo como cota sendo
- * gravada, escalonadas. Nenhuma das duas translada.
- *
- * Com `prefers-reduced-motion` a variável é escrita uma vez em 1 e não há
- * assinatura de scroll nenhuma: o texto está lá, inteiro, desde o começo. É a
- * mesma paridade que o portão entrega — o modo calmo mostra o mesmo conteúdo,
- * sem o movimento.
+ * Sem `data-lit` o texto está inteiro. É o estado sem JavaScript, o de
+ * `prefers-reduced-motion`, e o de quem recarrega já dentro da faixa: nesse
+ * caso nada é escrito até o bloco apagar pela primeira vez.
  */
 export function BeatReveal({
   from,
-  to,
+  to = Infinity,
   className = "",
   children,
 }: BeatRevealProps) {
@@ -50,36 +40,32 @@ export function BeatReveal({
     const node = ref.current;
     if (node === null) return;
 
-    // `null` é "ainda não dá para saber". Não escrever nada é o certo: assumir
-    // que pode mover e corrigir depois produz o lampejo que a preferência
-    // existe para evitar.
-    if (reducedMotion === null) return;
+    // `null` é "ainda não dá para saber"; com a preferência ligada o texto
+    // fica como veio do servidor.
+    if (reducedMotion !== false) return;
 
-    if (reducedMotion) {
-      node.style.setProperty("--reveal", "1");
-      return;
-    }
-
-    const span = to - from;
-    let last = -1;
+    let lit: boolean | null = null;
 
     const write = (progress: number) => {
-      const local = span <= 0 ? 1 : clamp01((progress - from) / span);
-      const eased = easeStrong(local);
-      // Três casas bastam para o olho e evitam reescrever o estilo por ruído
-      // de ponto flutuante — o navegador reavalia o CSS a cada escrita.
-      const rounded = Math.round(eased * 1000) / 1000;
-      if (rounded === last) return;
-      last = rounded;
-      node.style.setProperty("--reveal", rounded.toFixed(3));
+      const edge = lit === true ? EDGE : 0;
+      const next = progress >= from - edge && progress <= to + edge;
+      if (next === lit) return;
+      const first = lit === null;
+      lit = next;
+      if (first && next) return;
+      node.setAttribute("data-lit", String(next));
+      runReadouts(node, next);
     };
 
-    // Do progresso atual, não de zero: um reload no meio da descida restaura a
-    // posição, e começar em zero pediria um quadro para se corrigir.
     write(getScrollProgress());
-    return subscribeToScroll((snapshot) => {
+    const unsubscribe = subscribeToScroll((snapshot) => {
       write(snapshot.progress);
     });
+    return () => {
+      unsubscribe();
+      runReadouts(node, false);
+      node.removeAttribute("data-lit");
+    };
   }, [from, to, reducedMotion]);
 
   return (

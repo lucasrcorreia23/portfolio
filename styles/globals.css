@@ -111,9 +111,7 @@
   /* --- Os momentos --------------------------------------------------------
      Cada seção é alta (vários viewports) e o conteúdo dela fica preso à
      janela enquanto a seção passa: é a cena que anda, o texto fica.
-     Nada esmaece e nada translada: as entradas são recorte, com cada pixel
-     visível já na cor cheia. `--reveal` vai de 0 a 1 pelo `BeatReveal`; o
-     padrão é 1, para o conteúdo aparecer inteiro sem JavaScript. */
+     A entrada de cada texto mora mais abaixo, em "A entrada dos textos". */
   .beat-stage {
     position: sticky;
     top: 0;
@@ -128,17 +126,58 @@
   .beat-stage button {
     pointer-events: auto;
   }
-  .beat-reveal {
-    --reveal: 1;
+
+  /* --- A entrada dos textos ----------------------------------------------
+     A natureza emite luz e a indústria é neutra, também na tipografia:
+     títulos acendem letra a letra, o mono entra como leitura de instrumento
+     (`lib/text/readout.ts`) e os parágrafos saem da névoa. Quem dá a deixa
+     escreve `data-lit`; sem ele o texto está inteiro. `--wait` atrasa um bloco
+     em relação à deixa. Apagar é sempre um corte. */
+  .glyph-word {
+    display: inline-block;
+    white-space: nowrap;
   }
-  /* Entra de cima para baixo. */
-  .beat-in {
-    clip-path: inset(0 0 calc((1 - var(--reveal)) * 100%) 0);
+  [data-lit="false"] .glyph,
+  [data-lit="false"] [data-readout],
+  [data-lit="false"] .fog-in {
+    opacity: 0;
+    transition: opacity var(--dur-cut) linear;
   }
-  /* Sai para a direita: o convite do Impacto some quando a descida começa. */
-  .beat-out {
-    clip-path: inset(0 0 0 calc(var(--reveal) * 100%));
-    padding-bottom: 12svh;
+  .beat-stage [data-lit="false"] a:not(.card-link) {
+    pointer-events: none;
+  }
+  [data-lit="true"] .glyph {
+    animation: ignite 900ms var(--ease-strong) both;
+    animation-delay: calc(var(--wait, 0ms) + var(--o) * 620ms);
+  }
+  [data-lit="true"] [data-readout] {
+    transition: opacity var(--dur-cut) linear var(--wait, 0ms);
+  }
+  [data-lit="false"] .fog-in {
+    filter: blur(0.5rem);
+  }
+  [data-lit="true"] .fog-in {
+    transition:
+      opacity 900ms var(--ease-strong) var(--wait, 0ms),
+      filter 900ms var(--ease-strong) var(--wait, 0ms);
+  }
+  @keyframes ignite {
+    0% {
+      opacity: 0;
+      color: var(--cyan);
+      text-shadow: 0 0 0.4em var(--cyan);
+      animation-timing-function: linear;
+    }
+    14% {
+      opacity: 1;
+      color: var(--cyan);
+      text-shadow:
+        0 0 0.06em var(--cyan),
+        0 0 0.4em var(--cyan);
+    }
+    100% {
+      opacity: 1;
+    }
   }
 
   /* O nome: a display em duas linhas, do mesmo corpo. */
@@ -147,10 +186,6 @@
     line-height: 0.84;
     letter-spacing: -0.035em;
     font-weight: 800;
-  }
-  .intro-line {
-    --line-reveal: clamp(0, calc((var(--reveal) - var(--line) * 0.25) / 0.75), 1);
-    clip-path: inset(calc((1 - var(--line-reveal)) * 100%) 0 0 0);
   }
 
   /* A legenda da parada: o índice em mono grande, cruzando a cena. */
@@ -165,30 +200,18 @@
     font-weight: 500;
   }
 
-  /* A entrada da vitrine: o desvio da trilha, na cor do rastro que leva a ela. */
-  .fork-enter {
-    color: var(--rose);
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 0.35em;
-  }
-  .fork-enter:hover,
-  .fork-enter:focus-visible {
-    color: var(--mist);
-  }
-
   /* O e-mail do CTA: o acento quente do site. */
   .cta-email {
     font-size: clamp(1.125rem, 2.6vw, 2.5rem);
     letter-spacing: 0.04em;
-    color: var(--coral);
+    color: var(--mist);
     text-transform: none;
     text-decoration: underline;
     text-decoration-thickness: 1px;
     text-underline-offset: 0.3em;
   }
   .cta-email:hover {
-    color: var(--mist);
+    color: var(--cyan);
   }
 
   [data-beat] {

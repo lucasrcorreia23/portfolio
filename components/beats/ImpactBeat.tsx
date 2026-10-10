@@ -13,12 +13,8 @@ type ImpactBeatProps = {
 export function ImpactBeat({ beat, hint }: ImpactBeatProps) {
   return (
     <div className="beat-stage">
-      <BeatReveal
-        from={beat.from + 0.01}
-        to={beat.from + 0.05}
-        className="beat-reveal beat-out mt-auto"
-      >
-        <p data-veil className="type-mono text-hud text-mist w-fit">
+      <BeatReveal from={beat.from} to={beat.from + 0.03} className="mt-auto pb-[12svh]">
+        <p data-veil data-readout className="type-mono text-hud text-mist w-fit">
           {hint} <span aria-hidden="true">↓</span>
         </p>
       </BeatReveal>
