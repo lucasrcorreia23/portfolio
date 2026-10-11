@@ -58,7 +58,6 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
     jobTitle: [
       t("intro.position.product"),
       t("intro.position.engineering"),
-      t("intro.position.deployment"),
       t("intro.position.brand"),
     ],
     sameAs: PROFILES.flatMap((profile) =>
@@ -92,7 +91,6 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
                 position={[
                   t("intro.position.product"),
                   t("intro.position.engineering"),
-                  t("intro.position.deployment"),
                   t("intro.position.brand"),
                 ]}
                 manifesto={[t("intro.manifesto.one"), t("intro.manifesto.two")]}
