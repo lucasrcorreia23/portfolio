@@ -26,7 +26,7 @@ import {
   SPORE_SIZE,
   SPORE_VERT,
 } from "./shaders/spores";
-import { fogUniforms, type SharedUniforms } from "./uniforms";
+import { fogUniforms, wakeUniforms, type SharedUniforms } from "./uniforms";
 
 /**
  * O campo de esporos e pólen: o estado na GPU e o passo que o avança.
@@ -121,6 +121,7 @@ export function createSporeField(shared: SharedUniforms, height: Texture): Spore
       uFrame: { value: 0 },
       uInit: { value: 0 },
       uClassic: classic,
+      ...wakeUniforms(shared),
     },
     GLSL3,
   );
@@ -134,6 +135,7 @@ export function createSporeField(shared: SharedUniforms, height: Texture): Spore
   const material = new ShaderMaterial({
     uniforms: {
       ...fogUniforms(shared),
+      ...wakeUniforms(shared),
       uPos: { value: null as Texture | null },
       uVel: { value: null as Texture | null },
       uResolution: shared.resolution,

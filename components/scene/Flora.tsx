@@ -18,7 +18,8 @@ import {
   GRASS_VERT,
 } from "@/lib/scene/shaders/flora";
 import { createHeightTexture } from "@/lib/scene/terrain";
-import { fogUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
+import { fogUniforms, wakeUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
+import { createWake } from "@/lib/scene/wake";
 import { Spores } from "./Spores";
 
 const FORWARD = new Vector3();
@@ -30,16 +31,18 @@ const BEHIND = 28;
  * A flora: relva, plantas e esporos. Um draw call por tipo de planta e por zona
  * da trilha; os esporos e o pólen têm o componente deles. É tudo que emite luz.
  */
-export function Flora({ shared }: { shared: SharedUniforms }) {
+export function Flora({ shared, still }: { shared: SharedUniforms; still: boolean }) {
   const built = useMemo(() => {
     const fog = fogUniforms(shared);
     const height = createHeightTexture();
     return {
       height,
+      wake: createWake(shared),
       grassGeometry: createGrassGeometry(),
       grassMaterial: new ShaderMaterial({
         uniforms: {
           ...fog,
+          ...wakeUniforms(shared),
           uHeight: { value: height },
           uTeal: shared.teal,
           uMist: shared.mist,
@@ -56,6 +59,7 @@ export function Flora({ shared }: { shared: SharedUniforms }) {
     const held = built;
     return () => {
       held.height.dispose();
+      held.wake.dispose();
       held.grassGeometry.dispose();
       held.grassMaterial.dispose();
     };
@@ -94,6 +98,7 @@ export function Flora({ shared }: { shared: SharedUniforms }) {
             return new ShaderMaterial({
               uniforms: {
                 ...fogUniforms(shared),
+                ...wakeUniforms(shared),
                 uHeight: { value: built.height },
                 uMap: { value: plants.textures[batch.species] },
                 uTeal: shared.teal,
@@ -123,7 +128,7 @@ export function Flora({ shared }: { shared: SharedUniforms }) {
     if (plants !== null) markPlantsSettled();
   }, [plants, plantMaterials]);
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     // O ladrilho de relva fica à frente da câmera.
     state.camera.getWorldDirection(FORWARD);
     const focus = built.grassMaterial.uniforms["uFocus"]?.value as Vector2;
@@ -131,6 +136,9 @@ export function Flora({ shared }: { shared: SharedUniforms }) {
       state.camera.position.x + FORWARD.x * 22,
       state.camera.position.z + FORWARD.z * 22,
     );
+
+    // O rastro acompanha o ladrilho: é a relva dele que se deita.
+    built.wake.step(state.gl, state.camera, focus, Math.min(delta, 1 / 30), still);
 
     // O nível de qualidade só escreve contagens.
     const quality = getQuality();

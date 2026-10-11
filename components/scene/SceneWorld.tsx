@@ -311,7 +311,7 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
       )}
       <QualityGovernor still={still} />
       <Land shared={shared} />
-      <Flora shared={shared} />
+      <Flora shared={shared} still={still} />
       <Panels shared={shared} panels={panels} />
       <Plates shared={shared} instant={instant} />
       <Door shared={shared} instant={instant} />

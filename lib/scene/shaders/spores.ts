@@ -1,5 +1,6 @@
 import { HEIGHT_GLSL } from "../terrain";
 import { FOG_GLSL, FOG_UNIFORMS_GLSL, NOISE_GLSL } from "./fog";
+import { WAKE_GLSL } from "./wake";
 import { WIND_GLSL } from "./wind";
 
 /**
@@ -55,6 +56,7 @@ layout(location = 1) out vec4 outVel;
 ${NOISE_GLSL}
 ${HEIGHT_GLSL}
 ${WIND_GLSL}
+${WAKE_GLSL}
 ${LIFE_GLSL}
 
 // O volume em que um esporo nasce solto, e até onde ele continua vivo.
@@ -124,10 +126,16 @@ void main() {
     // A câmera arrasta o ar por onde passa.
     vec3 fromEye = pos - uEye;
     air += uEyeVelocity * 0.5 * exp(-dot(fromEye, fromEye) / 9.0);
+    // O rastro: rente à vegetação mexida o ar vai junto com ela, e a
+    // agitação levanta o que estava pousado.
+    float ground = terrainHeight(pos.xz) + 0.06;
+    vec3 wake = wakeAt(pos.xz) * (1.0 - smoothstep(1.2, 3.0, pos.y - ground));
+    air.xz += wake.rg * 3.0;
+    air.y += wake.b * 0.9;
     // Arrasto: a partícula persegue o ar, não o copia. É a inércia dela.
     vel += (air - vel) * (1.0 - exp(-uDelta * 1.4));
     pos += vel * uDelta;
-    float ground = terrainHeight(pos.xz) + 0.06;
+    ground = terrainHeight(pos.xz) + 0.06;
     if (pos.y < ground) {
       pos.y = ground;
       vel.y = max(vel.y, 0.0);
@@ -151,6 +159,7 @@ uniform float uClassic;
 varying vec3 vColor;
 
 ${FOG_GLSL}
+${WAKE_GLSL}
 ${LIFE_GLSL}
 
 void main() {
@@ -196,7 +205,8 @@ void main() {
     // O pólen sai aceso da flor, na cor dela, e esfria. O que sobra dele, e
     // a poeira que nunca foi flor, só aparece onde a luz das flores chega.
     vec3 hue = mix(uCyan, uRose, max(warm, 0.0));
-    float ember = step(0.0, warm) * 2.4 * exp(-age * 0.4);
+    // E reacende onde a vegetação foi mexida.
+    float ember = step(0.0, warm) * 2.4 * max(exp(-age * 0.4), 0.6 * wakeAt(world.xz).b);
     vec3 lit = floraGlow(world) * 0.05;
     // De longe o pólen é menor que um pixel: somado, viraria um véu leitoso
     // sobre as flores. Ele existe perto, onde se vê cada grão.

@@ -86,6 +86,13 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
      * arrasta. Zero no modo calmo e quando a câmera salta de um lugar a outro.
      */
     eyeVelocity: { value: new Vector3() },
+
+    /**
+     * O rastro no campo (`wake.ts`): a textura, e em `wakeOrigin` o centro
+     * dela em XZ mais, em z, se o campo existe (1) ou não (0).
+     */
+    wake: { value: null as Texture | null },
+    wakeOrigin: { value: new Vector3() },
   };
 }
 
@@ -106,6 +113,11 @@ export function fogUniforms(shared: SharedUniforms) {
     uAstro: shared.astro,
     uAstroDir: shared.astroDir,
   };
+}
+
+/** O mapa que `WAKE_GLSL` espera. */
+export function wakeUniforms(shared: SharedUniforms) {
+  return { uWake: shared.wake, uWakeOrigin: shared.wakeOrigin };
 }
 
 /** As caixas do véu, para o compositor e para os esporos. */

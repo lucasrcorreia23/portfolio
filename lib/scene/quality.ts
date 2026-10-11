@@ -23,12 +23,14 @@ export type Quality = {
   glass: boolean;
   parallax: boolean;
   door: boolean;
+  /** O rastro que a câmera e o ponteiro deixam na vegetação. */
+  wake: boolean;
 };
 
 export const QUALITY: Readonly<Record<QualityTier, Quality>> = {
-  high: { tier: "high", dpr: 2, grass: 1, flowers: 1, spores: 1, pollen: 1, dof: true, glass: true, parallax: true, door: true },
-  medium: { tier: "medium", dpr: 1.5, grass: 0.24, flowers: 0.5, spores: 0.75, pollen: 0.25, dof: true, glass: true, parallax: true, door: true },
-  low: { tier: "low", dpr: 1, grass: 0.28, flowers: 0.55, spores: 0.4, pollen: 0.0625, dof: false, glass: false, parallax: false, door: false },
+  high: { tier: "high", dpr: 2, grass: 1, flowers: 1, spores: 1, pollen: 1, dof: true, glass: true, parallax: true, door: true, wake: true },
+  medium: { tier: "medium", dpr: 1.5, grass: 0.24, flowers: 0.5, spores: 0.75, pollen: 0.25, dof: true, glass: true, parallax: true, door: true, wake: true },
+  low: { tier: "low", dpr: 1, grass: 0.28, flowers: 0.55, spores: 0.4, pollen: 0.0625, dof: false, glass: false, parallax: false, door: false, wake: false },
 };
 
 /** O que as geometrias alocam: é a contagem do nível alto. */

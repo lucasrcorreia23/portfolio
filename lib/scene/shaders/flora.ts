@@ -1,6 +1,7 @@
 import { HEIGHT_GLSL } from "../terrain";
 import { TERRAIN } from "../world";
 import { FOG_GLSL, FOG_UNIFORMS_GLSL } from "./fog";
+import { WAKE_GLSL } from "./wake";
 import { WIND_GLSL } from "./wind";
 
 /**
@@ -26,6 +27,7 @@ varying vec3 vColor;
 
 ${FOG_GLSL}
 ${WIND_GLSL}
+${WAKE_GLSL}
 
 void main() {
   // O ladrilho acompanha a câmera: cada lâmina tem um lugar fixo no mundo, e o
@@ -47,9 +49,10 @@ void main() {
   float along = position.y;
 
   vec3 local = vec3(position.x * 0.028 * c, along * height, position.x * 0.028 * s);
-  // A lâmina já nasce inclinada, e o vento a dobra mais na ponta.
+  // A lâmina já nasce inclinada, e o vento a dobra mais na ponta. Quem
+  // passa por ela a deita também: é o rastro.
   vec2 lean = vec2(-s, c) * 0.22 * aSeed.z;
-  local.xz += (lean + windAt(base, uTime)) * along * along * height;
+  local.xz += (lean + windAt(base, uTime) + wakeAt(xz).rg) * along * along * height;
 
   vec3 world = base + local;
   vec4 view = viewMatrix * vec4(world, 1.0);
@@ -100,6 +103,7 @@ varying vec3 vFogColor;
 
 ${FOG_GLSL}
 ${WIND_GLSL}
+${WAKE_GLSL}
 
 void main() {
   vec2 xz = aOffset.xz;
@@ -111,14 +115,16 @@ void main() {
   float along = clamp(position.y / uTall, 0.0, 1.0);
   // Um pouco enterrada: planta e pedra saem do chão, não pousam nele.
   local.y -= 0.04 * aSeed.x * uTall;
-  local.xz += windAt(base, uTime + aSeed.z * 4.0) * along * along * aSeed.x * uTall * 0.7 * uSway;
+  vec3 wake = wakeAt(xz);
+  local.xz += (windAt(base, uTime + aSeed.z * 4.0) + wake.rg) * along * along * aSeed.x * uTall * 0.7 * uSway;
   vec3 world = base + local;
 
   vec4 view = viewMatrix * vec4(world, 1.0);
   float depth = -view.z;
 
   float cluster = uEmitters[int(aOffset.y)].w;
-  float bright = (0.6 + 0.4 * aSeed.w) * (0.5 + 0.5 * cluster) * uGlow;
+  // A flor mexida acende um pouco mais, enquanto a agitação dura.
+  float bright = (0.6 + 0.4 * aSeed.w) * (0.5 + 0.5 * cluster) * uGlow * (1.0 + 0.3 * wake.b);
   // Ciano, com algumas mais azuis; e as rosas, que são o calor do campo.
   vec3 tint = mix(uCyan, uCyan * vec3(0.55, 0.78, 1.05), step(0.72, aSeed.z));
   vec3 hue = mix(tint, uRose * vec3(1.0, 0.85, 0.95), aWarm);
