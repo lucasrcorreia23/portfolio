@@ -4,6 +4,9 @@ import { useSyncExternalStore } from "react";
 
 let probed: boolean | undefined;
 
+/** Rasterizadores de CPU: SwiftShader (Chrome), llvmpipe e softpipe (Mesa). */
+const SOFTWARE_RENDERER = /swiftshader|llvmpipe|softpipe|software/i;
+
 /**
  * WebGL2, não WebGL1: é o que three e o React Three Fiber 9 usam.
  * Sondado uma vez por sessão e memoizado — criar contexto é caro e os
@@ -31,8 +34,20 @@ function probe(): boolean {
 
   try {
     const canvas = document.createElement("canvas");
-    const gl = canvas.getContext("webgl2");
-    probed = gl !== null && gl.getExtension("EXT_color_buffer_float") !== null;
+    // Renderizador por software (sem GPU) também é "não": a cena trava a
+    // thread. A opção recusa o contexto quando o navegador cai para software
+    // sozinho; o nome cobre o caso em que ele foi escolhido de propósito
+    // (Chrome sem cabeça de robôs e de medidores).
+    const gl = canvas.getContext("webgl2", {
+      failIfMajorPerformanceCaveat: true,
+    });
+    const info = gl?.getExtension("WEBGL_debug_renderer_info");
+    const renderer =
+      gl && info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "";
+    probed =
+      gl !== null &&
+      gl.getExtension("EXT_color_buffer_float") !== null &&
+      !SOFTWARE_RENDERER.test(renderer);
     gl?.getExtension("WEBGL_lose_context")?.loseContext();
   } catch {
     probed = false;

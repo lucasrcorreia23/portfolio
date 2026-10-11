@@ -58,16 +58,20 @@ export function ScenePoster() {
     let luminance: Float32Array | null = null;
     let mapWidth = 0;
     let mapHeight = 0;
-    const toLinear = (v: number) => {
+    // sRGB → linear por tabela: a potência por pixel era uma tarefa longa.
+    const linear = new Float32Array(256);
+    for (let v = 0; v < 256; v += 1) {
       const c = v / 255;
-      return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-    };
+      linear[v] = c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    }
+    const toLinear = (v: number) => linear[v] ?? 0;
 
     const readLuminance = () => {
       const probe = document.createElement("canvas");
       probe.width = image.naturalWidth;
       probe.height = image.naturalHeight;
-      const g = probe.getContext("2d");
+      // Só para leitura: em CPU, sem ida e volta à GPU no `getImageData`.
+      const g = probe.getContext("2d", { willReadFrequently: true });
       if (g === null) return;
       g.drawImage(image, 0, 0);
       const data = g.getImageData(0, 0, probe.width, probe.height).data;
