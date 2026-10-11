@@ -32,8 +32,8 @@ import type { Vector4 } from "three";
  * publicá-la para o shader.
  */
 
-/** L de `--mist` (#DCE9EC) em luz relativa. */
-const MIST_LUMINANCE = 0.796;
+/** L de `--mist` (#C9D1D3) em luz relativa. */
+const MIST_LUMINANCE = 0.627;
 
 /**
  * A razão de contraste que o solucionador mira — **não** o piso de
@@ -65,8 +65,15 @@ const MIST_LUMINANCE = 0.796;
  * comparação não podia testar porque o card ainda não existe, e a HUD, que
  * está na tela o tempo todo, fica exatamente na borda por onde os cards
  * passam.
+ *
+ * **Voltou para 4.5.** O teto sai da luz do texto, e quando `--mist` escureceu
+ * (0.796 → 0.627) o mesmo 5.5 passou a pedir um fundo um terço mais escuro:
+ * o teto caiu de 0.087 para 0.056 e o véu voltou a ler como sombra atrás do
+ * texto. Em 4.5 o teto ficou em 0.083, perto de onde estava, e o Lucas ainda
+ * leu sombra: desceu para 3, com o teto em 0.159. É abaixo dos 4.5:1 de texto
+ * de leitura no quadro em que uma flor acesa passa atrás de uma linha.
  */
-export const VEIL_TARGET_CONTRAST = 5.5;
+export const VEIL_TARGET_CONTRAST = 3;
 
 /**
  * O teto de luminância sob uma caixa de texto, na luminância **entregue** —
@@ -145,7 +152,8 @@ export const MAX_VEIL_BOXES = 8;
 /**
  * Raio da queda do véu para fora da caixa, em UV de tela.
  *
- * **Sete centésimos, e antes eram dezesseis.** A queda larga foi desenhada para
+ * **Um décimo: já foram dezesseis centésimos e depois sete; subiu de novo para
+ * a borda do véu ler como névoa.** A queda larga foi desenhada para
  * o mecanismo antigo, em que `f` era uma constante por caixa: ali ela escondia a
  * borda de um retângulo que escurecia por igual. Com o `f` resolvido da
  * luminância da própria cena, quem escurece são os corpos que passam — o fundo
@@ -160,7 +168,7 @@ export const MAX_VEIL_BOXES = 8;
  * O número é lido pelo shader do composite e pela conferência de pegada da
  * sonda, para os dois falarem da mesma queda.
  */
-export const VEIL_FALLOFF = 0.07;
+export const VEIL_FALLOFF = 0.1;
 
 export type VeilBox = {
   /** Caixa em UV de tela: x0, y0, x1, y1, origem embaixo à esquerda. */
@@ -183,6 +191,8 @@ export type VeilBox = {
  * qualquer jeito. A versão que relia a cada quatro quadros deixava até 67 ms de
  * texto sem véu quando uma coluna entrava na tela, e a varredura acusou.
  */
+const UNLIT = '[data-lit="false"] :is([data-readout], .fog-in, :has(.glyph))';
+
 export function readVeilBoxes(): VeilBox[] {
   const nodes = document.querySelectorAll<HTMLElement>("[data-veil]");
   const width = window.innerWidth;
@@ -205,11 +215,21 @@ export function readVeilBoxes(): VeilBox[] {
    */
   const margin = height * 0.15;
 
+  // Com a HUD desligada o conteúdo da página está invisível (`globals.css`),
+  // e véu atrás de nada escurece o cenário: só a caixa do botão que a religa
+  // continua valendo.
+  const bare = document.documentElement.getAttribute("data-hud-view") === "off";
+
   const candidates: { box: VeilBox; area: number }[] = [];
   for (const node of nodes) {
     const rect = node.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) continue;
+    if (bare && node.closest("[data-hud]") === null) continue;
     if (rect.bottom < -margin || rect.top > height + margin) continue;
+    // Texto ainda apagado não tem véu: a caixa só existe quando ele acende,
+    // senão a cena escurece atrás de nada. Vale só para o que `data-lit` de
+    // fato apaga; o corpo de um case fica à vista e mantém a caixa.
+    if (node.matches(UNLIT)) continue;
 
     // Uma folga de meia altura de linha: o DIRECTION.md exige que nem o texto
     // nem o que encosta na caixa dele estourem o teto.

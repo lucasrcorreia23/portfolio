@@ -47,7 +47,7 @@ void main() {
   float rim = 1.0 - smoothstep(0.0, 0.012, min(edge.x, edge.y));
   color += uMist * 0.5 * rim * uHover;
 
-  gl_FragColor = vec4(applyFog(color, vDepth, vWorld), 1.0);
+  gl_FragColor = vec4(applyPlateFog(color, vDepth, vWorld), 1.0);
 }
 `;
 
@@ -104,7 +104,7 @@ void main() {
   color += (air * 2.0 + flora * 0.2) * rim * 0.6;
 
   // Aditivo: a névoa não tinge, ela apaga. E na leitura do case o vidro some.
-  color *= (1.0 - fogAmount(vDepth, vWorld)) * (1.0 - uRecess);
+  color *= (1.0 - fogAmount(vDepth, vWorld)) * plateDim(vDepth) * (1.0 - uRecess);
   gl_FragColor = vec4(min(color, vec3(0.5)), 1.0);
 }
 `;

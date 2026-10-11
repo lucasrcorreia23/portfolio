@@ -1,20 +1,22 @@
 import type { CSSProperties } from "react";
 import { Glyphs } from "@/components/text/Glyphs";
-import { EMAIL, PROFILES } from "@/lib/contact";
+import { EMAIL, PROFILES, type Profile } from "@/lib/contact";
+import type { Locale } from "@/lib/i18n/config";
 import type { Beat } from "./beats";
 import { BeatReveal } from "./BeatReveal";
 
 type CtaBeatProps = {
   beat: Beat;
+  locale: Locale;
   line: string;
-  profileNames: Record<"linkedin" | "github" | "x", string>;
+  profileNames: Record<Profile["id"], string>;
 };
 
 /**
  * O CTA: o contato, sem formulário. A frase acende; o e-mail e os perfis
  * entram como leitura.
  */
-export function CtaBeat({ beat, line, profileNames }: CtaBeatProps) {
+export function CtaBeat({ beat, locale, line, profileNames }: CtaBeatProps) {
   const span = beat.to - beat.from;
   return (
     <div className="beat-stage justify-end pb-[14svh]">
@@ -42,7 +44,11 @@ export function CtaBeat({ beat, line, profileNames }: CtaBeatProps) {
             {PROFILES.map((profile) => (
               <li key={profile.id}>
                 <a
-                  href={profile.href}
+                  href={
+                    typeof profile.href === "string"
+                      ? profile.href
+                      : profile.href[locale]
+                  }
                   rel="me noreferrer"
                   target="_blank"
                   className="type-mono text-label text-mist hover:text-cyan"

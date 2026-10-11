@@ -9,8 +9,10 @@ import { IntroBeat } from "@/components/beats/IntroBeat";
 import { StationList } from "@/components/beats/StationList";
 import { Gate } from "@/components/gate/Gate";
 import { VITRINE } from "@/content/vitrine";
+import { isLocked } from "@/lib/work/locked";
 import { getCases } from "@/lib/cases";
-import { alternatesFor, localizePath } from "@/lib/i18n/config";
+import { EMAIL, PROFILES } from "@/lib/contact";
+import { alternatesFor, localizePath, SITE_URL } from "@/lib/i18n/config";
 import { requireLocale } from "@/lib/i18n/locale";
 
 export async function generateMetadata({
@@ -33,6 +35,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
     title: entry.frontmatter.title,
     client: entry.frontmatter.client,
     year: entry.frontmatter.year,
+    locked: isLocked(entry.slug),
   }));
   const captions = cases.map((entry) => ({
     title: entry.frontmatter.title,
@@ -43,8 +46,34 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
       .join(" · "),
   }));
 
+  // Quem é o dono do site, para os buscadores. Só na home.
+  const person = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: t("intro.fullName"),
+    alternateName: t("meta.title"),
+    url: SITE_URL,
+    email: `mailto:${EMAIL}`,
+    description: t("meta.description"),
+    jobTitle: [
+      t("intro.position.product"),
+      t("intro.position.engineering"),
+      t("intro.position.deployment"),
+      t("intro.position.brand"),
+    ],
+    sameAs: PROFILES.flatMap((profile) =>
+      typeof profile.href === "string" ? [profile.href] : [],
+    ),
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(person).replace(/</g, "\\u003c"),
+        }}
+      />
       {/* O loading vive na home, e só nela. A cena mora um nível acima, em
           `(scene)/layout.tsx`, porque atravessa viva a navegação para o case. */}
       <Gate />
@@ -63,6 +92,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
                 position={[
                   t("intro.position.product"),
                   t("intro.position.engineering"),
+                  t("intro.position.deployment"),
                   t("intro.position.brand"),
                 ]}
                 manifesto={[t("intro.manifesto.one"), t("intro.manifesto.two")]}
@@ -71,7 +101,14 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
             {beat.id === "cases" ? (
               <div className="beat-stage justify-end pb-[12svh]">
                 <CaseCaption captions={captions} />
-                <StationList stations={stations} enterLabel={t("cases.enter")} />
+                <StationList
+                  stations={stations}
+                  enterLabel={t("cases.enter")}
+                  lock={{
+                    label: t("cases.lock.label"),
+                    wrong: t("cases.lock.wrong"),
+                  }}
+                />
               </div>
             ) : null}
             {beat.id === "vitrine" ? (
@@ -86,11 +123,13 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
             {beat.id === "cta" ? (
               <CtaBeat
                 beat={beat}
+                locale={typed}
                 line={t("cta.line")}
                 profileNames={{
                   linkedin: t("nav.profiles.linkedin"),
                   github: t("nav.profiles.github"),
                   x: t("nav.profiles.x"),
+                  resume: t("nav.profiles.resume"),
                 }}
               />
             ) : null}

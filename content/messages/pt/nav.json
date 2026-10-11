@@ -10,14 +10,20 @@
   "profiles": {
     "linkedin": "LinkedIn",
     "github": "GitHub",
-    "x": "X"
+    "x": "X",
+    "resume": "Currículo"
   },
   "audio": {
     "label": "Som",
     "on": "ON",
     "off": "OFF"
   },
+  "hud": {
+    "label": "HUD",
+    "on": "ON",
+    "off": "OFF"
+  },
   "language": "Idioma",
   "rule": "Trilha",
-  "stop": "Ir para o case {index}"
+  "stop": "Ir para o projeto {index}"
 }

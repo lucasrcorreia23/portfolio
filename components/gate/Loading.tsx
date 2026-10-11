@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "@/lib/capabilities/use-reduced-motion";
-import { damp, DURATION } from "@/lib/motion";
+import { DURATION } from "@/lib/motion";
 import { markEntered, markEntryPending } from "@/lib/preload/entered";
 import { runPreload } from "@/lib/preload/manifest";
 import { sceneSettings } from "@/lib/scene/settings";
@@ -16,10 +16,11 @@ type Phase = "loading" | "leaving" | "gone";
  */
 let crossed = false;
 
-/** Quanto o contador persegue o progresso real, por segundo. */
-const CHASE_LAMBDA = 5;
-/** O perseguidor mira além de 1 para chegar a 100 num tempo finito. */
-const CHASE_AIM = 1.04;
+/**
+ * O passo do contador, por segundo: ele sobe em linha reta, devagar, em vez de
+ * saltar a cada tarefa que termina. De 0 a 100 leva três segundos, no mínimo.
+ */
+const RATE = 1 / 3;
 /** A pausa em 100 antes do corte. */
 const HOLD_MS = 300;
 const CUT_MS = DURATION.cut * 1000;
@@ -31,10 +32,12 @@ type LoadingProps = {
 };
 
 /**
- * O contador de carregamento: pequeno, em mono, no canto. Ele conta o
- * manifesto real (`lib/preload/manifest.ts`: fontes, driver de scroll, áudio,
- * o chunk da cena e a compilação dos shaders) e **nunca mostra mais do que já
- * chegou**. Em 100 ele fecha sozinho, e a cena começa a revelação do Impacto.
+ * O carregamento: a cabeça de uma flor no centro e, embaixo dela, o contador
+ * em mono. Ele conta o manifesto real (`lib/preload/manifest.ts`: fontes,
+ * driver de scroll, áudio, o chunk da cena e a compilação dos shaders) e
+ * **nunca mostra mais do que já chegou**. A flor começa apagada e acende do
+ * miolo para as pontas com o mesmo número (`--p`, de 0 a 1). Em 100 ele fecha
+ * sozinho, e a cena começa a revelação do Impacto.
  *
  * `data-gate` no `<html>` é o contrato com o CSS: `closed` enquanto carrega,
  * `open` depois.
@@ -44,6 +47,7 @@ export function Loading({ label, status, done }: LoadingProps) {
   const [phase, setPhase] = useState<Phase>(crossed ? "gone" : "loading");
   const [ready, setReady] = useState(false);
   const counter = useRef<HTMLSpanElement>(null);
+  const overlay = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -62,7 +66,6 @@ export function Loading({ label, status, done }: LoadingProps) {
 
     let target = 0;
     let shown = 0;
-    let chase = 0;
     let raf = 0;
     let previous = 0;
     let hold = 0;
@@ -75,6 +78,7 @@ export function Loading({ label, status, done }: LoadingProps) {
       if (node !== null) {
         node.textContent = String(Math.round(value * 100)).padStart(3, "0");
       }
+      overlay.current?.style.setProperty("--p", value.toFixed(3));
     };
 
     const finish = () => {
@@ -95,10 +99,8 @@ export function Loading({ label, status, done }: LoadingProps) {
     const frame = (now: number) => {
       const dt = previous === 0 ? 0.016 : Math.min((now - previous) / 1000, 0.05);
       previous = now;
-      chase = damp(chase, CHASE_AIM, CHASE_LAMBDA, dt);
-      write(Math.min(chase, target, 1));
-      if (target >= 1 && shown >= 0.995) {
-        write(1);
+      write(Math.min(shown + RATE * dt, target));
+      if (shown >= 1) {
         finish();
         return;
       }
@@ -133,10 +135,17 @@ export function Loading({ label, status, done }: LoadingProps) {
 
   return (
     <div
+      ref={overlay}
       data-gate-overlay
       data-gate-phase={phase}
-      className="loading bg-void fixed inset-0 z-[60] flex items-end justify-between px-6 py-6 md:px-12 md:py-10"
+      className="loading bg-void fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6"
+      style={{ "--p": 0 } as CSSProperties}
     >
+      <div className="loading-flower" aria-hidden="true">
+        <div className="loading-flower-head">
+          <span className="loading-flower-light" />
+        </div>
+      </div>
       <p className="type-mono text-hud text-mist">
         {label}{" "}
         <span ref={counter} aria-hidden="true" className="tabular-nums">

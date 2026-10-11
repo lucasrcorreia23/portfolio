@@ -12,12 +12,15 @@
  * navega por leitor de tela ouve "LinkedIn", não "IN".
  */
 
+import type { Locale } from "@/lib/i18n/config";
+
 export type Profile = {
   /** Chave da tradução em `hud.profiles`. */
-  id: "linkedin" | "github" | "x";
+  id: "linkedin" | "github" | "x" | "resume";
   /** A sigla que a HUD desenha. */
   short: string;
-  href: string;
+  /** Um endereço só, ou um por idioma. */
+  href: string | Record<Locale, string>;
 };
 
 export const EMAIL = "lucas_rc15@live.com";
@@ -26,4 +29,9 @@ export const PROFILES: readonly Profile[] = [
   { id: "linkedin", short: "IN", href: "https://linkedin.com/in/lucasrcorreia" },
   { id: "github", short: "GH", href: "https://github.com/lucasrcorreia23" },
   { id: "x", short: "X", href: "https://x.com/lucasrcpd" },
+  {
+    id: "resume",
+    short: "CV",
+    href: { en: "/resume.pdf", pt: "/curriculo.pdf" },
+  },
 ] as const;

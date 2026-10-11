@@ -2,6 +2,15 @@
 @import "lenis/dist/lenis.css";
 @import "./tokens.css";
 
+/* A coluna de leitura do case, em comprimento. Registrada, a medida em `ch` é
+   resolvida uma vez, na fonte do corpo, e desce em pixels: um título em corpo
+   maior fica com a mesma largura do parágrafo, em vez de 54ch da fonte dele. */
+@property --case-col {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
 @layer base {
   html {
     color-scheme: dark;
@@ -10,6 +19,15 @@
     -webkit-text-size-adjust: 100%;
     /* O scroll suave é do Lenis. O nativo só atrapalharia. */
     scroll-behavior: auto;
+  }
+
+  /* A barra nativa some: quem mostra a rolagem é a da HUD (`ScrollBar`), que
+     fica por cima da cena em vez de reservar uma faixa ao lado dela. */
+  html {
+    scrollbar-width: none;
+  }
+  html::-webkit-scrollbar {
+    display: none;
   }
 
   body {
@@ -106,6 +124,48 @@
   .loading[data-gate-phase="leaving"] {
     opacity: 0;
     pointer-events: none;
+  }
+
+  /* A flor do loading. `--p` (0 a 1) é o progresso, escrito por
+     `components/gate/Loading.tsx`. A foto entra só como máscara
+     (`scripts/derive-loading-flower.mjs`); a cor é dos tokens. O brilho fica
+     no elemento de fora: no mesmo elemento, a máscara o recortaria. */
+  .loading-flower {
+    width: min(44vmin, 18rem);
+    aspect-ratio: 1;
+    filter: drop-shadow(0 0 1.5rem color-mix(in oklab, var(--cyan) calc(var(--p) * 55%), transparent));
+  }
+  /* Antes de carregar: preta e branca, como a relva da cena. */
+  .loading-flower-head {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: color-mix(in oklab, var(--mist) 60%, var(--void));
+    mask: url("/loading/flor.webp") center / contain no-repeat;
+  }
+  /* Acesa: ciano no miolo, mais azul para as pontas, e o rosa em um anel na
+     base das pétalas e em algumas pontas. A luz sai do miolo e chega à borda
+     em 100. O azul é o `--cyan` com a mesma conta do shader das flores
+     (`lib/scene/shaders/flora.ts`). */
+  .loading-flower-light {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 22% 30%, color-mix(in oklab, var(--rose) 70%, transparent), transparent 22%),
+      radial-gradient(circle at 80% 62%, color-mix(in oklab, var(--rose) 60%, transparent), transparent 20%),
+      radial-gradient(circle at 44% 88%, color-mix(in oklab, var(--rose) 50%, transparent), transparent 16%),
+      radial-gradient(
+        circle,
+        transparent 12%,
+        color-mix(in oklab, var(--rose) 65%, transparent) 20%,
+        transparent 34%
+      ),
+      radial-gradient(circle, var(--cyan) 10%, rgb(from var(--cyan) calc(r * 0.55) calc(g * 0.78) b) 62%);
+    mask-image: radial-gradient(
+      circle,
+      #000 calc(var(--p) * 115% - 15%),
+      transparent calc(var(--p) * 115%)
+    );
   }
 
   /* --- Os momentos --------------------------------------------------------
@@ -280,8 +340,74 @@
     color: var(--cyan);
   }
 
+  /* O case com senha: no lugar do link, um formulário sobre a placa. O que
+     se vê é só uma linha fina no canto de baixo dela, como mais uma leitura
+     do painel; ela acende com o ponteiro e com o foco. Fora de alcance o
+     campo não recebe ponteiro, como o link. */
+  .card-lock input {
+    pointer-events: none;
+  }
+  .card-lock[data-live="true"] input,
+  html:not([data-scene-mode="driven"]):not([data-scene-mode="composed"])
+    .card-lock
+    input {
+    pointer-events: auto;
+  }
+  .card-lock[data-live="true"] {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    opacity: 1;
+    container-type: size;
+  }
+  .card-lock-body {
+    opacity: 0.45;
+    transition: opacity 240ms ease-out;
+  }
+  .card-lock:hover .card-lock-body,
+  .card-lock-body:focus-within {
+    opacity: 1;
+  }
+  .card-lock[data-live="true"] .card-lock-body {
+    margin: 0 9cqw 7.5cqh 0;
+  }
+  /* Placa pequena demais para um campo: de longe, só a placa. */
+  @container (max-width: 22rem) {
+    .card-lock-body {
+      display: none;
+    }
+  }
+  .card-lock input[type="password"] {
+    width: 7.5rem;
+    padding: 0.2rem 0;
+    font: inherit;
+    letter-spacing: 0.16em;
+    text-transform: none;
+    color: var(--mist);
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid color-mix(in oklab, var(--mist) 40%, transparent);
+    border-radius: 0;
+    outline: none;
+  }
+  .card-lock input[type="password"]::placeholder {
+    color: var(--mist);
+    opacity: 1;
+    text-transform: uppercase;
+  }
+  .card-lock input[type="password"]:focus-visible {
+    border-bottom-color: var(--cyan);
+  }
+  .card-lock input[type="password"]:focus-visible::placeholder {
+    opacity: 0.35;
+  }
+  .card-lock input[aria-invalid="true"] {
+    border-bottom-color: var(--rose);
+  }
+
   .case {
     --case-wide: 68rem;
+    --case-col: var(--measure);
   }
 
   /* A capa do case. A razão de aspecto chega inline, de `PANEL_ASPECT`: a
@@ -299,16 +425,33 @@
     height: 100%;
   }
 
+  /* O cabeçalho abre degraus: cada bloco um pouco mais longe do anterior, da
+     linha de cliente até os metadados. */
   .case-head {
+    margin-top: 3rem;
     max-width: var(--case-wide);
+  }
+
+  .case-title {
+    margin-top: 1.5rem;
+  }
+
+  .case-summary {
+    margin-top: 2.5rem;
+    max-width: var(--case-col);
+    text-wrap: pretty;
   }
 
   .case-meta {
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: 0.4rem 1.5rem;
-    max-width: var(--measure);
-    color: var(--mist);
+    gap: 0.75rem 1.5rem;
+    margin-top: 3rem;
+    max-width: var(--case-col);
+    font-size: var(--text-label);
+    font-weight: var(--text-label--font-weight);
+    line-height: 1.6;
+    letter-spacing: var(--text-label--letter-spacing);
   }
 
   .case-meta dt {
@@ -318,17 +461,36 @@
 
   .case-body {
     position: relative;
-    margin-top: 6rem;
+    margin-top: 7rem;
     color: var(--mist);
   }
 
-  /* Listas e citações do MDX não passam pelo mapa de componentes, e sem isto
-     um item ocuparia a largura inteira do artigo: o vazio à direita dele
-     deixaria de ser vazio para o clique de saída (`CaseExit`). */
-  .case-body ul,
-  .case-body ol,
-  .case-body blockquote {
-    max-width: var(--measure);
+  /* A HUD desligada (`HudToggle` escreve o atributo no <html>): some tudo,
+     menos o botão que a religa, e fica só o cenário. O painel encolhe até ele
+     e fica embaixo, onde o botão já estava, para o véu não escurecer a coluna
+     inteira; no mobile o painel aparece sem o acionador, senão não haveria
+     como voltar. O conteúdo da página some com `visibility`, não `display`:
+     a altura dele é a rolagem que move a câmera. */
+  html[data-hud-view="off"] main {
+    visibility: hidden;
+  }
+  html[data-hud-view="off"] [data-hud] {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  html[data-hud-view="off"] [data-hud] > button,
+  html[data-hud-view="off"] [data-hud] > div > :not([data-hud-controls]),
+  html[data-hud-view="off"] [data-hud-controls] > :not([data-hud-toggle]) {
+    display: none !important;
+  }
+  html[data-hud-view="off"] [data-hud-bar] {
+    display: none;
+  }
+  html[data-hud-view="off"] [data-hud] > div {
+    display: flex !important;
+    height: auto !important;
+    margin-top: 0 !important;
   }
 
   /* O cursor da saída pelo vazio. Quem decide é o mesmo teste do clique, em
@@ -343,45 +505,90 @@
   .case-veil {
     position: absolute;
     inset: 0 auto 0 0;
-    width: min(100%, var(--measure));
+    width: min(100%, var(--case-col));
     pointer-events: none;
   }
 
-  /* A hierarquia do texto de um case — ver `caseComponents`. Espaçamento
-     desigual de propósito: o rótulo de seção abre muito e fecha perto do que
-     ele nomeia; o subtítulo abre médio e cola no parágrafo. */
+  /* A hierarquia do texto de um case — ver `caseComponents`. Cada papel
+     declara o próprio tipo a partir dos tokens, e tudo que é frase tem a
+     largura da coluna (`--case-col`). Espaçamento desigual de propósito: a
+     régua abre a seção, o rótulo fecha perto do que ele nomeia, o subtítulo
+     abre médio e cola no parágrafo. Nenhum vão passa do `GAP_PX` do
+     `CaseExit`. */
+  .case-text,
+  .case-list {
+    margin: 0 0 1.65em;
+    max-width: var(--case-col);
+    font-size: var(--text-body);
+    line-height: 1.65;
+    letter-spacing: var(--text-body--letter-spacing);
+    text-wrap: pretty;
+  }
+
+  .case-list {
+    padding-left: 1.25rem;
+    list-style: disc;
+  }
+
+  ol.case-list {
+    list-style: decimal;
+  }
+
+  .case-list li + li {
+    margin-top: 0.75em;
+  }
+
   /* A manchete é uma frase, e frase é leitura: família de leitura em corpo
      grande, peso médio, caixa normal. A display (Expanded, caixa alta) fica
      com o nome da peça — o `h1` do case —, como o PROJECT.md §3.2 separa. */
   .case-headline {
-    margin: 4.5rem 0 2rem;
+    margin: 5rem 0 2.5rem;
     max-width: min(var(--case-wide), 22em);
+    font-size: var(--text-display-3);
     font-weight: 500;
-    line-height: 1.08;
+    line-height: 1.12;
+    letter-spacing: var(--text-display-3--letter-spacing);
     text-wrap: balance;
-    color: var(--mist);
+  }
+
+  .case-statement,
+  .case-subhead {
+    max-width: var(--case-col);
+    font-size: var(--text-body-lg);
+    line-height: var(--text-body-lg--line-height);
+    letter-spacing: var(--text-body-lg--letter-spacing);
+    text-wrap: pretty;
   }
 
   .case-statement {
-    margin: 0 0 1.75rem;
+    margin: 2.5rem 0;
     font-weight: 600;
-    color: var(--mist);
   }
 
   .case-subhead {
-    margin: 2.75rem 0 0.75rem;
+    margin: 3.5rem 0 1rem;
     font-weight: 500;
-    color: var(--mist);
   }
 
   .case-label {
-    margin: 5.5rem 0 1.25rem;
-    text-transform: uppercase;
-    color: var(--mist);
+    margin: 4rem 0 1.25rem;
+    max-width: var(--case-col);
+    font-size: var(--text-label);
+    font-weight: var(--text-label--font-weight);
+    line-height: var(--text-label--line-height);
+    letter-spacing: var(--text-label--letter-spacing);
+  }
+
+  /* O rótulo cola no que ele nomeia, e o primeiro bloco do corpo não abre
+     espaço além do que o cabeçalho já deu. */
+  .case-label + .case-statement,
+  .case-label + .case-subhead,
+  .case-veil + * {
+    margin-top: 0;
   }
 
   .case-rule {
-    margin: 5rem 0 0;
+    margin: 7rem 0 0;
     max-width: var(--case-wide);
     border: 0;
     border-top: 1px solid var(--deep);
@@ -402,8 +609,17 @@
   }
 
   .case-figure {
-    margin: 3rem 0;
+    margin: 4.5rem 0;
     max-width: var(--case-wide);
+  }
+
+  /* Figuras em sequência são uma prancha só: ficam perto umas das outras. */
+  .case-figure:has(+ .case-figure) {
+    margin-bottom: 1.5rem;
+  }
+
+  .case-figure + .case-figure {
+    margin-top: 0;
   }
 
   .case-figure img {
@@ -421,6 +637,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 1.5rem;
+    margin-top: 8rem;
     border-top: 1px solid var(--deep);
     padding-top: 1.5rem;
     max-width: var(--case-wide);

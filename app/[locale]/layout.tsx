@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
@@ -7,6 +7,7 @@ import { Hud } from "@/components/hud/Hud";
 import { fontVariables } from "@/lib/fonts";
 import { SITE_URL } from "@/lib/i18n/config";
 import { routing } from "@/lib/i18n/routing";
+import { openGraphBase, VOID_COLOR } from "@/lib/site-meta";
 import { ScrollProvider } from "@/lib/scroll/ScrollProvider";
 import "@/styles/globals.css";
 
@@ -27,29 +28,37 @@ export async function generateMetadata({
   if (!hasLocale(routing.locales, locale)) notFound();
 
   const t = await getTranslations({ locale, namespace: "meta" });
+  const fullName = (await getTranslations({ locale, namespace: "intro" }))("fullName");
 
   return {
     // Sem isto, a capa que a rota de case declara como imagem de Open Graph
     // sai como caminho relativo e o Next resolve contra `localhost:3000` — o
     // aviso da build é literal sobre isso. O domínio é o do PROJECT.md §0.
     metadataBase: new URL(SITE_URL),
-    title: t("title"),
+    title: t("homeTitle"),
     description: t("description"),
-    // A imagem de Open Graph **é a cena**: o último quadro da descida — a
-    // câmara vazia, a luz de fora em lâminas e a cota ±00.000 gravada na
-    // soleira —, lido do buffer do WebGL pela sonda e recortado em 1200×630.
-    // Um case troca por a capa dele (ver `work/[slug]/page.tsx`).
+    applicationName: t("title"),
+    authors: [{ name: fullName, url: SITE_URL }],
+    creator: fullName,
+    // O nome embaixo do ícone na tela de início do iOS. O ícone em si é
+    // `app/apple-icon.png`; os demais estão em `app/` e no manifesto.
+    appleWebApp: { title: t("title"), statusBarStyle: "black-translucent" },
+    // A imagem de Open Graph **é a cena**: o campo de flores à noite, com a
+    // indústria ao fundo, recortado em 1200×630.
     openGraph: {
-      type: "website",
-      siteName: t("title"),
-      title: t("title"),
+      ...openGraphBase(locale, { siteName: t("title"), imageAlt: t("ogAlt") }),
+      title: t("homeTitle"),
       description: t("description"),
-      locale: locale === "pt" ? "pt_BR" : "en_US",
-      images: [{ url: "/og.jpg", width: 1200, height: 630, alt: t("ogAlt") }],
     },
-    twitter: { card: "summary_large_image" },
+    twitter: { card: "summary_large_image", creator: "@lucasrcpd" },
   };
 }
+
+/** A barra do navegador e a do sistema na cor do fundo, `--void`. */
+export const viewport: Viewport = {
+  themeColor: VOID_COLOR,
+  colorScheme: "dark",
+};
 
 /**
  * A rolagem de um reload **na home** volta ao topo, antes da hidratação.

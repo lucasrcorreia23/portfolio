@@ -1,10 +1,15 @@
 {
-  "label": "Cases",
-  "enter": "Open case",
+  "label": "Projects",
+  "enter": "Open project",
+  "lock": {
+    "label": "Password",
+    "wrong": "Wrong password"
+  },
   "disciplines": {
     "produto": "Product",
     "sistema": "System",
-    "marca": "Brand"
+    "marca": "Brand",
+    "fundador": "Product Founder"
   },
   "case": {
     "back": "Back",
@@ -13,7 +18,7 @@
     "role": "Role",
     "stack": "Stack",
     "disciplines": "Disciplines",
-    "cover": "{title} — case cover",
+    "cover": "{title} — project cover",
     "generated": "Generated image"
   }
 }

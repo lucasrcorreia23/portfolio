@@ -3,10 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { VITRINE_PROGRESS } from "@/components/beats/beats";
-import { NavJump } from "@/components/hud/NavJump";
 import { Glyphs } from "@/components/text/Glyphs";
-import { CaseReturn } from "@/components/work/CaseReturn";
 import { CaseExit } from "@/components/work/CaseExit";
 import { CaseReveal } from "@/components/work/CaseReveal";
 import { Placeholder } from "@/components/work/Placeholder";
@@ -14,6 +11,8 @@ import { caseSummary, getCaseSlugs, getCases, loadCase } from "@/lib/cases";
 import { alternatesFor, localizePath } from "@/lib/i18n/config";
 import { requireLocale } from "@/lib/i18n/locale";
 import { PANEL_ASPECT } from "@/lib/scene/stops";
+import { openGraphBase } from "@/lib/site-meta";
+import { isLocked } from "@/lib/work/locked";
 import { caseComponents } from "@/lib/work/mdx-case";
 
 /** Os slugs vêm do disco; qualquer outro é 404, sem render dinâmico. */
@@ -34,16 +33,18 @@ export async function generateMetadata({
   if (!slugs.includes(slug)) notFound();
 
   const { frontmatter } = await loadCase(slug);
-  const t = await getTranslations({
-    locale: requireLocale(locale),
-    namespace: "meta",
-  });
+  const typed = requireLocale(locale);
+  const t = await getTranslations({ locale: typed, namespace: "meta" });
 
   return {
     title: t("workTitle", { title: frontmatter.title }),
     description: caseSummary(frontmatter, locale),
-    alternates: alternatesFor(`/work/${slug}`, requireLocale(locale)),
+    alternates: alternatesFor(`/work/${slug}`, typed),
+    // Case com senha fica fora dos buscadores.
+    ...(isLocked(slug) ? { robots: { index: false, follow: false } } : {}),
     openGraph: {
+      ...openGraphBase(typed, { siteName: t("title"), imageAlt: t("ogAlt") }),
+      type: "article",
       title: t("workTitle", { title: frontmatter.title }),
       description: caseSummary(frontmatter, locale),
     },
@@ -87,7 +88,6 @@ export default async function CasePage({
 
   const { frontmatter, Content, sizes } = await loadCase(slug);
   const t = await getTranslations("cases");
-  const tNav = await getTranslations("nav");
 
   const cases = await getCases();
   const here = cases.findIndex((entry) => entry.slug === slug);
@@ -116,13 +116,13 @@ export default async function CasePage({
           <h1
             aria-label={frontmatter.title}
             data-veil
-            className="type-display text-display-2 mt-4 w-fit"
+            className="case-title type-display text-display-2 w-fit"
           >
             <Glyphs text={frontmatter.title} />
           </h1>
 
           <p
-            className="fog-in measure text-body-lg text-mist mt-8 w-fit"
+            className="case-summary fog-in text-body-lg text-mist w-fit"
             data-veil
             style={{ "--wait": "500ms" } as CSSProperties}
           >
@@ -132,7 +132,7 @@ export default async function CasePage({
           <dl
             data-veil
             data-readout
-            className="case-meta type-mono text-hud-sm mt-10 w-fit"
+            className="case-meta type-mono w-fit"
             style={{ "--wait": "700ms" } as CSSProperties}
           >
             <dt>{t("case.role")}</dt>
@@ -162,29 +162,20 @@ export default async function CasePage({
           />
         </article>
 
-        <footer data-veil className="case-foot type-mono text-hud mt-24">
-          <CaseReturn
-            label={t("case.back")}
-            title={t("case.backTitle")}
-            className="case-foot-link"
-          />
-          {next === undefined ? null : (
+        {next === undefined ? null : (
+          <footer data-veil className="case-foot type-mono text-hud">
             <Link
               href={localizePath(`/work/${next.slug}`, typed)}
-              className="case-foot-link"
+              className="case-foot-link group inline-flex items-center gap-2"
             >
               {t("case.next")}: {next.frontmatter.title}
-              <span aria-hidden="true"> →</span>
+              <span
+                aria-hidden="true"
+                className="ease-strong h-px w-4 origin-left bg-current transition-transform duration-(--dur-snap) group-hover:scale-x-150"
+              />
             </Link>
-          )}
-          <NavJump
-            progress={VITRINE_PROGRESS}
-            anchor="vitrine"
-            className="case-foot-link"
-          >
-            {tNav("vitrine")}
-          </NavJump>
-        </footer>
+          </footer>
+        )}
       </CaseReveal>
     </main>
   );

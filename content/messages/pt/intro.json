@@ -5,11 +5,12 @@
   "fullName": "Lucas Rodrigues Correia",
   "position": {
     "product": "Design de produto",
-    "engineering": "Engenharia de front-end",
-    "brand": "Sistemas de marca"
+    "engineering": "Engenharia de produto",
+    "deployment": "Implantação de IA",
+    "brand": "Gestão de produto"
   },
   "manifesto": {
-    "one": "Desenho o produto e implemento o front-end do que desenho. A decisão de interface e o custo de construí-la são tratados no mesmo lugar.",
-    "two": "Atuo em domínios complexos: prontuário clínico, contratação de energia, treinamento de vendas. Nesses contextos a tela é a menor parte do trabalho; o que define o produto são as regras de negócio, os estados e os casos de exceção."
+    "one": "Profissional de produto com o gosto de um designer e a consciência de um engenheiro. Hoje construo produtos de IA e com IA, da descoberta ao código.",
+    "two": "Trabalho é meu hobby. Vivo dizendo a mim mesmo que vou desacelerar e fazer outra coisa, mas aí me apaixono por outro projeto ou problema e ele me puxa de volta. Vejo nos desafios de produto o mesmo lado competitivo dos jogos online, que também já foram minha obsessão, principalmente World of Warcraft."
   }
 }

@@ -15,9 +15,9 @@ export const TERRAIN = {
   minX: -120,
   maxX: 120,
   minZ: -350,
-  maxZ: 50,
+  maxZ: 90,
   cols: 96,
-  rows: 168,
+  rows: 185,
 } as const;
 
 export const TERRAIN_WIDTH = TERRAIN.maxX - TERRAIN.minX;
@@ -99,8 +99,8 @@ export function heightAt(x: number, z: number): number {
 /* ------------------------------------------------------------------- trilha */
 
 /** Onde a câmera está em Z no começo e no fim de cada momento. */
-const Z_START = 26;
-const Z_INTRO = -22;
+const Z_START = 50;
+const Z_INTRO = 2;
 const Z_CASES = -62;
 /** A distância entre duas paradas, e de quão longe a câmera lê o painel. */
 export const STOP_SPACING = 32;
@@ -230,9 +230,9 @@ export function vitrineWall(): Placement {
  * ocupa várias (ver `wallScreens`). A parede é uma faixa comprida: a câmera
  * enquadra a altura inteira e percorre as colunas.
  */
-export const WALL_COLUMNS = 15;
+export const WALL_COLUMNS = 9;
 export const WALL_ROWS = 3;
-export const WALL_CELL = { width: 1.44, height: 0.9, gap: 0.28 };
+export const WALL_CELL = { width: 1.76, height: 1.1, gap: 0.28 };
 export const WALL_SPAN = WALL_COLUMNS * WALL_CELL.width + (WALL_COLUMNS - 1) * WALL_CELL.gap;
 export const WALL_TALL = WALL_ROWS * WALL_CELL.height + (WALL_ROWS - 1) * WALL_CELL.gap;
 
@@ -299,8 +299,8 @@ export type Patch = {
 };
 
 /**
- * As manchas de flora: o campo do Impacto, uma mancha densa em cada case e a
- * do CTA. A ordem é a dos emissores no shader.
+ * As manchas de flora: o campo do Impacto, uma mancha densa em cada case, a
+ * do CTA, a da vitrine e a do começo. A ordem é a dos emissores no shader.
  */
 export function floraPatches(): readonly Patch[] {
   const patches: Patch[] = [
@@ -351,6 +351,19 @@ export function floraPatches(): readonly Patch[] {
     stop: -1,
     warm: 0.72,
     mix: { gazania: 0.55, empodium: 0.1 },
+  });
+  // O começo da trilha: o campo já está lá quando a câmera sai da névoa. Por
+  // último na lista, para as outras manchas não mudarem de lugar.
+  patches.push({
+    x: pathX(34) + 2,
+    z: 34,
+    rx: 28,
+    rz: 14,
+    count: 700,
+    light: 1.2,
+    stop: -1,
+    warm: 0.2,
+    mix: { empodium: 0.36, gazania: 0.1, celandine: 0.08 },
   });
   return patches;
 }

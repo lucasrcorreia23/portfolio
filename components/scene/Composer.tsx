@@ -227,7 +227,9 @@ export function Composer({
         uVeilF: shared.veilF,
         uCeiling: { value: VEIL_CEILING },
         uFogLuma: { value: fogLuminance(shared) },
-        // Descida em ~16 quadros (0.27 s). Ver o docblock do véu em post.ts.
+        // Subida a 90% em ~37 quadros (0.6 s), o tempo em que o texto acende;
+        // descida no mesmo passo. Ver o docblock do véu em post.ts.
+        uRise: { value: 0.06 },
         uFall: { value: 0.06 },
       },
       GLSL3,

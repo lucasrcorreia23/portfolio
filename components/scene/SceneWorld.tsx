@@ -18,10 +18,10 @@ import {
   applyReveal,
   applyWallApproach,
   astroAt,
+  BARE_FOG,
   cameraPose,
   createCameraPose,
   fogAt,
-  planetAt,
   planetPlace,
   REVEAL_FOG,
   REVEAL_GLOW,
@@ -191,14 +191,20 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
     focusRef.current = pose.position.distanceTo(pose.target);
 
     // Texto de leitura nunca tem desfoque: dentro do case a abertura fecha.
-    const aperture = apertureAt(progress) * (1 - inCase);
+    // Com a HUD desligada também: é para olhar em volta, e o foco na placa
+    // borraria todo o resto.
+    const bare = document.documentElement.getAttribute("data-hud-view") === "off";
+    const aperture = bare ? 0 : apertureAt(progress) * (1 - inCase);
     apertureRef.current = still
       ? aperture
       : damp(apertureRef.current, aperture, 4, dt);
 
     // --- atmosfera ----------------------------------------------------------
     const fogBase = fogAt(progress);
-    const fogOpen = fogBase + (CASE_FOG - fogBase) * inCase;
+    // A névoa fechada do case existe para o texto; sem texto, vale a da descida.
+    const fogOpen = bare
+      ? fogBase * BARE_FOG
+      : fogBase + (CASE_FOG - fogBase) * inCase;
     const fog = REVEAL_FOG + (fogOpen - REVEAL_FOG) * reveal;
     shared.fogDensity.value = still
       ? fog
@@ -210,10 +216,10 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
       ? astro
       : damp(shared.astro.value, astro, 3, dt);
 
-    // O planeta: onde ele fica depende da proporção da tela.
-    const planet = planetAt(progress) * reveal * (1 - inCase);
+    // O planeta: aparece com o fim da trilha, e onde ele fica depende da
+    // proporção da tela.
     shared.planet.value.set(
-      still ? planet : damp(shared.planet.value.x, planet, 3, dt),
+      still ? astro : damp(shared.planet.value.x, astro, 3, dt),
       planetPlace(state.size.width / Math.max(state.size.height, 1), shared.astroDir.value),
     );
 
@@ -258,10 +264,11 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
       const t = shared.time.value;
       const slot = Math.floor(t * 0.6);
       const roll = Math.sin(slot * 91.7) * 43758.5453;
-      const active = !still && roll - Math.floor(roll) > 0.45 && reveal > 0.9;
+      const active =
+        !still && roll - Math.floor(roll) > 0.8 && t * 0.6 - slot < 0.5 && reveal > 0.9;
       shared.storm.value = active ? 1 - inCase : 0;
       const pulse = Math.sin(Math.floor(t * 22) * 12.9898) * 43758.5453;
-      const spark = active && pulse - Math.floor(pulse) > 0.55 ? 1 - inCase : 0;
+      const spark = active && pulse - Math.floor(pulse) > 0.8 ? 1 - inCase : 0;
       shared.flash.value = damp(shared.flash.value, spark, spark > 0 ? 40 : 9, dt);
     }
 

@@ -130,6 +130,11 @@ function freshNoise(context: AudioContext, seconds: number): AudioBuffer {
 }
 
 function playCue(context: AudioContext, destination: AudioNode, cue: SoundCue): void {
+  if (cue.kind === "text" || cue.kind === "readout") {
+    playNeon(context, destination, cue);
+    return;
+  }
+
   const now = context.currentTime;
   const source = context.createBufferSource();
   const filter = context.createBiquadFilter();
@@ -154,24 +159,6 @@ function playCue(context: AudioContext, destination: AudioNode, cue: SoundCue): 
     return;
   }
 
-  if (cue.kind === "text" || cue.kind === "readout") {
-    // Um título acendendo: um chiado só, que sobe e se apaga devagar. A
-    // numeração dos cases usa o mesmo som, mais baixo.
-    const level = cue.kind === "text" ? 0.035 : 0.015;
-    source.buffer = freshNoise(context, 1.4);
-    filter.type = "bandpass";
-    filter.Q.value = 5;
-    filter.frequency.setValueAtTime(900, now);
-    filter.frequency.exponentialRampToValueAtTime(2600, now + 0.9);
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(level, now + 0.25);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.35);
-    source.connect(filter).connect(gain).connect(pan).connect(destination);
-    source.start(now);
-    source.stop(now + 1.4);
-    return;
-  }
-
   // Abrir um case: um inchaço grave, mais pressão que som.
   source.buffer = freshNoise(context, 1.0);
   filter.type = "lowpass";
@@ -185,4 +172,92 @@ function playCue(context: AudioContext, destination: AudioNode, cue: SoundCue): 
   source.connect(filter).connect(gain).connect(pan).connect(destination);
   source.start(now);
   source.stop(now + 1.0);
+}
+
+/**
+ * Um título acendendo, como um letreiro de neon de verdade: a descarga estala
+ * algumas vezes antes de pegar, o transformador zumbe no dobro da rede, e o gás
+ * chia baixo por cima. Nada muda de tom. O zumbido cede a cada estalo, que é o
+ * que faz os dois soarem como um objeto só. A numeração dos cases usa o mesmo
+ * som, mais curto e mais baixo.
+ */
+function playNeon(context: AudioContext, destination: AudioNode, cue: SoundCue): void {
+  const full = cue.kind === "text";
+  const span = full ? 1 : 0.7;
+  const now = context.currentTime;
+  const hold = now + 1.2 * span;
+  const end = now + 2.4 * span;
+
+  const pan = context.createStereoPanner();
+  pan.pan.value = Math.max(-1, Math.min(1, cue.pan));
+  const out = context.createGain();
+  out.gain.value = full ? 0.05 : 0.032;
+  out.connect(pan).connect(destination);
+
+  // Os estalos da descarga, em tempos irregulares, cada um mais fraco.
+  const strikes = [0, 0.055, 0.12, 0.23].map((at) => now + at + Math.random() * 0.03);
+  const caught = (strikes[strikes.length - 1] ?? now) + 0.02;
+  const noise = freshNoise(context, 2.4 * span);
+
+  const sharp = context.createBiquadFilter();
+  sharp.type = "highpass";
+  sharp.frequency.value = 3000;
+  sharp.connect(out);
+  strikes.forEach((at, index) => {
+    const crackle = context.createBufferSource();
+    crackle.buffer = noise;
+    const level = context.createGain();
+    level.gain.setValueAtTime(0.35 * 0.8 ** index, at);
+    level.gain.exponentialRampToValueAtTime(0.0001, at + 0.006 + Math.random() * 0.008);
+    crackle.connect(level).connect(sharp);
+    crackle.start(at, Math.random());
+    crackle.stop(at + 0.02);
+  });
+
+  // O transformador: fraco enquanto a descarga falha, inteiro quando pega.
+  const swell = context.createGain();
+  swell.gain.setValueAtTime(0.0001, now);
+  swell.gain.exponentialRampToValueAtTime(0.4, now + 0.02);
+  for (const at of strikes.slice(1)) {
+    swell.gain.setValueAtTime(0.1, at);
+    swell.gain.setValueAtTime(0.4, at + 0.015);
+  }
+  swell.gain.setValueAtTime(0.4, caught);
+  swell.gain.linearRampToValueAtTime(1, caught + 0.15);
+  swell.gain.setValueAtTime(1, hold);
+  swell.gain.exponentialRampToValueAtTime(0.0001, end);
+  swell.connect(out);
+
+  const mains = context.createOscillator();
+  mains.type = "sawtooth";
+  mains.frequency.value = 119.5 + Math.random();
+  const dull = context.createBiquadFilter();
+  dull.type = "lowpass";
+  dull.Q.value = 1;
+  dull.frequency.setValueAtTime(450, now);
+  dull.frequency.setValueAtTime(450, caught);
+  dull.frequency.linearRampToValueAtTime(650, caught + 0.3);
+  const hum = context.createGain();
+  hum.gain.value = 0.6;
+  mains.connect(dull).connect(hum).connect(swell);
+
+  // O gás ionizado: um chiado quase inaudível, com o mesmo contorno.
+  const gas = context.createBufferSource();
+  gas.buffer = noise;
+  const thin = context.createBiquadFilter();
+  thin.type = "bandpass";
+  thin.Q.value = 0.7;
+  thin.frequency.value = 6000;
+  const hiss = context.createGain();
+  hiss.gain.value = 0.08;
+  gas.connect(thin).connect(hiss).connect(swell);
+
+  mains.start(now);
+  mains.stop(end + 0.05);
+  gas.start(now);
+  gas.stop(end);
+  mains.onended = () => {
+    out.disconnect();
+    pan.disconnect();
+  };
 }

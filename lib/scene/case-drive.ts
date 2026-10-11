@@ -19,6 +19,11 @@ import type { SharedUniforms } from "./uniforms";
  *
  * O painel e a capa em DOM desenham o mesmo placeholder, então a troca é o
  * corte curto do `<img>` por cima do painel: não há entrega de textura.
+ *
+ * **A entrega é uma trava.** Enquanto o voo acontece o encaixe segue a capa;
+ * entregue, ele fica guardado e o DOM não é mais lido. A leitura rola a capa
+ * para milhares de pixels acima da janela, e um encaixe que a seguisse levaria
+ * a mira da câmera para baixo do terreno.
  */
 
 const FLIGHT_DAMP = 5;
@@ -44,9 +49,11 @@ export type CaseDrive = {
 export function createCaseDrive(): CaseDrive {
   const dock: CameraPose = { position: new Vector3(), target: new Vector3() };
   const rest: CameraPose = { position: new Vector3(), target: new Vector3() };
+  const seat: CameraPose = { position: new Vector3(), target: new Vector3() };
   let amount = 0;
   let recede = 0;
   let handoffAt = 0;
+  let handed = false;
   let idle = true;
   let stationFor = "";
 
@@ -67,6 +74,7 @@ export function createCaseDrive(): CaseDrive {
         amount = 0;
         recede = 0;
         handoffAt = 0;
+        handed = false;
         stationFor = "";
         settleRiver();
       }
@@ -94,38 +102,45 @@ export function createCaseDrive(): CaseDrive {
       stationFor = state.slug;
       setCaseIndex(index);
       setReturnProgress(stopProgress(index));
+      handoffAt = 0;
+      // Chegada sem voo (link direto, reload, um case aberto a partir de
+      // outro): não há de onde voar, então a câmera já nasce no repouso.
+      handed = state.phase === "case" && !state.fromRiver;
+      if (handed) {
+        amount = 1;
+        recede = 1;
+        dockPose(panel, null, viewportWidth, viewportHeight, dock);
+      }
     }
 
-    const image = document.querySelector<SVGElement>(COVER_SELECTOR);
-    const rect = image === null ? null : image.getBoundingClientRect();
-    const usable =
-      rect !== null && rect.width > 1 && rect.height > 1 ? rect : null;
+    if (!handed) {
+      const image = document.querySelector<SVGElement>(COVER_SELECTOR);
+      const rect = image === null ? null : image.getBoundingClientRect();
+      const present = rect !== null && rect.width > 1 && rect.height > 1;
+      // Uma capa fora da janela não posiciona nada: vale o encaixe centrado.
+      const onScreen = present && rect.bottom > 0 && rect.top < viewportHeight;
+      dockPose(panel, onScreen ? rect : null, viewportWidth, viewportHeight, dock);
 
-    dockPose(panel, usable, viewportWidth, viewportHeight, dock);
+      const arrived = flying && amount >= 1 && present;
+      if (flying) setDocked(arrived);
+      if (!arrived) {
+        handoffAt = 0;
+      } else {
+        if (handoffAt === 0) handoffAt = performance.now();
+        handed = instant || performance.now() - handoffAt >= HANDOFF_HOLD_MS;
+      }
+    }
     restPose(panel, rest);
 
-    const arrived = amount >= 1 && usable !== null;
-    if (flying) setDocked(arrived);
-    if (arrived) {
-      if (handoffAt === 0) handoffAt = performance.now();
-    } else {
-      handoffAt = 0;
-    }
-    const handed =
-      handoffAt !== 0 &&
-      (instant || performance.now() - handoffAt >= HANDOFF_HOLD_MS);
-
-    recede = instant
-      ? handed
-        ? 1
-        : 0
-      : damp(recede, handed ? 1 : 0, RECEDE_DAMP, dt);
-    dock.position.lerp(rest.position, easeStrong(recede));
-    dock.target.lerp(rest.target, easeStrong(recede));
+    const settled = handed && flying ? 1 : 0;
+    recede = instant ? settled : damp(recede, settled, RECEDE_DAMP, dt);
+    const back = easeStrong(recede);
+    seat.position.copy(dock.position).lerp(rest.position, back);
+    seat.target.copy(dock.target).lerp(rest.target, back);
 
     const blend = easeStrong(amount);
-    pose.position.lerp(dock.position, blend);
-    pose.target.lerp(dock.target, blend);
+    pose.position.lerp(seat.position, blend);
+    pose.target.lerp(seat.target, blend);
     return amount;
   };
 

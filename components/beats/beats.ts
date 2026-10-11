@@ -18,7 +18,7 @@ export type Beat = {
 
 export const BEATS: readonly Beat[] = [
   { id: "impact", from: 0.0, to: 0.16, vh: 1.8, mobileVh: 1.5 },
-  { id: "intro", from: 0.16, to: 0.34, vh: 2.4, mobileVh: 2.4 },
+  { id: "intro", from: 0.16, to: 0.34, vh: 3.6, mobileVh: 3.6 },
   { id: "cases", from: 0.34, to: 0.8, vh: 9.6, mobileVh: 7.8 },
   // A vitrine: depois dos cases, a trilha desvia até a parede de telas e a
   // câmera a percorre de ponta a ponta.

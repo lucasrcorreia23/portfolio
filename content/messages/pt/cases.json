@@ -1,10 +1,15 @@
 {
-  "label": "Cases",
-  "enter": "Abrir case",
+  "label": "Projetos",
+  "enter": "Abrir projeto",
+  "lock": {
+    "label": "Senha",
+    "wrong": "Senha incorreta"
+  },
   "disciplines": {
     "produto": "Produto",
     "sistema": "Sistema",
-    "marca": "Marca"
+    "marca": "Marca",
+    "fundador": "Fundador de Produto"
   },
   "case": {
     "back": "Voltar",
@@ -13,7 +18,7 @@
     "role": "Papel",
     "stack": "Stack",
     "disciplines": "Disciplinas",
-    "cover": "{title} — capa do case",
+    "cover": "{title} — capa do projeto",
     "generated": "Imagem gerada"
   }
 }

@@ -123,6 +123,12 @@ export default function ScrollDriver() {
       // para o topo, que é exatamente o que a volta do case não pode fazer.
       if (consumeScrollResize()) {
         lenis.resize();
+        // `resize` iguala a posição, mas não para uma rolagem em curso: o
+        // assentamento numa parada continuaria escrevendo o pixel da descida
+        // no documento do case, que abriria no fim do texto. Parar e religar
+        // é o que encerra a animação.
+        lenis.stop();
+        lenis.start();
         ScrollTrigger.refresh();
       }
       // O assentamento: uma vez por pausa, com a página já parada.

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="corpo" cx="0.36" cy="0.3" r="0.78">
+      <stop offset="0" stop-color="#f4fcff"/>
+      <stop offset="0.28" stop-color="#cdf5ff"/>
+      <stop offset="0.6" stop-color="#9eebff"/>
+      <stop offset="0.84" stop-color="#76cde6"/>
+      <stop offset="1" stop-color="#4fa3c0"/>
+    </radialGradient>
+    <radialGradient id="rebatida" cx="0.76" cy="0.82" r="0.46">
+      <stop offset="0" stop-color="#ffd0e0" stop-opacity="0.62"/>
+      <stop offset="1" stop-color="#ffd0e0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="brilho" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="url(#corpo)"/>
+  <circle cx="32" cy="32" r="30" fill="url(#rebatida)"/>
+  <circle cx="32" cy="32" r="29.5" fill="none" stroke="#3f8aa8" stroke-opacity="0.45"/>
+  <ellipse cx="22.5" cy="19.5" rx="10" ry="6.5" transform="rotate(-32 22.5 19.5)" fill="url(#brilho)"/>
+</svg>

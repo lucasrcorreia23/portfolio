@@ -158,10 +158,16 @@ export function caseComponents({
       // mas um `<p>` com uma figura dentro é HTML inválido, e uma edição futura
       // do MDX não deveria poder produzir isso sem querer.
       if (images > 0) {
-        return <div className="measure mb-6 text-body">{props.children}</div>;
+        return <div className="case-text">{props.children}</div>;
       }
-      return <p {...props} className="measure mb-6 text-body" />;
+      return <p {...props} className="case-text" />;
     },
+
+    // As listas entram aqui para não herdar as margens do mapa global
+    // (`mdx-components.tsx`), que são utilities e venceriam o `.case-list`.
+    ul: (props) => <ul {...props} className="case-list" />,
+    ol: (props) => <ol {...props} className="case-list" />,
+    li: (props) => <li {...props} />,
 
     /**
      * **Os títulos descem um nível.** A página já tem o `h1` (o título do case,
@@ -177,17 +183,16 @@ export function caseComponents({
      *
      * Nenhum carrega `data-veil`, pelo mesmo motivo do `p` acima: quem protege a
      * coluna é a âncora `.case-veil`.
+     *
+     * **Uma classe por papel, sem utility de tipo.** `text-display-3` e as
+     * irmãs moram na camada `utilities`, que vence a `components`: com elas no
+     * elemento, a entrelinha e o peso declarados em `.case-*` não valiam. O
+     * tamanho sai dos mesmos tokens, lidos no CSS do case.
      */
-    h1: (props) => (
-      <h2 {...props} className="case-headline text-display-3" />
-    ),
-    h2: (props) => (
-      <h3 {...props} className="case-statement text-body-lg measure" />
-    ),
-    h3: (props) => <h4 {...props} className="case-subhead text-body-lg measure" />,
-    h4: (props) => (
-      <h5 {...props} className="case-label type-mono text-label measure" />
-    ),
+    h1: (props) => <h2 {...props} className="case-headline" />,
+    h2: (props) => <h3 {...props} className="case-statement" />,
+    h3: (props) => <h4 {...props} className="case-subhead" />,
+    h4: (props) => <h5 {...props} className="case-label type-mono" />,
     hr: () => <hr className="case-rule" />,
     strong: (props) => <strong {...props} className="case-strong" />,
     a: (props) => <a {...props} className="case-link" />,

@@ -100,7 +100,7 @@ export function applyReveal(pose: CameraPose, reveal: number): void {
 }
 
 /** A folga em volta das telas no enquadramento da parede, em unidades. */
-const WALL_MARGIN = 0.9;
+const WALL_MARGIN = 0.6;
 /** Quanto da largura da tela fica livre nas pontas: à esquerda mora a HUD. */
 const WALL_LEAD = 0.14;
 const WALL_TRAIL = 0.05;
@@ -145,6 +145,9 @@ export const REVEAL_MS = 3200;
 export const REVEAL_FOG = 0.11;
 export const REVEAL_GLOW = 0.12;
 
+/** Quanto da névoa fica com a HUD desligada: o ar abre para se olhar em volta. */
+export const BARE_FOG = 0.5;
+
 /** Densidade da névoa ao longo da descida. */
 export function fogAt(progress: number): number {
   const impact = beatOf("impact");
@@ -152,25 +155,16 @@ export function fogAt(progress: number): number {
   return lerp(0.02, 0.017, open) - 0.003 * astroAt(progress);
 }
 
-/** O fim da trilha, 0 a 1: o ar abre e o horizonte clareia. */
+/**
+ * O fim da trilha, 0 a 1: o ar abre, o horizonte clareia e o planeta aparece.
+ * Começa quando a câmera sai da vitrine; antes disso a névoa o esconde.
+ */
 export function astroAt(progress: number): number {
   const cta = beatOf("cta");
   return smooth((progress - cta.from) / (1 - cta.from));
 }
 
-/**
- * Quanto o planeta aparece, 0 a 1: na Introdução e no CTA. Entre os dois a
- * névoa o esconde, para ele nunca ficar atrás de uma placa.
- */
-export function planetAt(progress: number): number {
-  const impact = beatOf("impact");
-  const intro = beatOf("intro");
-  const rise = smooth((progress - impact.to * 0.6) / (impact.to * 0.6));
-  const set = 1 - smooth((progress - (intro.to - 0.05)) / 0.07);
-  return Math.max(rise * set, astroAt(progress));
-}
-
-/** O olhar da câmera na Introdução e no CTA, em graus: um pouco à esquerda. */
+/** O olhar da câmera no CTA, em graus: um pouco à esquerda. */
 const PLANET_HEADING = -5.5;
 /** Quanto à direita do olhar o planeta fica, no máximo, e a altura dele. */
 const PLANET_ASIDE = 19;

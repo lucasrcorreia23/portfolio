@@ -26,8 +26,8 @@ import {
 /**
  * A indústria de fundo. Os tanques (modelos) e a tubulação (primitivas) são
  * uma geometria com chapa enferrujada; as chaminés, outra, com a textura do
- * modelo; a estrutura da parede da vitrine é silhueta, sem textura. Os pórticos que sustentam os painéis
- * saem daqui com textura.
+ * modelo; a estrutura da parede da vitrine, aço com o circuito dela. Os
+ * pórticos que sustentam os painéis saem daqui com textura.
  */
 
 /** Um ponto no chão. */
@@ -239,9 +239,13 @@ function pipeline(z: number, fromX: number, toX: number, lift: number, slant: nu
   }
 }
 
+/** A espessura da alma dos perfis da parede: a dos postes e a das travessas. */
+const WALL_WEB = { post: 0.024, beam: 0.02 };
+
 /**
- * A estrutura da parede da vitrine: os postes e as travessas. As quinze
- * placas, uma por item, são desenhadas pela `Wall` (`components/scene`).
+ * A estrutura da parede da vitrine: postes e travessas em perfil I, de aço,
+ * com a alma virada para a câmera e uma chapa de base em cada poste. As
+ * placas, três por item, são desenhadas pela `Wall` (`components/scene`).
  */
 function wall(parts: Part[], beacons: number[], arcs: number[]): void {
   const place3 = vitrineWall();
@@ -251,6 +255,8 @@ function wall(parts: Part[], beacons: number[], arcs: number[]): void {
   const span = WALL_SPAN;
   const tall = WALL_TALL;
   const top = place3.y + tall / 2 + 0.7;
+  const box = (width: number, height: number, depth: number) =>
+    projectUv(new BoxGeometry(width, height, depth), GANTRY_TILE);
 
   for (let column = 0; column <= WALL_COLUMNS; column += 1) {
     const along = -span / 2 - WALL_CELL.gap / 2 + column * (WALL_CELL.width + WALL_CELL.gap);
@@ -259,7 +265,13 @@ function wall(parts: Part[], beacons: number[], arcs: number[]): void {
     const base = ground(x, z) - 0.4;
     const end = column === 0 || column === WALL_COLUMNS;
     const height = top - base + (end ? 2.4 : 0.4);
-    parts.push(place(new BoxGeometry(0.16, height, 0.16), x, base + height / 2, z, 0, yaw, 0));
+    const y = base + height / 2;
+    // De pé: duas abas e a alma.
+    for (const side of [-1, 1]) {
+      parts.push(place(box(0.03, height, 0.2), x + rightX * 0.085 * side, y, z + rightZ * 0.085 * side, 0, yaw, 0));
+    }
+    parts.push(place(box(0.14, height, WALL_WEB.post), x, y, z, 0, yaw, 0));
+    parts.push(place(box(0.42, 0.03, 0.42), x, base + 0.42, z, 0, yaw, 0));
     if (end) {
       beacons.push(x, base + height + 0.06, z, 0.7);
       arcs.push(x, base + height, z);
@@ -267,8 +279,58 @@ function wall(parts: Part[], beacons: number[], arcs: number[]): void {
   }
   for (let row = 0; row <= WALL_ROWS; row += 1) {
     const y = place3.y - tall / 2 - WALL_CELL.gap / 2 + row * (WALL_CELL.height + WALL_CELL.gap);
-    parts.push(place(new BoxGeometry(span + 1, 0.1, 0.1), place3.x, y, place3.z, 0, yaw, 0));
+    // Deitada: as abas em cima e embaixo.
+    for (const side of [-1, 1]) {
+      parts.push(place(box(span + 1, 0.03, 0.14), place3.x, y + 0.045 * side, place3.z, 0, yaw, 0));
+    }
+    parts.push(place(box(span + 1, 0.06, WALL_WEB.beam), place3.x, y, place3.z, 0, yaw, 0));
   }
+}
+
+/**
+ * O que a parede da vitrine acrescenta ao material de aço: um circuito. Um
+ * fio rosa corre na alma das travessas e dos postes, entre as telas, com
+ * pulsos lentos que passam por ele, cada linha no sentido contrário da
+ * vizinha. É conta no espaço da parede, sem geometria nem textura a mais.
+ */
+export function wallExtension(): PbrExtension {
+  const place3 = vitrineWall();
+  const f = (value: number) => value.toFixed(4);
+  const stepU = WALL_CELL.width + WALL_CELL.gap;
+  const stepV = WALL_CELL.height + WALL_CELL.gap;
+  return {
+    key: "parede",
+    fragmentPars: /* glsl */ `
+float wallLine(float distance, float pixel) {
+  return (1.0 - smoothstep(0.012 - pixel, 0.012 + pixel, distance)) * min(1.0, 0.012 / max(pixel, 1e-5));
+}
+
+float wallPulse(float along, float line, float speed) {
+  float way = mod(line, 2.0) * 2.0 - 1.0;
+  return pow(0.5 + 0.5 * cos(6.2832 * (along * way - uTime * speed + line * 0.31)), 24.0);
+}
+
+vec3 wallCircuit(vec3 world) {
+  vec3 rel = world - vec3(${f(place3.x)}, ${f(place3.y)}, ${f(place3.z)});
+  // Só a face da alma virada para a câmera.
+  float out2 = dot(rel, vec3(${f(Math.sin(place3.yaw))}, 0.0, ${f(Math.cos(place3.yaw))}));
+  if (abs(out2 - 0.011) > 0.006) return vec3(0.0);
+  float u = dot(rel, vec3(${f(Math.cos(place3.yaw))}, 0.0, ${f(-Math.sin(place3.yaw))})) + ${f(WALL_SPAN / 2 + WALL_CELL.gap / 2)};
+  float v = rel.y + ${f(WALL_TALL / 2 + WALL_CELL.gap / 2)};
+  float row = floor(v / ${f(stepV)} + 0.5);
+  float column = floor(u / ${f(stepU)} + 0.5);
+  float onRow = step(-0.5, row) * step(row, ${f(WALL_ROWS + 0.5)}) * step(-0.5, u) * step(u, ${f(WALL_COLUMNS * stepU + 0.5)});
+  float onColumn = step(-0.5, column) * step(column, ${f(WALL_COLUMNS + 0.5)}) * step(-0.3, v) * step(v, ${f(WALL_ROWS * stepV + 0.3)});
+  float across = wallLine(abs(v - row * ${f(stepV)}), fwidth(v)) * onRow * (0.035 + wallPulse(u * 0.07, row, 0.3));
+  float up = wallLine(abs(u - column * ${f(stepU)}), fwidth(u)) * onColumn * (0.035 + wallPulse(v * 0.11, column, 0.24));
+  return uRose * max(across, up);
+}
+`,
+    // Sem o escurecimento das placas, e o fio por cima do teto da chapa.
+    fragmentFog: /* glsl */ `
+gl_FragColor.rgb = applyFog(min(gl_FragColor.rgb, vec3(0.9)) + wallCircuit(vPbrWorld), vViewPosition.z, vPbrWorld);
+`,
+  };
 }
 
 /**
@@ -307,8 +369,8 @@ gl_FragColor.rgb = applyFog(min(gl_FragColor.rgb, vec3(0.9)), vViewPosition.z, v
 };
 
 export type Industry = {
-  /** A silhueta sem textura: a estrutura da parede da vitrine. */
-  geometry: BufferGeometry;
+  /** A estrutura da parede da vitrine, com UV. */
+  wall: BufferGeometry;
   /** Os tanques e a tubulação, com UV. */
   hull: BufferGeometry;
   /** As chaminés, com UV: têm material próprio. */
@@ -394,7 +456,7 @@ export function createIndustry(models: IndustryModels): Industry {
   }
 
   return {
-    geometry: merge(parts),
+    wall: merge(parts, true),
     hull: merge(hullParts, true),
     stacks: merge(stackParts, true),
     beacons: new Float32Array(beacons),

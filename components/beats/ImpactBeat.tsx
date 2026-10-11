@@ -14,8 +14,9 @@ export function ImpactBeat({ beat, hint }: ImpactBeatProps) {
   return (
     <div className="beat-stage">
       <BeatReveal from={beat.from} to={beat.from + 0.03} className="mt-auto pb-[12svh]">
-        <p data-veil data-readout className="type-mono text-hud text-mist w-fit">
-          {hint} <span aria-hidden="true">↓</span>
+        <p data-veil data-readout className="type-mono text-hud text-mist flex w-fit items-center gap-2">
+          {hint}
+          <span aria-hidden="true" className="h-3 w-px bg-current" />
         </p>
       </BeatReveal>
     </div>

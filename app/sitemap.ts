@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getCaseSlugs } from "@/lib/cases";
 import { alternatesFor, LOCALES, SITE_URL } from "@/lib/i18n/config";
+import { isLocked } from "@/lib/work/locked";
 
 /**
  * O sitemap: a descida e cada case, nos dois idiomas, cada entrada
@@ -9,7 +10,8 @@ import { alternatesFor, LOCALES, SITE_URL } from "@/lib/i18n/config";
  * tira ninguém da indexação.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const slugs = await getCaseSlugs();
+  // Case com senha não é anunciado.
+  const slugs = (await getCaseSlugs()).filter((slug) => !isLocked(slug));
   const paths = ["/", ...slugs.map((slug) => `/work/${slug}`)];
 
   return paths.flatMap((path) =>

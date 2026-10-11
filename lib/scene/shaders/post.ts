@@ -321,6 +321,7 @@ uniform vec4  uVeilBox[${MAX_VEIL_BOXES}];
 uniform float uVeilF[${MAX_VEIL_BOXES}];
 uniform float uCeiling;
 uniform float uFogLuma;
+uniform float uRise;
 uniform float uFall;
 
 out vec4 fragColor;
@@ -345,10 +346,11 @@ void main() {
     : 0.0;
   solved *= on;
 
-  // Sobe no quadro, desce devagar. Um quadro sem véu é um quadro ilegível;
-  // um quadro com véu a mais é só um quadro com névoa.
+  // O que se amortece é a presença do véu (0 a 1), não a força resolvida:
+  // ele sobe no tempo em que o texto acende e desce devagar, sem corte.
+  float gate = smoothstep(0.0, 0.15, solved);
   float previous = texelFetch(uPrevious, ivec2(index, 0), 0).g;
-  float damped = solved > previous ? solved : mix(previous, solved, uFall);
+  float damped = mix(previous, gate, gate > previous ? uRise : uFall);
 
   fragColor = vec4(peak, damped, 0.0, 1.0);
 }
@@ -410,19 +412,20 @@ vec3 sampleFocused(vec2 uv, float blend) {
 /**
  * Onde o véu age: 1 dentro de uma caixa que precisa dele, caindo suave para
  * fora dela. O f resolvido deixou de ser a **força** do véu e passou a ser só
- * o portão dele — ele é zero quando nada atrás da caixa passa do teto, sobe no
- * quadro em que alguma coisa passa, e desce devagar (o amortecimento
- * assimétrico continua na passada de resolução).
+ * a presença dele — zero quando nada atrás da caixa passa do teto, subindo
+ * devagar quando alguma coisa passa e descendo devagar depois (o amortecimento
+ * é da passada de resolução).
  */
 float veilAmount(vec2 uv) {
   float total = 0.0;
   for (int i = 0; i < ${MAX_VEIL_BOXES}; i++) {
-    if (uVeilF[i] <= 0.0) continue;
+    // Sem olhar uVeilF: a caixa que saiu continua aqui enquanto o f dela
+    // desce, para o véu sair como entrou e não num corte.
     float f = texelFetch(uVeilSolved, ivec2(i, 0), 0).g;
-    if (f <= 0.0) continue;
+    if (f <= 0.001) continue;
     vec2 d = max(uVeilBox[i].xy - uv, uv - uVeilBox[i].zw);
     float fall = 1.0 - smoothstep(0.0, ${VEIL_FALLOFF.toFixed(3)}, length(max(d, vec2(0.0))));
-    total = max(total, smoothstep(0.0, 0.05, f) * fall);
+    total = max(total, f * fall);
   }
   return total;
 }

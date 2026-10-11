@@ -135,11 +135,11 @@ export function getScrollRole(): ScrollRole {
  * Troca o papel da rolagem. Quem chama é o `ScrollProvider`, a partir do
  * `pathname` — um lugar só, derivado da rota, sem cada página ter que lembrar.
  *
- * A troca sempre pede uma remedida ao driver: a altura do documento acabou de
- * mudar, e publicar contra o limite antigo daria um progresso inventado.
+ * Toda chamada pede uma remedida ao driver, mesmo sem trocar de papel: de um
+ * case para o outro a altura do documento também muda, e publicar contra o
+ * limite antigo daria um progresso inventado.
  */
 export function setScrollRole(next: ScrollRole): void {
-  if (next === role) return;
   role = next;
   pendingResize = true;
   // A rolagem da rota nova começa do zero até a primeira publicação; deixar o

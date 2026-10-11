@@ -69,7 +69,7 @@ void main() {
   vec3 dir = normalize(vWorld - cameraPosition);
   // O horizonte é a cor da névoa distante, e ele fecha para o fundo acima:
   // três paradas com ruído, sem linha onde o terreno acaba.
-  vec3 horizon = fogColorAt(120.0, cameraPosition + dir * 120.0);
+  vec3 horizon = fogBaseAt(120.0, cameraPosition + dir * 120.0);
   float n = sceneNoise(dir * 3.2 + vec3(0.0, uTime * 0.004, 0.0));
   float up = smoothstep(-0.04, 0.42, dir.y + (n - 0.5) * 0.12);
   vec3 color = mix(horizon, mix(uAbyss, uVoid, 0.55), up);
@@ -84,8 +84,8 @@ void main() {
   color += pale * 0.12 * exp(-max(dir.y + 0.14, 0.0) * 7.0) * smoothstep(-0.12, 0.18, toward) * uAstro;
 
   // O planeta: uma esfera grande e distante, meio encoberta pelo horizonte.
-  // Duas luzes, as mesmas do céu em volta: o rosa de um lado e, do outro, o
-  // azul das serras e do fundo, que enche a sombra em vez de deixá-la chapada.
+  // A luz é rosa, de um lado só. Do outro, a sombra se confunde com o céu e
+  // guarda um resto do azul das serras, quase imperceptível.
   // A base some na névoa, como tudo que está longe.
   float away = acos(clamp(dot(dir, uAstroDir), -1.0, 1.0));
   float radius = uPlanet.y;
@@ -115,11 +115,12 @@ void main() {
 
     // A esfera escurece para a borda: é o que a faz ter volume.
     float round = 0.5 + 0.5 * normal.z;
-    vec3 body = mix(uRose, uMist, 0.12) * tone * lit * round;
-    body += blue * (0.1 + 0.16 * tone) * fill * (1.0 - 0.75 * lit) * round;
+    // A sombra é quase a cor do céu; o azul nela é só um resto, não uma luz.
+    vec3 body = mix(color * 0.75, mix(uRose, uMist, 0.12) * tone * round, lit);
+    body += blue * (0.02 + 0.03 * tone) * fill * (1.0 - lit) * round;
     // A atmosfera: um fio na borda, da cor da luz que bate ali.
     float rim = pow(1.0 - normal.z, 4.0);
-    body += (mix(uRose, uMist, 0.45) * 0.55 * lit + blue * 0.5 * fill * (1.0 - lit)) * rim;
+    body += (mix(uRose, uMist, 0.45) * 0.55 * lit + blue * 0.1 * fill * (1.0 - lit)) * rim;
     // Está longe: o ar fica entre ele e a câmera.
     body = mix(body, color, 0.24);
     float sunk = smoothstep(-0.1, 0.06, dir.y) * uPlanet.x;
@@ -128,7 +129,7 @@ void main() {
     vec2 out2 = normalize(p + 1e-5);
     float warmSide = smoothstep(-0.3, 0.8, dot(out2, normalize(sun.xy)));
     float glow = exp(-max(away - radius, 0.0) * 34.0) * (1.0 - disc) * sunk;
-    color += (uRose * 0.16 * warmSide + blue * 0.07 * (1.0 - warmSide)) * glow;
+    color += (uRose * 0.16 * warmSide + blue * 0.015 * (1.0 - warmSide)) * glow;
   }
 
   // As serras ao longe, do lado oposto ao planeta: duas cristas frias, da cor
@@ -150,35 +151,6 @@ void main() {
   color = mix(color, blue * mix(0.04, 0.015, smoothstep(0.0, 0.14, crestB - dir.y)), inB * cold);
 
   gl_FragColor = vec4(color, 1.0);
-}
-`;
-
-/** A indústria: iluminada por vértice, porque é silhueta. */
-export const INDUSTRY_VERT = /* glsl */ `
-${FOG_UNIFORMS_GLSL}
-uniform vec3 uTeal;
-varying vec3 vColor;
-
-${FOG_GLSL}
-
-void main() {
-  vec4 world = modelMatrix * vec4(position, 1.0);
-  vec4 view = viewMatrix * world;
-  vec3 n = normalize(normal);
-  // Neutra e fosca: duas cores de estrutura, a de cima um passo mais clara.
-  vec3 base = mix(uDeep, uTeal, 0.35 + 0.4 * clamp(n.y, 0.0, 1.0)) * 0.34;
-  // A flora a alcança de leve, sem cor própria: é reflexo, não emissão.
-  base += floraGlow(world.xyz) * 0.035;
-  vColor = applyFog(base, -view.z, world.xyz);
-  gl_Position = projectionMatrix * view;
-}
-`;
-
-export const INDUSTRY_FRAG = /* glsl */ `
-varying vec3 vColor;
-
-void main() {
-  gl_FragColor = vec4(vColor, 1.0);
 }
 `;
 
@@ -219,8 +191,8 @@ void main() {
   world.y -= span * 0.05 * sin(t * 3.14159);
 
   // Cada descarga dispara em algumas rajadas, e pisca dentro delas.
-  float chosen = step(0.5, arcHash(vec3(seed, floor(uTime * 0.6), 1.0)));
-  float flicker = step(0.35, arcHash(vec3(seed, beat, 2.0)));
+  float chosen = step(0.7, arcHash(vec3(seed, floor(uTime * 0.6), 1.0)));
+  float flicker = step(0.55, arcHash(vec3(seed, beat, 2.0)));
   vec4 view = viewMatrix * vec4(world, 1.0);
   vAlpha = uStorm * chosen * flicker * exp(-uFogDensity * 0.35 * max(-view.z, 0.0));
   gl_Position = vAlpha <= 0.001 ? vec4(2.0, 2.0, 2.0, 1.0) : projectionMatrix * view;
@@ -232,7 +204,7 @@ uniform vec3 uRose;
 varying float vAlpha;
 
 void main() {
-  gl_FragColor = vec4(mix(uRose, vec3(1.0), 0.5) * 3.2 * vAlpha, 1.0);
+  gl_FragColor = vec4(mix(uRose, vec3(1.0), 0.5) * 1.7 * vAlpha, 1.0);
 }
 `;
 
@@ -247,8 +219,11 @@ void main() {
   vec4 view = viewMatrix * modelMatrix * vec4(position, 1.0);
   float depth = max(-view.z, 0.1);
   // Metade delas pisca devagar, como luz de obstáculo.
-  float blink = aPhase > 0.5 ? 0.55 + 0.45 * step(0.5, fract(uTime * 0.35 + aPhase)) : 1.0;
+  float phase = fract(aPhase);
+  float blink = phase > 0.5 ? 0.55 + 0.45 * step(0.5, fract(uTime * 0.35 + phase)) : 1.0;
   vAlpha = blink * exp(-uFogDensity * 0.45 * depth);
+  // As dos pórticos (fase acima de 1) escurecem de longe junto com as placas.
+  if (aPhase > 1.0) vAlpha *= 1.0 - 0.72 * smoothstep(14.0, 60.0, depth);
   gl_PointSize = clamp(uResolution.y * 0.9 / depth, 1.5, uResolution.y * 0.006);
   gl_Position = projectionMatrix * view;
 }

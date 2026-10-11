@@ -17,6 +17,7 @@ import {
   loadIndustryModels,
   BACKDROP_EXTENSION,
   markIndustrySettled,
+  wallExtension,
 } from "@/lib/scene/industry";
 import { whenEntered } from "@/lib/scene/late-assets";
 import { createPbrMaterial, disposePbrMaterial, loadPbrSet } from "@/lib/scene/pbr";
@@ -26,8 +27,6 @@ import {
   ARC_VERT,
   BEACON_FRAG,
   BEACON_VERT,
-  INDUSTRY_FRAG,
-  INDUSTRY_VERT,
   SKY_FRAG,
   SKY_VERT,
   TERRAIN_FRAG,
@@ -37,8 +36,8 @@ import { createTerrainGeometry } from "@/lib/scene/terrain";
 import { fogUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
 
 /**
- * O que não emite: o céu, o terreno, a indústria (silhueta, tanques e
- * chaminés), as descargas e as luzes indicadoras dela. Sete draw calls.
+ * O que não emite: o céu, o terreno, a indústria (parede da vitrine, tanques
+ * e chaminés), as descargas e as luzes indicadoras dela. Sete draw calls.
  */
 export function Land({ shared }: { shared: SharedUniforms }) {
   const sky = useRef<Mesh>(null);
@@ -52,18 +51,22 @@ export function Land({ shared }: { shared: SharedUniforms }) {
     const hull = createPbrMaterial(shared, BACKDROP_EXTENSION);
     stacks.metalness = 0;
     hull.metalness = 0;
-    return { stacks, hull };
+    // A estrutura da parede da vitrine: o mesmo aço dos pórticos.
+    const wall = createPbrMaterial(shared, wallExtension());
+    return { stacks, hull, wall };
   }, [shared]);
   useEffect(() => {
     let alive = true;
     void whenEntered().then(() => {
       void loadPbrSet(gl, backdrop.stacks, "chamine", () => alive).catch(() => {});
       void loadPbrSet(gl, backdrop.hull, "green_metal_rust", () => alive).catch(() => {});
+      void loadPbrSet(gl, backdrop.wall, "green_metal_rust", () => alive).catch(() => {});
     });
     return () => {
       alive = false;
       disposePbrMaterial(backdrop.stacks);
       disposePbrMaterial(backdrop.hull);
+      disposePbrMaterial(backdrop.wall);
     };
   }, [gl, backdrop]);
 
@@ -118,7 +121,7 @@ export function Land({ shared }: { shared: SharedUniforms }) {
     arcs.setAttribute("aTo", new BufferAttribute(to, 3));
     arcs.setAttribute("aArc", new BufferAttribute(arc, 2));
 
-    return { geometry: made.geometry, hull: made.hull, stacks: made.stacks, beacons, arcs };
+    return { wall: made.wall, hull: made.hull, stacks: made.stacks, beacons, arcs };
   }, [models]);
 
   useEffect(() => {
@@ -153,11 +156,6 @@ export function Land({ shared }: { shared: SharedUniforms }) {
         uniforms: { ...fog, uTeal: shared.teal },
         vertexShader: TERRAIN_VERT,
         fragmentShader: TERRAIN_FRAG,
-      }),
-      industryMaterial: new ShaderMaterial({
-        uniforms: { ...fog, uTeal: shared.teal },
-        vertexShader: INDUSTRY_VERT,
-        fragmentShader: INDUSTRY_FRAG,
       }),
       beaconMaterial: new ShaderMaterial({
         uniforms: { ...fog, uResolution: shared.resolution, uMist: shared.mist },
@@ -195,11 +193,7 @@ export function Land({ shared }: { shared: SharedUniforms }) {
       />
       {industry !== null && (
         <>
-          <mesh
-            geometry={industry.geometry}
-            material={built.industryMaterial}
-            frustumCulled={false}
-          />
+          <mesh geometry={industry.wall} material={backdrop.wall} frustumCulled={false} />
           <mesh geometry={industry.hull} material={backdrop.hull} frustumCulled={false} />
           <mesh geometry={industry.stacks} material={backdrop.stacks} frustumCulled={false} />
           <lineSegments

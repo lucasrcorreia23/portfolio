@@ -13,7 +13,7 @@ import { MAX_VEIL_BOXES } from "./veil";
  */
 
 /** Quantos aglomerados de flora iluminam a cena. Tamanho de array no GLSL. */
-export const MAX_EMITTERS = 12;
+export const MAX_EMITTERS = 13;
 
 export type SharedUniforms = ReturnType<typeof createSharedUniforms>;
 

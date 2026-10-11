@@ -13,6 +13,8 @@ export async function Gate() {
   return (
     <>
       <noscript dangerouslySetInnerHTML={{ __html: NOSCRIPT_STYLE }} />
+      {/* A máscara da flor: sem ela o loading abre vazio. */}
+      <link rel="preload" as="image" href="/loading/flor.webp" fetchPriority="high" />
       <Loading label={t("label")} status={t("status")} done={t("done")} />
     </>
   );

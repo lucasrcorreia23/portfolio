@@ -20,8 +20,8 @@ const BLOCKS =
 
 /**
  * Até quanto de vão vertical entre dois blocos ainda é "dentro da coluna".
- * O maior intervalo do CSS do case é o rótulo de seção (5.5rem acima dele) e a
- * régua (5rem): 160 px cobre os dois a qualquer tamanho de fonte razoável.
+ * Os maiores intervalos do CSS do case são o rodapé (8rem acima dele), a régua
+ * e a abertura do corpo (7rem cada): 160 px cobre os três.
  */
 const GAP_PX = 160;
 

@@ -122,7 +122,8 @@ vec3 astroAir(vec3 dir) {
   return air * uAstro;
 }
 
-vec3 fogColorAt(float viewDepth, vec3 worldPos) {
+/** A névoa rente ao horizonte: é dela que o céu parte (SKY_FRAG). */
+vec3 fogBaseAt(float viewDepth, vec3 worldPos) {
   float depth01 = clamp(viewDepth / 120.0, 0.0, 1.0);
   // Três paradas: o fundo, a profundidade média e a linha do horizonte.
   vec3 fogColor = mix(uVoid, uAbyss, smoothstep(0.0, 0.25, depth01));
@@ -130,8 +131,21 @@ vec3 fogColorAt(float viewDepth, vec3 worldPos) {
   fogColor += 0.06 * floraScatter(worldPos);
   fogColor += astroAir(normalize(worldPos - cameraPosition)) * smoothstep(0.35, 1.0, depth01);
   // As descargas acendem o ar inteiro por um instante, mais longe do que perto.
-  fogColor += mix(uRose, vec3(1.0), 0.45) * 0.05 * uFlash * smoothstep(0.05, 0.6, depth01);
+  fogColor += mix(uRose, vec3(1.0), 0.45) * 0.025 * uFlash * smoothstep(0.05, 0.6, depth01);
   return fogColor;
+}
+
+/**
+ * A cor para onde a névoa leva um ponto. Longe e acima do horizonte ela fecha
+ * junto com o céu (as mesmas paradas de SKY_FRAG): o que está longe some no
+ * fundo que tem atrás, e não numa faixa mais clara que ele.
+ */
+vec3 fogColorAt(float viewDepth, vec3 worldPos) {
+  vec3 fogColor = fogBaseAt(viewDepth, worldPos);
+  float rise = normalize(worldPos - cameraPosition).y;
+  vec3 above = mix(mix(uAbyss, uVoid, 0.55), uVoid, smoothstep(0.3, 0.9, rise));
+  float far = smoothstep(0.35, 1.0, clamp(viewDepth / 120.0, 0.0, 1.0));
+  return mix(fogColor, above, smoothstep(-0.04, 0.42, rise) * far);
 }
 
 /** Quanto da névoa fica entre a câmera e o ponto, 0 a 1. */
@@ -147,5 +161,22 @@ float fogAmount(float viewDepth, vec3 worldPos) {
 
 vec3 applyFog(vec3 color, float viewDepth, vec3 worldPos) {
   return mix(color, fogColorAt(viewDepth, worldPos), fogAmount(viewDepth, worldPos));
+}
+
+/**
+ * As placas dos cases acendem com a chegada. De longe elas estão lá, mas
+ * escuras: uma silhueta na névoa, como as torres, e não um objeto claro no
+ * fundo. plateFar é quanto a placa está longe, 0 a 1; a luz dela cai com isso.
+ */
+float plateFar(float viewDepth) {
+  return smoothstep(14.0, 60.0, viewDepth);
+}
+
+float plateDim(float viewDepth) {
+  return 1.0 - 0.72 * plateFar(viewDepth);
+}
+
+vec3 applyPlateFog(vec3 color, float viewDepth, vec3 worldPos) {
+  return applyFog(color * plateDim(viewDepth), viewDepth, worldPos);
 }
 `;

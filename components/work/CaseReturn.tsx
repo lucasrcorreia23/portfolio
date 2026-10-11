@@ -43,12 +43,16 @@ export function CaseReturn({ label, title, className = "" }: CaseReturnProps) {
       type="button"
       title={title}
       aria-label={title}
-      className={className}
+      className={`group inline-flex items-center gap-2 ${className}`}
       onClick={() => {
         leaveCase(router, pathname);
       }}
     >
-      <span aria-hidden="true">← </span>
+      {/* O traço da régua no lugar da flecha: cresce para o lado da volta. */}
+      <span
+        aria-hidden="true"
+        className="ease-strong h-px w-4 origin-right bg-current transition-transform duration-(--dur-snap) group-hover:scale-x-150"
+      />
       {label}
     </button>
   );
