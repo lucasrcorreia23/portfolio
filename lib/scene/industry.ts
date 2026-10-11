@@ -239,13 +239,16 @@ function pipeline(z: number, fromX: number, toX: number, lift: number, slant: nu
   }
 }
 
-/** A espessura da alma dos perfis da parede: a dos postes e a das travessas. */
-const WALL_WEB = { post: 0.024, beam: 0.02 };
+/**
+ * A face e a espessura das barras da parede. A espessura é a do circuito em
+ * `wallExtension`, que corre só na face virada para a câmera.
+ */
+const WALL_BAR = { face: 0.05, depth: 0.02 };
 
 /**
- * A estrutura da parede da vitrine: postes e travessas em perfil I, de aço,
- * com a alma virada para a câmera e uma chapa de base em cada poste. As
- * placas, três por item, são desenhadas pela `Wall` (`components/scene`).
+ * A estrutura da parede da vitrine: barras finas de aço entre as telas, para
+ * a moldura não competir com elas. Os postes das pontas descem até o chão,
+ * com chapa de base. As placas são desenhadas pela `Wall` (`components/scene`).
  */
 function wall(parts: Part[], beacons: number[], arcs: number[]): void {
   const place3 = vitrineWall();
@@ -266,24 +269,16 @@ function wall(parts: Part[], beacons: number[], arcs: number[]): void {
     const end = column === 0 || column === WALL_COLUMNS;
     const height = top - base + (end ? 2.4 : 0.4);
     const y = base + height / 2;
-    // De pé: duas abas e a alma.
-    for (const side of [-1, 1]) {
-      parts.push(place(box(0.03, height, 0.2), x + rightX * 0.085 * side, y, z + rightZ * 0.085 * side, 0, yaw, 0));
-    }
-    parts.push(place(box(0.14, height, WALL_WEB.post), x, y, z, 0, yaw, 0));
-    parts.push(place(box(0.42, 0.03, 0.42), x, base + 0.42, z, 0, yaw, 0));
+    parts.push(place(box(end ? 0.14 : WALL_BAR.face, height, WALL_BAR.depth), x, y, z, 0, yaw, 0));
     if (end) {
+      parts.push(place(box(0.42, 0.03, 0.42), x, base + 0.42, z, 0, yaw, 0));
       beacons.push(x, base + height + 0.06, z, 0.7);
       arcs.push(x, base + height, z);
     }
   }
   for (let row = 0; row <= WALL_ROWS; row += 1) {
     const y = place3.y - tall / 2 - WALL_CELL.gap / 2 + row * (WALL_CELL.height + WALL_CELL.gap);
-    // Deitada: as abas em cima e embaixo.
-    for (const side of [-1, 1]) {
-      parts.push(place(box(span + 1, 0.03, 0.14), place3.x, y + 0.045 * side, place3.z, 0, yaw, 0));
-    }
-    parts.push(place(box(span + 1, 0.06, WALL_WEB.beam), place3.x, y, place3.z, 0, yaw, 0));
+    parts.push(place(box(span + 0.3, WALL_BAR.face, WALL_BAR.depth), place3.x, y, place3.z, 0, yaw, 0));
   }
 }
 
@@ -302,7 +297,7 @@ export function wallExtension(): PbrExtension {
     key: "parede",
     fragmentPars: /* glsl */ `
 float wallLine(float distance, float pixel) {
-  return (1.0 - smoothstep(0.012 - pixel, 0.012 + pixel, distance)) * min(1.0, 0.012 / max(pixel, 1e-5));
+  return (1.0 - smoothstep(0.006 - pixel, 0.006 + pixel, distance)) * min(1.0, 0.006 / max(pixel, 1e-5));
 }
 
 float wallPulse(float along, float line, float speed) {
@@ -321,8 +316,8 @@ vec3 wallCircuit(vec3 world) {
   float column = floor(u / ${f(stepU)} + 0.5);
   float onRow = step(-0.5, row) * step(row, ${f(WALL_ROWS + 0.5)}) * step(-0.5, u) * step(u, ${f(WALL_COLUMNS * stepU + 0.5)});
   float onColumn = step(-0.5, column) * step(column, ${f(WALL_COLUMNS + 0.5)}) * step(-0.3, v) * step(v, ${f(WALL_ROWS * stepV + 0.3)});
-  float across = wallLine(abs(v - row * ${f(stepV)}), fwidth(v)) * onRow * (0.035 + wallPulse(u * 0.07, row, 0.3));
-  float up = wallLine(abs(u - column * ${f(stepU)}), fwidth(u)) * onColumn * (0.035 + wallPulse(v * 0.11, column, 0.24));
+  float across = wallLine(abs(v - row * ${f(stepV)}), fwidth(v)) * onRow * (0.015 + wallPulse(u * 0.07, row, 0.3));
+  float up = wallLine(abs(u - column * ${f(stepU)}), fwidth(u)) * onColumn * (0.015 + wallPulse(v * 0.11, column, 0.24));
   return uRose * max(across, up);
 }
 `,

@@ -65,8 +65,10 @@ void main() {
   vec3 plate = texture(uMap, vUv).rgb;
   // A tela debaixo do ponteiro: x = qual, y = quanto.
   float point = (abs(vCell - uPoint.x) < 0.5 ? 1.0 : 0.0) * uPoint.y;
-  vec3 color = mix(uDeep, plate, 0.2 + 0.8 * max(on, point)) * light;
-  color *= 1.0 + 0.4 * on + 0.9 * point;
+  // Acesa, a tela é a imagem dela, sem a sombra da chapa.
+  float lit = max(on, point);
+  vec3 color = mix(uDeep * light, plate, 0.2 + 0.8 * lit) * mix(light, vec3(1.0), lit);
+  color *= 1.0 + 0.15 * point;
 
   // O ponto de emissão do placeholder: aceso de longe, mais forte de frente.
   // Tela com imagem não tem ponto (raio zero).
@@ -76,7 +78,7 @@ void main() {
 
   // O ponteiro acende a borda da tela dele.
   vec2 edge = min(vLocal, 1.0 - vLocal) * vec2(${ratio}, 1.0);
-  float rim = 1.0 - smoothstep(0.0, 0.035, min(edge.x, edge.y));
+  float rim = 1.0 - smoothstep(0.0, 0.015, min(edge.x, edge.y));
   color += uMist * 0.5 * rim * point;
 
   gl_FragColor = vec4(applyFog(color, vDepth, vWorld), 1.0);

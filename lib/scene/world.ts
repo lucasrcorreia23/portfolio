@@ -232,7 +232,7 @@ export function vitrineWall(): Placement {
  */
 export const WALL_COLUMNS = 9;
 export const WALL_ROWS = 3;
-export const WALL_CELL = { width: 1.76, height: 1.1, gap: 0.28 };
+export const WALL_CELL = { width: 1.76, height: 1.1, gap: 0.07 };
 export const WALL_SPAN = WALL_COLUMNS * WALL_CELL.width + (WALL_COLUMNS - 1) * WALL_CELL.gap;
 export const WALL_TALL = WALL_ROWS * WALL_CELL.height + (WALL_ROWS - 1) * WALL_CELL.gap;
 

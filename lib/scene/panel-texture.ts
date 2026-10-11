@@ -174,7 +174,7 @@ export function createPanelTexture(
 }
 
 /** Pixels de canvas por unidade nas telas da parede. */
-const WALL_SCALE = 1.5;
+const WALL_SCALE = 3;
 
 /** Uma tela da parede da vitrine: um placeholder do item, ou uma imagem dele. */
 export type WallScreen = {

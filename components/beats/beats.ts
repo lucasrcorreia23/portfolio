@@ -22,7 +22,7 @@ export const BEATS: readonly Beat[] = [
   { id: "cases", from: 0.34, to: 0.8, vh: 9.6, mobileVh: 7.8 },
   // A vitrine: depois dos cases, a trilha desvia até a parede de telas e a
   // câmera a percorre de ponta a ponta.
-  { id: "vitrine", from: 0.8, to: 0.9, vh: 4.4, mobileVh: 4.0 },
+  { id: "vitrine", from: 0.8, to: 0.9, vh: 7, mobileVh: 6 },
   { id: "cta", from: 0.9, to: 1.0, vh: 2.0, mobileVh: 2.0 },
 ] as const;
 

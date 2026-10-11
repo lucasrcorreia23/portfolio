@@ -30,11 +30,13 @@ type WallProps = {
 };
 
 /**
- * A grade da textura não é a da parede: a parede é uma faixa comprida, e uma
- * textura com a mesma forma passaria do tamanho máximo de muitos aparelhos.
+ * A grade da textura não é a da parede: a parede é uma faixa comprida, e as
+ * telas vão na resolução das imagens. Uma textura só passaria do tamanho
+ * máximo de muitos aparelhos; são duas, 4 × 4 telas cada.
  */
-const ATLAS_COLUMNS = 8;
-const ATLAS_ROWS = Math.ceil((WALL_COLUMNS * WALL_ROWS) / ATLAS_COLUMNS);
+const ATLAS_COLUMNS = 4;
+const ATLAS_ROWS = 4;
+const ATLAS_CELLS = ATLAS_COLUMNS * ATLAS_ROWS;
 
 /** As telas só respondem ao ponteiro enquanto a câmera olha para a parede. */
 const LIVE_FORK = 0.35;
@@ -61,8 +63,8 @@ function createPlates(dots: readonly [number, number, number][]): BufferGeometry
   for (let cell = 0; cell < count; cell += 1) {
     const column = Math.floor(cell / WALL_ROWS);
     const row = cell % WALL_ROWS;
-    const atlasColumn = cell % ATLAS_COLUMNS;
-    const atlasRow = Math.floor(cell / ATLAS_COLUMNS);
+    const atlasColumn = (cell % ATLAS_CELLS) % ATLAS_COLUMNS;
+    const atlasRow = Math.floor((cell % ATLAS_CELLS) / ATLAS_COLUMNS);
     const x = -SPAN / 2 + WALL_CELL.width / 2 + column * (WALL_CELL.width + WALL_CELL.gap);
     const y = TALL / 2 - WALL_CELL.height / 2 - row * (WALL_CELL.height + WALL_CELL.gap);
     const [dx, dy, dr] = dots[cell] ?? [0.5, 0.5, 0];
@@ -97,6 +99,10 @@ function createPlates(dots: readonly [number, number, number][]): BufferGeometry
   geometry.setAttribute("aOrder", new BufferAttribute(order, 1));
   geometry.setAttribute("aCell", new BufferAttribute(cells, 1));
   geometry.setIndex(index);
+  // Um grupo por textura: as primeiras telas numa, as outras na segunda.
+  const split = Math.min(count, ATLAS_CELLS) * 6;
+  geometry.addGroup(0, split, 0);
+  geometry.addGroup(split, index.length - split, 1);
   return geometry;
 }
 
@@ -126,33 +132,38 @@ export function Wall({ shared }: WallProps) {
   const placement = useMemo(() => vitrineWall(), []);
 
   const built = useMemo(() => {
-    const { texture, dots } = createWallTexture(
-      wallScreens(VITRINE, WALL_COLUMNS * WALL_ROWS),
-      ATLAS_COLUMNS,
-      ATLAS_ROWS,
+    const screens = wallScreens(VITRINE, WALL_COLUMNS * WALL_ROWS);
+    const atlases = [screens.slice(0, ATLAS_CELLS), screens.slice(ATLAS_CELLS)].map(
+      (part) => createWallTexture(part, ATLAS_COLUMNS, ATLAS_ROWS),
     );
-    const geometry = createPlates(dots);
-    const material = new ShaderMaterial({
-      uniforms: {
-        ...fogUniforms(shared),
-        uMap: { value: texture },
-        uMist: shared.mist,
-        uFork: shared.fork,
-        uPoint: { value: new Vector2(-1, 0) },
-      },
-      vertexShader: WALL_VERT,
-      fragmentShader: wallFrag(WALL_CELL.width / WALL_CELL.height),
-      side: DoubleSide,
-    });
-    return { geometry, texture, material };
+    const geometry = createPlates(atlases.flatMap((atlas) => atlas.dots));
+    // As duas placas dividem o ponteiro: uma escrita acende a tela nas duas.
+    const point = { value: new Vector2(-1, 0) };
+    const materials = atlases.map(
+      ({ texture }) =>
+        new ShaderMaterial({
+          uniforms: {
+            ...fogUniforms(shared),
+            uMap: { value: texture },
+            uMist: shared.mist,
+            uFork: shared.fork,
+            uPoint: point,
+          },
+          vertexShader: WALL_VERT,
+          fragmentShader: wallFrag(WALL_CELL.width / WALL_CELL.height),
+          side: DoubleSide,
+        }),
+    );
+    const textures = atlases.map((atlas) => atlas.texture);
+    return { geometry, textures, materials, point: point.value };
   }, [shared]);
 
   useEffect(() => {
     const held = built;
     return () => {
       held.geometry.dispose();
-      held.texture.dispose();
-      held.material.dispose();
+      for (const texture of held.textures) texture.dispose();
+      for (const material of held.materials) material.dispose();
     };
   }, [built]);
 
@@ -178,20 +189,17 @@ export function Wall({ shared }: WallProps) {
         cell = cellAt(RAY.dot(RIGHT), RAY.y);
       }
     }
-    const pointed = built.material.uniforms["uPoint"]?.value as Vector2 | undefined;
     point.current = damp(point.current, cell >= 0 ? 1 : 0, 12, dt);
-    if (pointed !== undefined) {
-      // A tela só troca quando há outra debaixo do ponteiro: a que ele deixou
-      // apaga no lugar.
-      if (cell >= 0) pointed.x = cell;
-      pointed.y = point.current;
-    }
+    // A tela só troca quando há outra debaixo do ponteiro: a que ele deixou
+    // apaga no lugar.
+    if (cell >= 0) built.point.x = cell;
+    built.point.y = point.current;
   }, -7);
 
   return (
     <mesh
       geometry={built.geometry}
-      material={built.material}
+      material={built.materials}
       position={[placement.x, placement.y, placement.z]}
       rotation={[0, placement.yaw, 0]}
     />

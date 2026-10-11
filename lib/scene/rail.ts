@@ -8,6 +8,7 @@ import {
   pathX,
   stopWeight,
   vitrineWall,
+  WALL_CELL,
   WALL_SPAN,
   WALL_TALL,
 } from "./world";
@@ -99,43 +100,54 @@ export function applyReveal(pose: CameraPose, reveal: number): void {
   pose.target.y += 1.5 * back;
 }
 
-/** A folga em volta das telas no enquadramento da parede, em unidades. */
-const WALL_MARGIN = 0.6;
+/**
+ * Quanto da parede o quadro mostra: na altura, uma linha e meia — a de baixo
+ * cortada no meio, para o olhar descer até ela —; na largura, nunca menos que
+ * uma tela e um terço (no retrato).
+ */
+const WALL_VIEW_TALL = WALL_CELL.height * 1.6;
+const WALL_VIEW_WIDE = WALL_CELL.width * 1.3;
 /** Quanto da largura da tela fica livre nas pontas: à esquerda mora a HUD. */
 const WALL_LEAD = 0.14;
 const WALL_TRAIL = 0.05;
 
 /**
  * A câmera diante da parede da vitrine, por cima da pose. `amount` (0 a 1) é
- * o desvio: a trilha chega de frente para as telas, à distância em que as
- * linhas enchem a altura do quadro. `pan` (0 a 1) é o percurso: o scroll
- * arrasta a câmera da primeira à última coluna.
+ * o desvio: a trilha chega de frente para as telas, perto, com duas telas no
+ * quadro. `pan` (0 a 1) é o percurso: o scroll arrasta a câmera da primeira à
+ * última coluna. `drop` (0 a 1) é o olhar para baixo: a câmera desce da
+ * primeira linha até a última, sem inclinar.
  */
 export function applyWallApproach(
   pose: CameraPose,
   amount: number,
   pan: number,
+  drop: number,
   aspect: number,
 ): void {
   if (amount <= 0) return;
   const wall = vitrineWall();
   const half = Math.tan((CAMERA_FOV * Math.PI) / 360);
-  const distance = (WALL_TALL + WALL_MARGIN) / (2 * half);
-  // Meia largura do que a câmera vê no plano da parede.
+  const distance = Math.max(WALL_VIEW_TALL / (2 * half), WALL_VIEW_WIDE / (2 * half * aspect));
+  // Meia largura e meia altura do que a câmera vê no plano da parede.
   const reach = distance * half * aspect;
+  const rise = distance * half;
   let first = -WALL_SPAN / 2 + reach * (1 - 2 * WALL_LEAD);
   let last = WALL_SPAN / 2 - reach * (1 - 2 * WALL_TRAIL);
   // Uma janela tão larga que a parede cabe inteira: a câmera fica no meio.
   if (first > last) first = last = (first + last) / 2;
   const along = lerp(first, last, pan);
+  // Do topo à base; se a altura inteira cabe, no meio.
+  const top = Math.max(0, WALL_TALL / 2 - rise + WALL_CELL.gap);
+  const y = wall.y + lerp(top, -top, drop);
 
   const nx = Math.sin(wall.yaw);
   const nz = Math.cos(wall.yaw);
   const x = wall.x + Math.cos(wall.yaw) * along;
   const z = wall.z - Math.sin(wall.yaw) * along;
-  PANEL.set(x + nx * distance, wall.y, z + nz * distance);
+  PANEL.set(x + nx * distance, y, z + nz * distance);
   pose.position.lerp(PANEL, amount);
-  PANEL.set(x, wall.y, z);
+  PANEL.set(x, y, z);
   pose.target.lerp(PANEL, amount);
 }
 

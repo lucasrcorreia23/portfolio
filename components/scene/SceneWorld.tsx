@@ -111,6 +111,7 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
   const focusRef = useRef(20);
   const focusRangeRef = useRef(34);
   const sway = useRef({ x: 0, y: 0 });
+  const drop = useRef(0);
   /** Falso até o primeiro quadro: antes dele não há posição anterior. */
   const moved = useRef(false);
   /** A HUD no quadro anterior, e se o segredo do CTA já foi achado. */
@@ -166,11 +167,14 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
     applyReveal(pose, reveal);
 
     // Na vitrine a trilha desvia: a câmera chega perto da parede de telas.
+    // O ponteiro abaixo do meio da tela desce a câmera pelas linhas dela.
     const fork = forkWeight(progress);
+    drop.current = still ? 0 : damp(drop.current, clamp01(getPointer().y * 1.25), 2.2, dt);
     applyWallApproach(
       pose,
       fork,
       wallPan(progress),
+      drop.current,
       state.size.width / Math.max(state.size.height, 1),
     );
     shared.fork.value = fork;
@@ -192,7 +196,8 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
     // de um case, onde nada se mexe.
     if (!still) {
       const pointer = getPointer();
-      const amount = 1 - inCase;
+      // Na parede o olhar não gira: as telas ficam de frente.
+      const amount = (1 - inCase) * (1 - fork);
       sway.current.x = damp(sway.current.x, pointer.x * Math.abs(pointer.x) * amount, 2.2, dt);
       sway.current.y = damp(sway.current.y, pointer.y * Math.abs(pointer.y) * amount, 2.2, dt);
       VIEW.subVectors(pose.target, pose.position);
