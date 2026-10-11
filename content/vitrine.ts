@@ -2,7 +2,7 @@
  * A vitrine: os itens da parede de telas da cena, num arquivo só. Não há
  * página: a parede mostra as telas, e o nome dos itens vai em DOM só para
  * leitor de tela. `year`, `discipline`, `type` e `slug` não são desenhados hoje.
- * Dos seis cases da trilha, só Perfecting e WeCann Care entram também aqui;
+ * Dos seis cases da trilha, só Perfecting e Agentes de IA entram também aqui;
  * os outros ficam só com a placa deles.
  */
 export type VitrineItem = {
@@ -31,5 +31,5 @@ export const VITRINE: readonly VitrineItem[] = [
   { name: "Multlog" },
   { name: "Solan Group" },
   { name: "Perfecting", year: 2026, discipline: "Produto · Marca", slug: "perfecting" },
-  { name: "WeCann Care", year: 2025, discipline: "Produto · Sistema", slug: "wecann-atena" },
+  { name: "Agentes de IA", year: 2025, discipline: "Produto · Sistema", slug: "wecann-atena" },
 ];
