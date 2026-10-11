@@ -1,9 +1,11 @@
 import { HEIGHT_GLSL } from "../terrain";
 import { TERRAIN } from "../world";
 import { FOG_GLSL, FOG_UNIFORMS_GLSL } from "./fog";
+import { WIND_GLSL } from "./wind";
 
 /**
- * A flora: a relva, as flores e os esporos. É a única coisa da cena que emite.
+ * A flora: a relva e as flores. Com os esporos (`spores.ts`), é a única coisa
+ * da cena que emite.
  *
  * Tudo é iluminado **por vértice**, com a névoa incluída: o fragmento de uma
  * lâmina de relva é uma cor só, e é isso que deixa cem mil delas baratas.
@@ -11,19 +13,6 @@ import { FOG_GLSL, FOG_UNIFORMS_GLSL } from "./fog";
 
 /** O lado do ladrilho de relva que acompanha a câmera, em metros. */
 export const GRASS_TILE = 72;
-
-const WIND_GLSL = /* glsl */ `
-/**
- * O vento: duas ondas que atravessam o campo e uma rajada lenta por cima.
- * Devolve o deslocamento em XZ da ponta de uma haste de um metro.
- */
-vec2 windAt(vec3 worldPos, float time) {
-  float a = sin(worldPos.x * 0.11 + worldPos.z * 0.07 + time * 0.9);
-  float b = sin(worldPos.x * 0.31 - worldPos.z * 0.23 + time * 1.7);
-  float gust = sceneNoise(vec3(worldPos.xz * 0.035, time * 0.12));
-  return vec2(0.75, 0.4) * (a * 0.14 + b * 0.05) * (0.4 + 1.3 * gust);
-}
-`;
 
 export const GRASS_VERT = /* glsl */ `
 ${FOG_UNIFORMS_GLSL}
@@ -176,68 +165,5 @@ void main() {
   leaf += vHue * uLeaf * detail * (0.07 + 0.42 * vAlong * vAlong);
   vec3 color = mix(leaf, vTint * (0.5 + 1.1 * detail), petal);
   gl_FragColor = vec4(mix(color, vFogColor, vFog), 1.0);
-}
-`;
-
-export const SPORE_VERT = /* glsl */ `
-${FOG_UNIFORMS_GLSL}
-uniform vec2 uResolution;
-uniform vec4 uVeilBox[8];
-uniform float uVeilF[8];
-uniform vec4 uPanelRect;
-uniform vec3 uBoxCenter;
-attribute vec4 aSeed;
-varying float vAlpha;
-
-const vec3 BOX = vec3(64.0, 18.0, 76.0);
-
-void main() {
-  // Deriva lenta, sem cauda: cada esporo anda num laço próprio e sobe devagar.
-  vec3 p = position;
-  p.x += sin(uTime * 0.11 + aSeed.x * 6.28) * 1.6;
-  p.z += cos(uTime * 0.09 + aSeed.y * 6.28) * 1.6;
-  p.y += uTime * (0.05 + 0.08 * aSeed.z);
-  // O volume acompanha a câmera, como o ladrilho de relva.
-  vec3 world = uBoxCenter + mod(p - uBoxCenter, BOX) - BOX * 0.5;
-
-  vec4 view = viewMatrix * vec4(world, 1.0);
-  float depth = -view.z;
-  vec4 clip = projectionMatrix * view;
-  vec2 ndc = clip.xy / max(clip.w, 1e-4);
-  vec2 uv = ndc * 0.5 + 0.5;
-
-  // Nas bordas e no fundo do quadro: perto da lente só fora do centro.
-  float border = smoothstep(0.3, 0.8, max(abs(ndc.x), abs(ndc.y)));
-  float alpha = mix(border, 1.0, smoothstep(14.0, 34.0, depth));
-  alpha *= smoothstep(3.0, 8.0, depth) * (1.0 - smoothstep(48.0, 62.0, depth));
-  // Nunca sobre texto ou navegação: as mesmas caixas do véu de legibilidade.
-  for (int i = 0; i < 8; i++) {
-    if (uVeilF[i] <= 0.0) continue;
-    vec2 d = max(uVeilBox[i].xy - uv, uv - uVeilBox[i].zw);
-    alpha *= smoothstep(0.0, 0.05, max(d.x, d.y));
-  }
-  // Nem sobre o painel: o retângulo dele na tela, com uma margem.
-  if (uPanelRect.z > uPanelRect.x) {
-    vec2 d = max(uPanelRect.xy - uv, uv - uPanelRect.zw);
-    alpha *= smoothstep(0.0, 0.04, max(d.x, d.y));
-  }
-  alpha *= exp(-uFogDensity * 0.5 * depth) * uGlow * (0.4 + 0.6 * aSeed.w);
-
-  vAlpha = alpha;
-  gl_PointSize = clamp(uResolution.y * (0.045 + 0.05 * aSeed.z) / max(depth, 1.0), 1.0, uResolution.y * 0.007);
-  gl_Position = alpha <= 0.001 ? vec4(2.0, 2.0, 2.0, 1.0) : clip;
-}
-`;
-
-export const SPORE_FRAG = /* glsl */ `
-uniform vec3 uCyan;
-varying float vAlpha;
-
-void main() {
-  vec2 p = gl_PointCoord * 2.0 - 1.0;
-  float d = dot(p, p);
-  // Disco de borda suave.
-  float soft = exp(-d * 3.2) * (1.0 - smoothstep(0.7, 1.0, d));
-  gl_FragColor = vec4(uCyan * 0.85 * soft * vAlpha, 1.0);
 }
 `;

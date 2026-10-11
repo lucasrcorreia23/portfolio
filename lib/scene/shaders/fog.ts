@@ -27,7 +27,8 @@ uniform float uAstro;
 uniform vec3  uAstroDir;
 `;
 
-export const FOG_GLSL = /* glsl */ `
+/** O ruído da cena. Sem uniforms: serve também às passadas de simulação. */
+export const NOISE_GLSL = /* glsl */ `
 float sceneHash13(vec3 p) {
   p = fract(p * 0.1031);
   p += dot(p, p.yzx + 33.33);
@@ -61,7 +62,10 @@ float sceneNoise(vec3 q) {
     f.z
   );
 }
+`;
 
+export const FOG_GLSL = /* glsl */ `
+${NOISE_GLSL}
 /**
  * A luz que a flora joga num ponto: soma dos aglomerados, com queda suave e
  * alcance curto. Sem sombra e sem normal: é luz de campo, difusa.

@@ -16,6 +16,8 @@ export type Quality = {
   grass: number;
   flowers: number;
   spores: number;
+  /** Fração das partículas de estado (esporos e pólen juntos) que são desenhadas. */
+  pollen: number;
   dof: boolean;
   /** O vidro das placas, a paralaxe de altura da chapa e a porta que se move. */
   glass: boolean;
@@ -24,14 +26,17 @@ export type Quality = {
 };
 
 export const QUALITY: Readonly<Record<QualityTier, Quality>> = {
-  high: { tier: "high", dpr: 2, grass: 1, flowers: 1, spores: 1, dof: true, glass: true, parallax: true, door: true },
-  medium: { tier: "medium", dpr: 1.5, grass: 0.24, flowers: 0.5, spores: 0.75, dof: true, glass: true, parallax: true, door: true },
-  low: { tier: "low", dpr: 1, grass: 0.28, flowers: 0.55, spores: 0.4, dof: false, glass: false, parallax: false, door: false },
+  high: { tier: "high", dpr: 2, grass: 1, flowers: 1, spores: 1, pollen: 1, dof: true, glass: true, parallax: true, door: true },
+  medium: { tier: "medium", dpr: 1.5, grass: 0.24, flowers: 0.5, spores: 0.75, pollen: 0.25, dof: true, glass: true, parallax: true, door: true },
+  low: { tier: "low", dpr: 1, grass: 0.28, flowers: 0.55, spores: 0.4, pollen: 0.0625, dof: false, glass: false, parallax: false, door: false },
 };
 
 /** O que as geometrias alocam: é a contagem do nível alto. */
 export const GRASS_MAX = 128_000;
+/** Os esporos soltos no ar: os primeiros da textura de estado. */
 export const SPORES_MAX = 2400;
+/** Todas as partículas de estado: uma textura de 256 × 256. O resto é pólen. */
+export const POLLEN_MAX = 65_536;
 
 /**
  * Onde a cena nasce. Num computador ela já começa no nível alto, e a medição

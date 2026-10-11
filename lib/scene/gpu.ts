@@ -14,10 +14,8 @@ import {
  * O encanamento de passadas de tela cheia.
  *
  * Um triângulo, uma cena, uma câmera ortográfica — reaproveitados por **todas**
- * as passadas: os dois passos da simulação do bando, a cadeia de bloom, o
- * borrão da profundidade de campo e o composite final. É a peça que torna o
- * compositor próprio praticamente de graça: ela já era necessária para os
- * boids.
+ * as passadas: o passo da simulação dos esporos, a cadeia de bloom, o borrão
+ * da profundidade de campo e o composite final.
  *
  * **Triângulo, não quad.** Um triângulo que transborda a tela não tem a
  * costura diagonal do par de triângulos, e roda um quarto a menos de quads de

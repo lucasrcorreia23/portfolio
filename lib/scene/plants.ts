@@ -13,6 +13,7 @@ import {
 import { STOP_COUNT } from "./stops";
 import {
   floraPatches,
+  heightAt,
   panelPlacement,
   pathX,
   vitrineWall,
@@ -178,6 +179,38 @@ function scatter(species: SpeciesId, share: number, size: number, seed: number):
     }
     return list;
   });
+}
+
+/** A semente de uma variante: o mesmo sorteio a cada carga. */
+function variantSeed(species: number, variant: number): number {
+  return 211 + species * 131 + variant * 17;
+}
+
+/**
+ * As plantas que emitem, uma por linha: x, y, z em mundo e o rosa dela. É de
+ * onde o pólen nasce. Repete o sorteio de `scatter()` com as sementes de
+ * `loadPlants`, então não espera os modelos chegarem. Em Z decrescente, que
+ * é o sentido da trilha: quem lê recorta um trecho por busca.
+ */
+export function flowerHeads(): Float32Array {
+  const ids = Object.keys(SPECIES) as SpeciesId[];
+  const heads: number[][] = [];
+  ids.forEach((species, s) => {
+    const config = SPECIES[species];
+    if (config.emit <= 0 || FIXED.includes(species)) return;
+    config.variants.forEach((variant, v) => {
+      // Com tamanho 1 a escala do item é a altura da planta, em metros.
+      for (const list of scatter(species, variant.share, 1, variantSeed(s, v))) {
+        for (const item of list) {
+          const x = item[0] ?? 0;
+          const z = item[2] ?? 0;
+          heads.push([x, heightAt(x, z) + (item[3] ?? 1) * 0.7, z, item[7] ?? 0]);
+        }
+      }
+    });
+  });
+  heads.sort((a, b) => (b[2] ?? 0) - (a[2] ?? 0));
+  return Float32Array.from(heads.flat());
 }
 
 /** Os arbustos ficam em lugar fixo: ao pé de cada pórtico e da parede da vitrine. */
@@ -353,7 +386,7 @@ export async function loadPlants(): Promise<Plants> {
     Promise.all(
       ids.flatMap((species, s) =>
         SPECIES[species].variants.map((variant, v) =>
-          loadVariant(species, variant, 211 + s * 131 + v * 17),
+          loadVariant(species, variant, variantSeed(s, v)),
         ),
       ),
     ),

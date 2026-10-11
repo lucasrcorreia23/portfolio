@@ -1,12 +1,11 @@
 import {
   BufferAttribute,
-  BufferGeometry,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
   Sphere,
   Vector3,
 } from "three";
-import { GRASS_MAX, SPORES_MAX } from "./quality";
+import { GRASS_MAX } from "./quality";
 import { GRASS_TILE } from "./shaders/flora";
 
 /**
@@ -59,24 +58,6 @@ export function createGrassGeometry(): InstancedBufferGeometry {
   geometry.setAttribute("aOffset", new InstancedBufferAttribute(offsets, 3));
   geometry.setAttribute("aSeed", new InstancedBufferAttribute(seeds, 4));
   geometry.instanceCount = GRASS_MAX;
-  geometry.boundingSphere = EVERYWHERE;
-  return geometry;
-}
-
-/** Os esporos: pontos num volume que acompanha a câmera. */
-export function createSporeGeometry(): BufferGeometry {
-  const random = mulberry(97);
-  const positions = new Float32Array(SPORES_MAX * 3);
-  const seeds = new Float32Array(SPORES_MAX * 4);
-  for (let i = 0; i < SPORES_MAX; i += 1) {
-    positions[i * 3] = random() * 64;
-    positions[i * 3 + 1] = random() * 18;
-    positions[i * 3 + 2] = random() * 76;
-    seeds.set([random(), random(), random(), random()], i * 4);
-  }
-  const geometry = new BufferGeometry();
-  geometry.setAttribute("position", new BufferAttribute(positions, 3));
-  geometry.setAttribute("aSeed", new BufferAttribute(seeds, 4));
   geometry.boundingSphere = EVERYWHERE;
   return geometry;
 }

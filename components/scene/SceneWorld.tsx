@@ -65,7 +65,13 @@ const PLANTS_WAIT_MS = 4000;
 const LOOK_YAW = Math.PI / 4;
 const LOOK_PITCH = 0.2;
 
+/** O passo de câmera, em metros num quadro, que já é um salto e não um movimento. */
+const EYE_JUMP = 6;
+/** O teto da velocidade publicada: uma rolada forte não vira furacão. */
+const EYE_SPEED_MAX = 14;
+
 const RIGHT = new Vector3();
+const MOVED = new Vector3();
 const VIEW = new Vector3();
 const UP = new Vector3(0, 1, 0);
 
@@ -94,6 +100,8 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
   const focusRef = useRef(20);
   const focusRangeRef = useRef(34);
   const sway = useRef({ x: 0, y: 0 });
+  /** Falso até o primeiro quadro: antes dele não há posição anterior. */
+  const moved = useRef(false);
   /** Os programas compilaram: até lá o compositor não desenha. */
   const readyRef = useRef(false);
 
@@ -185,6 +193,14 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
     // A câmera nunca entra no chão, nem na travessia.
     const floor = heightAt(pose.position.x, pose.position.z) + 1.1;
     if (pose.position.y < floor) pose.position.y = floor;
+
+    // O ar que a câmera arrasta: a velocidade dela, do quadro anterior para
+    // este. Um salto (troca de rota, corte de case) não é movimento.
+    MOVED.subVectors(pose.position, camera.position);
+    if (still || !moved.current || MOVED.length() > EYE_JUMP) MOVED.set(0, 0, 0);
+    else MOVED.divideScalar(Math.max(dt, 1e-3)).clampLength(0, EYE_SPEED_MAX);
+    shared.eyeVelocity.value.copy(MOVED);
+    moved.current = true;
 
     camera.position.copy(pose.position);
     camera.lookAt(pose.target);

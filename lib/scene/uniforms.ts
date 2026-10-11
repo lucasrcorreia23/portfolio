@@ -80,6 +80,12 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
 
     /** Quanto a cena recuou para virar fundo de leitura de um case, 0 a 1. */
     caseRecess: { value: 0 },
+
+    /**
+     * A velocidade da câmera em mundo, em metros por segundo: o ar que ela
+     * arrasta. Zero no modo calmo e quando a câmera salta de um lugar a outro.
+     */
+    eyeVelocity: { value: new Vector3() },
   };
 }
 

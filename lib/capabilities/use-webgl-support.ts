@@ -14,20 +14,19 @@ const SOFTWARE_RENDERER = /swiftshader|llvmpipe|softpipe|software/i;
  * contexto de teste é devolvido na hora.
  *
  * **`EXT_color_buffer_float` faz parte da pergunta, e ter WebGL2 não o
- * garante.** O bando é uma simulação em FBO ping-pong com posição e velocidade
- * em RGBA32F (DIRECTION.md §5), e sem essa extensão um alvo de render de ponto
- * flutuante não é renderizável em cor. O modo de falha é o pior tipo: o three
- * não lança, ele monta um framebuffer incompleto e desenha lixo.
+ * garante.** Os esporos são uma simulação em FBO ping-pong com posição e
+ * velocidade em RGBA32F (`lib/scene/spores.ts`), e sem essa extensão um alvo de
+ * render de ponto flutuante não é renderizável em cor. O modo de falha é o
+ * pior tipo: o three não lança, ele monta um framebuffer incompleto e desenha
+ * lixo.
  *
  * Meio-float não é a saída. RGBA16F tem mantissa de 10 bits, e posição
- * integrada quadro a quadro deriva visivelmente em segundos — o bando se
- * desmancharia sozinho.
+ * integrada quadro a quadro deriva visivelmente em segundos.
  *
  * Então a pergunta que esta sonda responde não é "existe WebGL" e sim "este
  * navegador roda **esta** cena". Quando a resposta é não, o site cai para
  * `poster`, e não para `composed`: o modo calmo também é a cena, com a câmera
- * parada, e também precisa da simulação para ter uma pose do bando em cada
- * composição. Sem alvo de ponto flutuante não há bando em modo nenhum.
+ * parada, e também roda a simulação para ter os esporos em cada composição.
  */
 function probe(): boolean {
   if (probed !== undefined) return probed;

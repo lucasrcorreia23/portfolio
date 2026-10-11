@@ -2,25 +2,24 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
-import { AdditiveBlending, DoubleSide, ShaderMaterial, Vector2, Vector3 } from "three";
-import { createGrassGeometry, createSporeGeometry } from "@/lib/scene/flora";
+import { DoubleSide, ShaderMaterial, Vector2, Vector3 } from "three";
+import { createGrassGeometry } from "@/lib/scene/flora";
 import {
   loadPlants,
   markPlantsSettled,
   SPECIES,
   type Plants,
 } from "@/lib/scene/plants";
-import { getQuality, GRASS_MAX, SPORES_MAX } from "@/lib/scene/quality";
+import { getQuality, GRASS_MAX } from "@/lib/scene/quality";
 import {
   FLOWER_FRAG,
   FLOWER_VERT,
   GRASS_FRAG,
   GRASS_VERT,
-  SPORE_FRAG,
-  SPORE_VERT,
 } from "@/lib/scene/shaders/flora";
 import { createHeightTexture } from "@/lib/scene/terrain";
 import { fogUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
+import { Spores } from "./Spores";
 
 const FORWARD = new Vector3();
 /** Até onde, à frente e atrás da câmera, uma zona de flora é desenhada. */
@@ -29,7 +28,7 @@ const BEHIND = 28;
 
 /**
  * A flora: relva, plantas e esporos. Um draw call por tipo de planta e por zona
- * da trilha, e um para os esporos. É tudo que emite luz.
+ * da trilha; os esporos e o pólen têm o componente deles. É tudo que emite luz.
  */
 export function Flora({ shared }: { shared: SharedUniforms }) {
   const built = useMemo(() => {
@@ -50,22 +49,6 @@ export function Flora({ shared }: { shared: SharedUniforms }) {
         fragmentShader: GRASS_FRAG,
         side: DoubleSide,
       }),
-      sporeGeometry: createSporeGeometry(),
-      sporeMaterial: new ShaderMaterial({
-        uniforms: {
-          ...fog,
-          uResolution: shared.resolution,
-          uVeilBox: shared.veilBox,
-          uVeilF: shared.veilF,
-          uPanelRect: shared.panelRect,
-          uBoxCenter: { value: new Vector3() },
-        },
-        vertexShader: SPORE_VERT,
-        fragmentShader: SPORE_FRAG,
-        blending: AdditiveBlending,
-        transparent: true,
-        depthWrite: false,
-      }),
     };
   }, [shared]);
 
@@ -75,8 +58,6 @@ export function Flora({ shared }: { shared: SharedUniforms }) {
       held.height.dispose();
       held.grassGeometry.dispose();
       held.grassMaterial.dispose();
-      held.sporeGeometry.dispose();
-      held.sporeMaterial.dispose();
     };
   }, [built]);
 
@@ -143,20 +124,17 @@ export function Flora({ shared }: { shared: SharedUniforms }) {
   }, [plants, plantMaterials]);
 
   useFrame((state) => {
-    // O ladrilho de relva e o volume dos esporos ficam à frente da câmera.
+    // O ladrilho de relva fica à frente da câmera.
     state.camera.getWorldDirection(FORWARD);
     const focus = built.grassMaterial.uniforms["uFocus"]?.value as Vector2;
     focus.set(
       state.camera.position.x + FORWARD.x * 22,
       state.camera.position.z + FORWARD.z * 22,
     );
-    const center = built.sporeMaterial.uniforms["uBoxCenter"]?.value as Vector3;
-    center.copy(state.camera.position).addScaledVector(FORWARD, 26);
 
     // O nível de qualidade só escreve contagens.
     const quality = getQuality();
     built.grassGeometry.instanceCount = Math.floor(GRASS_MAX * quality.grass);
-    built.sporeGeometry.setDrawRange(0, Math.floor(SPORES_MAX * quality.spores));
     if (plants !== null) {
       // A zona longe da câmera não é desenhada: a névoa já a esconde, e é o
       // que impede o mundo inteiro de ir para a GPU a cada quadro.
@@ -190,12 +168,7 @@ export function Flora({ shared }: { shared: SharedUniforms }) {
               />
             );
           })}
-      <points
-        geometry={built.sporeGeometry}
-        material={built.sporeMaterial}
-        frustumCulled={false}
-        renderOrder={2}
-      />
+      <Spores shared={shared} height={built.height} />
     </>
   );
 }
