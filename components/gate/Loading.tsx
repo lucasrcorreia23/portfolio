@@ -25,6 +25,8 @@ const RATE = 1 / 3;
 /** A pausa em 100 antes do corte. */
 const HOLD_MS = 300;
 const CUT_MS = DURATION.cut * 1000;
+/** As três pétalas que o vento move (as fatias estão no CSS). */
+const PETALS = ["petal-a", "petal-b", "petal-c"];
 
 type LoadingProps = {
   label: string;
@@ -190,6 +192,11 @@ export function Loading({ label, status, done, enter }: LoadingProps) {
         <div className="loading-flower-head">
           <span className="loading-flower-light" />
         </div>
+        {PETALS.map((petal) => (
+          <div key={petal} className={`loading-flower-head loading-flower-petal ${petal}`}>
+            <span className="loading-flower-light" />
+          </div>
+        ))}
       </div>
       {waiting ? (
         <p aria-hidden="true" className="type-mono text-hud text-cyan">

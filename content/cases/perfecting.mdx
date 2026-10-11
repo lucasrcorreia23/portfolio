@@ -14,10 +14,21 @@ export const frontmatter = {
   market_pt: "Salestech",
   market_en: "Salestech",
   accent: "cyan",
-  cover: "/generated/perfecting.webp",
-  media: [],
+  cover: "/assets/img/perfecting/antes-e-durante.webp",
+  // Prints do app com nomes de vendedores trocados por fictícios na captura.
+  media: [
+    { src: "/assets/img/perfecting/antes-e-durante.webp", alt_pt: "Duas telas da Perfecting sobrepostas: o briefing antes do treino, com etapas do playbook e o perfil do comprador, e a ligação em andamento com o comprador de IA", alt_en: "Two Perfecting screens overlapping: the pre-training briefing, with playbook stages and the buyer profile, and the call in progress with the AI buyer", generated: false },
+    { src: "/assets/img/perfecting/briefing.webp", alt_pt: "Tela antes do treino: escolha do momento do playbook, das etapas e da dificuldade, e o perfil do comprador com o que o vendedor vai praticar", alt_en: "Pre-training screen: choosing the playbook moment, stages and difficulty, with the buyer profile and what the rep will practise", generated: false },
+    { src: "/assets/img/perfecting/ligacao.webp", alt_pt: "Ligação em andamento: o comprador de IA falando, a onda de voz e o botão de encerrar, com os objetivos da chamada na lateral", alt_en: "Call in progress: the AI buyer speaking, the voice wave and the end-call button, with the call goals on the side", generated: false },
+    { src: "/assets/img/perfecting/resultado.webp", alt_pt: "Resultado de uma sessão: a transcrição da ligação, a nota 72 de 100, o feedback e as rubricas com os critérios atendidos", alt_en: "Session result: the call transcript, a score of 72 out of 100, the feedback and the rubrics with the criteria met", generated: false },
+    { src: "/assets/img/perfecting/resultado-crescimento.webp", alt_pt: "Continuação do resultado: área de crescimento e forças do vendedor, separadas em objeções, linguagem e oferta", alt_en: "Result continued: the rep's growth areas and strengths, split into objections, language and offer", generated: false },
+    { src: "/assets/img/perfecting/login.webp", alt_pt: "Tela de login da Perfecting com o diamante azul da marca à esquerda", alt_en: "Perfecting login screen with the blue diamond on the left", generated: false },
+    { src: "/assets/img/perfecting/analytics.mp4", poster: "/assets/img/perfecting/analytics-poster.webp", alt_pt: "Analytics do gestor: os indicadores mudam entre 7 dias, 30 dias e 6 meses, e a tela desce até o mapa de calor de taxa de sucesso por representante", alt_en: "Manager analytics: the indicators change between 7 days, 30 days and 6 months, and the screen scrolls down to the success-rate heatmap per rep", generated: false },
+    { src: "/assets/img/perfecting/analytics-mapa.webp", alt_pt: "Mapa de calor com a taxa de sucesso de cada representante em cada critério, agrupado por tipo de ligação", alt_en: "Heatmap with each rep's success rate on each criterion, grouped by call type", generated: false },
+    { src: "/assets/img/perfecting/home.webp", alt_pt: "Home do gestor com total de sessões, score médio, tempo de prática, representantes ativos e o top 6 da equipe", alt_en: "Manager home with total sessions, average score, practice time, active reps and the team's top 6", generated: false },
+  ],
   disciplines: ["fundador"],
-  generated: true,
+  generated: false,
 };
 
 Janeiro de 2026 até hoje
@@ -44,6 +55,8 @@ FIESC, piloto com a RD Station e outras empresas B2B
 Em andamento, em stealth
 
 A Perfecting é uma startup brasileira de salestech que ainda opera em stealth. Na plataforma, o vendedor pratica ligações por voz com compradores simulados por inteligência artificial antes de encarar o cliente de verdade, e o gestor acompanha a evolução do time. Quando entrei como sócio, em janeiro de 2026, mal existia uma API. O produto foi tomando corpo, mas sem nenhum jeito de saber se funcionava bem.
+
+![Briefing antes do treino e ligação em andamento](/assets/img/perfecting/antes-e-durante.webp)
 
 ---
 
@@ -128,9 +141,17 @@ Corrigi estimativas de esforço infladas, porque sabia que parte do trabalho era
 
 Transcrição ao vivo, dicas na tela, indicadores em tempo real. Rejeitei tudo isso de propósito. O valor do produto está na pressão de uma conversa de verdade, e cada ajuda durante a chamada tira o vendedor desse estado. A regra virou estrutura. Antes da ligação vem o contexto, durante existe só a conversa, e depois vem todo o aprendizado, com feedback e um convite claro para tentar de novo.
 
+![Antes da ligação: o contexto](/assets/img/perfecting/briefing.webp)
+
+![Durante a ligação: só a conversa](/assets/img/perfecting/ligacao.webp)
+
+![Depois da ligação: o aprendizado](/assets/img/perfecting/resultado.webp)
+
 ### Tratei a persona como interface.
 
 Numa plataforma de roleplay, o comprador simulado é a tela mais importante do produto. Desenhei o comportamento das personas com base em metodologias de vendas reais, escrevi os prompts dos agentes de voz e revisei as rubricas que geram o feedback. Uma persona que cede fácil demais ensina o vendedor a vender errado.
+
+![Área de crescimento e forças no resultado](/assets/img/perfecting/resultado-crescimento.webp)
 
 ### Reorganizei o treino para o jeito como vendas consultivas acontecem.
 
@@ -197,7 +218,15 @@ problemas mapeados antes que um único vendedor visse o produto, 23 deles críti
 
 Tudo isso acontece num produto com visual próprio: índigo como cor principal, âmbar como acento e terracota nos enquadramentos. O look and feel nasce do próprio produto e continua evoluindo junto com ele.
 
+![Tela de login da Perfecting](/assets/img/perfecting/login.webp)
+
 Depois de cada sessão, o vendedor recebe um scorecard de clareza, escuta ativa e tratamento de objeções. O gestor vê as lacunas de habilidade e o ranking do time em tempo real. E a entrada no cliente ficou leve, a lição que veio do piloto da RD: as sessões começam em até 48 horas depois do onboarding, com cerca de duas horas de configuração.
+
+![Analytics do gestor](/assets/img/perfecting/analytics.mp4)
+
+![Mapa de calor por representante e critério](/assets/img/perfecting/analytics-mapa.webp)
+
+![Home do gestor](/assets/img/perfecting/home.webp)
 
 {/* ⚠️ Confirmar se a entrada em 48 horas foi uma resposta direta ao piloto da RD e qual foi o seu papel nela. */}
 

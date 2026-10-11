@@ -48,6 +48,8 @@ type CaseComponentDeps = {
  */
 const isAnimated = (src: string) => src.toLowerCase().endsWith(".gif");
 
+const isVideo = (src: string) => src.toLowerCase().endsWith(".mp4");
+
 /**
  * Uma imagem num parágrafo não pode continuar dentro do parágrafo.
  *
@@ -101,6 +103,27 @@ export function caseComponents({
           ? entry.alt_pt
           : entry.alt_en;
     const size = sizes[src];
+
+    // Vídeo é um loop curto e mudo, no lugar de um GIF: toca sozinho, sem
+    // controles, e o poster reserva o espaço com as dimensões dele.
+    if (isVideo(src)) {
+      return (
+        <figure className="case-figure">
+          <video
+            src={src}
+            poster={entry?.poster}
+            width={size?.width}
+            height={size?.height}
+            muted
+            autoPlay
+            loop
+            playsInline
+            preload="metadata"
+            aria-label={alt}
+          />
+        </figure>
+      );
+    }
 
     return (
       <figure className="case-figure">

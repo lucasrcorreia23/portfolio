@@ -136,23 +136,58 @@
     aspect-ratio: 1;
     filter: drop-shadow(0 0 1.5rem color-mix(in oklab, var(--cyan) calc(var(--p) * 55%), transparent));
   }
-  /* Carregou e espera o gesto: passa um vento, de cinco em cinco segundos. A
-     flor balança como na ponta de um caule (o eixo fica abaixo dela), cede
-     para um lado, volta e assenta; o resto do ciclo é parada. */
-  .loading-flower-wind {
-    transform-origin: 50% 135%;
-    animation: flower-wind 5s ease-in-out 0.6s infinite;
+  /* Carregou e espera o gesto: passa um vento, de cinco em cinco segundos, e
+     só três pétalas cedem, uma depois da outra, pouco, e assentam. Cada uma é
+     uma cópia da flor numa fatia suave, que some perto do miolo (a base da
+     pétala fica, a ponta mexe); a flor de baixo leva o complemento exato dessa
+     fatia. As cópias se somam (`plus-lighter`) em vez de se sobrepor: parada,
+     a soma é a flor inteira, sem costura. */
+  .loading-flower {
+    position: relative;
+    isolation: isolate;
+    --fade: radial-gradient(circle closest-side, transparent 30%, #000 60%);
   }
-  @keyframes flower-wind {
-    0%, 46%, 100% { transform: none; }
-    8% { transform: rotate(9deg) skewX(-7deg); }
-    17% { transform: rotate(-5.5deg) skewX(4deg); }
-    26% { transform: rotate(3.2deg) skewX(-2.2deg); }
-    34% { transform: rotate(-1.6deg) skewX(1deg); }
-    41% { transform: rotate(0.6deg); }
+  .loading-flower > .loading-flower-head:first-child {
+    mask:
+      var(--loading-flower) center / contain no-repeat,
+      linear-gradient(#000, #000),
+      conic-gradient(
+        transparent 22deg, #000 34deg 56deg, transparent 68deg 142deg,
+        #000 154deg 174deg, transparent 186deg 242deg,
+        #000 254deg 276deg, transparent 288deg
+      ),
+      var(--fade);
+    mask-composite: intersect, exclude, intersect, add;
+  }
+  .loading-flower > .loading-flower-petal {
+    position: absolute;
+    inset: 0;
+    transform-origin: 50% 50%;
+    mix-blend-mode: plus-lighter;
+    mask:
+      var(--loading-flower) center / contain no-repeat,
+      conic-gradient(
+        transparent calc(var(--a) - 6deg),
+        #000 calc(var(--a) + 6deg) calc(var(--b) - 6deg),
+        transparent calc(var(--b) + 6deg)
+      ),
+      var(--fade);
+    mask-composite: intersect, intersect, add;
+  }
+  .petal-a { --a: 28deg; --b: 62deg; --d: 0s; }
+  .petal-b { --a: 148deg; --b: 180deg; --d: 0.35s; }
+  .petal-c { --a: 248deg; --b: 282deg; --d: 0.7s; }
+  .loading-flower-wind .loading-flower-petal {
+    animation: petal-wind 5s ease-in-out calc(0.6s + var(--d)) infinite;
+  }
+  @keyframes petal-wind {
+    0%, 60%, 100% { transform: none; }
+    16% { transform: rotate(1.6deg) scale(0.99); }
+    32% { transform: rotate(-0.5deg); }
+    46% { transform: rotate(0.2deg); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .loading-flower-wind {
+    .loading-flower-wind .loading-flower-petal {
       animation: none;
     }
   }
@@ -643,7 +678,8 @@
     margin-top: 0;
   }
 
-  .case-figure img {
+  .case-figure img,
+  .case-figure video {
     display: block;
     width: 100%;
     height: auto;

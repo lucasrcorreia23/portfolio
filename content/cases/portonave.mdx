@@ -1,19 +1,157 @@
 export const frontmatter = {
-  title: "Portonave",
+  title: "Portaria de visitantes",
   client: "Portonave",
-  // PROVISÓRIO: ano, papel, stack, resumo e disciplinas ainda não foram
-  // informados. Os valores abaixo só existem para o case ter rota.
-  year: 2026,
-  role: "A definir",
-  stack: ["A definir"],
-  summary_pt: "Case em preparação.",
-  summary_en: "Case in preparation.",
+  // A UI do portal mostra dezembro de 2025. Ver o ⚠️ do período no corpo.
+  year: 2025,
+  role: "Product Designer — Atomsix",
+  stack: ["Figma", "Journey map", "Storyboard", "Userflow", "Prototipação"],
+  summary_pt:
+    "Uma portaria de terminal portuário que dependia de papel, crachá e conferência presencial. A visita passou a começar dias antes, no celular, e a terminar num totem que imprime o adesivo de acesso.",
+  summary_en:
+    "A container terminal gate that relied on paper, badges and in-person checks. The visit now starts days earlier, on the phone, and ends at a kiosk that prints the access sticker.",
   market_pt: "Logística",
   market_en: "Logistics",
   accent: "teal",
-  // Sem capa real: a capa exibida é o placeholder gerado em código.
-  cover: "placeholder",
-  media: [],
+  cover: "/assets/img/portonave/totem-checkin.webp",
+  media: [
+    { src: "/assets/img/portonave/totem-checkin.webp", alt_pt: "Slide com um storyboard em traço de visitantes chegando ao totem de autoatendimento e, ao lado, o totem da Portonave com a foto aérea do porto", alt_en: "Slide with a line-drawn storyboard of visitors arriving at the self-service kiosk and, beside it, the Portonave kiosk with an aerial photo of the port", generated: false },
+    { src: "/assets/img/portonave/problema.webp", alt_pt: "Slide \"Problema identificado\" com o texto sobre a portaria manual e a foto de um computador antigo na recepção", alt_en: "\"Problem identified\" slide with the text about the manual gate and a photo of an old computer at the reception", generated: false },
+    { src: "/assets/img/portonave/journey-map.webp", alt_pt: "Journey map da portaria em post-its coloridos, com as etapas de agendamento a acesso e linhas de ações, objetivos, oportunidades e dores", alt_en: "Gate journey map in coloured sticky notes, with stages from scheduling to access and rows for actions, goals, opportunities and pain points", generated: false },
+    { src: "/assets/img/portonave/fluxo-grupo.webp", alt_pt: "Storyboard do líder de grupo recebendo a confirmação por e-mail e compartilhando o link com os participantes, ao lado do e-mail da Portonave", alt_en: "Storyboard of the group leader receiving the email confirmation and sharing the link with participants, beside the Portonave email", generated: false },
+    { src: "/assets/img/portonave/portal-vip.webp", alt_pt: "Portal de agendamentos com a lista de visitas, o calendário de dezembro e o painel de visitantes adicionais com a opção de acesso VIP", alt_en: "Scheduling portal with the visit list, the December calendar and the additional visitors panel with the VIP access option", generated: false },
+    { src: "/assets/img/portonave/whatsapp.webp", alt_pt: "Dois celulares: a notificação da Portonave na tela bloqueada e a conversa no WhatsApp com as orientações do dia da visita e a rota no mapa", alt_en: "Two phones: the Portonave notification on the lock screen and the WhatsApp chat with the visit-day guidance and the map route", generated: false },
+    { src: "/assets/img/portonave/totem-sequencia.webp", alt_pt: "Três telas do totem lado a lado: a tela de repouso com a foto do porto, o agendamento identificado com o botão de check-in e o check-in realizado com o adesivo", alt_en: "Three kiosk screens side by side: the idle screen with the port photo, the identified booking with the check-in button and the completed check-in with the sticker", generated: false },
+    { src: "/assets/img/portonave/adesivo.webp", alt_pt: "Storyboard de um prestador de serviço acompanhado dentro do porto, ao lado do adesivo de visitante com nome e QR code", alt_en: "Storyboard of a service provider being escorted inside the port, beside the visitor sticker with name and QR code", generated: false },
+  ],
   disciplines: ["produto"],
-  generated: true,
+  generated: false,
 };
+
+2025 {/* ⚠️ Período: a UI do portal mostra dezembro de 2025, mas o projeto não tem data registrada. Confirmar com o Lucas. */}
+
+Product Designer @ Portonave, pela Atomsix
+
+# Uma portaria de porto que dependia de papel e conferência presencial passou a receber o visitante antes mesmo de ele chegar.
+
+### A visita começa dias antes, no celular, e termina num totem que imprime o adesivo de acesso.
+
+**Meu papel**\
+Product Designer na Atomsix. Discovery, fluxos, portal, comunicações e totem. {/* ⚠️ Confirmar o que foi seu e o que foi do time. */}
+
+{/* ⚠️ Falta o bloco **Time**: quem estava junto da Atomsix e do lado da Portonave. Confirmar com o Lucas. */}
+
+A Portonave é um terminal de contêineres em Navegantes, Santa Catarina. Todo dia passam pela portaria motoristas, prestadores de serviço, visitantes comerciais e grupos. A pergunta do projeto era simples: quem entra no terminal, e com que autorização?
+
+![O totem de autoatendimento no storyboard e na tela](/assets/img/portonave/totem-checkin.webp)
+
+---
+
+#### Se você ler só uma parte
+
+## A portaria dependia de etapas manuais e conferência presencial. Em horário de pico, isso virava fila, retrabalho e pouco controle sobre quem estava lá dentro.
+
+## O que a gente fez foi mover a portaria para antes da chegada: agendamento, documentos e orientações resolvidos no celular, e um totem para o check-in.
+
+## O resultado é uma jornada desenhada para quatro perfis, com portal de agendamento, uma régua de mensagens até o dia da visita e um totem que imprime o adesivo de acesso.
+
+---
+
+#### O problema
+
+A fila da portaria começava muito antes da portaria.
+
+Nas palavras do próprio projeto, a portaria "depende de etapas manuais e verificações presenciais que tornam o processo mais lento, especialmente em momentos de alta demanda". O journey map mostrou de onde vinha essa lentidão:
+
+- Pouca sinalização para pedestres e veículos.
+- Papel, crachá e formulário preenchidos na hora.
+- Motoristas que não conhecem a planta do terminal.
+- Comunicação desencontrada entre a transportadora e o terminal.
+- Visitantes comerciais com pouca tolerância a atraso, que esperam uma experiência corporativa e limpa.
+
+![O problema, nas palavras do projeto](/assets/img/portonave/problema.webp)
+
+A tentação era desenhar um sistema de recepção mais rápido. O que a portaria precisava primeiro era deixar de depender do momento da chegada.
+
+---
+
+#### Por onde comecei
+
+#### 01.
+### Quem passa pela portaria, e o que cada um precisa?
+
+#### 02.
+### O que dá para resolver antes de a pessoa sair de casa?
+
+#### 03.
+### Como um grupo de visitantes entra sem que cada um precise se cadastrar do zero?
+
+#### 04.
+### O que acontece com quem chega sem agendamento?
+
+---
+
+#### O que eu fiz no discovery
+
+### Mapeei a jornada da chegada, e não só a recepção.
+
+O journey map foi do agendamento ao acesso, passando pela espera, pela chegada e pelo cadastro. Em cada etapa entraram as ações, os objetivos, as dores e as oportunidades. As dores mais fortes não estavam no balcão: estavam no caminho até ele.
+
+![Journey map da portaria](/assets/img/portonave/journey-map.webp)
+
+### Desenhei para quatro perfis com histórias diferentes.
+
+O líder de um grupo de visitantes quer agendar todo mundo de uma vez e saber quem está com pendência. O visitante comercial quer um pré-cadastro simples e entrar rápido. O prestador sem agendamento precisa ser identificado e aprovado pelo responsável interno. E o funcionário que esqueceu o crachá precisa de um adesivo provisório sem burocracia. Cada perfil virou um storyboard em traço, contado do ponto de vista da pessoa.
+
+![O líder de grupo compartilhando a visita](/assets/img/portonave/fluxo-grupo.webp)
+
+### Listei o que dava para tirar da portaria.
+
+Das histórias saíram as oportunidades: preencher dados automaticamente, um link compartilhável para grupos, recepção diferenciada para quem já agendou, acesso automático por reconhecimento facial, QR ou catraca, e compliance na coleta de dados de terceiros.
+
+---
+
+#### O que eu fiz no produto
+
+### Coloquei o agendamento num portal com aprovação de convidados.
+
+O responsável interno vê as visitas numa lista com calendário e cria um agendamento com veículo, motivo e responsável, que já vira um evento no Outlook. Visitantes adicionais passam por aprovação, e os marcados como VIP entram sem precisar do adesivo de identificação.
+
+![Portal de agendamentos com aprovação VIP](/assets/img/portonave/portal-vip.webp)
+
+### Fiz a visita começar 48 horas antes.
+
+Desenhei uma régua de comunicação até o dia da visita. Dois dias antes, a pessoa recebe o status. Um dia antes, o checklist de documentos do perfil dela. Na manhã do dia, as pendências. Duas a três horas antes, a rota no mapa, o estacionamento e o lembrete do reconhecimento facial. Depois da visita, uma pesquisa de satisfação. As mensagens chegam por WhatsApp e e-mail.
+
+![Orientações do dia da visita no WhatsApp](/assets/img/portonave/whatsapp.webp)
+
+### Troquei o balcão por um totem de autoatendimento.
+
+O visitante se identifica por CPF ou QR. O totem encontra o agendamento, mostra o responsável e o horário, e faz o check-in, que avisa o responsável. No fim, imprime um adesivo de acesso com QR. Quem chega sem cadastro recebe o link no celular. Quem tem cadastro mas não tem agendamento é encaminhado para a portaria. Os botões são grandes, em pílula, e cada tela tem uma tarefa só.
+
+![Sequência do totem: repouso, agendamento identificado e check-in](/assets/img/portonave/totem-sequencia.webp)
+
+### Fiz do adesivo a credencial da visita.
+
+O adesivo leva nome, responsável e QR. Com ele colado, o prestador é acompanhado até o lugar certo dentro do porto, junto com o responsável interno. É ele que identifica o visitante enquanto circula pelo terminal.
+
+![O adesivo de visitante em uso](/assets/img/portonave/adesivo.webp)
+
+---
+
+#### O que mudou
+
+{/* ⚠️ Status: o totem e o portal foram implantados? Há qualquer número de uso (tempo de check-in, visitas agendadas, NPS)? Confirmar com o Lucas. */}
+
+### A portaria deixou de começar no balcão.
+
+O que antes era resolvido em pé, na hora da chegada, passou a ser resolvido antes: agendamento, documentos, rota e orientações. No dia, o totem faz o check-in e entrega a credencial. A equipe da portaria fica com o que só uma pessoa resolve: os casos sem agendamento e as exceções.
+
+---
+
+#### Em retrospecto
+
+{/* ⚠️ Retrospecto rascunhado a partir do material do case. Revisar com o Lucas antes de publicar. */}
+
+### Os storyboards em traço foram o que mais ajudou a alinhar o cliente. Antes de qualquer tela, todo mundo conseguia se ver na história de um dos quatro perfis.
+
+### Se eu fizesse de novo, testaria o totem no terminal mais cedo. É no ambiente real, com sol, barulho e pressa, que uma tela de autoatendimento mostra se funciona.

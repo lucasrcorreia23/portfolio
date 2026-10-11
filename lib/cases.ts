@@ -16,7 +16,8 @@ import type { PaletteToken } from "./palette";
 /**
  * Os cases publicados, **nesta ordem**: é a ordem das paradas da trilha e do
  * "próximo case". Um `.mdx` fora desta lista continua no
- * repositório e não tem rota (hoje: `nestle` e `zoomtecnologia`).
+ * repositório e não tem rota (hoje: `nestle`, `zoomtecnologia` e
+ * `unifique-energia`, que ficou só com uma tela na vitrine).
  *
  * `title` sobrepõe o do frontmatter sem tocar no arquivo.
  */
@@ -24,7 +25,7 @@ const PUBLISHED: readonly { slug: string; title?: string }[] = [
   { slug: "decision-suite" },
   { slug: "prime8" },
   { slug: "perfecting" },
-  { slug: "unifique-energia" },
+  { slug: "netlex" },
   { slug: "wecann-atena" },
   { slug: "portonave" },
 ];
@@ -46,6 +47,11 @@ export type CaseMedia = {
   alt_pt: string;
   alt_en: string;
   generated: boolean;
+  /**
+   * O quadro parado de um vídeo (`.mp4`). É dele que saem as dimensões, porque
+   * `lib/media-size.ts` não lê vídeo, e é ele que aparece antes de tocar.
+   */
+  poster?: string;
 };
 
 /** O que um `.mdx` escreve. `river_rank` é da direção antiga e é ignorado. */
@@ -116,7 +122,7 @@ export async function loadCase(slug: string): Promise<LoadedCase> {
   const sizes: Record<string, MediaSize> = {};
   await Promise.all(
     frontmatter.media.map(async (item) => {
-      const size = await imageSize(item.src);
+      const size = await imageSize(item.poster ?? item.src);
       if (size !== null) sizes[item.src] = size;
     }),
   );
@@ -204,12 +210,17 @@ function parseMedia(slug: string, raw: unknown): CaseMedia[] {
     }
     const entry = item as Record<string, unknown>;
     const where = `media[${index}]`;
-    return {
-      src: requireString(slug, entry, "src", where),
+    const src = requireString(slug, entry, "src", where);
+    const media: CaseMedia = {
+      src,
       alt_pt: requireString(slug, entry, "alt_pt", where),
       alt_en: requireString(slug, entry, "alt_en", where),
       generated: entry["generated"] === true,
     };
+    if (src.toLowerCase().endsWith(".mp4")) {
+      media.poster = requireString(slug, entry, "poster", where);
+    }
+    return media;
   });
 }
 

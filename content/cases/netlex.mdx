@@ -1,0 +1,158 @@
+export const frontmatter = {
+  title: "Gestão de contratos",
+  client: "netLex",
+  // Sem data registrada no material. Ver o ⚠️ do período no corpo.
+  year: 2025,
+  role: "Product Designer — Atomsix",
+  stack: ["Figma", "Jobs to Be Done", "Jornadas por área", "Userflow", "Benchmark", "Design system"],
+  summary_pt:
+    "Uma plataforma jurídica que mostrava a estrutura da ferramenta, e não o trabalho de cada área. O redesign organizou o produto em Spaces por área, com um onboarding que monta a home de cada perfil e uma ação recomendada pela IA que guia a decisão em cada etapa do contrato.",
+  summary_en:
+    "A legal platform that showed the tool's structure, not each team's work. The redesign organised the product into Spaces per team, with an onboarding that builds each profile's home and an AI-recommended action that guides the decision at each stage of the contract.",
+  market_pt: "Legaltech",
+  market_en: "Legaltech",
+  accent: "teal",
+  cover: "/assets/img/netlex/contrato-detalhe-v2.webp",
+  media: [
+    { src: "/assets/img/netlex/contrato-detalhe-v2.webp", alt_pt: "Gestão de um contrato de locação no netLex: stepper de etapas, abas do contrato, o botão Ações Recomendadas da IA e uma barra flutuante de ferramentas", alt_en: "Managing a lease contract in netLex: stage stepper, contract tabs, the AI Recommended Actions button and a floating toolbar", generated: false },
+    { src: "/assets/img/netlex/antes-depois-contrato-v2.webp", alt_pt: "Antes e depois da gestão do contrato: à esquerda o documento cru do produto antigo, à direita a nova tela com etapas e ações recomendadas pela IA", alt_en: "Before and after of contract management: on the left the raw document from the old product, on the right the new screen with stages and AI-recommended actions", generated: false },
+    { src: "/assets/img/netlex/jornadas-jtbd.webp", alt_pt: "Quadro de jobs to be done e jornadas por área, Jurídico, Comercial e Compras, com etapas, ações, resultados esperados e o fluxo proposto de cada uma", alt_en: "Jobs to be done and journeys board per team, Legal, Sales and Procurement, with stages, actions, expected outcomes and the proposed flow for each", generated: false },
+    { src: "/assets/img/netlex/onboarding-etapas-v2.webp", alt_pt: "As cinco etapas do onboarding lado a lado: cargo, departamento, principais casos de uso, configuração de taxonomia e indicadores acompanhados", alt_en: "The five onboarding steps side by side: role, department, main use cases, taxonomy setup and tracked indicators", generated: false },
+    { src: "/assets/img/netlex/home-juridico-v2.webp", alt_pt: "Home do Space Jurídico com ações rápidas, métricas como vencendo hoje e SLA de consultas, últimos contatos, atividades recentes e documentos em andamento", alt_en: "Legal Space home with quick actions, metrics such as due today and query SLA, recent contacts, recent activity and documents in progress", generated: false },
+    { src: "/assets/img/netlex/home-regras-de-layout.webp", alt_pt: "Quadro do Figma com as homes de três áreas e post-its amarelos que definem as regras do grid modular", alt_en: "Figma board with the homes of three teams and yellow sticky notes defining the modular grid rules", generated: false },
+    { src: "/assets/img/netlex/antes-depois-documentos-v2.webp", alt_pt: "Antes e depois da lista de documentos: a lista genérica do produto antigo e a nova, com autor, pasta e etapa do workflow", alt_en: "Before and after of the document list: the old product's generic list and the new one, with author, folder and workflow stage", generated: false },
+    { src: "/assets/img/netlex/documentos-v2.webp", alt_pt: "Repositório de documentos com árvore de pastas, busca por conteúdo e a lista com autor, pasta, etapa do workflow e data", alt_en: "Document repository with folder tree, content search and the list with author, folder, workflow stage and date", generated: false },
+  ],
+  disciplines: ["produto", "sistema"],
+  generated: false,
+};
+
+2025 {/* ⚠️ Período: o material não traz data. Confirmar com o Lucas. */}
+
+Product Designer @ netLex, pela Atomsix
+
+# Uma plataforma jurídica mostrava a estrutura da ferramenta. O redesign passou a mostrar o trabalho de cada área.
+
+### Jurídico, Comercial e RH usam a mesma base sem virar três produtos, e a IA recomenda a próxima ação em cada etapa do contrato.
+
+**Meu papel**\
+Product Designer na Atomsix. Discovery, arquitetura de informação, onboarding, gestão do contrato com ações recomendadas pela IA e as telas finais. {/* ⚠️ Confirmar o que foi seu e o que foi do time. */}
+
+{/* ⚠️ Falta o bloco **Time**: quem estava junto da Atomsix e do lado da netLex. Confirmar com o Lucas. */}
+
+A netLex é uma plataforma de gestão jurídica e de contratos. Departamentos jurídicos, comerciais e de RH usam o produto para documentos, workflows, consultas, procurações e atas. O projeto foi um redesign do web app: discovery, benchmark, sitemap e quatro iterações de interface até a versão final.
+
+![Gestão de um contrato no netLex](/assets/img/netlex/contrato-detalhe-v2.webp)
+
+---
+
+#### Se você ler só uma parte
+
+## O produto se organizava por pastas, abas e listas. A jornada de cada área não aparecia, e o contrato era um documento cru, sem responsável, prazo nem próximo passo.
+
+## O que eu fiz foi reorganizar o produto pelo trabalho de cada área: Spaces com home própria, um onboarding que monta essa home e uma ação recomendada pela IA para guiar a tomada de decisão no contrato.
+
+## O resultado é uma base só para áreas diferentes, com vencimentos e gargalos visíveis desde a home e um contrato que mostra em que etapa está e qual é a próxima ação.
+
+---
+
+#### O problema
+
+A interface falava a língua da ferramenta, e não a de quem usa.
+
+- A navegação seguia a estrutura do sistema: pastas, abas genéricas e documentos em lista.
+- O detalhe do contrato era o documento cru, sem responsáveis, prazos nem próximo passo.
+- Jurídico, Comercial e Compras têm jornadas diferentes, e o produto tratava todos igual.
+- Vencimentos, SLAs e gargalos ficavam escondidos dentro das listas.
+
+![Antes e depois da gestão do contrato](/assets/img/netlex/antes-depois-contrato-v2.webp)
+
+A tentação era redesenhar tela por tela. O que o produto precisava primeiro era entender o trabalho de cada área.
+
+---
+
+#### Por onde comecei
+
+#### 01.
+### O que cada área precisa ver quando abre o produto?
+
+#### 02.
+### Como atender áreas diferentes sem criar três produtos?
+
+#### 03.
+### Como guiar a decisão de quem não sabe qual ação tomar em cada etapa do contrato?
+
+#### 04.
+### Como o produto aprende quem é o usuário sem um cadastro cansativo?
+
+---
+
+#### O que eu fiz no discovery
+
+### Mapeei o trabalho de cada área antes de mexer na interface.
+
+Escrevi os jobs to be done e as jornadas de três áreas, cada uma com etapas, ações e resultado esperado. O Jurídico vai da revisão interna à aprovação, assinatura, armazenamento, monitoramento e relatórios. O Comercial vai da criação à negociação externa e ao pós-assinatura. Compras acompanha contratos, vencimentos e alertas. Cada jornada virou um fluxo proposto, do login até a ação.
+
+![Jobs to be done e jornadas por área](/assets/img/netlex/jornadas-jtbd.webp)
+
+### Usei o benchmark para separar o que é estrutura do que é caso de uso.
+
+O Monday e o Asana mostraram como um mesmo produto organiza workflows diferentes por caso de uso. O Ironclad foi a referência direta de gestão de contratos jurídicos, com repositório e dashboard. Daí saiu a decisão de arquitetura: módulos comuns para todos, e Spaces por área por cima deles.
+
+### Transformei os achados em insights por módulo.
+
+Para cada parte do produto, escrevi o que mudar. A home passa a mostrar o status que importa para cada área: Compras vê o que vai vencer, o Jurídico o que está em revisão, o Comercial o que está perto de fechar. Os filtros por perfil vão para o primeiro plano. E o documento ganha um painel de próximo passo.
+
+---
+
+#### O que eu fiz no produto
+
+### Desenhei um onboarding que monta o produto para cada pessoa.
+
+Em vez de um cadastro genérico, o onboarding pergunta cinco coisas: o cargo, o departamento, os principais casos de uso, como a empresa chama os tipos de documento e quais indicadores a pessoa acompanha. A taxonomia já vem com sugestões, e dá para pular uma etapa e voltar depois. No fim, o produto configura a home daquele Space com os indicadores escolhidos.
+
+![As cinco etapas do onboarding](/assets/img/netlex/onboarding-etapas-v2.webp)
+
+### Organizei o produto em Spaces por área.
+
+Cada área tem seu Space, com home própria, sobre módulos comuns: Workflow, Documentos, Contatos, Intel e Configurações. Os Spaces abrem como abas de navegador, e quando as abas estouram a largura, aparece uma busca para achar as escondidas. Na home, as métricas mostram o que vence hoje e o SLA, com a variação contra o mês anterior.
+
+![Home do Space Jurídico](/assets/img/netlex/home-juridico-v2.webp)
+
+### Escrevi as regras do grid da home.
+
+Para a mesma home servir a áreas diferentes sem quebrar, defini regras para cada bloco. A linha de ações tem de um a quatro itens e não pode ser ocultada. As métricas usam três ou quatro colunas, com um ou dois números grandes, e também não podem ser ocultadas. Contatos, documentos e atividades usam uma ou duas colunas e podem ser escondidos. As regras ficaram em post-its no próprio Figma, ao lado das telas.
+
+![Regras do grid modular da home](/assets/img/netlex/home-regras-de-layout.webp)
+
+### Fiz a lista de documentos mostrar onde cada um está.
+
+O repositório ganhou uma árvore de pastas, busca pelo conteúdo do documento e, em cada linha, o autor, a pasta e a etapa do workflow. Antes, a lista era genérica. Agora ela responde em que pé está cada documento sem precisar abrir.
+
+![Antes e depois da lista de documentos](/assets/img/netlex/antes-depois-documentos-v2.webp)
+
+![Repositório de documentos](/assets/img/netlex/documentos-v2.webp)
+
+### Coloquei a IA para recomendar a próxima ação em cada etapa do contrato.
+
+Foi comentado que o usuário não sabia qual ação deveria tomar naquela etapa do contrato. A gestão do contrato ficou mais enxuta: um stepper com as etapas, de elaboração a negociação, aprovação financeira e assinatura, as abas do contrato e o botão Ações Recomendadas, em que a IA sugere o próximo passo da etapa atual para guiar a tomada de decisão. As ferramentas ficam numa barra flutuante. Foram três rodadas de layout até chegar aqui, e o painel continuou abrindo à direita, como no produto atual, para não quebrar o hábito de quem já usava.
+
+---
+
+#### O que mudou
+
+{/* ⚠️ Status: o redesign foi implementado? Há qualquer número de uso ou de adoção? Confirmar com o Lucas. */}
+
+### O produto passou a se organizar pelo trabalho de cada área, e não pela estrutura da ferramenta.
+
+A mesma base atende Jurídico, Comercial e RH. O onboarding configura a home de cada perfil. A lista de documentos mostra a etapa de cada um. E, no contrato, a IA recomenda a próxima ação de cada etapa.
+
+---
+
+#### Em retrospecto
+
+{/* ⚠️ Retrospecto rascunhado a partir do material do case. Revisar com o Lucas antes de publicar. */}
+
+### Escrever as regras do grid em post-its, ao lado das telas, foi o que fez a home modular funcionar. Sem regra, cada área pediria a sua exceção.
+
+### Manter o painel do documento à direita, como já era, foi uma escolha pequena que evitou um custo grande. Num redesign, nem toda mudança precisa ser mudança.

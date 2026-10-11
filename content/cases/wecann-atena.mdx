@@ -1,29 +1,171 @@
 export const frontmatter = {
   title: "Prontuário eletrônico inteligente",
   client: "Agentes de IA",
-  year: 2025,
+  year: 2026,
   role: "Product Designer — Atomsix",
-  stack: ["Figma", "Design System", "Arquitetura de informação", "Prototipação"],
+  stack: ["Figma", "Next.js", "three.js", "GSAP"],
   summary_pt:
-    "Plataforma de prontuário eletrônico, feita pela Atomsix. Case de domínio complexo e design de sistema — regras clínicas, alto risco e compliance transformados em fluxo usável.",
+    "Um prontuário com IA para médicos que prescrevem cannabis medicinal, desenhado para tirar a fadiga da tela e devolver a atenção ao paciente. A confiança na IA vem da evidência citada, não da velocidade.",
   summary_en:
-    "Electronic health record platform, built by Atomsix. A case of complex domain and system design — clinical rules, high risk and compliance turned into a usable flow.",
+    "An AI health record for doctors who prescribe medical cannabis, designed to take the fatigue off the screen and give attention back to the patient. Trust in the AI comes from cited evidence, not speed.",
   market_pt: "Healthtech",
   market_en: "Healthtech",
   accent: "rose",
-  cover: "/generated/wecann-atena.webp",
-  media: [],
+  cover: "/assets/img/wecann-atena/home.webp",
+  media: [
+    { src: "/assets/img/wecann-atena/home.webp", alt_pt: "Home do WeCann Care: a esfera da Athena ao centro, a saudação ao Dr. Ricardo, a agenda do dia à direita e o campo de comando com atalhos embaixo", alt_en: "WeCann Care home: Athena's sphere in the centre, the greeting to Dr. Ricardo, the day's schedule on the right and the command field with shortcuts below", generated: false },
+    { src: "/assets/img/wecann-atena/insights-entrevistas.webp", alt_pt: "Slide de workshop com os quatro achados das entrevistas: sobrecarga visual, confiança na IA, fragmentação de fluxos e medicina é estar presente", alt_en: "Workshop slide with the four interview findings: visual overload, trust in AI, fragmented flows and medicine is being present", generated: false },
+    { src: "/assets/img/wecann-atena/sitemap.webp", alt_pt: "Sitemap do prontuário com os módulos de agenda, Paciente 360, consulta, documentos, acompanhamento e casuística em árvore", alt_en: "Health record sitemap with the schedule, Patient 360, consultation, documents, follow-up and case series modules as a tree", generated: false },
+    { src: "/assets/img/wecann-atena/editorial-vs-saas.webp", alt_pt: "Duas versões da mesma tela de paciente lado a lado, uma editorial e uma SaaS, comparadas na direção criativa", alt_en: "Two versions of the same patient screen side by side, one editorial and one SaaS, compared in the creative direction", generated: false },
+    { src: "/assets/img/wecann-atena/intro.mp4", poster: "/assets/img/wecann-atena/intro-poster.webp", alt_pt: "Animação de abertura: a frase \"Tudo que a medicina pode ser, agora.\", a esfera da Athena se aproxima e a home se monta", alt_en: "Opening animation: the line \"Everything medicine can be, now.\", Athena's sphere moves closer and the home assembles", generated: false },
+    { src: "/assets/img/wecann-atena/conversa-agente.mp4", poster: "/assets/img/wecann-atena/conversa-agente-poster.webp", alt_pt: "O médico pergunta sobre cannabis em epilepsia refratária pediátrica e a Athena responde em streaming, com a resposta estruturada", alt_en: "The doctor asks about cannabis in paediatric refractory epilepsy and Athena answers in streaming, with a structured response", generated: false },
+    { src: "/assets/img/wecann-atena/discutir-caso.webp", alt_pt: "Modo Discutir um caso: a paciente fixada no campo de pergunta e a resposta da Athena sobre ajuste de titulação de CBD considerando o histórico dela", alt_en: "Discuss a case mode: the patient pinned to the question field and Athena's answer on adjusting CBD titration based on her history", generated: false },
+    { src: "/assets/img/wecann-atena/consulta-presencial.webp", alt_pt: "Tela de consulta presencial com transcrição em andamento, prontuário em SOAP, alertas clínicos e escalas sugeridas", alt_en: "In-person consultation screen with live transcription, SOAP record, clinical alerts and suggested scales", generated: false },
+    { src: "/assets/img/wecann-atena/gerar-documentos.webp", alt_pt: "Tela de documentos com duas receitas de controle especial geradas e a validação da Athena na lateral", alt_en: "Documents screen with two special-control prescriptions generated and Athena's validation on the side", generated: false },
+  ],
   disciplines: ["produto", "sistema"],
-  // Provisório (Prompt 5A).
-  river_rank: 4,
-  generated: true,
+  generated: false,
 };
 
-#### Placeholder
+2026
 
-Este case ainda não foi escrito. O frontmatter acima é real; o corpo, a mídia e
-a capa são provisórios — a capa é gerada (`generated: true`).
+Product Designer @ WeCann Care, pela Atomsix
 
-O que ele precisa provar, e nenhum outro do acervo prova: um domínio regulado e
-de alto risco — prontuário eletrônico — virando um sistema que a equipe clínica
-consegue usar sem treino.
+# Um prontuário com IA para médicos que prescrevem cannabis, desenhado para cansar menos e merecer confiança.
+
+### O painel do foguete não pode assustar. A IA só ajuda o médico se ele conseguir ver de onde vem cada resposta.
+
+**Meu papel**\
+Product Designer na Atomsix. Discovery, arquitetura de informação, interface, design system e um wireframe navegável em código. {/* ⚠️ Confirmar o que foi seu e o que foi do time em cada frente. */}
+
+**Período**\
+2026
+
+{/* ⚠️ Falta o bloco **Time**: quem estava junto da Atomsix e do lado da WeCann. Confirmar com o Lucas. */}
+
+A WeCann Care é um prontuário eletrônico com agentes de IA para médicos que prescrevem cannabis medicinal. O médico agenda, atende, documenta e acompanha o paciente num lugar só, com uma assistente de IA, a Athena, que pesquisa, resume e valida junto com ele. O trabalho foi do discovery de produto até um wireframe de alta fidelidade em código.
+
+![Home do WeCann Care](/assets/img/wecann-atena/home.webp)
+
+---
+
+#### Se você ler só uma parte
+
+## Médicos não querem mais um sistema denso. Para eles, densidade não comunica capacidade, comunica fadiga. E uma IA rápida não basta: eles precisam ver de onde vem a resposta.
+
+## O que eu fiz foi tratar a IA como copiloto clínico, com a evidência sempre visível, e organizar a jornada da consulta inteira em torno do médico.
+
+## O resultado é um produto com home de copiloto, resposta com referências científicas, jornada completa da consulta e um design system com regras que protegem a atenção do médico.
+
+---
+
+#### O problema
+
+O médico não precisa de mais tela. Precisa de mais tempo com o paciente.
+
+Nas entrevistas, quatro achados apareceram com força:
+
+- Sobrecarga visual. Densidade não comunica capacidade, comunica fadiga.
+- Confiança na IA. Ela vem da rastreabilidade, não da velocidade. O médico é o autor, e a IA expande o conhecimento dele.
+- Fluxos fragmentados. A promessa de centralizar não precisa ser vendida, precisa ser cumprida.
+- Medicina é estar presente. A tecnologia não pode ficar entre o médico e o paciente.
+
+![Os quatro achados das entrevistas](/assets/img/wecann-atena/insights-entrevistas.webp)
+
+A tentação era encher a tela de recursos para mostrar o quanto a IA sabe. O que o produto precisava primeiro era decidir o que o médico vê, e quando.
+
+---
+
+#### Por onde comecei
+
+#### 01.
+### Como uma IA ganha a confiança de um médico?
+
+#### 02.
+### Como mostrar muita capacidade sem mostrar muita coisa?
+
+#### 03.
+### Como juntar agenda, consulta, documentos e acompanhamento sem virar um sistema pesado?
+
+#### 04.
+### Onde a tecnologia ajuda, e onde ela atrapalha a consulta?
+
+---
+
+#### O que eu fiz no discovery
+
+### Ancorei o produto em duas convicções.
+
+No workshop, o time chegou a duas frases que guiaram todo o resto. "A força que devolve a medicina ao médico", com a imagem de um foguete cujo painel não pode assustar. E "a ferramenta que o médico tem orgulho de usar". As duas viraram critério para cada tela: se assusta ou cansa, não entra.
+
+### Organizei o produto pela jornada do médico.
+
+O sitemap partiu do dia do médico, e não dos módulos do sistema: agenda, Paciente 360, consulta presencial e por telemedicina, documentos, acompanhamento e casuística. Cada módulo responde a um momento da jornada, antes, durante ou depois da consulta, e a Athena atravessa todos eles.
+
+![Sitemap do prontuário](/assets/img/wecann-atena/sitemap.webp)
+
+### Escolhi a direção SaaS em vez da editorial.
+
+A direção criativa comparou duas versões da mesma tela: uma editorial, mais de revista, e uma SaaS, mais de ferramenta. A interface final ficou com a SaaS clara.
+
+{/* ⚠️ Escrever o motivo da escolha pela SaaS, se houver um registrado. Confirmar com o Lucas. */}
+
+![Direção editorial e SaaS lado a lado](/assets/img/wecann-atena/editorial-vs-saas.webp)
+
+---
+
+#### O que eu fiz no produto
+
+### Transformei a home num copiloto clínico.
+
+A home abre com a Athena e uma saudação. Abaixo, um campo de comando com atalhos: suporte à decisão clínica, documentação, calculadoras, diretrizes e segurança de medicamentos. Ao lado, a agenda do dia e as sessões recentes. Em vez de um painel cheio de números, uma pergunta: o que você precisa agora?
+
+![Animação de abertura do wireframe](/assets/img/wecann-atena/intro.mp4)
+
+### Fiz cada resposta mostrar de onde veio.
+
+Se a confiança vem da rastreabilidade, a resposta precisa provar o que diz. A Athena mostra o que está fazendo enquanto pensa, responde de forma estruturada e termina com as referências científicas e perguntas para continuar.
+
+![A Athena respondendo uma pergunta clínica](/assets/img/wecann-atena/conversa-agente.mp4)
+
+### Coloquei o paciente dentro da conversa.
+
+No modo "Discutir um caso", o médico fixa um paciente no campo de pergunta. A partir daí, a Athena responde considerando o histórico dele: a pergunta deixa de ser genérica e passa a ser sobre aquela pessoa.
+
+![Discutir um caso com a paciente fixada](/assets/img/wecann-atena/discutir-caso.webp)
+
+### Desenhei a jornada inteira da consulta.
+
+Agenda, Paciente 360, consulta presencial e por telemedicina, geração de documentos, acompanhamento depois da consulta e casuística. Na consulta, a transcrição corre sozinha e o prontuário se organiza em SOAP, para o médico olhar para o paciente e não para o teclado. A receita de controle especial sai validada pela Athena.
+
+![Tela de consulta presencial](/assets/img/wecann-atena/consulta-presencial.webp)
+
+![Receitas geradas com a validação da Athena](/assets/img/wecann-atena/gerar-documentos.webp)
+
+### Escrevi regras de interface para proteger a atenção.
+
+As cores de destaque só aparecem quando têm significado clínico. Não há sombra, só contraste e divisórias finas, e cada tela tem um único botão principal. A tipografia tem três vozes: serifa nos títulos, uma sem serifa na interface e uma mono para dosagens e tabelas. Cada regra existe para reduzir o que disputa o olhar do médico.
+
+### Coloquei a experiência em código para sentir o ritmo.
+
+Fizemos um wireframe navegável de alta fidelidade em Next.js, three.js e GSAP. Pré-consulta, consulta e pós-consulta ficam num espaço contínuo, com a câmera viajando entre as telas e a Athena sempre presente. A resposta do agente ali é simulada, mas o ritmo da conversa é o real.
+
+---
+
+#### O que mudou
+
+{/* ⚠️ Status do produto hoje: a WeCann Care está no ar? Com quantos médicos? Qualquer resultado de uso. O site público só traz a frase "Uma inteligência que trabalha a seu favor". Confirmar com o Lucas. */}
+
+### A WeCann Care ganhou um produto que trata a IA como apoio ao médico, e não como espetáculo.
+
+A interface troca densidade por foco. A jornada da consulta cabe num lugar só. E a IA mostra a evidência de cada resposta, que é o que os médicos disseram que precisavam para confiar nela. Hoje o produto se apresenta como "uma inteligência que trabalha a seu favor".
+
+---
+
+#### Em retrospecto
+
+{/* ⚠️ Retrospecto rascunhado a partir do material do case. Revisar com o Lucas antes de publicar. */}
+
+### Num produto com IA, o mais fácil é mostrar tudo que ela faz. Aprendi que o trabalho de design é o contrário: mostrar só o que o médico precisa e deixar a evidência a um clique.
+
+### Colocar o wireframe em código cedo mudou a conversa com o cliente. Ver a Athena responder em tempo real convence mais do que qualquer tela parada.

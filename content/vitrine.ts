@@ -6,8 +6,8 @@
  * aqui; os outros ficam só com a placa deles.
  *
  * A parede tem 27 telas, preenchidas coluna a coluna, três por coluna
- * (`lib/scene/world.ts`). Os itens com `screens` somam 18; as 9 que sobram
- * são placeholders, divididas entre os 6 itens sem telas. A ordem abaixo
+ * (`lib/scene/world.ts`). Os itens com `screens` somam 21; as 6 que sobram
+ * são placeholders, divididas entre os 5 itens sem telas. A ordem abaixo
  * intercala os dois para os placeholders não se juntarem num canto da parede.
  *
  * Uma tela `.mp4` é um loop mudo, 16:10, e precisa de um `.webp` com o mesmo
@@ -91,5 +91,15 @@ export const VITRINE: readonly VitrineItem[] = [
     screens: [`${V}/continente-shopping/triptico-fluxo.webp`, `${V}/continente-shopping/home-neve.mp4`],
   },
   { name: "Solan Group" },
-  { name: "Perfecting", year: 2026, discipline: "Produto · Marca", slug: "perfecting" },
+  {
+    name: "Perfecting",
+    year: 2026,
+    discipline: "Produto · Marca",
+    slug: "perfecting",
+    screens: [
+      `${V}/perfecting/analytics.mp4`,
+      `${V}/perfecting/ligacao.webp`,
+      `${V}/perfecting/resultado.webp`,
+    ],
+  },
 ];
