@@ -1,3 +1,5 @@
+import { sceneSettings } from "./settings";
+
 /**
  * O nível de qualidade da cena. Fora do React: a cena o lê por quadro.
  *
@@ -38,6 +40,8 @@ export const SPORES_MAX = 2400;
  */
 function initialTier(): QualityTier {
   if (typeof window === "undefined") return "medium";
+  const forced = sceneSettings().tier;
+  if (forced !== null) return forced;
   const compact = window.matchMedia("(max-width: 767px)").matches;
   const cores = navigator.hardwareConcurrency ?? 4;
   return !compact && cores >= 8 ? "high" : "medium";

@@ -1,9 +1,12 @@
+import type { QualityTier } from "./quality";
+
 /**
  * Os ajustes da cena lidos da URL, uma vez por carga.
  *
- * `dof`, `veil` e `grain` desligam uma passada cada. `at` e `stats` só existem
- * em desenvolvimento: `at` fixa o progresso e pula o loading (capturas e
- * posters), `stats` imprime tempo de quadro, draw calls e triângulos.
+ * `dof`, `veil` e `grain` desligam uma passada cada. `at`, `stats`, `dprCap` e
+ * `tier` só existem em desenvolvimento: `at` fixa o progresso e pula o loading
+ * (capturas e posters), `stats` publica tempo de quadro, draw calls e
+ * triângulos, `tier` fixa o nível de qualidade.
  */
 export type SceneSettings = {
   dof: boolean;
@@ -15,6 +18,8 @@ export type SceneSettings = {
   stats: boolean;
   /** Teto de DPR forçado, ou null para o do nível de qualidade. Só em dev. */
   dprCap: number | null;
+  /** Nível de qualidade forçado, ou null para o medido. Só em dev. */
+  tier: QualityTier | null;
 };
 
 const DEFAULTS: SceneSettings = {
@@ -24,6 +29,7 @@ const DEFAULTS: SceneSettings = {
   at: null,
   stats: false,
   dprCap: null,
+  tier: null,
 };
 
 let resolved: SceneSettings | null = null;
@@ -41,6 +47,11 @@ function readNumber(params: URLSearchParams, key: string): number | null {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
 }
 
+function readTier(params: URLSearchParams): QualityTier | null {
+  const raw = params.get("tier");
+  return raw === "high" || raw === "medium" || raw === "low" ? raw : null;
+}
+
 export function sceneSettings(): SceneSettings {
   if (resolved !== null) return resolved;
   if (typeof window === "undefined") return DEFAULTS;
@@ -54,6 +65,7 @@ export function sceneSettings(): SceneSettings {
     at: dev ? readNumber(params, "at") : null,
     stats: dev && readFlag(params, "stats", false),
     dprCap: dev ? readNumber(params, "dprCap") : null,
+    tier: dev ? readTier(params) : null,
   };
   return resolved;
 }

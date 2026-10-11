@@ -91,6 +91,8 @@ export function QualityGovernor({ still }: { still: boolean }) {
     setFrameMs(typical);
     samples.current.length = 0;
     windowStart.current = now;
+    // Nível forçado pela URL, em desenvolvimento: a medição segue, a troca não.
+    if (sceneSettings().tier !== null) return;
     const tier = getQuality().tier;
     if (!decided.current) {
       decided.current = true;
