@@ -68,6 +68,11 @@ function ensureContext(): AudioContext | null {
   if (context !== null) return context;
 
   try {
+    // No iOS o Web Audio obedece à chave de silencioso, e o site inteiro
+    // ficava mudo no iPhone. "playback" o trata como mídia, igual a um vídeo.
+    const session = (navigator as Navigator & { audioSession?: { type: string } })
+      .audioSession;
+    if (session !== undefined) session.type = "playback";
     context = new AudioContext();
     master = context.createGain();
     master.gain.value = muted ? 0 : 1;
