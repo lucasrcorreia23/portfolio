@@ -52,7 +52,11 @@ void main() {
   // A lâmina já nasce inclinada, e o vento a dobra mais na ponta. Quem
   // passa por ela a deita também: é o rastro.
   vec2 lean = vec2(-s, c) * 0.22 * aSeed.z;
-  local.xz += (lean + windAt(base, uTime) + wakeAt(xz).rg) * along * along * height;
+  vec2 bend = lean + windAt(base, uTime) + wakeAt(xz).rg;
+  local.xz += bend * along * along * height;
+  // A lâmina dobra sem esticar: o que a ponta anda para o lado, ela perde
+  // em altura.
+  local.y -= 0.6667 * min(dot(bend, bend), 0.4) * along * along * along * height;
 
   vec3 world = base + local;
   vec4 view = viewMatrix * vec4(world, 1.0);
@@ -116,7 +120,15 @@ void main() {
   // Um pouco enterrada: planta e pedra saem do chão, não pousam nele.
   local.y -= 0.04 * aSeed.x * uTall;
   vec3 wake = wakeAt(xz);
-  local.xz += (windAt(base, uTime + aSeed.z * 4.0) + wake.rg) * along * along * aSeed.x * uTall * 0.7 * uSway;
+  vec2 wind = windAt(base, uTime + aSeed.z * 4.0);
+  vec2 bend = (wind + wake.rg) * 0.7 * uSway;
+  float reach = aSeed.x * uTall;
+  local.xz += bend * along * along * reach;
+  // A haste dobra sem esticar, como a relva.
+  local.y -= 0.6667 * min(dot(bend, bend), 0.4) * along * along * along * reach;
+  // As folhas tremem: pouco, mais longe do caule e mais na rajada.
+  float tremor = sin(uTime * 6.1 + aSeed.z * 40.0 + position.x * 11.0 + position.z * 13.0);
+  local.y += tremor * 0.035 * min(length(position.xz) * aSeed.x, 0.6) * (0.3 + 3.0 * length(wind)) * uSway;
   vec3 world = base + local;
 
   vec4 view = viewMatrix * vec4(world, 1.0);
