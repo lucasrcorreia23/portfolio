@@ -46,7 +46,7 @@ export function Panels({ shared, panels }: PanelsProps) {
     const fog = fogUniforms(shared);
     const items = panels.map((panel, index) => {
       const placement = panelPlacement(index);
-      const { texture, dot } = createPanelTexture(panel.title, index);
+      const { texture, dot } = createPanelTexture(panel.title, index, panel.client);
       const material = new ShaderMaterial({
         uniforms: {
           ...fog,

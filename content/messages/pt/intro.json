@@ -3,11 +3,7 @@
   "first": "Lucas",
   "last": "Correia",
   "fullName": "Lucas Rodrigues Correia",
-  "position": {
-    "product": "Design de produto",
-    "engineering": "Engenharia de produto",
-    "brand": "Gestão de produto"
-  },
+  "position": "Design, engenharia e gestão de produto",
   "manifesto": {
     "one": "Profissional de produto com o gosto de um designer e a consciência de um engenheiro. Hoje construo produtos de IA e com IA, da descoberta ao código.",
     "two": "Trabalho é meu hobby. Vivo dizendo a mim mesmo que vou desacelerar e fazer outra coisa, mas aí me apaixono por outro projeto ou problema e ele me puxa de volta. Vejo nos desafios de produto o mesmo lado competitivo dos jogos online, que também já foram minha obsessão, principalmente World of Warcraft."

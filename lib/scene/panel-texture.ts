@@ -122,6 +122,7 @@ function paint(
     g.globalAlpha = 1;
   };
   text(spec.index, 24, 30, 7, 1.2);
+  text(spec.client.toUpperCase(), 40, 30, 7, 1.2, "left", 0.7);
   text(spec.readout, W - 24, 30, 5, 0.9, "right", 0.7);
   text(spec.name.toUpperCase(), 24, H - 16, 8, 1.4);
 }
@@ -145,8 +146,12 @@ export type PanelTexture = {
   dot: [number, number, number];
 };
 
-export function createPanelTexture(name: string, index: number): PanelTexture {
-  const spec = placeholderSpec(name, index);
+export function createPanelTexture(
+  name: string,
+  index: number,
+  client: string,
+): PanelTexture {
+  const spec = placeholderSpec(name, index, client);
   const canvas = document.createElement("canvas");
   canvas.width = W * SCALE;
   canvas.height = H * SCALE;

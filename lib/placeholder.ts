@@ -15,6 +15,8 @@ export type PlaceholderShape = "disc" | "ring" | "bar" | "cross";
 
 export type PlaceholderSpec = {
   name: string;
+  /** O cliente, ao lado do índice. Vazio nas telas da vitrine. */
+  client: string;
   /** O índice em dois dígitos, "01". */
   index: string;
   shape: PlaceholderShape;
@@ -40,7 +42,11 @@ function hash(text: string): number {
   return h >>> 0;
 }
 
-export function placeholderSpec(name: string, index: number): PlaceholderSpec {
+export function placeholderSpec(
+  name: string,
+  index: number,
+  client = "",
+): PlaceholderSpec {
   const h = hash(name.toLowerCase());
   const u = ((h >>> 3) % 1000) / 1000;
   const v = ((h >>> 13) % 1000) / 1000;
@@ -48,6 +54,7 @@ export function placeholderSpec(name: string, index: number): PlaceholderSpec {
   const y = 52 + v * 84;
   return {
     name,
+    client,
     index: String(index + 1).padStart(2, "0"),
     shape: SHAPES[h % SHAPES.length] as PlaceholderShape,
     x,

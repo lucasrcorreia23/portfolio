@@ -104,7 +104,11 @@ export default async function CasePage({
           className="case-cover"
           style={{ aspectRatio: String(PANEL_ASPECT) }}
         >
-          <Placeholder name={frontmatter.title} index={Math.max(here, 0)} />
+          <Placeholder
+            name={frontmatter.title}
+            index={Math.max(here, 0)}
+            client={frontmatter.client}
+          />
         </figure>
 
         <div className="case-head">

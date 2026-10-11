@@ -25,7 +25,7 @@ const PUBLISHED: readonly { slug: string; title?: string }[] = [
   { slug: "prime8" },
   { slug: "perfecting" },
   { slug: "unifique-energia" },
-  { slug: "wecann-atena", title: "WeCann Care" },
+  { slug: "wecann-atena" },
   { slug: "portonave" },
 ];
 
@@ -57,6 +57,9 @@ export type CaseFrontmatterInput = {
   stack: string[];
   summary_pt: string;
   summary_en: string;
+  /** O mercado do projeto, na legenda da home: "Salestech", "Energia". */
+  market_pt: string;
+  market_en: string;
   accent: AccentToken;
   cover: string;
   media: Array<Omit<CaseMedia, "generated"> & { generated?: boolean }>;
@@ -73,6 +76,8 @@ export type CaseFrontmatter = {
   stack: readonly string[];
   summary_pt: string;
   summary_en: string;
+  market_pt: string;
+  market_en: string;
   accent: AccentToken;
   /** A capa real, quando existir. Hoje a capa exibida é o placeholder. */
   cover: string;
@@ -239,6 +244,8 @@ export function parseFrontmatter(slug: string, raw: unknown): CaseFrontmatter {
     stack: requireStringArray(slug, record, "stack"),
     summary_pt: requireString(slug, record, "summary_pt"),
     summary_en: requireString(slug, record, "summary_en"),
+    market_pt: requireString(slug, record, "market_pt"),
+    market_en: requireString(slug, record, "market_en"),
     accent: requireOneOf(slug, record, "accent", ACCENT_TOKENS),
     cover: requireString(slug, record, "cover"),
     media: parseMedia(slug, record["media"]),

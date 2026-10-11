@@ -136,6 +136,26 @@
     aspect-ratio: 1;
     filter: drop-shadow(0 0 1.5rem color-mix(in oklab, var(--cyan) calc(var(--p) * 55%), transparent));
   }
+  /* Carregou e espera o gesto: passa um vento, de cinco em cinco segundos. A
+     flor balança como na ponta de um caule (o eixo fica abaixo dela), cede
+     para um lado, volta e assenta; o resto do ciclo é parada. */
+  .loading-flower-wind {
+    transform-origin: 50% 135%;
+    animation: flower-wind 5s ease-in-out 0.6s infinite;
+  }
+  @keyframes flower-wind {
+    0%, 46%, 100% { transform: none; }
+    8% { transform: rotate(9deg) skewX(-7deg); }
+    17% { transform: rotate(-5.5deg) skewX(4deg); }
+    26% { transform: rotate(3.2deg) skewX(-2.2deg); }
+    34% { transform: rotate(-1.6deg) skewX(1deg); }
+    41% { transform: rotate(0.6deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .loading-flower-wind {
+      animation: none;
+    }
+  }
   /* Antes de carregar: preta e branca, como a relva da cena. */
   .loading-flower-head {
     position: relative;

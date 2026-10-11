@@ -7,6 +7,7 @@ import {
 type PlaceholderProps = {
   name: string;
   index: number;
+  client?: string;
   className?: string;
 };
 
@@ -16,8 +17,8 @@ const MONO = "var(--font-geist-mono), ui-monospace, monospace";
  * A placa de placeholder em SVG, 16 por 10. Componente de servidor: não custa
  * JavaScript. As cores são os tokens, lidos por `var()`.
  */
-export function Placeholder({ name, index, className }: PlaceholderProps) {
-  const spec = placeholderSpec(name, index);
+export function Placeholder({ name, index, client, className }: PlaceholderProps) {
+  const spec = placeholderSpec(name, index, client);
   const step = (W - 32) / (spec.ticks - 1);
 
   return (
@@ -79,6 +80,17 @@ export function Placeholder({ name, index, className }: PlaceholderProps) {
         letterSpacing="1.2"
       >
         {spec.index}
+      </text>
+      <text
+        x="40"
+        y="30"
+        fill="var(--mist)"
+        fontFamily={MONO}
+        fontSize="7"
+        letterSpacing="1.2"
+        opacity="0.7"
+      >
+        {spec.client.toUpperCase()}
       </text>
       <text
         x={W - 24}

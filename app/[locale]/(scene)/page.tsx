@@ -40,6 +40,8 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
   const captions = cases.map((entry) => ({
     title: entry.frontmatter.title,
     client: entry.frontmatter.client,
+    market:
+      typed === "pt" ? entry.frontmatter.market_pt : entry.frontmatter.market_en,
     year: entry.frontmatter.year,
     disciplines: entry.frontmatter.disciplines
       .map((discipline) => t(`cases.disciplines.${discipline}`))
@@ -55,11 +57,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
     url: SITE_URL,
     email: `mailto:${EMAIL}`,
     description: t("meta.description"),
-    jobTitle: [
-      t("intro.position.product"),
-      t("intro.position.engineering"),
-      t("intro.position.brand"),
-    ],
+    jobTitle: t("intro.position"),
     sameAs: PROFILES.flatMap((profile) =>
       typeof profile.href === "string" ? [profile.href] : [],
     ),
@@ -88,11 +86,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
                 first={t("intro.first")}
                 last={t("intro.last")}
                 fullName={t("intro.fullName")}
-                position={[
-                  t("intro.position.product"),
-                  t("intro.position.engineering"),
-                  t("intro.position.brand"),
-                ]}
+                position={t("intro.position")}
                 manifesto={[t("intro.manifesto.one"), t("intro.manifesto.two")]}
               />
             ) : null}

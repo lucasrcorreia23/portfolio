@@ -1,60 +1,59 @@
 export const frontmatter = {
-  title: "Perfecting",
+  title: "Roleplay de vendas com IA",
   client: "Perfecting",
   // "2026 até hoje" — o schema guarda um ano só; o período por extenso está no
   // corpo, no bloco de papel.
   year: 2026,
-  role: "Sócio, Design Engineer",
+  role: "Sócio, Product Engineer",
   // Ferramentas citadas no texto do case, e só elas.
-  stack: ["PostHog", "Figma", "Python", "Design tokens W3C"],
+  stack: ["PostHog", "Figma", "Python"],
   summary_pt:
-    "Produto B2B SaaS de roleplay e treino de vendas com IA: fluxo de produto ponta a ponta, sistema de marca e camada de analytics numa entrega só.",
+    "Uma salestech de IA em que o vendedor treina por voz com um comprador simulado. Fiz o produto aprender a se enxergar antes de crescer, do dado ao código.",
   summary_en:
-    "B2B SaaS product for AI roleplay and sales training: end-to-end product flow, brand system and analytics layer in a single delivery.",
+    "An AI salestech where reps practise by voice with a simulated buyer. I made the product able to see itself before it grew, from data to code.",
+  market_pt: "Salestech",
+  market_en: "Salestech",
   accent: "cyan",
   cover: "/generated/perfecting.webp",
   media: [],
   disciplines: ["fundador"],
-  // PENDENTE — decisão do Lucas. A ordem do rio foi escrita pelo agente em
-  // 0061582 e não foi decidida olhando os cards montados (DIRECTION.md §4).
-  river_rank: 1,
   generated: true,
 };
 
-2026 até hoje
+Janeiro de 2026 até hoje
 
-Sócio e Design Engineer @ Perfecting
+Sócio e Product Engineer @ Perfecting
 
 # Uma salestech de IA que aprendeu a se enxergar antes de crescer, e um design que vai do dado ao código.
 
 ### Um treino de vendas só funciona se parecer uma ligação de verdade. Todo o resto é consequência disso.
 
 **Meu papel**\
-Sócio, Design Engineer. Produto, interface, frontend, dados e marca.
+Sócio, Product Engineer. Produto, interface, frontend e dados.
 
 **Período**\
-2026 até hoje
+Janeiro de 2026 até hoje
 
 **Time**\
 Startup enxuta, com CEO, engenharia, pesquisa e operações
 
 **Clientes**\
-FIESC, RD Station e outras empresas B2B
+FIESC, piloto com a RD Station e outras empresas B2B
 
-**Link**\
-[perfecting.com.br](https://perfecting.com.br)
+**Status**\
+Em andamento, em stealth
 
-A Perfecting é uma startup brasileira de salestech. Na plataforma, o vendedor pratica ligações por voz com compradores simulados por inteligência artificial antes de encarar o cliente de verdade, e o gestor acompanha a evolução do time. Quando entrei como sócio, o produto já funcionava. O que ainda não existia era uma forma de saber se ele funcionava bem.
+A Perfecting é uma startup brasileira de salestech que ainda opera em stealth. Na plataforma, o vendedor pratica ligações por voz com compradores simulados por inteligência artificial antes de encarar o cliente de verdade, e o gestor acompanha a evolução do time. Quando entrei como sócio, em janeiro de 2026, mal existia uma API. O produto foi tomando corpo, mas sem nenhum jeito de saber se funcionava bem.
 
 ---
 
 #### Se você ler só uma parte
 
-## A Perfecting tinha um produto no ar e nenhuma forma confiável de saber como ele era usado. Toda decisão de produto terminava em opinião.
+## Quando entrei, a Perfecting mal tinha uma API. Conforme o produto cresceu, não havia nenhum jeito confiável de saber como ele era usado, e toda decisão de produto terminava em opinião.
 
 ## O que eu liderei foi transformar o produto em algo que se deixa observar, e usar essa leitura para decidir o que construir e, principalmente, o que recusar.
 
-## A instrumentação, o princípio de realismo acima de didatismo e o sistema de marca são hoje a base sobre a qual o produto é construído.
+## A instrumentação e o princípio de realismo acima de didatismo são hoje a base sobre a qual o produto é construído.
 
 ---
 
@@ -64,13 +63,12 @@ Não faltava ideia. Faltava evidência.
 
 Com um time pequeno, cada semana de trabalho na direção errada custa caro. E sem dado, toda direção parece certa para quem a defende.
 
-{/* ⚠️ Linha incompleta no texto recebido ("Personassa e quebravam a imersão."), mantida como veio — falta o trecho do meio. Confirmar com o Lucas. */}
+{/* ⚠️ Saiu da lista uma linha incompleta do texto recebido ("Personassa e quebravam a imersão."). Mandar a frase inteira para ela voltar. */}
 
 - Nenhuma leitura confiável de onde o vendedor travava ou desistia.
 - Um terço dos eventos que a gente precisava medir sem nenhum endpoint no backend para existir.
 - Usuários internos contaminando os dashboards mesmo depois de filtrados. Só o meu perfil acumulava mais de dezessete identidades anônimas fundidas.
 - 47 segundos de espera entre o fim da ligação e o feedback.
-- Personassa e quebravam a imersão.
 - Um uso ainda longe da frequência que um treino precisa para virar hábito.
 
 Cada um desses problemas pedia uma tela nova. A tentação era sair desenhando. O que o produto precisava primeiro era aprender a se enxergar.
@@ -102,9 +100,9 @@ Não dava para resolver tudo ao mesmo tempo, então o trabalho começou com perg
 
 ### Instrumentei a jornada inteira antes de mexer em qualquer tela.
 
-{/* ⚠️ Trecho truncado no texto recebido ("empresa com empolhar uma média"), mantido como veio. Confirmar com o Lucas. */}
+{/* ⚠️ Trecho reconstruído: o texto recebido dizia "empresa com empolhar uma média". Confirmar com o Lucas. */}
 
-Desenhei o plano de tracking no PostHog do cadastro ao fim de cada roleplay, com atributos de plano, organização, papel e tamanho do time. Assim a gente passou a comparar vendedor com gestor e empresa com empolhar uma média que não representava ninguém.
+Desenhei o plano de tracking no PostHog do cadastro ao fim de cada roleplay, com atributos de plano, organização, papel e tamanho do time. Assim a gente passou a comparar vendedor com gestor e empresa com empresa, em vez de olhar uma média que não representava ninguém.
 
 ### Renegociei o escopo em vez de esperar o backend.
 
@@ -136,7 +134,7 @@ Numa plataforma de roleplay, o comprador simulado é a tela mais importante do p
 
 ### Reorganizei o treino para o jeito como vendas consultivas acontecem.
 
-Para clientes com playbook próprio, o treino passou a seguir as etapas desse playbook. A lista de roleplays, que era agrupada por oferta, está migrando para um agrupamento por estágio da conversa, porque em venda consultiva a oferta muitas vezes ainda nem existe na hora do diagnóstico.
+Para clientes com playbook próprio, o treino passou a seguir as etapas desse playbook. Na FIESC, que já vende com SPIN Selling, as trilhas de roleplay foram montadas sobre esse método, em vez de impor um nosso. Hoje o produto trabalha com SPIN, MEDDIC e SPICED, e o comprador de IA é montado com a oferta, as objeções e o perfil de cliente de cada empresa. A lista de roleplays, que era agrupada por oferta, está migrando para um agrupamento por estágio da conversa, porque em venda consultiva a oferta muitas vezes ainda nem existe na hora do diagnóstico.
 
 ---
 
@@ -145,6 +143,10 @@ Para clientes com playbook próprio, o treino passou a seguir as etapas desse pl
 ### Fui a campo na RD Station.
 
 Fiz uma visita de pesquisa com entrevistas gravadas e conversas com o time comercial. Descobri que um vendedor gastava entre 10 e 40 minutos preparando cada lead, e que essa preparação era simplesmente pulada em parte dos casos. O problema do vendedor não começava na ligação, começava antes dela. Estar perto de quem compra o produto mudou a forma como eu desenho para quem usa.
+
+### Um piloto que ia bem, e um business case que não fechou.
+
+A RD foi um piloto, e o feedback dos vendedores estava sendo bem positivo, a ponto de o gerente comercial já estar encaminhando a compra da plataforma para o jurídico. O contrato não veio por um motivo fora do produto: uma empresa que a RD comprou também lançou roleplays, e um roleplay integrado ao que eles já usavam, com valor no primeiro dia, venceu o nosso, que pedia oito semanas de implantação. A perda não invalidou a tese do produto. Invalidou a ordem de entrada: primeiro algo leve, depois a implantação pesada.
 
 ### Auditei o produto antes de colocar 120 vendedores nele.
 
@@ -156,15 +158,11 @@ A conclusão foi que os roleplays ainda não estavam prontos para vendedores. De
 
 ---
 
-#### O que eu fiz na engenharia e na marca
+#### O que eu fiz na engenharia
 
 ### Coloquei a mão na infraestrutura e nos modelos.
 
 Participei dos testes de carga para entender quantas ligações simultâneas o produto aguentava antes de degradar a experiência. Construí em Python um pipeline de dados sintéticos para o fine-tuning dos modelos, com conversas geradas entre agentes e uma etapa de pontuação de qualidade.
-
-### Construí uma marca que o código entende.
-
-Índigo como cor principal, âmbar como acento, terracota para os enquadramentos estruturais e o gradiente reservado para superfícies grandes. Tudo documentado em design tokens no padrão W3C, alimentando o Figma e o código a partir da mesma fonte. Uma marca que só existe no Figma se desfaz no primeiro deploy.
 
 ### Escrevi o site a partir do produto que existe.
 
@@ -195,7 +193,13 @@ problemas mapeados antes que um único vendedor visse o produto, 23 deles críti
 
 #### Hoje
 
-### Abra uma sessão na Perfecting hoje. O contexto antes da ligação, a conversa sem nenhuma interferência, o aprendizado todo concentrado no final, as cores, os tokens e os eventos que medem cada passo. São as definições que eu escrevi, e elas continuam orientando cada decisão nova do produto.
+### Abra uma sessão na Perfecting hoje. O contexto antes da ligação, a conversa sem nenhuma interferência, o aprendizado todo concentrado no final e os eventos que medem cada passo. São as definições que eu escrevi, e elas continuam orientando cada decisão nova do produto.
+
+Tudo isso acontece num produto com visual próprio: índigo como cor principal, âmbar como acento e terracota nos enquadramentos. O look and feel nasce do próprio produto e continua evoluindo junto com ele.
+
+Depois de cada sessão, o vendedor recebe um scorecard de clareza, escuta ativa e tratamento de objeções. O gestor vê as lacunas de habilidade e o ranking do time em tempo real. E a entrada no cliente ficou leve, a lição que veio do piloto da RD: as sessões começam em até 48 horas depois do onboarding, com cerca de duas horas de configuração.
+
+{/* ⚠️ Confirmar se a entrada em 48 horas foi uma resposta direta ao piloto da RD e qual foi o seu papel nela. */}
 
 As telas nunca foram a entrega principal. A entrega foi um produto que se deixa observar e um conjunto de princípios claros o bastante para que qualquer pessoa do time consiga decidir sem me perguntar.
 
@@ -206,5 +210,7 @@ As telas nunca foram a entrega principal. A entrega foi um produto que se deixa 
 ### Quando cheguei, eu quis redesenhar tudo logo de cara, e segurar isso pareceu lento. Olhando agora, as semanas gastas instrumentando e corrigindo dados foram as mais importantes do projeto. Sem elas, cada tela nova seria só mais uma opinião bem desenhada.
 
 ### Num time pequeno, é fácil virar a pessoa que executa tudo. Demorei para entender que a minha contribuição mais valiosa não estava na execução, e sim nas decisões que vinham antes dela. Hoje eu brigo pela autoria dessas decisões com a mesma energia que dedico às telas.
+
+### O piloto da RD me ensinou que feedback bom não garante contrato. O produto pode estar certo e a forma de entrar no cliente, errada.
 
 ### Na Perfecting, meu meio deixou de ser só o Figma. Virou o PostHog, o prompt da persona, o repositório e a conversa com o cliente. Uma decisão de design que não chega no dado e no código não existe de verdade.

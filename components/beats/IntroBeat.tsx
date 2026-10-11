@@ -8,12 +8,12 @@ type IntroBeatProps = {
   first: string;
   last: string;
   fullName: string;
-  position: readonly string[];
+  position: string;
   manifesto: readonly string[];
 };
 
 /**
- * A Introdução: o nome em tipografia no DOM, o papel em três linhas e o
+ * A Introdução: o nome em tipografia no DOM, o papel em uma frase e o
  * manifesto. O nome acende, o papel entra como leitura e o manifesto sai da
  * névoa, nessa ordem, a partir de uma deixa só. A deixa vem antes de o painel
  * grudar, com o nome já na tela: o texto chega quase junto do véu atrás dele.
@@ -38,16 +38,14 @@ export function IntroBeat({
           ))}
         </h1>
         <div className="flex flex-col gap-8 md:flex-row md:gap-16">
-          <ul
+          <p
             data-veil
             data-readout
-            className="type-mono text-hud text-mist flex w-fit shrink-0 flex-col gap-1"
+            className="type-mono text-hud text-mist w-fit max-w-[26ch] shrink-0 text-balance"
             style={{ "--wait": "200ms" } as CSSProperties}
           >
-            {position.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
+            {position}
+          </p>
           <div
             data-veil
             className="fog-in text-body text-mist flex w-fit max-w-[62ch] flex-col gap-4 text-pretty"

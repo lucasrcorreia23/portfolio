@@ -22,6 +22,7 @@ export default async function SceneLayout({
   const panels = (await getCases()).map((entry, index) => ({
     slug: entry.slug,
     title: entry.frontmatter.title,
+    client: entry.frontmatter.client,
     index,
   }));
 

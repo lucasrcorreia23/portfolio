@@ -3,11 +3,7 @@
   "first": "Lucas",
   "last": "Correia",
   "fullName": "Lucas Rodrigues Correia",
-  "position": {
-    "product": "Product design",
-    "engineering": "Product engineering",
-    "brand": "Product management"
-  },
+  "position": "Product design, engineering and management",
   "manifesto": {
     "one": "A product professional with a designer's taste and an engineer's conscience. Today I build AI products, and build with AI, from discovery to code.",
     "two": "Work is my hobby. I keep telling myself I'll slow down and do something else, but then I fall for another project or problem and it pulls me back in. I see in product challenges the same competitive side as online games, which were once my obsession too, World of Warcraft most of all."

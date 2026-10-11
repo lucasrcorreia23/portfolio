@@ -9,6 +9,7 @@ import { beatOf } from "./beats";
 export type Caption = {
   title: string;
   client: string;
+  market: string;
   year: number;
   disciplines: string;
 };
@@ -40,7 +41,7 @@ export function CaseCaption({ captions }: { captions: readonly Caption[] }) {
         </p>
         <p className="type-mono text-label text-mist mt-4">{caption.title}</p>
         <p className="type-mono text-hud-sm text-mist mt-2">
-          {caption.client} · {caption.year}
+          {caption.client} · {caption.market} · {caption.year}
         </p>
         <p className="type-mono text-hud-sm text-mist mt-1">{caption.disciplines}</p>
       </div>

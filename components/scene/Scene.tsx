@@ -23,6 +23,7 @@ setConsoleFunction((type: string, message: string, ...params: unknown[]) => {
 export type ScenePanel = {
   slug: string;
   title: string;
+  client: string;
   index: number;
 };
 
