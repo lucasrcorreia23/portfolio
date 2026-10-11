@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Loading } from "./Loading";
+import "@/styles/loading-flower.css";
 
 /** Sem JavaScript não há o que carregar: o site aparece inteiro, sem cena. */
 const NOSCRIPT_STYLE = `<style>[data-gate-overlay]{display:none}</style>`;
@@ -13,8 +14,6 @@ export async function Gate() {
   return (
     <>
       <noscript dangerouslySetInnerHTML={{ __html: NOSCRIPT_STYLE }} />
-      {/* A máscara da flor: sem ela o loading abre vazio. */}
-      <link rel="preload" as="image" href="/loading/flor.webp" fetchPriority="high" />
       <Loading
         label={t("label")}
         status={t("status")}

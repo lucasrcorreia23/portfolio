@@ -1,4 +1,5 @@
 import { prepareAudio } from "@/lib/audio/audio-context";
+import { webglSupported } from "@/lib/capabilities/use-webgl-support";
 import { loadScene } from "@/lib/scene/load-scene";
 import { whenScenePainted } from "@/lib/scene/scene-painted";
 import { loadScrollDriver } from "@/lib/scroll/load-driver";
@@ -56,8 +57,13 @@ const TASKS: readonly PreloadTask[] = [
   // PROJECT.md §5, e o portão é o momento certo para baixá-lo — enquanto a
   // veneziana está fechada e a espera é o que ele existe para cobrir. Peso 4
   // contra 1 das outras porque o peso é proporcional ao que a tarefa custa em
-  // rede, e este chunk custa uma ordem de grandeza a mais.
-  { id: "scene", weight: 3, start: () => loadScene() },
+  // rede, e este chunk custa uma ordem de grandeza a mais. Sem WebGL a cena
+  // não roda (o site fica no poster) e o chunk não é baixado.
+  {
+    id: "scene",
+    weight: 3,
+    start: () => (webglSupported() ? loadScene() : Promise.resolve()),
+  },
   // Os shaders: a cena compila todos os programas ao montar e avisa quando o
   // primeiro quadro composto saiu. Sem WebGL, quem avisa é o `SceneGate`.
   { id: "shaders", weight: 3, start: () => whenScenePainted() },

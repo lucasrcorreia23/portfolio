@@ -1,18 +1,24 @@
 #!/usr/bin/env node
 // @ts-check
-import { mkdirSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
 /**
- * A flor do loading: `public/loading/flor.webp`.
+ * A flor do loading: `styles/loading-flower.css`.
  *
  * É a cabeça da gazânia aberta, a mesma espécie da cena, tirada da textura de
  * 4k do Poly Haven (CC0; a do GLB tem 1024 px e a cabeça ficaria com 320).
  * O arquivo não leva cor: é branco, e o alfa é a silhueta da flor vezes o
  * relevo da foto. O CSS o usa como máscara (`.loading-flower-head`) e pinta
  * por baixo com os tokens.
+ *
+ * Sai embutida no CSS, e não como arquivo: a flor é o maior elemento do
+ * primeiro quadro (o LCP), e num pedido à parte ela disputava a rede com tudo
+ * o que o loading baixa. Por isso também é pequena: 320 px é o tamanho dela
+ * num celular. Vai numa variável, e não direto em `mask-image`: o prefixo
+ * `-webkit-` que o build acrescenta duplicaria a imagem inteira.
  *
  *   node scripts/derive-loading-flower.mjs
  */
@@ -27,10 +33,10 @@ const BOX = { left: 60, top: 2650, width: 1440, height: 1440 };
 const HEAD_RADIUS = 740 / BOX.width;
 /** O miolo e as manchas da base das pétalas são quase pretos: sem piso, somem. */
 const FLOOR = 0.4;
-const SIZE = 640;
+const SIZE = 320;
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const OUT = join(ROOT, "public", "loading");
+const OUT = join(ROOT, "styles", "loading-flower.css");
 
 /** @param {string} url */
 async function download(url) {
@@ -61,8 +67,15 @@ for (let y = 0; y < SIZE; y += 1) {
   }
 }
 
-mkdirSync(OUT, { recursive: true });
-const info = await sharp(pixels, { raw: { width: SIZE, height: SIZE, channels: 4 } })
-  .webp({ quality: 80, alphaQuality: 80, effort: 6 })
-  .toFile(join(OUT, "flor.webp"));
-console.log(`flor.webp: ${info.width} px, ${(info.size / 1024).toFixed(1)} kB`);
+const mask = await sharp(pixels, { raw: { width: SIZE, height: SIZE, channels: 4 } })
+  .webp({ quality: 50, alphaQuality: 80, effort: 6 })
+  .toBuffer();
+writeFileSync(
+  OUT,
+  `/* Gerado por scripts/derive-loading-flower.mjs: não edite à mão. */
+.loading-flower-head {
+  --loading-flower: url("data:image/webp;base64,${mask.toString("base64")}");
+}
+`,
+);
+console.log(`loading-flower.css: ${SIZE} px, ${(mask.length / 1024).toFixed(1)} kB`);

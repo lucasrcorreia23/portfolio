@@ -56,6 +56,11 @@ function probe(): boolean {
   return probed;
 }
 
+/** A mesma resposta fora do React, para quem decide o que baixar. Só no cliente. */
+export function webglSupported(): boolean {
+  return probe();
+}
+
 /** Suporte a WebGL não muda no meio da sessão: não há o que assinar. */
 function subscribe(): () => void {
   return () => {};

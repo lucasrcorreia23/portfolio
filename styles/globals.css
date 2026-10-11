@@ -127,9 +127,10 @@
   }
 
   /* A flor do loading. `--p` (0 a 1) é o progresso, escrito por
-     `components/gate/Loading.tsx`. A foto entra só como máscara
-     (`scripts/derive-loading-flower.mjs`); a cor é dos tokens. O brilho fica
-     no elemento de fora: no mesmo elemento, a máscara o recortaria. */
+     `components/gate/Loading.tsx`. A foto entra só como máscara, embutida em
+     `styles/loading-flower.css` (`scripts/derive-loading-flower.mjs`); a cor é
+     dos tokens. O brilho fica no elemento de fora: no mesmo elemento, a
+     máscara o recortaria. */
   .loading-flower {
     width: min(44vmin, 18rem);
     aspect-ratio: 1;
@@ -141,7 +142,7 @@
     width: 100%;
     height: 100%;
     background: color-mix(in oklab, var(--mist) 60%, var(--void));
-    mask: url("/loading/flor.webp") center / contain no-repeat;
+    mask: var(--loading-flower) center / contain no-repeat;
   }
   /* Acesa: ciano no miolo, mais azul para as pontas, e o rosa em um anel na
      base das pétalas e em algumas pontas. A luz sai do miolo e chega à borda
