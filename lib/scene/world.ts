@@ -236,6 +236,36 @@ export const WALL_CELL = { width: 1.76, height: 1.1, gap: 0.07 };
 export const WALL_SPAN = WALL_COLUMNS * WALL_CELL.width + (WALL_COLUMNS - 1) * WALL_CELL.gap;
 export const WALL_TALL = WALL_ROWS * WALL_CELL.height + (WALL_ROWS - 1) * WALL_CELL.gap;
 
+/**
+ * O centro de uma tela no plano da parede, a partir do centro dela. As telas
+ * descem por coluna: a de um mesmo projeto ficam juntas.
+ */
+export function wallCell(cell: number): { x: number; y: number } {
+  const column = Math.floor(cell / WALL_ROWS);
+  const row = cell % WALL_ROWS;
+  return {
+    x: -WALL_SPAN / 2 + WALL_CELL.width / 2 + column * (WALL_CELL.width + WALL_CELL.gap),
+    y: WALL_TALL / 2 - WALL_CELL.height / 2 - row * (WALL_CELL.height + WALL_CELL.gap),
+  };
+}
+
+/**
+ * Em que tela um ponto do plano da parede cai, ou −1: nos vãos e fora dela.
+ * `x` e `y` são a partir do centro.
+ */
+export function wallCellAt(x: number, y: number): number {
+  const stepX = WALL_CELL.width + WALL_CELL.gap;
+  const stepY = WALL_CELL.height + WALL_CELL.gap;
+  const fromLeft = x + WALL_SPAN / 2;
+  const fromTop = WALL_TALL / 2 - y;
+  const column = Math.floor(fromLeft / stepX);
+  const row = Math.floor(fromTop / stepY);
+  if (column < 0 || column >= WALL_COLUMNS || row < 0 || row >= WALL_ROWS) return -1;
+  if (fromLeft - column * stepX > WALL_CELL.width) return -1;
+  if (fromTop - row * stepY > WALL_CELL.height) return -1;
+  return column * WALL_ROWS + row;
+}
+
 /** Em que fração do trecho a câmera chega à parede e em qual a solta. */
 const FORK_ARRIVE = 0.2;
 const FORK_LEAVE = 0.84;

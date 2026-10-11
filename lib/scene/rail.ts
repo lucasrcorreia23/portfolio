@@ -9,6 +9,7 @@ import {
   stopWeight,
   vitrineWall,
   WALL_CELL,
+  wallCell,
   WALL_SPAN,
   WALL_TALL,
 } from "./world";
@@ -101,11 +102,11 @@ export function applyReveal(pose: CameraPose, reveal: number): void {
 }
 
 /**
- * Quanto da parede o quadro mostra: na altura, uma linha e meia — a de baixo
- * cortada no meio, para o olhar descer até ela —; na largura, nunca menos que
- * uma tela e um terço (no retrato).
+ * Quanto da parede o quadro mostra: na altura, duas linhas — com o ponteiro
+ * no meio da tela, a do meio inteira e metade das outras duas —; na largura,
+ * nunca menos que uma tela e um terço (no retrato).
  */
-const WALL_VIEW_TALL = WALL_CELL.height * 1.6;
+const WALL_VIEW_TALL = WALL_CELL.height * 2;
 const WALL_VIEW_WIDE = WALL_CELL.width * 1.3;
 /** Quanto da largura da tela fica livre nas pontas: à esquerda mora a HUD. */
 const WALL_LEAD = 0.14;
@@ -149,6 +150,43 @@ export function applyWallApproach(
   pose.position.lerp(PANEL, amount);
   PANEL.set(x, y, z);
   pose.target.lerp(PANEL, amount);
+}
+
+/** Quanto do quadro a tela em foco ocupa, no máximo: na altura e na largura. */
+const FOCUS_TALL = 0.84;
+const FOCUS_WIDE = 0.8;
+
+/**
+ * A câmera diante de uma tela da parede, por cima da aproximação: `cell` é a
+ * tela e `weight` (0 a 1) quanto a câmera foi até ela. A tela enche o quadro,
+ * de frente, um pouco à direita do meio para a HUD não cobri-la.
+ */
+export function applyWallFocus(
+  pose: CameraPose,
+  cell: number,
+  weight: number,
+  aspect: number,
+): void {
+  if (cell < 0 || weight <= 0) return;
+  const wall = vitrineWall();
+  const half = Math.tan((CAMERA_FOV * Math.PI) / 360);
+  const distance = Math.max(
+    WALL_CELL.height / (2 * half * FOCUS_TALL),
+    WALL_CELL.width / (2 * half * aspect * FOCUS_WIDE),
+  );
+  const center = wallCell(cell);
+  // A câmera vai à esquerda do centro da tela, para ela ficar à direita.
+  const along = center.x - distance * half * aspect * WALL_LEAD;
+  const y = wall.y + center.y;
+
+  const nx = Math.sin(wall.yaw);
+  const nz = Math.cos(wall.yaw);
+  const x = wall.x + Math.cos(wall.yaw) * along;
+  const z = wall.z - Math.sin(wall.yaw) * along;
+  PANEL.set(x + nx * distance, y, z + nz * distance);
+  pose.position.lerp(PANEL, weight);
+  PANEL.set(x, y, z);
+  pose.target.lerp(PANEL, weight);
 }
 
 /** Quanto dura a revelação, em milissegundos. */

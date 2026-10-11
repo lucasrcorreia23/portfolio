@@ -13,11 +13,12 @@ import { CASE_FOG } from "@/lib/scene/case-pose";
 import { industrySettled } from "@/lib/scene/industry";
 import { plantsSettled } from "@/lib/scene/plants";
 import { getQuality } from "@/lib/scene/quality";
-import { getPointer, installPointer } from "@/lib/scene/pointer";
+import { getPointer, hasPointer, installPointer } from "@/lib/scene/pointer";
 import {
   apertureAt,
   applyReveal,
   applyWallApproach,
+  applyWallFocus,
   astroAt,
   BARE_FOG,
   cameraPose,
@@ -32,6 +33,7 @@ import {
 import { sceneSettings } from "@/lib/scene/settings";
 import { createSharedUniforms } from "@/lib/scene/uniforms";
 import { readVeilBoxes, writeVeilBoxes } from "@/lib/scene/veil";
+import { wallFocus } from "@/lib/scene/wall-focus";
 import {
   BLOOM_SLOT,
   bloomPatch,
@@ -69,6 +71,14 @@ const PLANTS_WAIT_MS = 4000;
 /** Até onde o ponteiro gira o olhar, em radianos: para os lados e na vertical. */
 const LOOK_YAW = Math.PI / 4;
 const LOOK_PITCH = 0.2;
+
+/**
+ * O foco da vitrine: quanto o ponteiro fica parado numa tela até a câmera ir
+ * até ela, quanto fica fora dela até voltar, e quanto de scroll a solta.
+ */
+const FOCUS_DWELL_S = 0.35;
+const FOCUS_AWAY_S = 0.3;
+const FOCUS_PAN = 0.015;
 
 /** O passo de câmera, em metros num quadro, que já é um salto e não um movimento. */
 const EYE_JUMP = 6;
@@ -112,6 +122,17 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
   const focusRangeRef = useRef(34);
   const sway = useRef({ x: 0, y: 0 });
   const drop = useRef(0);
+  const focus = useRef({
+    on: false,
+    armed: false,
+    dwellCell: -1,
+    dwell: 0,
+    away: 0,
+    pan: 0,
+    lastPan: 0,
+    x: 0,
+    y: 0,
+  });
   /** Falso até o primeiro quadro: antes dele não há posição anterior. */
   const moved = useRef(false);
   /** A HUD no quadro anterior, e se o segredo do CTA já foi achado. */
@@ -167,9 +188,10 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
     applyReveal(pose, reveal);
 
     // Na vitrine a trilha desvia: a câmera chega perto da parede de telas.
-    // O ponteiro abaixo do meio da tela desce a câmera pelas linhas dela.
     const fork = forkWeight(progress);
-    drop.current = still ? 0 : damp(drop.current, clamp01(getPointer().y * 1.25), 2.2, dt);
+    // O ponteiro no meio da tela olha a linha do meio; no topo, a primeira; da
+    // altura de três quartos para baixo, a última inteira.
+    drop.current = still ? 0 : damp(drop.current, clamp01(0.5 + getPointer().y * 0.8), 2.2, dt);
     applyWallApproach(
       pose,
       fork,
@@ -178,6 +200,52 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
       state.size.width / Math.max(state.size.height, 1),
     );
     shared.fork.value = fork;
+
+    // O foco: o ponteiro parado numa tela leva a câmera até ela. Só conta o
+    // ponteiro que se mexeu depois do último scroll — rolar com ele parado
+    // em cima das telas não abre nada.
+    const pan = wallPan(progress);
+    const aim = getPointer();
+    const f = focus.current;
+    if (aim.x !== f.x || aim.y !== f.y) f.armed = true;
+    if (Math.abs(pan - f.lastPan) > 1e-4) f.armed = false;
+    f.x = aim.x;
+    f.y = aim.y;
+    f.lastPan = pan;
+    const hover = wallFocus.hover;
+    const open = !still && fork >= 0.5 && hasPointer() && shared.caseRecess.value < 0.02;
+    if (f.on) {
+      // Enquanto a câmera ainda chega, a tela passa por baixo do ponteiro.
+      f.away = hover === wallFocus.cell || wallFocus.weight < 0.9 ? 0 : f.away + dt;
+      if (!open || f.away > FOCUS_AWAY_S || Math.abs(pan - f.pan) > FOCUS_PAN) {
+        f.on = false;
+        f.dwell = 0;
+        f.dwellCell = -1;
+      }
+    } else if (open && f.armed && hover >= 0 && wallFocus.weight < 0.05) {
+      f.dwell = hover === f.dwellCell ? f.dwell + dt : 0;
+      f.dwellCell = hover;
+      if (f.dwell >= FOCUS_DWELL_S) {
+        f.on = true;
+        f.away = 0;
+        f.pan = pan;
+        wallFocus.cell = hover;
+      }
+    } else {
+      f.dwell = 0;
+      f.dwellCell = -1;
+    }
+    wallFocus.weight = still ? 0 : damp(wallFocus.weight, f.on ? 1 : 0, 3, dt);
+    if (!f.on && wallFocus.weight < 1e-3) {
+      wallFocus.weight = 0;
+      wallFocus.cell = -1;
+    }
+    applyWallFocus(
+      pose,
+      wallFocus.cell,
+      wallFocus.weight,
+      state.size.width / Math.max(state.size.height, 1),
+    );
 
     // A travessia para o case é misturada aqui dentro, por cima da trilha.
     const inCase = caseDrive.update(
@@ -240,7 +308,7 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
       : still
         ? 1
         : Math.min(1, shared.bloom.value + dt / BLOOM_S);
-    const aperture = bare ? 0 : apertureAt(progress) * (1 - inCase);
+    const aperture = bare ? 0 : apertureAt(progress) * (1 - inCase) * (1 - wallFocus.weight);
     apertureRef.current = still
       ? aperture
       : damp(apertureRef.current, aperture, 4, dt);

@@ -5,7 +5,8 @@ import { FOG_GLSL, FOG_UNIFORMS_GLSL } from "./fog";
  * como os painéis dos cases — não emitem, a não ser o ponto de cada
  * placeholder. Apagadas de longe, acendem uma a uma quando a câmera olha para
  * o desvio (`uFork`): é o convite, sem texto. A tela debaixo do ponteiro
- * (`uPoint`) acende inteira.
+ * (`uPoint`) acende um pouco; a tela em foco (`uFocus`) fica inteira e as
+ * outras apagam.
  */
 export const WALL_VERT = /* glsl */ `
 attribute vec2 aLocal;
@@ -42,6 +43,7 @@ uniform sampler2D uMap;
 uniform vec3 uMist;
 uniform float uFork;
 uniform vec2 uPoint;
+uniform vec2 uFocus;
 varying vec2 vUv;
 varying vec2 vLocal;
 varying vec3 vDot;
@@ -65,10 +67,15 @@ void main() {
   vec3 plate = texture(uMap, vUv).rgb;
   // A tela debaixo do ponteiro: x = qual, y = quanto.
   float point = (abs(vCell - uPoint.x) < 0.5 ? 1.0 : 0.0) * uPoint.y;
-  // Acesa, a tela é a imagem dela, sem a sombra da chapa.
+  // A tela em foco (x = qual, y = quanto) e o apagar das outras.
+  float mine = abs(vCell - uFocus.x) < 0.5 ? 1.0 : 0.0;
+  float focus = mine * uFocus.y;
+  // Acesa, a tela tem o pouco brilho dos painéis dos cases; o ponteiro a
+  // levanta um pouco, o foco a deixa inteira.
   float lit = max(on, point);
-  vec3 color = mix(uDeep * light, plate, 0.2 + 0.8 * lit) * mix(light, vec3(1.0), lit);
-  color *= 1.0 + 0.15 * point;
+  float gain = mix(0.62, 0.78, point);
+  gain = mix(gain, 0.88, focus) * (1.0 - 0.75 * (1.0 - mine) * uFocus.y);
+  vec3 color = mix(uDeep * light, plate * gain, 0.2 + 0.8 * lit);
 
   // O ponto de emissão do placeholder: aceso de longe, mais forte de frente.
   // Tela com imagem não tem ponto (raio zero).
@@ -79,9 +86,10 @@ void main() {
   // O ponteiro acende a borda da tela dele.
   vec2 edge = min(vLocal, 1.0 - vLocal) * vec2(${ratio}, 1.0);
   float rim = 1.0 - smoothstep(0.0, 0.015, min(edge.x, edge.y));
-  color += uMist * 0.5 * rim * point;
+  color += uMist * 0.5 * rim * point * (1.0 - focus);
 
-  gl_FragColor = vec4(applyFog(color, vDepth, vWorld), 1.0);
+  // A tela em foco fica fora da névoa: é para ler.
+  gl_FragColor = vec4(mix(applyFog(color, vDepth, vWorld), color, focus), 1.0);
 }
 `;
 }
