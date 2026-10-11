@@ -10,7 +10,11 @@ import { getSoundField, subscribeToCues, type SoundCue } from "./field-store";
  *
  * O volume segue a cena, pelas duas leituras do `field-store`: sobe com a
  * abertura do ar (a saída da névoa, no Impacto) e um pouco mais nas paradas.
- * Um passa-baixa abre junto, então no loading a trilha chega abafada.
+ * Um passa-baixa abre junto.
+ *
+ * O arquivo é baixado e decodificado no loading (`loadTrack`), então a
+ * primeira volta começa no gesto de entrada, com uma rampa curta, e não
+ * quando a rede deixar.
  *
  * As duas interações continuam sintetizadas: chegar a uma parada e abrir um
  * case.
@@ -19,10 +23,39 @@ import { getSoundField, subscribeToCues, type SoundCue } from "./field-store";
 const TRACK_URL = "/audio/trilha.mp3";
 /** Quanto duas voltas da trilha se sobrepõem, em segundos. */
 const CROSSFADE_S = 3;
+/** A entrada da primeira volta: curta, só para não começar num degrau. */
+const ENTRY_S = 0.5;
+/**
+ * De onde a primeira volta parte, em segundos. O arquivo abre com meio
+ * segundo de silêncio e leva três para subir: tocado do zero, o gesto de
+ * entrada era seguido de dois segundos sem som. As voltas seguintes partem do
+ * zero, por baixo do fim da anterior.
+ */
+const ENTRY_OFFSET_S = 2.4;
 /** O volume da trilha com o ar todo aberto. */
 const TRACK_LEVEL = 0.32;
 
 export type SoundBed = { dispose: () => void };
+
+let track: Promise<AudioBuffer | null> | null = null;
+
+/**
+ * A trilha decodificada, uma vez só. Sem ela (rede, formato) devolve `null`
+ * e esquece a tentativa, para a próxima poder tentar de novo.
+ */
+export function loadTrack(context: AudioContext): Promise<AudioBuffer | null> {
+  track ??= fetch(TRACK_URL)
+    .then((response) => {
+      if (!response.ok) throw new Error(`${TRACK_URL}: ${response.status}`);
+      return response.arrayBuffer();
+    })
+    .then((data) => context.decodeAudioData(data))
+    .catch(() => {
+      track = null;
+      return null;
+    });
+  return track;
+}
 
 export async function startSoundBed(
   context: AudioContext,
@@ -34,27 +67,41 @@ export async function startSoundBed(
   lowpass.frequency.value = 600;
 
   const gain = context.createGain();
-  gain.gain.value = 0;
   lowpass.connect(gain).connect(destination);
 
   let disposed = false;
   let timer = 0;
   const playing = new Set<AudioBufferSourceNode>();
 
+  // O que a cena pede agora, para o filtro e para o volume.
+  const levels = () => {
+    const field = getSoundField();
+    const openness = field.live ? field.openness : 0.5;
+    const pressure = field.live ? field.pressure : 0;
+    return {
+      cutoff: 500 + 15000 * openness * openness,
+      level: TRACK_LEVEL * (0.3 + 0.6 * openness + 0.1 * pressure),
+    };
+  };
+  // Já nasce no ponto: partir de zero somaria uma segunda subida à entrada.
+  const first = levels();
+  lowpass.frequency.value = first.cutoff;
+  gain.gain.value = first.level;
+
   // Uma volta da trilha, com a entrada e a saída em rampa, e a próxima
   // agendada para começar dentro da saída desta.
-  const play = (buffer: AudioBuffer, at: number) => {
+  const play = (buffer: AudioBuffer, at: number, rise: number, offset = 0) => {
     if (disposed) return;
     const source = context.createBufferSource();
     source.buffer = buffer;
     const fade = context.createGain();
-    const end = at + buffer.duration;
+    const end = at + buffer.duration - offset;
     fade.gain.setValueAtTime(0, at);
-    fade.gain.linearRampToValueAtTime(1, at + CROSSFADE_S);
+    fade.gain.linearRampToValueAtTime(1, at + rise);
     fade.gain.setValueAtTime(1, end - CROSSFADE_S);
     fade.gain.linearRampToValueAtTime(0, end);
     source.connect(fade).connect(lowpass);
-    source.start(at);
+    source.start(at, offset);
     playing.add(source);
     source.onended = () => {
       playing.delete(source);
@@ -63,32 +110,34 @@ export async function startSoundBed(
     };
     const next = end - CROSSFADE_S;
     timer = window.setTimeout(
-      () => play(buffer, next),
+      () => play(buffer, next, CROSSFADE_S),
       Math.max(0, (next - context.currentTime - 1) * 1000),
     );
   };
 
-  // Sem a trilha (rede, formato) o site fica em silêncio: os cues continuam.
-  void fetch(TRACK_URL)
-    .then((response) => response.arrayBuffer())
-    .then((data) => context.decodeAudioData(data))
-    .then((buffer) => play(buffer, context.currentTime + 0.05))
-    .catch(() => {});
+  // A primeira volta espera o contexto tocar de fato: o `resume()` do gesto
+  // resolve um instante depois, e agendar contra um relógio parado deixaria a
+  // entrada para trás.
+  const onState = () => {
+    if (context.state !== "running") return;
+    context.removeEventListener("statechange", onState);
+    void loadTrack(context).then((buffer) => {
+      // Sem a trilha o site fica em silêncio: os cues continuam.
+      if (buffer !== null) {
+        play(buffer, context.currentTime + 0.02, ENTRY_S, ENTRY_OFFSET_S);
+      }
+    });
+  };
+  context.addEventListener("statechange", onState);
+  onState();
 
   const update = () => {
     const now = context.currentTime;
-    const field = getSoundField();
-    const openness = field.live ? field.openness : 0.5;
-    const pressure = field.live ? field.pressure : 0;
-    lowpass.frequency.setTargetAtTime(500 + 15000 * openness * openness, now, 0.6);
-    gain.gain.setTargetAtTime(
-      TRACK_LEVEL * (0.3 + 0.6 * openness + 0.1 * pressure),
-      now,
-      0.8,
-    );
+    const { cutoff, level } = levels();
+    lowpass.frequency.setTargetAtTime(cutoff, now, 0.6);
+    gain.gain.setTargetAtTime(level, now, 0.8);
   };
   const poll = window.setInterval(update, 100);
-  update();
 
   const onCue = (cue: SoundCue) => {
     try {
@@ -102,6 +151,7 @@ export async function startSoundBed(
   return {
     dispose: () => {
       disposed = true;
+      context.removeEventListener("statechange", onState);
       stopCues();
       window.clearInterval(poll);
       window.clearTimeout(timer);

@@ -48,7 +48,9 @@ const TASKS: readonly PreloadTask[] = [
   // que custa ~110 ms de thread principal. Ele estava dentro do handler do
   // clique e sozinho estourava o teto de 100 ms de latência de ponteiro do
   // PROJECT.md §3.3. Aqui a espera é o que o portão existe para cobrir; o
-  // gesto do usuário fica só com o `resume()`, que custa 0.1 ms.
+  // gesto do usuário fica só com o `resume()`, que custa 0.1 ms. Com o som
+  // ligado, a tarefa também baixa e decodifica a trilha, para ela começar no
+  // gesto de entrada e não quando a rede deixar.
   { id: "audio", weight: 1, start: () => prepareAudio() },
   // A cena: three, R3F, troika e os shaders. É o chunk de 350 kB do
   // PROJECT.md §5, e o portão é o momento certo para baixá-lo — enquanto a

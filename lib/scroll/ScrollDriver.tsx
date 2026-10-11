@@ -6,6 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis, { type VirtualScrollData } from "lenis";
 import { useReducedMotion } from "@/lib/capabilities/use-reduced-motion";
 import { LENIS_LERP } from "@/lib/motion";
+import { getEntry } from "@/lib/preload/entered";
 import { stops } from "@/lib/scene/stops";
 import { descentFromScroll, scrollFromDescent } from "./descent-map";
 import { publishFrame } from "./frame-bus";
@@ -85,6 +86,10 @@ export default function ScrollDriver() {
       return { best, interval };
     };
     const viscous = (data: VirtualScrollData): boolean => {
+      // Com o loading na frente nada rola. A trava do CSS segura a rolagem
+      // nativa, mas não a do Lenis, que escreve a posição por código: sem
+      // isto a roda andava a descida por trás de quem ainda não entrou.
+      if (getEntry().phase === "pending") return false;
       if (getScrollRole() !== "descent" || !data.event.type.includes("wheel")) return true;
       lastWheel = performance.now();
       settled = false;

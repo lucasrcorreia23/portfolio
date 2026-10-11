@@ -1,6 +1,7 @@
 "use client";
 
 import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { audioNeedsGesture, startAudio } from "@/lib/audio/audio-context";
 import { useReducedMotion } from "@/lib/capabilities/use-reduced-motion";
 import { DURATION } from "@/lib/motion";
 import { markEntered, markEntryPending } from "@/lib/preload/entered";
@@ -29,6 +30,7 @@ type LoadingProps = {
   label: string;
   status: string;
   done: string;
+  enter: string;
 };
 
 /**
@@ -36,16 +38,22 @@ type LoadingProps = {
  * em mono. Ele conta o manifesto real (`lib/preload/manifest.ts`: fontes,
  * driver de scroll, áudio, o chunk da cena e a compilação dos shaders) e
  * **nunca mostra mais do que já chegou**. A flor começa apagada e acende do
- * miolo para as pontas com o mesmo número (`--p`, de 0 a 1). Em 100 ele fecha
- * sozinho, e a cena começa a revelação do Impacto.
+ * miolo para as pontas com o mesmo número (`--p`, de 0 a 1). Em 100 a cena
+ * começa a revelação do Impacto.
+ *
+ * **Com o som ligado, ele abre num clique, toque ou tecla.** Navegador nenhum
+ * deixa a trilha começar sem um gesto, e sem pedi-lo aqui a descida começava
+ * muda para quem só rola a página. Quem desligou o som, ou já fez um gesto
+ * durante a contagem, entra sem pedir nada.
  *
  * `data-gate` no `<html>` é o contrato com o CSS: `closed` enquanto carrega,
  * `open` depois.
  */
-export function Loading({ label, status, done }: LoadingProps) {
+export function Loading({ label, status, done, enter }: LoadingProps) {
   const reducedMotion = useReducedMotion();
   const [phase, setPhase] = useState<Phase>(crossed ? "gone" : "loading");
   const [ready, setReady] = useState(false);
+  const [waiting, setWaiting] = useState(false);
   const counter = useRef<HTMLSpanElement>(null);
   const overlay = useRef<HTMLDivElement>(null);
 
@@ -81,18 +89,51 @@ export function Loading({ label, status, done }: LoadingProps) {
       overlay.current?.style.setProperty("--p", value.toFixed(3));
     };
 
+    const open = () => {
+      crossed = true;
+      root.setAttribute("data-gate", "open");
+      markEntered();
+      setPhase("leaving");
+      // A trava de rolagem saiu: quem mede a página precisa medir de novo.
+      window.dispatchEvent(new Event("resize"));
+      cut = window.setTimeout(() => setPhase("gone"), CUT_MS);
+    };
+
+    // O gesto de entrada. O destrave do som é síncrono, dentro do handler:
+    // um `await` antes dele perde o gesto em alguns navegadores.
+    const gate = overlay.current;
+    const onEnter = (event: Event) => {
+      if (event instanceof KeyboardEvent) {
+        // Atalho do navegador ou tecla solta de modificador não é entrada.
+        if (event.metaKey || event.ctrlKey || event.altKey) return;
+        if (["Escape", "Shift", "Control", "Alt", "Meta"].includes(event.key)) return;
+      }
+      disarm();
+      startAudio();
+      open();
+    };
+    const disarm = () => {
+      gate?.removeEventListener("click", onEnter);
+      window.removeEventListener("keydown", onEnter);
+    };
+
     const finish = () => {
       if (finished) return;
       finished = true;
       setReady(true);
       hold = window.setTimeout(() => {
-        crossed = true;
-        root.setAttribute("data-gate", "open");
-        markEntered();
-        setPhase("leaving");
-        // A trava de rolagem saiu: quem mede a página precisa medir de novo.
-        window.dispatchEvent(new Event("resize"));
-        cut = window.setTimeout(() => setPhase("gone"), CUT_MS);
+        // Som desligado, gesto já feito na contagem, ou um navegador que
+        // deixa tocar sem gesto: entra direto.
+        if (!audioNeedsGesture()) {
+          startAudio();
+          open();
+          return;
+        }
+        setWaiting(true);
+        // O clique fica no próprio overlay, e não na janela: o iOS só entrega
+        // clique a um elemento que o escuta diretamente.
+        gate?.addEventListener("click", onEnter);
+        window.addEventListener("keydown", onEnter);
       }, HOLD_MS);
     };
 
@@ -119,6 +160,7 @@ export function Loading({ label, status, done }: LoadingProps) {
 
     return () => {
       cancel();
+      disarm();
       if (raf !== 0) cancelAnimationFrame(raf);
       window.clearTimeout(hold);
       window.clearTimeout(cut);
@@ -138,7 +180,7 @@ export function Loading({ label, status, done }: LoadingProps) {
       ref={overlay}
       data-gate-overlay
       data-gate-phase={phase}
-      className="loading bg-void fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6"
+      className={`loading bg-void fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6${waiting ? " cursor-pointer" : ""}`}
       style={{ "--p": 0 } as CSSProperties}
     >
       <div className="loading-flower" aria-hidden="true">
@@ -146,14 +188,20 @@ export function Loading({ label, status, done }: LoadingProps) {
           <span className="loading-flower-light" />
         </div>
       </div>
-      <p className="type-mono text-hud text-mist">
-        {label}{" "}
-        <span ref={counter} aria-hidden="true" className="tabular-nums">
-          000
-        </span>
-      </p>
+      {waiting ? (
+        <p aria-hidden="true" className="type-mono text-hud text-cyan">
+          {enter}
+        </p>
+      ) : (
+        <p className="type-mono text-hud text-mist">
+          {label}{" "}
+          <span ref={counter} aria-hidden="true" className="tabular-nums">
+            000
+          </span>
+        </p>
+      )}
       <p role="status" className="sr-only">
-        {ready ? done : status}
+        {waiting ? `${done} ${enter}` : ready ? done : status}
       </p>
     </div>
   );

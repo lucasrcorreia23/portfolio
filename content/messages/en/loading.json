@@ -1,5 +1,6 @@
 {
   "label": "Loading",
   "status": "Loading the scene.",
-  "done": "Scene ready."
+  "done": "Scene ready.",
+  "enter": "Click or tap to enter"
 }

@@ -105,6 +105,12 @@ function ensureContext(): AudioContext | null {
  * Então o temporizador não é um "por via das dúvidas": ele é o caminho de
  * saída garantido, e o rAF é o atalho para o caso bom. Um dispara em aba
  * oculta, o outro não; quem chegar primeiro resolve.
+ *
+ * ### A trilha chega junto
+ *
+ * Com o som ligado, a tarefa só termina com a trilha baixada e decodificada:
+ * no gesto de entrada ela já está na memória e começa na hora, em vez de
+ * começar quando a rede deixar. Nada toca aqui; tocar é do gesto.
  */
 export function prepareAudio(): Promise<void> {
   return new Promise((resolve) => {
@@ -120,8 +126,18 @@ export function prepareAudio(): Promise<void> {
       if (settled) return;
       settled = true;
       window.clearTimeout(timer);
-      ensureContext();
-      resolve();
+      const ready = ensureContext();
+      hydrateAudioPreference();
+      if (ready === null || muted) {
+        resolve();
+        return;
+      }
+      void import("./sound-bed")
+        .then(({ loadTrack }) => loadTrack(ready))
+        .then(
+          () => resolve(),
+          () => resolve(),
+        );
     };
 
     // O caminho bom: depois de dois quadros pintados.
@@ -194,24 +210,45 @@ export function hydrateAudioPreference(): void {
 }
 
 /**
- * O navegador só deixa o som começar depois de um gesto. A trilha é pedida
- * assim que o site abre (onde o navegador permitir, ela já toca ao fim do
- * loading) e, onde não permitir, começa no primeiro clique, toque ou tecla.
+ * O som está ligado e o navegador ainda não o deixou tocar: falta um gesto.
+ * É o que o loading pergunta antes de abrir (`components/gate/Loading.tsx`).
+ */
+export function audioNeedsGesture(): boolean {
+  return !muted && context !== null && context.state !== "running";
+}
+
+/**
+ * Começa a trilha, se o som estiver ligado. Chamado de dentro de um gesto,
+ * ou onde o navegador já deixa tocar sem ele.
+ */
+export function startAudio(): void {
+  if (!muted) unlockAudio();
+}
+
+/**
+ * Navegador nenhum deixa o som começar sem um gesto, e rolar a página não
+ * conta: só clique, toque ou tecla. Na home quem pede o gesto é o loading;
+ * isto cobre o resto (um case aberto por link, um gesto que o navegador não
+ * aceitou) e fica armado **até o contexto tocar de fato**. Um toque que vira
+ * rolagem dispara `pointerdown` e não destrava nada: desarmar no primeiro
+ * evento deixava o celular em silêncio para sempre.
  */
 export function armAudio(): () => void {
-  const start = () => {
-    if (!muted) unlockAudio();
+  const events = ["pointerdown", "keydown", "touchend", "click"] as const;
+  const disarm = () => {
+    for (const name of events) window.removeEventListener(name, onGesture);
   };
-  const events = ["pointerdown", "keydown", "touchend"] as const;
-  const once = () => {
-    start();
-    for (const name of events) window.removeEventListener(name, once);
+  const onGesture = () => {
+    if (unlocked && context?.state === "running") {
+      disarm();
+      return;
+    }
+    startAudio();
   };
-  for (const name of events) window.addEventListener(name, once, { passive: true });
-  start();
-  return () => {
-    for (const name of events) window.removeEventListener(name, once);
-  };
+  for (const name of events) {
+    window.addEventListener(name, onGesture, { passive: true });
+  }
+  return disarm;
 }
 
 export function subscribeToAudioPreference(listener: () => void): () => void {
