@@ -1,5 +1,5 @@
 import { HEIGHT_GLSL } from "../terrain";
-import { TERRAIN } from "../world";
+import { BLOOM_MARK, TERRAIN } from "../world";
 import { FOG_GLSL, FOG_UNIFORMS_GLSL } from "./fog";
 import { WAKE_GLSL } from "./wake";
 import { WIND_GLSL } from "./wind";
@@ -96,6 +96,7 @@ attribute vec4 aSeed;
 uniform float uTall;
 uniform float uEmit;
 uniform float uSway;
+uniform float uBloom;
 attribute float aWarm;
 varying vec2 vUv;
 varying vec3 vTint;
@@ -114,27 +115,32 @@ void main() {
   vec3 base = vec3(xz.x, terrainHeight(xz), xz.y);
   float c = cos(aSeed.y);
   float s = sin(aSeed.y);
-  vec3 local = vec3(position.x * c - position.z * s, position.y, position.x * s + position.z * c) * aSeed.x;
+  // A mancha escondida brota com uBloom: cada planta na vez dela, do chão.
+  float hidden = step(${(BLOOM_MARK - 0.5).toFixed(1)}, aOffset.y);
+  float sprout = clamp(uBloom * 1.8 - aSeed.z * 0.8, 0.0, 1.0);
+  float grown = mix(1.0, sprout * sprout * (3.0 - 2.0 * sprout), hidden);
+  float size = aSeed.x * grown;
+  vec3 local = vec3(position.x * c - position.z * s, position.y, position.x * s + position.z * c) * size;
   // O vento dobra a planta a partir da base, mais na ponta.
   float along = clamp(position.y / uTall, 0.0, 1.0);
   // Um pouco enterrada: planta e pedra saem do chão, não pousam nele.
-  local.y -= 0.04 * aSeed.x * uTall;
+  local.y -= 0.04 * size * uTall;
   vec3 wake = wakeAt(xz);
   vec2 wind = windAt(base, uTime + aSeed.z * 4.0);
   vec2 bend = (wind + wake.rg) * 0.7 * uSway;
-  float reach = aSeed.x * uTall;
+  float reach = size * uTall;
   local.xz += bend * along * along * reach;
   // A haste dobra sem esticar, como a relva.
   local.y -= 0.6667 * min(dot(bend, bend), 0.4) * along * along * along * reach;
   // As folhas tremem: pouco, mais longe do caule e mais na rajada.
   float tremor = sin(uTime * 6.1 + aSeed.z * 40.0 + position.x * 11.0 + position.z * 13.0);
-  local.y += tremor * 0.035 * min(length(position.xz) * aSeed.x, 0.6) * (0.3 + 3.0 * length(wind)) * uSway;
+  local.y += tremor * 0.035 * min(length(position.xz) * size, 0.6) * (0.3 + 3.0 * length(wind)) * uSway;
   vec3 world = base + local;
 
   vec4 view = viewMatrix * vec4(world, 1.0);
   float depth = -view.z;
 
-  float cluster = uEmitters[int(aOffset.y)].w;
+  float cluster = uEmitters[int(aOffset.y) - ${BLOOM_MARK} * int(hidden)].w;
   // A flor mexida acende um pouco mais, enquanto a agitação dura.
   float bright = (0.6 + 0.4 * aSeed.w) * (0.5 + 0.5 * cluster) * uGlow * (1.0 + 0.3 * wake.b);
   // Ciano, com algumas mais azuis; e as rosas, que são o calor do campo.

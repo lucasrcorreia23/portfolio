@@ -186,6 +186,19 @@ export function planetPlace(aspect: number, out: Vector3): number {
   return Math.min(PLANET_RADIUS, half * 0.6);
 }
 
+/** O planeta pequeno do segredo do CTA: à esquerda do olhar, no alto, e o raio. */
+const MOON_ASIDE = 0.5;
+const MOON_LIFT = 9;
+export const MOON_RADIUS = 0.022;
+
+/** Onde o planeta pequeno fica no céu: no vazio acima das serras. */
+export function moonPlace(aspect: number, out: Vector3): void {
+  const half = Math.atan(Math.tan((CAMERA_FOV * Math.PI) / 360) * aspect);
+  const azimuth = (PLANET_HEADING * Math.PI) / 180 - half * MOON_ASIDE;
+  const lift = (MOON_LIFT * Math.PI) / 180;
+  out.set(Math.sin(azimuth) * Math.cos(lift), Math.sin(lift), -Math.cos(azimuth) * Math.cos(lift));
+}
+
 /** Abertura da profundidade de campo, 0 a 1: abre nas paradas, no painel. */
 export function apertureAt(progress: number): number {
   return 0.16 + 0.3 * stopWeight(progress).weight;

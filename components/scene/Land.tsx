@@ -157,7 +157,14 @@ export function Land({ shared }: { shared: SharedUniforms }) {
       }),
       skyGeometry: new SphereGeometry(320, 24, 12),
       skyMaterial: new ShaderMaterial({
-        uniforms: { ...fog, uPlanet: shared.planet, uTeal: shared.teal, uMist: shared.mist },
+        uniforms: {
+          ...fog,
+          uPlanet: shared.planet,
+          uTeal: shared.teal,
+          uMist: shared.mist,
+          uMoonDir: shared.moonDir,
+          uBloom: shared.bloom,
+        },
         vertexShader: SKY_VERT,
         fragmentShader: SKY_FRAG,
         side: BackSide,

@@ -55,6 +55,13 @@ export function createSharedUniforms(palette: Palette = readPalette()) {
     astroDir: { value: new Vector3(0, 0, -1) },
     /** O planeta: x = quanto a névoa o deixa ver, 0 a 1; y = o raio, em radianos. */
     planet: { value: new Vector2(0, 0.15) },
+    /**
+     * O segredo do CTA, 0 a 1: a mancha escondida brota e um segundo planeta,
+     * pequeno e distante, aparece no alto. Ver `bloomPatch` em `world.ts`.
+     */
+    bloom: { value: 0 },
+    /** Para onde o planeta pequeno fica no céu. */
+    moonDir: { value: new Vector3(0, 0.3, -1).normalize() },
 
     /** Os painéis dos cases: xyz do centro em mundo, w = giro em torno de Y. */
     panels: { value: Array.from({ length: STOP_COUNT }, () => new Vector4()) },

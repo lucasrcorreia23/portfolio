@@ -107,6 +107,7 @@ export function Flora({ shared, still }: { shared: SharedUniforms; still: boolea
                 uEmit: { value: species.emit },
                 uSway: { value: species.sway },
                 uLeaf: { value: species.leaf },
+                uBloom: shared.bloom,
               },
               vertexShader: FLOWER_VERT,
               fragmentShader: FLOWER_FRAG,

@@ -367,3 +367,27 @@ export function floraPatches(): readonly Patch[] {
   });
   return patches;
 }
+
+/**
+ * A mancha escondida: o campo vazio à esquerda do CTA, que floresce quando a
+ * HUD é ligada ou desligada ali. Não tem emissor próprio: pega emprestado o
+ * da mancha do começo, que do fim da trilha está fora de alcance. As plantas
+ * dela levam `BLOOM_MARK` somado ao índice, e o shader as faz brotar.
+ */
+export const BLOOM_SLOT = 12;
+export const BLOOM_MARK = 32;
+
+export function bloomPatch(): Patch {
+  return {
+    x: pathX(Z_END - 26) - 9,
+    z: Z_END - 26,
+    rx: 10,
+    rz: 7,
+    count: 260,
+    light: 0.75,
+    stop: -1,
+    warm: 0.5,
+    // Pouca margarida aberta: é a planta que mais custa por triângulo.
+    mix: { empodium: 0.5, celandine: 0.3, gazania: 0.1 },
+  };
+}

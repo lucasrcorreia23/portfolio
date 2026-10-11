@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Vector3 } from "three";
 import { clearSoundField, publishSoundField } from "@/lib/audio/field-store";
+import { beatOf } from "@/components/beats/beats";
 import { clamp01, damp, easeStrong } from "@/lib/motion";
 import { getEntry } from "@/lib/preload/entered";
 import { createCaseDrive } from "@/lib/scene/case-drive";
@@ -22,6 +23,7 @@ import {
   cameraPose,
   createCameraPose,
   fogAt,
+  moonPlace,
   planetPlace,
   REVEAL_FOG,
   REVEAL_GLOW,
@@ -31,12 +33,15 @@ import { sceneSettings } from "@/lib/scene/settings";
 import { createSharedUniforms } from "@/lib/scene/uniforms";
 import { readVeilBoxes, writeVeilBoxes } from "@/lib/scene/veil";
 import {
+  BLOOM_SLOT,
+  bloomPatch,
   doorOpen,
   floraPatches,
   forkWeight,
   heightAt,
   stopWeight,
   wallPan,
+  ZONE_EDGES,
 } from "@/lib/scene/world";
 import { useScrollProgress } from "@/lib/scroll/use-scroll-progress";
 import { ComposedClock } from "./ComposedClock";
@@ -70,6 +75,11 @@ const EYE_JUMP = 6;
 /** O teto da velocidade publicada: uma rolada forte não vira furacão. */
 const EYE_SPEED_MAX = 14;
 
+/** Quanto a mancha escondida leva para brotar inteira, em segundos. */
+const BLOOM_S = 5;
+/** Daqui para o fim da trilha a câmera está na zona do CTA. */
+const CTA_ZONE_Z = ZONE_EDGES[2] ?? 0;
+
 const RIGHT = new Vector3();
 const MOVED = new Vector3();
 const VIEW = new Vector3();
@@ -88,6 +98,7 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
   const pose = useMemo(() => createCameraPose(), []);
   const caseDrive = useMemo(() => createCaseDrive(), []);
   const patches = useMemo(() => floraPatches(), []);
+  const hidden = useMemo(() => bloomPatch(), []);
 
   const composedRef = useRef(0);
   const fixedRef = useRef(settings.at ?? 0);
@@ -102,6 +113,9 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
   const sway = useRef({ x: 0, y: 0 });
   /** Falso até o primeiro quadro: antes dele não há posição anterior. */
   const moved = useRef(false);
+  /** A HUD no quadro anterior, e se o segredo do CTA já foi achado. */
+  const wasBare = useRef<boolean | null>(null);
+  const bloomed = useRef(false);
   /** Os programas compilaram: até lá o compositor não desenha. */
   const readyRef = useRef(false);
 
@@ -210,6 +224,17 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
     // Com a HUD desligada também: é para olhar em volta, e o foco na placa
     // borraria todo o resto.
     const bare = document.documentElement.getAttribute("data-hud-view") === "off";
+    // O segredo: ligar ou desligar a HUD no CTA faz o campo vazio florescer e
+    // traz um segundo planeta. Fica até a página recarregar.
+    if (wasBare.current !== null && bare !== wasBare.current && progress >= beatOf("cta").from) {
+      bloomed.current = true;
+    }
+    wasBare.current = bare;
+    shared.bloom.value = !bloomed.current
+      ? 0
+      : still
+        ? 1
+        : Math.min(1, shared.bloom.value + dt / BLOOM_S);
     const aperture = bare ? 0 : apertureAt(progress) * (1 - inCase);
     apertureRef.current = still
       ? aperture
@@ -238,12 +263,16 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
       still ? astro : damp(shared.planet.value.x, astro, 3, dt),
       planetPlace(state.size.width / Math.max(state.size.height, 1), shared.astroDir.value),
     );
+    moonPlace(state.size.width / Math.max(state.size.height, 1), shared.moonDir.value);
 
     // --- a luz: a flora, mais forte na parada em que a câmera está ---------
     const stop = stopWeight(progress);
     const emitters = shared.emitters.value;
+    // Na zona do CTA a luz da mancha do começo, longe demais para ser vista,
+    // vai para a mancha escondida, e acende com ela.
+    const borrow = pose.position.z < CTA_ZONE_Z;
     for (let i = 0; i < emitters.length; i += 1) {
-      const patch = patches[i];
+      const patch = borrow && i === BLOOM_SLOT ? hidden : patches[i];
       const emitter = emitters[i];
       if (emitter === undefined) continue;
       if (patch === undefined) {
@@ -251,7 +280,8 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
         continue;
       }
       const here = patch.stop >= 0 && patch.stop === stop.index ? stop.weight : 0;
-      const wanted = patch.light * (patch.stop >= 0 ? 0.6 + 0.75 * here : 1);
+      const lit = patch === hidden ? shared.bloom.value : 1;
+      const wanted = patch.light * lit * (patch.stop >= 0 ? 0.6 + 0.75 * here : 1);
       emitter.set(
         patch.x,
         heightAt(patch.x, patch.z) + 1.2,
@@ -261,7 +291,8 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
     }
 
     for (let i = 0; i < patches.length; i += 1) {
-      shared.emitterWarm.value[i] = patches[i]?.warm ?? 0;
+      const patch = borrow && i === BLOOM_SLOT ? hidden : patches[i];
+      shared.emitterWarm.value[i] = patch?.warm ?? 0;
     }
 
     // --- as portas de enrolar ----------------------------------------------

@@ -1,3 +1,4 @@
+import { MOON_RADIUS } from "../rail";
 import { FOG_GLSL, FOG_UNIFORMS_GLSL } from "./fog";
 
 /**
@@ -113,9 +114,60 @@ ${FOG_UNIFORMS_GLSL}
 uniform vec2 uPlanet;
 uniform vec3 uTeal;
 uniform vec3 uMist;
+uniform vec3 uMoonDir;
+uniform float uBloom;
 varying vec3 vWorld;
 
 ${FOG_GLSL}
+
+// Um planeta no céu: a esfera, as faixas, a borda e o halo, tudo na escala
+// do raio. \`air\` é quanto do céu fica entre ele e a câmera: o mais distante
+// tem a mesma luz, só mais encoberta.
+vec3 planetAt(vec3 dir, vec3 color, vec3 center, float radius, float shown, float air, float seed) {
+  float away = acos(clamp(dot(dir, center), -1.0, 1.0));
+  if (shown <= 0.001 || away >= radius * 2.0) return color;
+  float disc = 1.0 - smoothstep(radius * 0.98, radius * 1.02, away);
+  // A normal da esfera vista de frente.
+  vec3 side = normalize(cross(center, vec3(0.0, 1.0, 0.0)));
+  vec3 top = cross(side, center);
+  vec2 p = vec2(dot(dir, side), dot(dir, top)) / sin(radius);
+  vec3 normal = vec3(p, sqrt(max(1.0 - dot(p, p), 0.0)));
+  // A luz rosa vem de cima, à direita; a azul, de baixo, à esquerda. Nenhuma
+  // tem linha de sombra: uma vai cedendo para a outra ao longo da esfera.
+  vec3 sun = normalize(vec3(0.62, 0.55, 0.56));
+  vec3 sky = normalize(vec3(-0.8, -0.3, 0.52));
+  float lit = smoothstep(-0.3, 0.85, dot(normal, sun));
+  float fill = smoothstep(-0.2, 1.0, dot(normal, sky));
+  vec3 blue = uCyan * vec3(0.5, 0.78, 1.05);
+
+  // As faixas: ruído esticado ao longo dos paralelos, num eixo inclinado,
+  // girando tão devagar que só se nota de uma visita para a outra.
+  vec2 q = mat2(0.94, 0.34, -0.34, 0.94) * p;
+  float lon = atan(q.x, normal.z) + uTime * 0.003;
+  float bend = sceneNoise(vec3(lon * 1.3, q.y * 3.0, 7.0 + seed)) - 0.5;
+  float bands = sceneNoise(vec3(lon * 0.5 + 4.0, (q.y + bend * 0.1) * 9.0, 2.0)) * 0.65
+    + sceneNoise(vec3(lon * 1.7, (q.y + bend * 0.16) * 24.0, 5.0)) * 0.35;
+  float tone = 0.45 + 0.55 * smoothstep(0.2, 0.8, bands);
+
+  // A esfera escurece para a borda: é o que a faz ter volume.
+  float round = 0.5 + 0.5 * normal.z;
+  // A sombra é quase a cor do céu; o azul nela é só um resto, não uma luz.
+  vec3 body = mix(color * 0.75, mix(uRose, uMist, 0.12) * tone * round, lit);
+  body += blue * (0.02 + 0.03 * tone) * fill * (1.0 - lit) * round;
+  // A atmosfera: um fio na borda, da cor da luz que bate ali.
+  float rim = pow(1.0 - normal.z, 4.0);
+  body += (mix(uRose, uMist, 0.45) * 0.55 * lit + blue * 0.1 * fill * (1.0 - lit)) * rim;
+  // Está longe: o ar fica entre ele e a câmera.
+  body = mix(body, color, air);
+  float sunk = smoothstep(-0.1, 0.06, dir.y) * shown;
+  color = mix(color, body, disc * sunk);
+  // O halo logo fora da borda: rosa do lado da luz, azul do outro, fino.
+  vec2 out2 = normalize(p + 1e-5);
+  float warmSide = smoothstep(-0.3, 0.8, dot(out2, normalize(sun.xy)));
+  float glow = exp(-max(away - radius, 0.0) / radius * 5.1) * (1.0 - disc) * sunk * (1.0 - air) / 0.76;
+  color += (uRose * 0.16 * warmSide + blue * 0.015 * (1.0 - warmSide)) * glow;
+  return color;
+}
 
 void main() {
   vec3 dir = normalize(vWorld - cameraPosition);
@@ -139,50 +191,9 @@ void main() {
   // A luz é rosa, de um lado só. Do outro, a sombra se confunde com o céu e
   // guarda um resto do azul das serras, quase imperceptível.
   // A base some na névoa, como tudo que está longe.
-  float away = acos(clamp(dot(dir, uAstroDir), -1.0, 1.0));
-  float radius = uPlanet.y;
-  if (uPlanet.x > 0.001 && away < radius * 2.0) {
-    float disc = 1.0 - smoothstep(radius - 0.003, radius + 0.003, away);
-    // A normal da esfera vista de frente.
-    vec3 side = normalize(cross(uAstroDir, vec3(0.0, 1.0, 0.0)));
-    vec3 top = cross(side, uAstroDir);
-    vec2 p = vec2(dot(dir, side), dot(dir, top)) / sin(radius);
-    vec3 normal = vec3(p, sqrt(max(1.0 - dot(p, p), 0.0)));
-    // A luz rosa vem de cima, à direita; a azul, de baixo, à esquerda. Nenhuma
-    // tem linha de sombra: uma vai cedendo para a outra ao longo da esfera.
-    vec3 sun = normalize(vec3(0.62, 0.55, 0.56));
-    vec3 sky = normalize(vec3(-0.8, -0.3, 0.52));
-    float lit = smoothstep(-0.3, 0.85, dot(normal, sun));
-    float fill = smoothstep(-0.2, 1.0, dot(normal, sky));
-    vec3 blue = uCyan * vec3(0.5, 0.78, 1.05);
-
-    // As faixas: ruído esticado ao longo dos paralelos, num eixo inclinado,
-    // girando tão devagar que só se nota de uma visita para a outra.
-    vec2 q = mat2(0.94, 0.34, -0.34, 0.94) * p;
-    float lon = atan(q.x, normal.z) + uTime * 0.003;
-    float bend = sceneNoise(vec3(lon * 1.3, q.y * 3.0, 7.0)) - 0.5;
-    float bands = sceneNoise(vec3(lon * 0.5 + 4.0, (q.y + bend * 0.1) * 9.0, 2.0)) * 0.65
-      + sceneNoise(vec3(lon * 1.7, (q.y + bend * 0.16) * 24.0, 5.0)) * 0.35;
-    float tone = 0.45 + 0.55 * smoothstep(0.2, 0.8, bands);
-
-    // A esfera escurece para a borda: é o que a faz ter volume.
-    float round = 0.5 + 0.5 * normal.z;
-    // A sombra é quase a cor do céu; o azul nela é só um resto, não uma luz.
-    vec3 body = mix(color * 0.75, mix(uRose, uMist, 0.12) * tone * round, lit);
-    body += blue * (0.02 + 0.03 * tone) * fill * (1.0 - lit) * round;
-    // A atmosfera: um fio na borda, da cor da luz que bate ali.
-    float rim = pow(1.0 - normal.z, 4.0);
-    body += (mix(uRose, uMist, 0.45) * 0.55 * lit + blue * 0.1 * fill * (1.0 - lit)) * rim;
-    // Está longe: o ar fica entre ele e a câmera.
-    body = mix(body, color, 0.24);
-    float sunk = smoothstep(-0.1, 0.06, dir.y) * uPlanet.x;
-    color = mix(color, body, disc * sunk);
-    // O halo logo fora da borda: rosa do lado da luz, azul do outro, fino.
-    vec2 out2 = normalize(p + 1e-5);
-    float warmSide = smoothstep(-0.3, 0.8, dot(out2, normalize(sun.xy)));
-    float glow = exp(-max(away - radius, 0.0) * 34.0) * (1.0 - disc) * sunk;
-    color += (uRose * 0.16 * warmSide + blue * 0.015 * (1.0 - warmSide)) * glow;
-  }
+  color = planetAt(dir, color, uAstroDir, uPlanet.y, uPlanet.x, 0.24, 0.0);
+  // O segredo do CTA: um segundo planeta, pequeno, alto e mais longe.
+  color = planetAt(dir, color, uMoonDir, ${MOON_RADIUS.toFixed(3)}, uPlanet.x * uBloom, 0.55, 11.0);
 
   // As serras ao longe, do lado oposto ao planeta: duas cristas frias, da cor
   // da flora, com o ar aceso por cima. A base delas também some na névoa.

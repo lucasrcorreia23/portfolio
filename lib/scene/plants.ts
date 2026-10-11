@@ -12,6 +12,9 @@ import {
 } from "three";
 import { STOP_COUNT } from "./stops";
 import {
+  BLOOM_MARK,
+  BLOOM_SLOT,
+  bloomPatch,
   floraPatches,
   heightAt,
   panelPlacement,
@@ -154,7 +157,10 @@ type Item = number[];
 function scatter(species: SpeciesId, share: number, size: number, seed: number): Item[][] {
   const config = SPECIES[species];
   const random = mulberry(seed);
-  return floraPatches().map((patch, index) => {
+  // A mancha escondida vem por último: as outras sorteiam o que sempre sortearam.
+  const patches = [...floraPatches(), bloomPatch()];
+  return patches.map((patch, at) => {
+    const index = at === patches.length - 1 ? BLOOM_SLOT + BLOOM_MARK : at;
     const list: Item[] = [];
     const wanted = Math.round(patch.count * (patch.mix[species] ?? 0) * share);
     let guard = 0;
@@ -202,6 +208,8 @@ export function flowerHeads(): Float32Array {
       // Com tamanho 1 a escala do item é a altura da planta, em metros.
       for (const list of scatter(species, variant.share, 1, variantSeed(s, v))) {
         for (const item of list) {
+          // A mancha escondida não solta pólen: até florescer, ela não existe.
+          if ((item[1] ?? 0) >= BLOOM_MARK) continue;
           const x = item[0] ?? 0;
           const z = item[2] ?? 0;
           heads.push([x, heightAt(x, z) + (item[3] ?? 1) * 0.7, z, item[7] ?? 0]);
