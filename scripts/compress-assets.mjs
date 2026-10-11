@@ -28,6 +28,8 @@ const SETS = [
   // cor: a indústria é neutra.
   { id: "green_metal_rust", size: 512, maps: ["diff", "nor_gl", "arm"], muted: true },
   { id: "concrete_wall_006", size: 512, maps: ["diff", "nor_gl", "arm"], muted: true },
+  // O chão. É cascalho, que comprime mal: em 1k os três mapas passam de 1,3 MB.
+  { id: "brown_mud_rocks_01", size: 512, maps: ["diff", "nor_gl", "arm"] },
 ];
 
 const work = mkdtempSync(path.join(tmpdir(), "assets-"));

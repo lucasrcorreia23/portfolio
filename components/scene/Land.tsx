@@ -7,9 +7,13 @@ import {
   BackSide,
   BufferAttribute,
   BufferGeometry,
+  DataTexture,
+  NoColorSpace,
   ShaderMaterial,
   SphereGeometry,
+  SRGBColorSpace,
   type Mesh,
+  type Texture,
 } from "three";
 import {
   createIndustry,
@@ -19,8 +23,14 @@ import {
   markIndustrySettled,
   wallExtension,
 } from "@/lib/scene/industry";
-import { whenEntered } from "@/lib/scene/late-assets";
-import { createPbrMaterial, disposePbrMaterial, loadPbrSet } from "@/lib/scene/pbr";
+import { nextFrame, whenEntered } from "@/lib/scene/late-assets";
+import {
+  createPbrMaterial,
+  disposePbrMaterial,
+  loadMap,
+  loadPbrSet,
+} from "@/lib/scene/pbr";
+import { getQuality } from "@/lib/scene/quality";
 import {
   ARC_FRAG,
   ARC_SEGMENTS,
@@ -134,6 +144,8 @@ export function Land({ shared }: { shared: SharedUniforms }) {
 
   const built = useMemo(() => {
     const fog = fogUniforms(shared);
+    const waiting = new DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
+    waiting.needsUpdate = true;
     return {
       arcMaterial: new ShaderMaterial({
         uniforms: { ...fog, uStorm: shared.storm },
@@ -152,8 +164,18 @@ export function Land({ shared }: { shared: SharedUniforms }) {
         depthWrite: false,
       }),
       terrainGeometry: createTerrainGeometry(),
+      // O solo nasce com um pixel no lugar dos mapas e `uSoilOn` em zero:
+      // até os arquivos chegarem o chão é o liso, e no nível baixo fica assim.
+      soilWaiting: waiting,
       terrainMaterial: new ShaderMaterial({
-        uniforms: { ...fog, uTeal: shared.teal },
+        uniforms: {
+          ...fog,
+          uTeal: shared.teal,
+          uSoil: { value: waiting as Texture },
+          uSoilNormal: { value: waiting as Texture },
+          uSoilArm: { value: waiting as Texture },
+          uSoilOn: { value: 0 },
+        },
         vertexShader: TERRAIN_VERT,
         fragmentShader: TERRAIN_FRAG,
       }),
@@ -172,9 +194,58 @@ export function Land({ shared }: { shared: SharedUniforms }) {
     };
   }, [built]);
 
-  // O céu acompanha a câmera: é fundo, nunca se chega nele.
-  useFrame((state) => {
+  // O solo chega depois do loading, como as texturas da indústria: cor,
+  // relevo e rugosidade, cada mapa num quadro. O nível baixo não o pede.
+  const soilReady = useRef(false);
+  useEffect(() => {
+    let alive = true;
+    let loaded: Texture[] = [];
+    const uniforms = built.terrainMaterial.uniforms;
+    void whenEntered()
+      .then(() => {
+        if (!alive || getQuality().tier === "low") return null;
+        const base = "/textures/cena/brown_mud_rocks_01";
+        return Promise.all([
+          loadMap(`${base}_diff.webp`, SRGBColorSpace),
+          loadMap(`${base}_nor_gl.webp`, NoColorSpace),
+          loadMap(`${base}_arm.webp`, NoColorSpace),
+        ]);
+      })
+      .then(async (maps) => {
+        if (maps === null) return;
+        loaded = maps;
+        for (const map of maps) {
+          if (!alive) break;
+          gl.initTexture(map);
+          await nextFrame();
+        }
+        if (!alive) {
+          for (const map of maps) map.dispose();
+          return;
+        }
+        const [color, normal, arm] = maps;
+        if (uniforms["uSoil"]) uniforms["uSoil"].value = color;
+        if (uniforms["uSoilNormal"]) uniforms["uSoilNormal"].value = normal;
+        if (uniforms["uSoilArm"]) uniforms["uSoilArm"].value = arm;
+        soilReady.current = true;
+      })
+      // Sem os arquivos o chão fica como sempre foi.
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+      soilReady.current = false;
+      for (const map of loaded) map.dispose();
+    };
+  }, [gl, built]);
+
+  useFrame((state, delta) => {
+    // O céu acompanha a câmera: é fundo, nunca se chega nele.
     sky.current?.position.copy(state.camera.position);
+    // O solo entra aos poucos: o chão não troca de cara num quadro.
+    const soil = built.terrainMaterial.uniforms["uSoilOn"];
+    if (soil !== undefined && soilReady.current && soil.value < 1) {
+      soil.value = Math.min(1, soil.value + Math.min(delta, 1) * 0.8);
+    }
   }, -9);
 
   return (
@@ -186,10 +257,13 @@ export function Land({ shared }: { shared: SharedUniforms }) {
         frustumCulled={false}
         renderOrder={-1}
       />
+      {/* Por último entre os opacos: a relva e as plantas cobrem quase todo
+          o chão, e o que elas cobrem não chega a ser calculado. */}
       <mesh
         geometry={built.terrainGeometry}
         material={built.terrainMaterial}
         frustumCulled={false}
+        renderOrder={1}
       />
       {industry !== null && (
         <>

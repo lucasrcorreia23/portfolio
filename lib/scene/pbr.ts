@@ -213,7 +213,8 @@ export type PbrSet =
 
 let loader: ImageBitmapLoader | null = null;
 
-async function loadMap(url: string, colorSpace: ColorSpace): Promise<Texture> {
+/** Um mapa de `public/textures/cena`: repete, com mipmaps, decodificado fora da thread. */
+export async function loadMap(url: string, colorSpace: ColorSpace): Promise<Texture> {
   loader ??= new ImageBitmapLoader().setOptions({
     imageOrientation: "flipY",
     premultiplyAlpha: "none",

@@ -13,6 +13,7 @@ e `_disp` (altura, para deslocamento ou paralaxe).
 | green_metal_rust | estrutura com desgaste | Rob Tuytel |
 | concrete_wall_006 | bases e sapatas | Dario Barresi, Charlotte Baglioni |
 | brushed_concrete | bases e piso industrial | Dario Barresi, Dimitrios Savva |
+| brown_mud_rocks_01 | o chão (só cor, normal e arm) | Rob Tuytel |
 
 Fonte de cada uma: https://polyhaven.com/a/<nome da pasta>
 
@@ -27,3 +28,4 @@ Fonte de cada uma: https://polyhaven.com/a/<nome da pasta>
 | corrugated_iron_02 | diff, nor_gl, arm | 512 | verso da placa |
 | green_metal_rust | diff, nor_gl, arm | 512 | estrutura do pórtico |
 | concrete_wall_006 | diff, nor_gl, arm | 512 | sapatas do pórtico |
+| brown_mud_rocks_01 | diff, nor_gl, arm | 512 | o chão, perto da câmera |

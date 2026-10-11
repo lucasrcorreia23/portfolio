@@ -26,11 +26,19 @@ void main() {
 export const TERRAIN_FRAG = /* glsl */ `
 ${FOG_UNIFORMS_GLSL}
 uniform vec3 uTeal;
+uniform sampler2D uSoil;
+uniform sampler2D uSoilNormal;
+uniform sampler2D uSoilArm;
+uniform float uSoilOn;
 varying vec3 vWorld;
 varying vec3 vNormal;
 varying float vDepth;
 
 ${FOG_GLSL}
+
+// A cor média do solo, em luz linear: o mapa entra como desenho em volta de 1,
+// por cima da cor da cena, e não como cor própria.
+const vec3 SOIL_MEAN = vec3(0.103, 0.079, 0.049);
 
 void main() {
   vec3 n = normalize(vNormal);
@@ -38,11 +46,55 @@ void main() {
   // flora que o toca. O ruído é o tapete de relva que a distância não instancia.
   float mat = sceneNoise(vWorld * vec3(0.9, 0.2, 0.9));
   float fine = sceneNoise(vWorld * 4.3);
-  vec3 base = mix(uDeep * 0.05, uTeal * 0.09, mat * 0.6 + fine * 0.4);
-  float sky = 0.35 + 0.65 * clamp(n.y, 0.0, 1.0);
+
+  // O solo de verdade só existe perto, onde a relva deixa ver o chão: terra,
+  // cascalho e o relevo deles. Longe, e enquanto os mapas não chegam, near é
+  // zero e a conta abaixo é a do chão liso.
+  float near = uSoilOn * (1.0 - smoothstep(24.0, 44.0, vDepth));
+  // Duas escalas, a segunda girada, misturadas por ruído: o ladrilho da
+  // textura não se repete à vista. As derivadas saem antes do desvio, que é
+  // onde a amostragem as perderia.
+  vec2 uvA = vWorld.xz / 2.6;
+  vec2 uvB = vec2(vWorld.x * 0.8 - vWorld.z * 0.6, vWorld.x * 0.6 + vWorld.z * 0.8) / 7.3;
+  vec4 gradA = vec4(dFdx(uvA), dFdy(uvA));
+  vec4 gradB = vec4(dFdx(uvB), dFdy(uvB));
+
+  vec3 tone = vec3(1.0);
+  vec3 relief = n;
+  float wet = 0.0;
+  float gloss = 0.0;
+  if (near > 0.002) {
+    float pick = smoothstep(0.35, 0.65, sceneNoise(vWorld * 0.23 + 11.0));
+    vec3 soil = mix(textureGrad(uSoil, uvA, gradA.xy, gradA.zw).rgb, textureGrad(uSoil, uvB, gradB.xy, gradB.zw).rgb, pick);
+    // Oclusão e rugosidade numa escala só: a diferença não se lê.
+    vec3 arm = textureGrad(uSoilArm, uvA, gradA.xy, gradA.zw).rgb;
+    vec2 bumpA = textureGrad(uSoilNormal, uvA, gradA.xy, gradA.zw).xy * 2.0 - 1.0;
+    vec2 bumpB = textureGrad(uSoilNormal, uvB, gradB.xy, gradB.zw).xy * 2.0 - 1.0;
+    // A normal do mapa girado volta para os eixos do mundo antes de misturar.
+    vec2 bump = mix(bumpA, vec2(bumpB.x * 0.8 + bumpB.y * 0.6, bumpB.y * 0.8 - bumpB.x * 0.6), pick);
+
+    // Poças: manchas largas onde o chão é mais escuro e mais liso.
+    wet = near * smoothstep(0.48, 0.82, sceneNoise(vWorld * vec3(0.13, 0.0, 0.13) + 5.7));
+    tone = mix(vec3(dot(soil, vec3(0.2126, 0.7152, 0.0722)) / 0.082), soil / SOIL_MEAN, 0.3);
+    tone = clamp(tone * mix(1.0, arm.r, 0.7), 0.2, 2.4);
+    tone = mix(vec3(1.0), tone * (1.0 - 0.4 * wet), near);
+    gloss = wet * (1.0 - 0.5 * arm.g) + near * 0.08 * (1.0 - arm.g);
+    // O chão é quase plano: o relevo do mapa entra direto em X e Z.
+    relief = normalize(n + vec3(bump.x, 0.0, bump.y) * near * (1.0 - 0.7 * wet));
+  }
+
+  vec3 base = mix(uDeep * 0.05, uTeal * 0.09, mat * 0.6 + fine * 0.4) * tone;
+  float sky = 0.35 + 0.65 * clamp(relief.y, 0.0, 1.0);
   vec3 color = base * sky;
-  color += floraGlow(vWorld + vec3(0.0, 0.6, 0.0)) * (0.05 + 0.06 * fine);
-  gl_FragColor = vec4(applyFog(color, vDepth, vWorld), 1.0);
+  vec3 view = normalize(cameraPosition - vWorld);
+  vec3 shine;
+  vec3 glow = floraRelief(vWorld + vec3(0.0, 0.6, 0.0), n, relief, view, gloss, shine);
+  color += glow * (0.05 + 0.06 * fine) * mix(vec3(1.0), tone, 0.8);
+  // O molhado devolve as flores e, no fim da trilha, o planeta.
+  color += shine * 0.5;
+  color += uRose * pow(max(dot(relief, normalize(uAstroDir + view)), 0.0), 60.0) * uAstro * wet * 0.14;
+  // O chão não emite: fica abaixo do limiar do bloom, com ou sem reflexo.
+  gl_FragColor = vec4(applyFog(min(color, vec3(0.5)), vDepth, vWorld), 1.0);
 }
 `;
 

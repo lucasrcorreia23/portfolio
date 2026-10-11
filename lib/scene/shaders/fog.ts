@@ -94,6 +94,35 @@ vec3 floraGlow(vec3 worldPos) {
 }
 
 /**
+ * A luz da flora numa superfície com relevo, e em shine o brilho dela onde a
+ * superfície é lisa e molhada. Cada mancha é uma fonte larga: a luz chega de
+ * cima dela, e o que a normal muda é quanto a face está virada para lá, em
+ * volta de 1. Com a superfície lisa (normal igual a base) é o floraGlow.
+ */
+vec3 floraRelief(vec3 worldPos, vec3 base, vec3 normal, vec3 view, float gloss, out vec3 shine) {
+  vec3 total = vec3(0.0);
+  shine = vec3(0.0);
+  for (int i = 0; i < ${MAX_EMITTERS}; i++) {
+    vec4 e = uEmitters[i];
+    if (e.w <= 0.0) continue;
+    vec3 d = e.xyz - worldPos;
+    float fall = e.w / (1.0 + dot(d, d) * 0.035);
+    vec3 hue = mix(uCyan, uRose, uEmitterWarm[i]) * fall;
+    // De longe a mancha só soma a luz dela: o relevo e o brilho não se leem,
+    // e são a parte cara da conta.
+    if (fall < 0.03) {
+      total += hue;
+      continue;
+    }
+    vec3 l = normalize(vec3(d.x, abs(d.y) + 0.5 * length(d.xz) + 1.0, d.z));
+    total += hue * max(1.0 + 1.6 * (dot(normal, l) - dot(base, l)), 0.0);
+    shine += hue * pow(max(dot(normal, normalize(l + view)), 0.0), 48.0) * gloss;
+  }
+  shine *= uGlow;
+  return total * uGlow;
+}
+
+/**
  * A flora vista através da névoa: quanto do raio da câmera até o ponto passa
  * perto de um aglomerado. É o halo no ar em volta de cada mancha de flores.
  */
