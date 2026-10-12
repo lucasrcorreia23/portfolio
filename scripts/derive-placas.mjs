@@ -47,12 +47,13 @@ const BRIGHTNESS = 0.85;
 /** @type {Record<string, Layer[]>} Camadas de trás para a frente, em px de 2560 × 1600. */
 const RECIPES = {
   "decision-suite": [
-    { src: join(IMG, "decision-suite/painel-de-controle.png"), x: 240, y: 190, width: 1900 },
+    // A home com o Assistente IA e os agentes por área, a mesma do GIF do case.
+    { src: join(IMG, "decision-suite/final-01.png"), x: 110, y: 230, width: 1860 },
     {
       src: join(IMG, "decision-suite/mobile.png"),
-      x: 1880,
-      y: 420,
-      width: 520,
+      x: 2010,
+      y: 330,
+      width: 470,
       radius: 0,
       shadow: false,
     },
@@ -99,8 +100,9 @@ const RECIPES = {
       dim: 0.6,
     },
     {
-      // Sem o logo "wecann.care": a placa diz "Agentes de IA".
-      src: join(ACERVO, "wecann-atena/stills@2x/05-agente-resposta.png"),
+      // A home com a esfera da Athena, a capa do case. Sem o logo
+      // "wecann.care": a placa diz "Agentes de IA".
+      src: join(ACERVO, "wecann-atena/stills@2x/03-home.png"),
       crop: { left: 0, top: 200, width: 3840, height: 1960 },
       x: 140,
       y: 400,
