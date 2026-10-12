@@ -11,7 +11,7 @@
  * precisa são três strings.
  */
 
-export const DISCIPLINES = ["produto", "marca", "fundador"] as const;
+export const DISCIPLINES = ["produto", "marca"] as const;
 
 export type Discipline = (typeof DISCIPLINES)[number];
 

@@ -7,8 +7,7 @@
   },
   "disciplines": {
     "produto": "Product",
-    "marca": "Brand",
-    "fundador": "Product Founder"
+    "marca": "Brand"
   },
   "case": {
     "back": "Back",
