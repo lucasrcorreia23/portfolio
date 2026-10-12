@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { PlaneGeometry, ShaderMaterial, Vector3 } from "three";
 import { damp } from "@/lib/motion";
+import { plateImage } from "@/lib/plate";
 import { PANEL_HEIGHT, PANEL_WIDTH } from "@/lib/scene/case-pose";
 import { createPanelTexture } from "@/lib/scene/panel-texture";
 import { PANEL_FRAG, PANEL_VERT } from "@/lib/scene/shaders/panel";
@@ -29,7 +30,7 @@ const LIVE_DISTANCE = 26;
 const LIVE_MIN_WIDTH = 120;
 
 /**
- * As imagens dos cases, uma por parada: o placeholder do case, atrás do vidro
+ * As imagens dos cases, uma por parada: a montagem do case, atrás do vidro
  * da placa. A moldura, o vidro e o pórtico são da `Plates`.
  *
  * O clique não é raycast: o link de verdade do case (`StationList`) é
@@ -46,12 +47,16 @@ export function Panels({ shared, panels }: PanelsProps) {
     const fog = fogUniforms(shared);
     const items = panels.map((panel, index) => {
       const placement = panelPlacement(index);
-      const { texture, dot } = createPanelTexture(panel.title, index, panel.client);
+      const texture = createPanelTexture(
+        panel.title,
+        index,
+        panel.client,
+        plateImage(panel.slug, true),
+      );
       const material = new ShaderMaterial({
         uniforms: {
           ...fog,
           uMap: { value: texture },
-          uDot: { value: new Vector3(...dot) },
           uMist: shared.mist,
           uHover: { value: 0 },
         },

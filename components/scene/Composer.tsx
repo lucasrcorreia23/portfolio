@@ -31,6 +31,7 @@ import { getFrameMs, getQuality } from "@/lib/scene/quality";
 import { sceneSettings } from "@/lib/scene/settings";
 import { veilUniforms, type SharedUniforms } from "@/lib/scene/uniforms";
 import { MAX_VEIL_BOXES, VEIL_CEILING } from "@/lib/scene/veil";
+import { wallFocus } from "@/lib/scene/wall-focus";
 
 /** Níveis da cadeia de bloom, a partir de meia resolução. */
 const BLOOM_LEVELS = 5;
@@ -443,13 +444,19 @@ export function Composer({
     setUniform(rig.composite, "uBlurred", rig.dofB.texture);
     if (first !== undefined) setUniform(rig.composite, "uBloom", first.texture);
 
+    // Diante de uma tela da vitrine em foco, bloom e grão saem: ela é para
+    // ler, como a névoa, que já não a cobre. Saem antes de ela clarear, para
+    // a aproximação não passar por um clarão.
+    const clear = 1 - smoothstep(0, 0.4, wallFocus.weight);
+    setUniform(rig.composite, "uBloomStrength", BLOOM_STRENGTH * clear);
+
     // Grão animado por quadro, entre 0.03 e 0.06.
     const time = shared.time.value;
     setUniform(rig.composite, "uGrainSeed", (time * 977) % 1000);
     setUniform(
       rig.composite,
       "uGrain",
-      settings.grain ? 0.045 + 0.015 * Math.sin(time * 11.3) : 0,
+      settings.grain ? (0.045 + 0.015 * Math.sin(time * 11.3)) * clear : 0,
     );
     setUniform(
       rig.composite,
@@ -480,6 +487,11 @@ export function Composer({
 const HORIZONTAL = new Vector2(1, 0);
 const VERTICAL = new Vector2(0, 1);
 const TEXEL = new Vector2();
+
+function smoothstep(from: number, to: number, x: number): number {
+  const t = Math.min(1, Math.max(0, (x - from) / (to - from)));
+  return t * t * (3 - 2 * t);
+}
 
 function setUniform(
   material: ShaderMaterial,

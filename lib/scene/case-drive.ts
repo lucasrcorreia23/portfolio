@@ -17,7 +17,7 @@ import type { SharedUniforms } from "./uniforms";
  * até o painel encaixar no retângulo da capa em DOM, avisa que atracou, e
  * depois recua para a pose de leitura.
  *
- * O painel e a capa em DOM desenham o mesmo placeholder, então a troca é o
+ * O painel e a capa em DOM desenham a mesma placa, então a troca é o
  * corte curto do `<img>` por cima do painel: não há entrega de textura.
  *
  * **A entrega é uma trava.** Enquanto o voo acontece o encaixe segue a capa;

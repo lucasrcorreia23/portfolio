@@ -3,8 +3,8 @@ import { FOG_GLSL, FOG_UNIFORMS_GLSL } from "./fog";
 
 /**
  * A imagem de um case, atrás do vidro da placa: uma tela de pouco brilho,
- * constante, que a névoa atenua com a distância. Só o pequeno ponto do
- * placeholder cruza o limiar do bloom. A moldura em volta está em `frame.ts`.
+ * constante, que a névoa atenua com a distância e que fica abaixo do limiar do
+ * bloom. A moldura em volta está em `frame.ts`.
  */
 export const PANEL_VERT = /* glsl */ `
 varying vec2 vUv;
@@ -24,7 +24,6 @@ void main() {
 export const PANEL_FRAG = /* glsl */ `
 ${FOG_UNIFORMS_GLSL}
 uniform sampler2D uMap;
-uniform vec3 uDot;
 uniform vec3 uMist;
 uniform float uHover;
 varying vec2 vUv;
@@ -37,10 +36,6 @@ void main() {
   vec3 plate = texture(uMap, vUv).rgb;
   // Uma tela de pouco brilho: a luz é dela e não muda com a flora em volta.
   vec3 color = plate * 0.72;
-
-  // O ponto de emissão do placeholder.
-  vec2 d = (vUv - uDot.xy) * vec2(${PANEL_ASPECT.toFixed(2)}, 1.0);
-  color += uCyan * 2.2 * exp(-dot(d, d) / (uDot.z * uDot.z)) * uGlow;
 
   // O foco e o ponteiro acendem a borda: é o estado de foco do link.
   vec2 edge = min(vUv, 1.0 - vUv) * vec2(${PANEL_ASPECT.toFixed(2)}, 1.0);

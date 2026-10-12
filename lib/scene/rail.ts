@@ -13,6 +13,7 @@ import {
   WALL_SPAN,
   WALL_TALL,
 } from "./world";
+import { WALL_SCREENS } from "./wall-screens";
 
 /**
  * A trilha da câmera: o mundo é aberto na aparência, mas a câmera anda numa
@@ -158,8 +159,9 @@ const FOCUS_WIDE = 0.8;
 
 /**
  * A câmera diante de uma tela da parede, por cima da aproximação: `cell` é a
- * tela e `weight` (0 a 1) quanto a câmera foi até ela. A tela enche o quadro,
- * de frente, um pouco à direita do meio para a HUD não cobri-la.
+ * tela e `weight` (0 a 1) quanto a câmera foi até ela. A imagem da tela (sem a
+ * margem do quadro) enche o quadro, de frente, um pouco à direita do meio
+ * para a HUD não cobri-la. A tela em pé enche a altura.
  */
 export function applyWallFocus(
   pose: CameraPose,
@@ -170,9 +172,10 @@ export function applyWallFocus(
   if (cell < 0 || weight <= 0) return;
   const wall = vitrineWall();
   const half = Math.tan((CAMERA_FOV * Math.PI) / 360);
+  const image = WALL_SCREENS[cell] ?? WALL_CELL;
   const distance = Math.max(
-    WALL_CELL.height / (2 * half * FOCUS_TALL),
-    WALL_CELL.width / (2 * half * aspect * FOCUS_WIDE),
+    image.height / (2 * half * FOCUS_TALL),
+    image.width / (2 * half * aspect * FOCUS_WIDE),
   );
   const center = wallCell(cell);
   // A câmera vai à esquerda do centro da tela, para ela ficar à direita.

@@ -227,12 +227,13 @@ export function vitrineWall(): Placement {
 
 /**
  * As telas da parede: colunas × linhas. São telas, não itens — um projeto
- * ocupa várias (ver `wallScreens`). A parede é uma faixa comprida: a câmera
- * enquadra a altura inteira e percorre as colunas.
+ * ocupa uma coluna (ver `WALL_SCREENS`). A parede é uma faixa comprida: a
+ * câmera enquadra a altura inteira e percorre as colunas. O vão entre os
+ * quadros é o respiro; a margem dentro de cada um, `WALL_PAD`.
  */
 export const WALL_COLUMNS = 9;
 export const WALL_ROWS = 3;
-export const WALL_CELL = { width: 1.76, height: 1.1, gap: 0.07 };
+export const WALL_CELL = { width: 1.76, height: 1.1, gap: 0.16 };
 export const WALL_SPAN = WALL_COLUMNS * WALL_CELL.width + (WALL_COLUMNS - 1) * WALL_CELL.gap;
 export const WALL_TALL = WALL_ROWS * WALL_CELL.height + (WALL_ROWS - 1) * WALL_CELL.gap;
 

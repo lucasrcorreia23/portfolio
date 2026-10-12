@@ -6,10 +6,11 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Glyphs } from "@/components/text/Glyphs";
 import { CaseExit } from "@/components/work/CaseExit";
 import { CaseReveal } from "@/components/work/CaseReveal";
-import { Placeholder } from "@/components/work/Placeholder";
+import { PlateHud } from "@/components/work/PlateHud";
 import { caseSummary, getCaseSlugs, getCases, loadCase } from "@/lib/cases";
 import { alternatesFor, localizePath } from "@/lib/i18n/config";
 import { requireLocale } from "@/lib/i18n/locale";
+import { plateImage } from "@/lib/plate";
 import { PANEL_ASPECT } from "@/lib/scene/stops";
 import { openGraphBase } from "@/lib/site-meta";
 import { isLocked } from "@/lib/work/locked";
@@ -56,16 +57,13 @@ export async function generateMetadata({
  *
  * ## A capa é a superfície de entrega, e por isso é um `<img>` puro
  *
- * Todo o resto da mídia deste arquivo passa por `next/image`, que é o certo:
- * há JPEGs de 3840 px aqui, e o LCP de 4G do PROJECT.md §5 não sobrevive a
- * entregá-los inteiros. A capa é a exceção, e o motivo é o encaixe: no fim do
- * voo a cena está desenhando **a mesma imagem** naquele retângulo, e ela a
- * carrega a partir do `currentSrc` deste elemento. Duas imagens do mesmo assunto
- * em tamanhos diferentes seriam dois downloads e duas versões que não são bit a
- * bit iguais justamente no quadro em que uma substitui a outra.
+ * Todo o resto da mídia deste arquivo passa por `next/image`. A capa é a
+ * montagem da placa (`lib/plate.ts`), já derivada no tamanho de entrega por
+ * `scripts/derive-placas.mjs`; a cena desenha a versão `.sm` dela no painel,
+ * com o mesmo HUD por cima, e por isso a troca no fim do voo não aparece.
  *
  * `fetchPriority="high"` porque ela é o LCP desta rota nos dois caminhos de
- * chegada, e `aspect-ratio` vindo de `CARD_COVER_ASPECT` porque o retângulo
+ * chegada, e `aspect-ratio` vindo de `PANEL_ASPECT` porque o retângulo
  * precisa existir com o tamanho final **antes** de a imagem chegar: é ele que a
  * cena lê para saber onde parar.
  *
@@ -97,14 +95,22 @@ export default async function CasePage({
     <main className="case px-6 pb-32 pt-24 md:pl-56 md:pr-12">
       <CaseExit />
       <CaseReveal>
-        {/* A capa é o mesmo placeholder que o painel da cena desenha: é o
-            retângulo dela que a travessia lê para saber onde encaixar. */}
+        {/* A capa é a mesma placa que o painel da cena desenha, a montagem
+            com o HUD por cima: é o retângulo dela que a travessia lê para
+            saber onde encaixar. */}
         <figure
           data-case-cover
           className="case-cover"
           style={{ aspectRatio: String(PANEL_ASPECT) }}
         >
-          <Placeholder
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={plateImage(slug)}
+            alt={frontmatter.title}
+            fetchPriority="high"
+            decoding="async"
+          />
+          <PlateHud
             name={frontmatter.title}
             index={Math.max(here, 0)}
             client={frontmatter.client}

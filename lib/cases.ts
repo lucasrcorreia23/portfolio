@@ -85,7 +85,7 @@ export type CaseFrontmatter = {
   market_pt: string;
   market_en: string;
   accent: AccentToken;
-  /** A capa real, quando existir. Hoje a capa exibida é o placeholder. */
+  /** A capa do frontmatter. A capa exibida é a montagem da placa (`lib/plate.ts`). */
   cover: string;
   media: readonly CaseMedia[];
   disciplines: readonly Discipline[];

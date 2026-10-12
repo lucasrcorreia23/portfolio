@@ -12,7 +12,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "measure": "node scripts/measure-bundle.mjs",
-    "covers:derive": "node scripts/derive-covers.mjs"
+    "placas:derive": "node scripts/derive-placas.mjs",
+    "vitrine:derive": "node scripts/derive-vitrine.mjs"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.1.1",

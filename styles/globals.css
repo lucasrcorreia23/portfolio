@@ -469,13 +469,24 @@
   /* A capa do case. A razão de aspecto chega inline, de `PANEL_ASPECT`: a
      mesma do painel na cena. */
   .case-cover {
+    position: relative;
     width: 100%;
     max-width: var(--case-wide);
     overflow: hidden;
-    background-color: var(--abyss);
+    background-color: var(--deep);
+  }
+
+  /* A montagem por baixo, o HUD por cima: a mesma placa da cena. */
+  .case-cover img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .case-cover svg {
+    position: relative;
     display: block;
     width: 100%;
     height: 100%;
