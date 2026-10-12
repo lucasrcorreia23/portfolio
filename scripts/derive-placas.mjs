@@ -5,6 +5,7 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
+import { edgeOf, roundedMask, shadowOf } from "./shadow.mjs";
 
 /**
  * A imagem de cada placa da trilha: uma montagem 16:10 com a tela que mais
@@ -136,23 +137,6 @@ const RECIPES = {
   ],
 };
 
-/** @param {number} width @param {number} height @param {number} radius */
-function roundedMask(width, height, radius) {
-  return Buffer.from(
-    `<svg width="${width}" height="${height}"><rect width="${width}" height="${height}" rx="${radius}" fill="#fff"/></svg>`,
-  );
-}
-
-/** @param {number} width @param {number} height @param {number} radius */
-function shadowOf(width, height, radius) {
-  const pad = 80;
-  const svg = `<svg width="${width + pad * 2}" height="${height + pad * 2}">
-    <defs><filter id="s"><feGaussianBlur stdDeviation="28"/></filter></defs>
-    <rect x="${pad}" y="${pad + 18}" width="${width}" height="${height}" rx="${radius}"
-      fill="#000" opacity="0.55" filter="url(#s)"/></svg>`;
-  return { input: Buffer.from(svg), pad };
-}
-
 /** @param {Layer} layer */
 async function render(layer) {
   let image = sharp(layer.src);
@@ -188,6 +172,9 @@ for (const [slug, layers] of Object.entries(RECIPES)) {
       });
     }
     overlays.push({ input: buffer, left: layer.x, top: layer.y });
+    if (layer.shadow !== false) {
+      overlays.push({ input: edgeOf(layer.width, height, radius), left: layer.x, top: layer.y });
+    }
   }
 
   const base = await sharp({

@@ -6,6 +6,7 @@ import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
+import { edgeOf, roundedMask, shadowOf } from "./shadow.mjs";
 
 /**
  * As telas da parede da vitrine, a partir das gravações e das telas originais:
@@ -254,23 +255,6 @@ function coverVideo(image, cover) {
   return out;
 }
 
-/** @param {number} width @param {number} height @param {number} radius */
-function roundedMask(width, height, radius) {
-  return Buffer.from(
-    `<svg width="${width}" height="${height}"><rect width="${width}" height="${height}" rx="${radius}" fill="#fff"/></svg>`,
-  );
-}
-
-/** @param {number} width @param {number} height @param {number} radius */
-function shadowOf(width, height, radius) {
-  const pad = 60;
-  const svg = `<svg width="${width + pad * 2}" height="${height + pad * 2}">
-    <defs><filter id="s"><feGaussianBlur stdDeviation="22"/></filter></defs>
-    <rect x="${pad}" y="${pad + 14}" width="${width}" height="${height}" rx="${radius}"
-      fill="#000" opacity="0.55" filter="url(#s)"/></svg>`;
-  return { input: Buffer.from(svg), pad };
-}
-
 /**
  * Uma montagem, em PNG na memória: as camadas com canto e sombra no quadro.
  * @param {Layer[]} layers
@@ -295,6 +279,7 @@ async function montage(layers) {
     const shadow = shadowOf(layer.width, height, radius);
     overlays.push({ input: shadow.input, left: layer.x - shadow.pad, top: layer.y - shadow.pad });
     overlays.push({ input: shaped, left: layer.x, top: layer.y });
+    overlays.push({ input: edgeOf(layer.width, height, radius), left: layer.x, top: layer.y });
   }
   return sharp({
     create: { ...MONTAGE, channels: 3, background: `#${PLATE.slice(2)}` },
@@ -355,20 +340,24 @@ for (const screen of SCREENS) {
       const shadow = shadowOf(layer.width, height, radius);
       const shadowFile = join(SCRATCH, `shadow-${i}.png`);
       const maskFile = join(SCRATCH, `mask-${i}.png`);
+      const edgeFile = join(SCRATCH, `edge-${i}.png`);
       await sharp(shadow.input).png().toFile(shadowFile);
       await sharp(roundedMask(layer.width, height, radius)).png().toFile(maskFile);
+      await sharp(edgeOf(layer.width, height, radius)).png().toFile(edgeFile);
       extras.push(
         "-stream_loop", "-1", "-ss", String(layer.from ?? 0), "-i", layer.video,
         "-loop", "1", "-i", shadowFile,
         "-loop", "1", "-i", maskFile,
+        "-loop", "1", "-i", edgeFile,
       );
-      const v = i * 3, sh = v + 1, m = v + 2;
+      const v = i * 4, sh = v + 1, m = v + 2, e = v + 3;
       chain.push(
         `[${v}:v]fps=30,scale=${layer.width}:${height}:flags=lanczos,format=rgba[v${i}]`,
         `[${m}:v]format=gray[m${i}]`,
         `[v${i}][m${i}]alphamerge[r${i}]`,
         `[${last}][${sh}:v]overlay=${layer.x - shadow.pad}:${layer.y - shadow.pad}[s${i}]`,
-        `[s${i}][r${i}]overlay=${layer.x}:${layer.y}[o${i}]`,
+        `[s${i}][r${i}]overlay=${layer.x}:${layer.y}[t${i}]`,
+        `[t${i}][${e}:v]overlay=${layer.x}:${layer.y}[o${i}]`,
       );
       last = `o${i}`;
     }
