@@ -42,6 +42,8 @@ const STACK = { height: 1400, gap: 56 };
  * shader da parede), para o vão se ler como margem.
  */
 const PLATE = "0x1f3037";
+/** O quadro das montagens, 16:10. */
+const MONTAGE = { width: 1920, height: 1200 };
 
 /**
  * `out`: destino sem extensão. `video` ou `image`: a fonte; uma lista de vídeos
@@ -49,9 +51,12 @@ const PLATE = "0x1f3037";
  * lado a lado, numa tela só (os vídeos curtos repetem até `to`).
  * `from`/`to`: o trecho do vídeo, em segundos. `poster`: o instante do quadro
  * parado, a partir de `from`. `crop`: o recorte de uma imagem, em px da fonte.
+ * `montage`: telas paradas sobrepostas num quadro 16:10 (`MONTAGE`), de trás
+ * para a frente, em px dele; `dim` escurece a de trás.
  * @typedef {{ video?: string | string[]; speed?: number; image?: string }} Part
  * @typedef {{ left: number; top: number; width: number; height: number }} Crop
- * @type {(Part & { out: string; stack?: Part[]; from?: number; to?: number; poster?: number; crop?: Crop })[]}
+ * @typedef {{ src: string; crop?: Crop; x: number; y: number; width: number; dim?: number }} Layer
+ * @type {(Part & { out: string; stack?: Part[]; montage?: Layer[]; from?: number; to?: number; poster?: number; crop?: Crop })[]}
  */
 const SCREENS = [
   // TiL: o checklist de pré-operação, três celulares num quadro — a home do
@@ -101,10 +106,23 @@ const SCREENS = [
   { out: "atlas-gov/glass-desktop", video: `${CASES}/atlas-gov/motion/02-glass-desktop.mp4`, to: 15, poster: 1 },
   { out: "atlas-gov/glass-mobile", video: `${CASES}/atlas-gov/motion/03-glass-mobile.mp4`, poster: 2 },
   { out: "atlas-gov/home-dashboard", image: `${CASES}/atlas-gov/figma/01-home-dashboard.png` },
-  // Agentes de IA (WeCann Care)
+  // Agentes de IA (WeCann Care): a conversa com a Athena e, em montagens de
+  // duas, as telas de dentro que a placa e o vídeo não mostram.
   { out: "wecann-care/conversa", video: `${CASES}/wecann-atena/motion/02-conversa-agente.mp4`, from: 3, to: 18, poster: 9 },
-  { out: "wecann-care/discutir-caso", video: `${CASES}/wecann-atena/motion/04-discutir-caso.mp4`, to: 15, poster: 10 },
-  { out: "wecann-care/intro", video: `${CASES}/wecann-atena/motion/01-intro.mp4`, poster: 4 },
+  {
+    out: "wecann-care/agenda-e-pacientes",
+    montage: [
+      { src: `${CASES}/wecann-atena/figma/03-agenda-semana.png`, crop: { left: 0, top: 0, width: 2880, height: 1800 }, x: 50, y: 60, width: 1200, dim: 0.8 },
+      { src: `${CASES}/wecann-atena/figma/04-paciente-360-lista.png`, crop: { left: 0, top: 0, width: 2880, height: 1800 }, x: 640, y: 370, width: 1240 },
+    ],
+  },
+  {
+    out: "wecann-care/acompanhamento-e-casuistica",
+    montage: [
+      { src: `${CASES}/wecann-atena/figma/10-acompanhamento.png`, crop: { left: 0, top: 0, width: 2880, height: 1800 }, x: 50, y: 60, width: 1200, dim: 0.8 },
+      { src: `${CASES}/wecann-atena/figma/11-casuistica.png`, crop: { left: 0, top: 0, width: 2880, height: 1800 }, x: 640, y: 370, width: 1240 },
+    ],
+  },
   // Natal Mágico, o totem em pé. Fora as fotos de resultado: são pessoas reais.
   { out: "natal-magico/home-neve", video: `${CASES}/natal-magico/motion/01-home-neve-9x16.mp4`, poster: 2 },
   { out: "natal-magico/formulario", video: `${CASES}/natal-magico/motion/02-formulario-teclado-9x16.mp4`, poster: 3 },
@@ -136,6 +154,56 @@ function partVideo(part) {
     "-map", "[out]", "-an", "-c:v", "libx264", "-crf", "16", out,
   ]);
   return out;
+}
+
+/** @param {number} width @param {number} height @param {number} radius */
+function roundedMask(width, height, radius) {
+  return Buffer.from(
+    `<svg width="${width}" height="${height}"><rect width="${width}" height="${height}" rx="${radius}" fill="#fff"/></svg>`,
+  );
+}
+
+/** @param {number} width @param {number} height @param {number} radius */
+function shadowOf(width, height, radius) {
+  const pad = 60;
+  const svg = `<svg width="${width + pad * 2}" height="${height + pad * 2}">
+    <defs><filter id="s"><feGaussianBlur stdDeviation="22"/></filter></defs>
+    <rect x="${pad}" y="${pad + 14}" width="${width}" height="${height}" rx="${radius}"
+      fill="#000" opacity="0.55" filter="url(#s)"/></svg>`;
+  return { input: Buffer.from(svg), pad };
+}
+
+/**
+ * Uma montagem, em PNG na memória: as camadas com canto e sombra no quadro.
+ * @param {Layer[]} layers
+ */
+async function montage(layers) {
+  /** @type {import("sharp").OverlayOptions[]} */
+  const overlays = [];
+  const radius = 10;
+  for (const layer of layers) {
+    let image = sharp(layer.src);
+    if (layer.crop !== undefined) image = image.extract(layer.crop);
+    const buffer = await image
+      .resize({ width: layer.width })
+      .modulate({ brightness: layer.dim ?? 1 })
+      .png()
+      .toBuffer();
+    const { height = 0 } = await sharp(buffer).metadata();
+    const shaped = await sharp(buffer)
+      .composite([{ input: roundedMask(layer.width, height, radius), blend: "dest-in" }])
+      .png()
+      .toBuffer();
+    const shadow = shadowOf(layer.width, height, radius);
+    overlays.push({ input: shadow.input, left: layer.x - shadow.pad, top: layer.y - shadow.pad });
+    overlays.push({ input: shaped, left: layer.x, top: layer.y });
+  }
+  return sharp({
+    create: { ...MONTAGE, channels: 3, background: `#${PLATE.slice(2)}` },
+  })
+    .composite(overlays)
+    .png()
+    .toBuffer();
 }
 
 /** O quadro parado de um vídeo, em PNG na memória. */
@@ -211,8 +279,10 @@ for (const screen of SCREENS) {
     );
     size = statSync(`${base}.mp4`).size;
     still = frameAt(`${base}.mp4`, screen.poster ?? 0);
-  } else if (screen.image !== undefined) {
-    let image = sharp(screen.image);
+  } else if (screen.image !== undefined || screen.montage !== undefined) {
+    let image = sharp(
+      screen.montage !== undefined ? await montage(screen.montage) : screen.image,
+    );
     if (screen.crop !== undefined) {
       image = sharp(await image.extract(screen.crop).png().toBuffer());
     }

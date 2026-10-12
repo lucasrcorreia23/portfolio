@@ -9,7 +9,7 @@
  * coluna a coluna: cada item tem três telas e fica com uma coluna inteira.
  *
  * As telas saem de `scripts/derive-vitrine.mjs`, no formato delas, sem corte:
- * o quadro põe a margem em volta. Toda tela tem ao lado um `.sm.webp` de mesmo
+ * o quadro põe a margem em volta; uma montagem junta duas telas num quadro. Toda tela tem ao lado um `.sm.webp` de mesmo
  * nome, a versão pequena que a parede carrega de saída. Uma tela `.mp4` é um
  * loop mudo; uma `.webp` é a versão grande, carregada quando a câmera chega.
  */
@@ -98,8 +98,8 @@ export const VITRINE: readonly VitrineItem[] = [
     slug: "wecann-atena",
     screens: [
       { src: `${V}/wecann-care/conversa.mp4`, aspect: WIDE },
-      { src: `${V}/wecann-care/discutir-caso.mp4`, aspect: WIDE },
-      { src: `${V}/wecann-care/intro.mp4`, aspect: WIDE },
+      { src: `${V}/wecann-care/agenda-e-pacientes.webp`, aspect: 1.6 },
+      { src: `${V}/wecann-care/acompanhamento-e-casuistica.webp`, aspect: 1.6 },
     ],
   },
   {
