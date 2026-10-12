@@ -7,7 +7,9 @@
   },
   "disciplines": {
     "produto": "Product",
-    "marca": "Brand"
+    "marca": "Brand",
+    "engenharia": "Engineering",
+    "startup": "Startup"
   },
   "case": {
     "back": "Back",
