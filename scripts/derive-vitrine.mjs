@@ -126,12 +126,12 @@ const SCREENS = [
   // Agentes de IA (WeCann Care): a conversa com a Athena e, em montagens de
   // duas, as telas de dentro que a placa e o vídeo não mostram.
   {
-    // A conversa atrás, inteira à vista; a intro por cima, no canto oposto.
+    // A intro por cima, grande; da conversa atrás aparece só a ponta.
     out: "wecann-care/conversa-e-intro",
     reel: {
       layers: [
-        { video: `${CASES}/wecann-atena/motion/02-conversa-agente.mp4`, from: 3, x: 50, y: 50, width: 1300 },
-        { video: `${CASES}/wecann-atena/motion/01-intro.mp4`, x: 910, y: 610, width: 960 },
+        { video: `${CASES}/wecann-atena/motion/02-conversa-agente.mp4`, from: 3, x: 40, y: 40, width: 1200 },
+        { video: `${CASES}/wecann-atena/motion/01-intro.mp4`, x: 300, y: 250, width: 1580 },
       ],
       length: 17.6,
     },
