@@ -92,7 +92,8 @@ const RECIPES = {
   ],
   "wecann-atena": [
     {
-      src: join(ACERVO, "wecann-atena/figma/05-paciente-360-prontuario.png"),
+      // A agenda atrás: a capa já sugere a jornada, sem antecipar a consulta.
+      src: join(ACERVO, "wecann-atena/figma/03-agenda-semana.png"),
       crop: { left: 0, top: 180, width: 2880, height: 1900 },
       x: 1100,
       y: 130,
