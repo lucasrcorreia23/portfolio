@@ -36,14 +36,14 @@ const WIDE = 16 / 9;
 
 export const VITRINE: readonly VitrineItem[] = [
   {
-    // O checklist de pré-operação: três celulares (a home, a jornada
-    // acelerada e o liberado), a visão geral do admin e mais três celulares
-    // com os outros estados.
+    // O checklist de pré-operação em três quadros de três celulares: a home,
+    // a jornada acelerada e o liberado; o checklist passo a passo; e os
+    // outros estados.
     name: "TiL Group",
     year: 2026,
     screens: [
       { src: `${V}/til-group/checklist-mobile.mp4`, aspect: 1.504 },
-      { src: `${V}/til-group/visao-geral.webp`, aspect: 1.778 },
+      { src: `${V}/til-group/checklist-passos.webp`, aspect: 1.504 },
       { src: `${V}/til-group/estados-mobile.webp`, aspect: 1.504 },
     ],
   },

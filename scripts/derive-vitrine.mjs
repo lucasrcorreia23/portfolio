@@ -67,8 +67,8 @@ const MONTAGE = { width: 1920, height: 1200 };
 const SCREENS = [
   // TiL: o checklist de pré-operação, três celulares num quadro — a home do
   // operador, a jornada inteira acelerada (QR, equipamento, falha com foto e
-  // IA) e o equipamento liberado; a visão geral do admin, no desktop; e mais
-  // três celulares, com os estados que o primeiro quadro não mostra.
+  // IA) e o equipamento liberado; o checklist parado, passo a passo; e os
+  // estados que os outros quadros não mostram.
   {
     out: "til-group/checklist-mobile",
     stack: [
@@ -85,7 +85,14 @@ const SCREENS = [
     to: 8.5,
     poster: 5,
   },
-  { out: "til-group/visao-geral", image: `${CASES}/portonave/stills@2x/d08-admin-visao-geral.png` },
+  {
+    out: "til-group/checklist-passos",
+    stack: [
+      { image: `${CASES}/portonave/retrato/m04-equipamento-disponivel.png` },
+      { image: `${CASES}/portonave/retrato/m05-checklist-secao-1.png` },
+      { image: `${CASES}/portonave/retrato/m06b-falha-ia-descricao.png` },
+    ],
+  },
   {
     out: "til-group/estados-mobile",
     stack: [
