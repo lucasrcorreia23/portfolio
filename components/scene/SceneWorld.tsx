@@ -69,7 +69,7 @@ type SceneWorldProps = {
 /** Quanto o primeiro quadro espera pelas plantas, no máximo. */
 const PLANTS_WAIT_MS = 4000;
 /** Até onde o ponteiro gira o olhar, em radianos: para os lados e na vertical. */
-const LOOK_YAW = Math.PI / 4;
+const LOOK_YAW = (25 * Math.PI) / 180;
 const LOOK_PITCH = 0.2;
 
 /**
@@ -258,7 +258,7 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
     );
     shared.caseRecess.value = inCase;
 
-    // Olhar em volta: o ponteiro gira o olhar para o lado dele, até 45 graus
+    // Olhar em volta: o ponteiro gira o olhar para o lado dele, até 25 graus
     // na borda da tela. Perto do centro quase nada se move (a resposta é
     // quadrática), para a leitura ficar parada. Some no modo calmo e dentro
     // de um case, onde nada se mexe.
