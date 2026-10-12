@@ -155,7 +155,10 @@ const SCREENS = [
   {
     out: "natal-magico/contagem-e-processando",
     stack: [
-      { video: `${CASES}/natal-magico/motion/03-contagem-flash-9x16.mp4` },
+      // A contagem com uma pessoa de verdade na câmera: um vídeo do Pexels
+      // (pexels.com/video/6332699, licença Pexels) na moldura, com o texto e
+      // os números refeitos por cima nas fontes do totem.
+      { video: `${CASES}/natal-magico/motion/03-contagem-pessoa-9x16.mp4` },
       { video: `${CASES}/natal-magico/motion/04-processando-9x16.mp4` },
     ],
     to: 7.6,
