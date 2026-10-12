@@ -131,14 +131,6 @@ export default async function CasePage({
             <Glyphs text={frontmatter.title} />
           </h1>
 
-          <p
-            className="case-summary fog-in text-body-lg text-mist w-fit"
-            data-veil
-            style={{ "--wait": "500ms" } as CSSProperties}
-          >
-            {caseSummary(frontmatter, typed)}
-          </p>
-
           <dl
             data-veil
             data-readout

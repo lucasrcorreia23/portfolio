@@ -503,12 +503,6 @@
     margin-top: 1.5rem;
   }
 
-  .case-summary {
-    margin-top: 2.5rem;
-    max-width: var(--case-col);
-    text-wrap: pretty;
-  }
-
   .case-meta {
     display: grid;
     grid-template-columns: auto 1fr;
