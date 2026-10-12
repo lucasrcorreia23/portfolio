@@ -98,7 +98,7 @@ export const VITRINE: readonly VitrineItem[] = [
     discipline: "Produto · Sistema",
     slug: "wecann-atena",
     screens: [
-      { src: `${V}/wecann-care/conversa.mp4`, aspect: WIDE },
+      { src: `${V}/wecann-care/conversa-e-intro.mp4`, aspect: 1.6 },
       { src: `${V}/wecann-care/agenda-e-pacientes.webp`, aspect: 1.6 },
       { src: `${V}/wecann-care/acompanhamento-e-casuistica.webp`, aspect: 1.6 },
     ],

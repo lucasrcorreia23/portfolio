@@ -54,12 +54,14 @@ const MONTAGE = { width: 1920, height: 1200 };
  * `from`/`to`: o trecho do vídeo, em segundos. `poster`: o instante do quadro
  * parado, a partir de `from`. `crop`: o recorte de uma imagem, em px da fonte.
  * `montage`: telas paradas sobrepostas num quadro 16:10 (`MONTAGE`), de trás
- * para a frente, em px dele; `dim` escurece a de trás.
+ * para a frente, em px dele; `dim` escurece a de trás. `reel`: o mesmo com
+ * vídeos (os curtos repetem até `length`).
  * @typedef {{ src: string; x: number; y: number; width: number; height: number; hold: number; fade: number; length: number }} Cover
  * @typedef {{ video?: string | string[]; speed?: number; image?: string; cover?: Cover; crop?: Crop }} Part
  * @typedef {{ left: number; top: number; width: number; height: number }} Crop
  * @typedef {{ src: string; crop?: Crop; x: number; y: number; width: number; dim?: number }} Layer
- * @type {(Part & { out: string; stack?: Part[]; montage?: Layer[]; from?: number; to?: number; poster?: number; crop?: Crop })[]}
+ * @typedef {{ video: string; from?: number; x: number; y: number; width: number }} ReelLayer
+ * @type {(Part & { out: string; stack?: Part[]; montage?: Layer[]; reel?: { layers: ReelLayer[]; length: number }; from?: number; to?: number; poster?: number; crop?: Crop })[]}
  */
 const SCREENS = [
   // TiL: o checklist de pré-operação, três celulares num quadro — a home do
@@ -113,7 +115,18 @@ const SCREENS = [
   { out: "atlas-gov/home-dashboard", image: `${CASES}/atlas-gov/figma/01-home-dashboard.png` },
   // Agentes de IA (WeCann Care): a conversa com a Athena e, em montagens de
   // duas, as telas de dentro que a placa e o vídeo não mostram.
-  { out: "wecann-care/conversa", video: `${CASES}/wecann-atena/motion/02-conversa-agente.mp4`, from: 3, to: 18, poster: 9 },
+  {
+    // A conversa atrás, inteira à vista; a intro por cima, no canto oposto.
+    out: "wecann-care/conversa-e-intro",
+    reel: {
+      layers: [
+        { video: `${CASES}/wecann-atena/motion/02-conversa-agente.mp4`, from: 3, x: 50, y: 50, width: 1300 },
+        { video: `${CASES}/wecann-atena/motion/01-intro.mp4`, x: 910, y: 610, width: 960 },
+      ],
+      length: 17.6,
+    },
+    poster: 9,
+  },
   {
     out: "wecann-care/agenda-e-pacientes",
     montage: [
@@ -316,7 +329,42 @@ for (const screen of SCREENS) {
   mkdirSync(dirname(base), { recursive: true });
   let still;
   let size = 0;
-  if (screen.stack !== undefined) {
+  if (screen.reel !== undefined) {
+    const { layers, length } = screen.reel;
+    const radius = 10;
+    const extras = [];
+    const chain = [`color=c=${PLATE}:s=${MONTAGE.width}x${MONTAGE.height}:r=30:d=${length}[base]`];
+    let last = "base";
+    for (const [i, layer] of layers.entries()) {
+      const height = Math.round((layer.width * 9) / 16);
+      const shadow = shadowOf(layer.width, height, radius);
+      const shadowFile = join(SCRATCH, `shadow-${i}.png`);
+      const maskFile = join(SCRATCH, `mask-${i}.png`);
+      await sharp(shadow.input).png().toFile(shadowFile);
+      await sharp(roundedMask(layer.width, height, radius)).png().toFile(maskFile);
+      extras.push(
+        "-stream_loop", "-1", "-ss", String(layer.from ?? 0), "-i", layer.video,
+        "-loop", "1", "-i", shadowFile,
+        "-loop", "1", "-i", maskFile,
+      );
+      const v = i * 3, sh = v + 1, m = v + 2;
+      chain.push(
+        `[${v}:v]fps=30,scale=${layer.width}:${height}:flags=lanczos,format=rgba[v${i}]`,
+        `[${m}:v]format=gray[m${i}]`,
+        `[v${i}][m${i}]alphamerge[r${i}]`,
+        `[${last}][${sh}:v]overlay=${layer.x - shadow.pad}:${layer.y - shadow.pad}[s${i}]`,
+        `[s${i}][r${i}]overlay=${layer.x}:${layer.y}[o${i}]`,
+      );
+      last = `o${i}`;
+    }
+    encode(
+      [...extras, "-t", String(length)],
+      ["-filter_complex", `${chain.join(";")};[${last}]scale=${VIDEO_SIDE}:-2:flags=lanczos,${TAGS}[out]`, "-map", "[out]"],
+      `${base}.mp4`,
+    );
+    size = statSync(`${base}.mp4`).size;
+    still = frameAt(`${base}.mp4`, screen.poster ?? 0);
+  } else if (screen.stack !== undefined) {
     const inputs = screen.stack.flatMap((part) =>
       part.video !== undefined || part.cover !== undefined
         ? ["-stream_loop", "-1", "-i", partVideo(part)]
