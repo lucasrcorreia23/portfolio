@@ -22,12 +22,12 @@ import type { PaletteToken } from "./palette";
  * `title` sobrepõe o do frontmatter sem tocar no arquivo.
  */
 const PUBLISHED: readonly { slug: string; title?: string }[] = [
-  { slug: "decision-suite" },
-  { slug: "prime8" },
-  { slug: "perfecting" },
   { slug: "netlex" },
+  { slug: "perfecting" },
   { slug: "wecann-atena" },
   { slug: "portonave" },
+  { slug: "decision-suite" },
+  { slug: "prime8" },
 ];
 
 export const ACCENT_TOKENS = [
