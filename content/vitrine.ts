@@ -9,8 +9,9 @@
  * coluna a coluna: cada item tem três telas e fica com uma coluna inteira.
  *
  * As telas saem de `scripts/derive-vitrine.mjs`, no formato delas, sem corte:
- * o quadro põe a margem em volta; uma montagem junta duas telas num quadro. Toda tela tem ao lado um `.sm.webp` de mesmo
- * nome, a versão pequena que a parede carrega de saída. Uma tela `.mp4` é um
+ * o quadro põe a margem em volta; uma montagem junta duas telas num quadro.
+ * Toda tela tem ao lado um `.sm.webp` de mesmo nome, a versão pequena que a
+ * parede carrega de saída. Uma tela `.mp4` é um
  * loop mudo; uma `.webp` é a versão grande, carregada quando a câmera chega.
  */
 export type VitrineScreen = {
