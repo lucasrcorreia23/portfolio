@@ -67,8 +67,8 @@ const MONTAGE = { width: 1920, height: 1200 };
 const SCREENS = [
   // TiL: o checklist de pré-operação, três celulares num quadro — a home do
   // operador, a jornada inteira acelerada (QR, equipamento, falha com foto e
-  // IA) e o equipamento liberado; a triagem do checklist e o painel de
-  // contratos, no desktop.
+  // IA) e o equipamento liberado; a visão geral do admin, no desktop; e mais
+  // três celulares, com os estados que o primeiro quadro não mostra.
   {
     out: "til-group/checklist-mobile",
     stack: [
@@ -85,8 +85,15 @@ const SCREENS = [
     to: 8.5,
     poster: 5,
   },
-  { out: "til-group/triagem-ia", video: `${CASES}/portonave/motion/03-triagem-ia.mp4`, poster: 4 },
-  { out: "til-group/contratos-painel", image: `${CASES}/til-group/stills@2x/10-contratos-painel.png` },
+  { out: "til-group/visao-geral", image: `${CASES}/portonave/stills@2x/d08-admin-visao-geral.png` },
+  {
+    out: "til-group/estados-mobile",
+    stack: [
+      { image: `${CASES}/portonave/retrato/m02-bem-vindo.png` },
+      { image: `${CASES}/portonave/retrato/m08-emp03-uso-negado.png` },
+      { image: `${CASES}/portonave/retrato/m09-rs01-aguardando.png` },
+    ],
+  },
   // netLex: a gestão de contrato e o dashboard.
   { out: "netlex/contrato-detalhe", image: `${CASES}/netlex/figma/06-contrato-detalhe-v1-2.png` },
   { out: "netlex/dashboard-juridico", image: `${CASES}/netlex/figma/02-home-juridico.png` },
