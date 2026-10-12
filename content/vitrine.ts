@@ -104,13 +104,14 @@ export const VITRINE: readonly VitrineItem[] = [
     ],
   },
   {
-    // Natal Mágico, o totem de foto com IA, em pé.
+    // Natal Mágico, o totem de foto com IA: dois celulares em pé por quadro,
+    // e a foto real que vira desenho.
     name: "Continente Shopping",
     year: 2026,
     screens: [
-      { src: `${V}/natal-magico/home-neve.mp4`, aspect: 0.563 },
-      { src: `${V}/natal-magico/formulario.mp4`, aspect: 0.563 },
-      { src: `${V}/natal-magico/contagem-flash.mp4`, aspect: 0.563 },
+      { src: `${V}/natal-magico/home-e-formulario.mp4`, aspect: 1.206 },
+      { src: `${V}/natal-magico/contagem-e-processando.mp4`, aspect: 1.206 },
+      { src: `${V}/natal-magico/foto-e-avaliacao.mp4`, aspect: 1.206 },
     ],
   },
   {

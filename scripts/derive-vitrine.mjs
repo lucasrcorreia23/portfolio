@@ -47,13 +47,16 @@ const MONTAGE = { width: 1920, height: 1200 };
 
 /**
  * `out`: destino sem extensão. `video` ou `image`: a fonte; uma lista de vídeos
- * vira um só, um depois do outro, e `speed` acelera. `stack`: telas em pé,
+ * vira um só, um depois do outro, e `speed` acelera. `cover`: uma foto por cima
+ * de `image`, no retângulo dela, que some aos poucos e revela a tela (`hold`
+ * segundos parada, `fade` sumindo, o vídeo dura `length`). `stack`: telas em pé,
  * lado a lado, numa tela só (os vídeos curtos repetem até `to`).
  * `from`/`to`: o trecho do vídeo, em segundos. `poster`: o instante do quadro
  * parado, a partir de `from`. `crop`: o recorte de uma imagem, em px da fonte.
  * `montage`: telas paradas sobrepostas num quadro 16:10 (`MONTAGE`), de trás
  * para a frente, em px dele; `dim` escurece a de trás.
- * @typedef {{ video?: string | string[]; speed?: number; image?: string }} Part
+ * @typedef {{ src: string; x: number; y: number; width: number; height: number; hold: number; fade: number; length: number }} Cover
+ * @typedef {{ video?: string | string[]; speed?: number; image?: string; cover?: Cover }} Part
  * @typedef {{ left: number; top: number; width: number; height: number }} Crop
  * @typedef {{ src: string; crop?: Crop; x: number; y: number; width: number; dim?: number }} Layer
  * @type {(Part & { out: string; stack?: Part[]; montage?: Layer[]; from?: number; to?: number; poster?: number; crop?: Crop })[]}
@@ -123,10 +126,44 @@ const SCREENS = [
       { src: `${CASES}/wecann-atena/figma/11-casuistica.png`, crop: { left: 0, top: 0, width: 2880, height: 1800 }, x: 640, y: 370, width: 1240 },
     ],
   },
-  // Natal Mágico, o totem em pé. Fora as fotos de resultado: são pessoas reais.
-  { out: "natal-magico/home-neve", video: `${CASES}/natal-magico/motion/01-home-neve-9x16.mp4`, poster: 2 },
-  { out: "natal-magico/formulario", video: `${CASES}/natal-magico/motion/02-formulario-teclado-9x16.mp4`, poster: 3 },
-  { out: "natal-magico/contagem-flash", video: `${CASES}/natal-magico/motion/03-contagem-flash-9x16.mp4`, poster: 2 },
+  // Natal Mágico, o totem em pé, dois por quadro. Fora as fotos de resultado:
+  // são pessoas reais.
+  {
+    out: "natal-magico/home-e-formulario",
+    stack: [
+      { video: `${CASES}/natal-magico/motion/01-home-neve-9x16.mp4` },
+      { video: `${CASES}/natal-magico/motion/02-formulario-teclado-9x16.mp4` },
+    ],
+    to: 10,
+    poster: 2,
+  },
+  {
+    out: "natal-magico/contagem-e-processando",
+    stack: [
+      { video: `${CASES}/natal-magico/motion/03-contagem-flash-9x16.mp4` },
+      { video: `${CASES}/natal-magico/motion/04-processando-9x16.mp4` },
+    ],
+    to: 7.6,
+    poster: 2,
+  },
+  {
+    // A foto real vira desenho: um placeholder do Unsplash (licença Unsplash,
+    // unsplash.com/photos/-AQ-P_R25aI) por cima da foto mágica, que some.
+    out: "natal-magico/foto-e-avaliacao",
+    stack: [
+      {
+        image: `${CASES}/natal-magico/retrato/06-resultado.png`,
+        cover: {
+          src: `${CASES}/natal-magico/placeholder/unsplash-AQ-P_R25aI.jpg`,
+          x: 242, y: 394, width: 602, height: 938,
+          hold: 2, fade: 1.5, length: 6,
+        },
+      },
+      { video: `${CASES}/natal-magico/motion/05-resultado-avaliacao-9x16.mp4` },
+    ],
+    to: 11.6,
+    poster: 1,
+  },
   // Solan Group: exportadas em 2× e 3× do arquivo do Figma (maZhN17n2AZxNL3mfrSiWt).
   { out: "solan-group/relatorios-problemas", image: `${CASES}/solan-group/figma/01-relatorios-problemas.png` },
   { out: "solan-group/relatorios-personalizado", image: `${CASES}/solan-group/figma/02-relatorios-personalizado.png` },
@@ -141,6 +178,7 @@ const SCRATCH = mkdtempSync(join(tmpdir(), "vitrine-"));
  * @param {Part} part
  */
 function partVideo(part) {
+  if (part.cover !== undefined) return coverVideo(part.image ?? "", part.cover);
   const list = Array.isArray(part.video) ? part.video : [part.video ?? ""];
   if (list.length === 1 && part.speed === undefined) return list[0];
   const out = join(SCRATCH, `part-${Math.random().toString(36).slice(2)}.mp4`);
@@ -152,6 +190,26 @@ function partVideo(part) {
     "-filter_complex",
     `${chain};${joined}concat=n=${list.length}:v=1:a=0,setpts=PTS/${part.speed ?? 1}[out]`,
     "-map", "[out]", "-an", "-c:v", "libx264", "-crf", "16", out,
+  ]);
+  return out;
+}
+
+/**
+ * A tela parada com a foto por cima, que some e revela o que está embaixo.
+ * @param {string} image
+ * @param {Cover} cover
+ */
+function coverVideo(image, cover) {
+  const out = join(SCRATCH, `cover-${Math.random().toString(36).slice(2)}.mp4`);
+  const { x, y, width, height, hold, fade, length } = cover;
+  execFileSync("ffmpeg", [
+    "-v", "error", "-y",
+    "-loop", "1", "-framerate", "30", "-t", String(length), "-i", image,
+    "-loop", "1", "-framerate", "30", "-t", String(length), "-i", cover.src,
+    "-filter_complex",
+    `[1:v]scale=${width}:${height}:force_original_aspect_ratio=increase,crop=${width}:${height},format=rgba,` +
+      `fade=t=out:st=${hold}:d=${fade}:alpha=1[photo];[0:v][photo]overlay=${x}:${y},format=yuv420p[out]`,
+    "-map", "[out]", "-c:v", "libx264", "-crf", "16", out,
   ]);
   return out;
 }
@@ -248,7 +306,7 @@ for (const screen of SCREENS) {
   let size = 0;
   if (screen.stack !== undefined) {
     const inputs = screen.stack.flatMap((part) =>
-      part.video !== undefined
+      part.video !== undefined || part.cover !== undefined
         ? ["-stream_loop", "-1", "-i", partVideo(part)]
         : ["-loop", "1", "-framerate", "30", "-i", part.image ?? ""],
     );
