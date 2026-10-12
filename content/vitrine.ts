@@ -64,7 +64,7 @@ export const VITRINE: readonly VitrineItem[] = [
     screens: [
       { src: `${V}/perfecting/analytics.mp4`, aspect: WIDE },
       { src: `${V}/perfecting/antes-e-durante.webp`, aspect: 1.6 },
-      { src: `${V}/perfecting/resultado.webp`, aspect: 1.362 },
+      { src: `${V}/perfecting/resultado.webp`, aspect: 1.778 },
     ],
   },
   {

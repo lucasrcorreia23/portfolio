@@ -91,11 +91,11 @@ const SCREENS = [
   { out: "netlex/dashboard-juridico", image: `${CASES}/netlex/figma/02-home-juridico.png` },
   { out: "netlex/home-rh", video: `${CASES}/netlex/motion/02-home-rh-scroll.mp4`, poster: 0.5 },
   // Perfecting: o analytics do gestor, o antes e o durante da ligação, o resultado.
-  // O analytics regravado na homologação em 1920 (sem o painel admin), para o
-  // cabeçalho caber numa linha.
+  // O analytics e o resultado de uma sessão, regravados na homologação em 1920
+  // (sem o painel admin), para o cabeçalho caber numa linha.
   { out: "perfecting/analytics", video: `${CASES}/perfecting/motion/01-analytics-1920.mp4`, poster: 1.5 },
   { out: "perfecting/antes-e-durante", image: `${PERFECTING}/antes-e-durante.webp` },
-  { out: "perfecting/resultado", image: `${PERFECTING}/resultado.webp` },
+  { out: "perfecting/resultado", image: `${CASES}/perfecting/figma/02-resultado-1920.png` },
   // iFood
   { out: "ifood/webapp-e-rede", video: `${CASES}/ifood/motion/02-webapp-e-rede.mp4`, to: 15, poster: 1 },
   { out: "ifood/totens-portal-mobile", video: `${CASES}/ifood/motion/03-totens-portal-mobile.mp4`, to: 15, poster: 2 },
