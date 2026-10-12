@@ -155,9 +155,10 @@ const SCREENS = [
   {
     out: "natal-magico/contagem-e-processando",
     stack: [
-      // A contagem com uma pessoa de verdade na câmera: um vídeo do Pexels
-      // (pexels.com/video/6332699, licença Pexels) na moldura, com o texto e
-      // os números refeitos por cima nas fontes do totem.
+      // A contagem com uma pessoa de verdade diante do totem, se ajeitando
+      // para a foto: um vídeo do Pexels (pexels.com/video/8628513, licença
+      // Pexels) na moldura, com o texto e os números refeitos por cima nas
+      // fontes do totem.
       { video: `${CASES}/natal-magico/motion/03-contagem-pessoa-9x16.mp4` },
       { video: `${CASES}/natal-magico/motion/04-processando-9x16.mp4` },
     ],
@@ -165,14 +166,14 @@ const SCREENS = [
     poster: 2,
   },
   {
-    // A foto real vira desenho: um placeholder do Unsplash (licença Unsplash,
-    // unsplash.com/photos/-AQ-P_R25aI) por cima da foto mágica, que some.
+    // A foto real vira desenho: um quadro do mesmo vídeo da contagem por cima
+    // da foto mágica, que some.
     out: "natal-magico/foto-e-avaliacao",
     stack: [
       {
         image: `${CASES}/natal-magico/retrato/06-resultado.png`,
         cover: {
-          src: `${CASES}/natal-magico/placeholder/unsplash-AQ-P_R25aI.jpg`,
+          src: `${CASES}/natal-magico/placeholder/pexels-8628513-joinha.jpg`,
           x: 242, y: 394, width: 602, height: 938,
           hold: 2, fade: 1.5, length: 6,
         },
