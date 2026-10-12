@@ -186,15 +186,15 @@ const SCREENS = [
   { out: "solan-group/relatorios-problemas", image: `${CASES}/solan-group/figma/01-relatorios-problemas.png` },
   { out: "solan-group/relatorios-personalizado", image: `${CASES}/solan-group/figma/02-relatorios-personalizado.png` },
   {
-    // O app em quatro celulares: a home do cliente e, do app do integrador
-    // (arquivo KhwhNdDwWJVOvAd5A6AIqG), tickets, usinas e perfil. As telas
-    // mais altas são cortadas na altura da home.
+    // O app do cliente em quatro celulares, um por módulo da barra de baixo:
+    // visão geral, tickets, financeiro e perfil (os três últimos do arquivo
+    // D3jdlLxDMXIIONUoSLnS3O).
     out: "solan-group/mobile",
     stack: [
       { image: `${CASES}/solan-group/figma/03-mobile-home.png` },
-      { image: `${CASES}/solan-group/figma/07-integrador-tickets.png`, crop: { left: 0, top: 0, width: 1179, height: 2482 } },
-      { image: `${CASES}/solan-group/figma/08-integrador-usinas.png`, crop: { left: 0, top: 0, width: 1179, height: 2482 } },
-      { image: `${CASES}/solan-group/figma/09-integrador-perfil.png`, crop: { left: 0, top: 0, width: 1179, height: 2482 } },
+      { image: `${CASES}/solan-group/figma/10-mobile-tickets.png` },
+      { image: `${CASES}/solan-group/figma/11-mobile-financeiro.png` },
+      { image: `${CASES}/solan-group/figma/12-mobile-perfil.png` },
     ],
   },
 ];
