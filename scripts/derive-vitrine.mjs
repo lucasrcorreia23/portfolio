@@ -56,7 +56,7 @@ const MONTAGE = { width: 1920, height: 1200 };
  * `montage`: telas paradas sobrepostas num quadro 16:10 (`MONTAGE`), de trás
  * para a frente, em px dele; `dim` escurece a de trás.
  * @typedef {{ src: string; x: number; y: number; width: number; height: number; hold: number; fade: number; length: number }} Cover
- * @typedef {{ video?: string | string[]; speed?: number; image?: string; cover?: Cover }} Part
+ * @typedef {{ video?: string | string[]; speed?: number; image?: string; cover?: Cover; crop?: Crop }} Part
  * @typedef {{ left: number; top: number; width: number; height: number }} Crop
  * @typedef {{ src: string; crop?: Crop; x: number; y: number; width: number; dim?: number }} Layer
  * @type {(Part & { out: string; stack?: Part[]; montage?: Layer[]; from?: number; to?: number; poster?: number; crop?: Crop })[]}
@@ -169,7 +169,17 @@ const SCREENS = [
   // Solan Group: exportadas em 2× e 3× do arquivo do Figma (maZhN17n2AZxNL3mfrSiWt).
   { out: "solan-group/relatorios-problemas", image: `${CASES}/solan-group/figma/01-relatorios-problemas.png` },
   { out: "solan-group/relatorios-personalizado", image: `${CASES}/solan-group/figma/02-relatorios-personalizado.png` },
-  { out: "solan-group/mobile-home", image: `${CASES}/solan-group/figma/03-mobile-home.png` },
+  {
+    // O app em quatro celulares: a home, os últimos 30 dias, a escolha da usina
+    // e a fatura pendente. As telas mais altas são cortadas na altura da home.
+    out: "solan-group/mobile",
+    stack: [
+      { image: `${CASES}/solan-group/figma/03-mobile-home.png` },
+      { image: `${CASES}/solan-group/figma/04-mobile-30-dias.png`, crop: { left: 0, top: 0, width: 1140, height: 2400 } },
+      { image: `${CASES}/solan-group/figma/05-mobile-usinas.png` },
+      { image: `${CASES}/solan-group/figma/06-mobile-fatura-pendente.png`, crop: { left: 0, top: 0, width: 1140, height: 2400 } },
+    ],
+  },
 ];
 
 const SCRATCH = mkdtempSync(join(tmpdir(), "vitrine-"));
@@ -314,18 +324,33 @@ for (const screen of SCREENS) {
     );
     const pads = screen.stack
       .map(
-        (_, i) =>
-          `[${i}:v]fps=30,scale=-2:${STACK.height}:flags=lanczos,pad=iw+${STACK.gap}:ih:${STACK.gap / 2}:0:color=${PLATE},setsar=1[p${i}]`,
+        (part, i) =>
+          `[${i}:v]${part.crop === undefined ? "" : `crop=${part.crop.width}:${part.crop.height}:${part.crop.left}:${part.crop.top},`}fps=30,scale=-2:${STACK.height}:flags=lanczos,pad=iw+${STACK.gap}:ih:${STACK.gap / 2}:0:color=${PLATE},setsar=1[p${i}]`,
       )
       .join(";");
     const row = screen.stack.map((_, i) => `[p${i}]`).join("");
-    encode(
-      [...inputs, "-t", String(screen.to ?? 10)],
-      ["-filter_complex", `${pads};${row}hstack=inputs=${screen.stack.length},${TAGS}[out]`, "-map", "[out]"],
-      `${base}.mp4`,
-    );
-    size = statSync(`${base}.mp4`).size;
-    still = frameAt(`${base}.mp4`, screen.poster ?? 0);
+    if (screen.stack.every((part) => part.image !== undefined && part.cover === undefined)) {
+      // Só telas paradas: sai uma imagem, não um vídeo.
+      still = execFileSync(
+        "ffmpeg",
+        ["-v", "error", ...inputs, "-filter_complex", `${pads};${row}hstack=inputs=${screen.stack.length}[out]`,
+          "-map", "[out]", "-frames:v", "1", "-f", "image2pipe", "-c:v", "png", "-"],
+        { maxBuffer: 256 * 1024 * 1024 },
+      );
+      const info = await sharp(still)
+        .resize({ width: IMAGE_SIDE, height: IMAGE_SIDE, fit: "inside", withoutEnlargement: true })
+        .webp({ quality: 82, effort: 6 })
+        .toFile(`${base}.webp`);
+      size = info.size;
+    } else {
+      encode(
+        [...inputs, "-t", String(screen.to ?? 10)],
+        ["-filter_complex", `${pads};${row}hstack=inputs=${screen.stack.length},${TAGS}[out]`, "-map", "[out]"],
+        `${base}.mp4`,
+      );
+      size = statSync(`${base}.mp4`).size;
+      still = frameAt(`${base}.mp4`, screen.poster ?? 0);
+    }
   } else if (screen.video !== undefined) {
     const from = screen.from ?? 0;
     encode(

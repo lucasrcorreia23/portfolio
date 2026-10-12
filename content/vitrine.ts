@@ -119,7 +119,7 @@ export const VITRINE: readonly VitrineItem[] = [
     screens: [
       { src: `${V}/solan-group/relatorios-personalizado.webp`, aspect: 1.636 },
       { src: `${V}/solan-group/relatorios-problemas.webp`, aspect: 0.901 },
-      { src: `${V}/solan-group/mobile-home.webp`, aspect: 0.475 },
+      { src: `${V}/solan-group/mobile.webp`, aspect: 2.063 },
     ],
   },
 ];
