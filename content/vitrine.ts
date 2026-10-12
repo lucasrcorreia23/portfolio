@@ -35,14 +35,15 @@ const WIDE = 16 / 9;
 
 export const VITRINE: readonly VitrineItem[] = [
   {
-    // O checklist de pré-operação (três celulares num quadro, com a triagem
-    // no desktop) e o editor de contratos: os dois levam a marca TiL.
+    // O checklist de pré-operação (três celulares num quadro: a home, a
+    // jornada acelerada e o liberado; a triagem no desktop) e o painel de
+    // contratos.
     name: "TiL Group",
     year: 2026,
     screens: [
       { src: `${V}/til-group/checklist-mobile.mp4`, aspect: 1.504 },
       { src: `${V}/til-group/triagem-ia.mp4`, aspect: WIDE },
-      { src: `${V}/til-group/editor-fluxo.mp4`, aspect: WIDE },
+      { src: `${V}/til-group/contratos-painel.webp`, aspect: 1.778 },
     ],
   },
   {

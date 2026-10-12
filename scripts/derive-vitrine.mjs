@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // @ts-check
 import { execFileSync } from "node:child_process";
-import { mkdirSync, rmSync, statSync } from "node:fs";
-import { homedir } from "node:os";
+import { mkdirSync, mkdtempSync, rmSync, statSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
@@ -44,28 +44,37 @@ const STACK = { height: 1400, gap: 56 };
 const PLATE = "0x1f3037";
 
 /**
- * `out`: destino sem extensão. `video` ou `image`: a fonte. `stack`: telas em
- * pé, lado a lado, numa tela só (os vídeos curtos repetem até `to`).
+ * `out`: destino sem extensão. `video` ou `image`: a fonte; uma lista de vídeos
+ * vira um só, um depois do outro, e `speed` acelera. `stack`: telas em pé,
+ * lado a lado, numa tela só (os vídeos curtos repetem até `to`).
  * `from`/`to`: o trecho do vídeo, em segundos. `poster`: o instante do quadro
  * parado, a partir de `from`.
- * @typedef {{ video?: string; image?: string }} Part
+ * @typedef {{ video?: string | string[]; speed?: number; image?: string }} Part
  * @type {(Part & { out: string; stack?: Part[]; from?: number; to?: number; poster?: number })[]}
  */
 const SCREENS = [
-  // TiL: o checklist de pré-operação, três celulares num quadro; a triagem do
-  // checklist e o editor de contratos, no desktop.
+  // TiL: o checklist de pré-operação, três celulares num quadro — a home do
+  // operador, a jornada inteira acelerada (QR, equipamento, falha com foto e
+  // IA) e o equipamento liberado; a triagem do checklist e o painel de
+  // contratos, no desktop.
   {
     out: "til-group/checklist-mobile",
     stack: [
-      { video: `${CASES}/portonave/motion/01-scanner-qr-9x16.mp4` },
-      { video: `${CASES}/portonave/motion/02-falha-foto-ia-9x16.mp4` },
-      { image: `${CASES}/portonave/retrato/m05-checklist-secao-1.png` },
+      { image: `${CASES}/portonave/retrato/m03-operador-home.png` },
+      {
+        video: [
+          `${CASES}/portonave/motion/01-scanner-qr-9x16.mp4`,
+          `${CASES}/portonave/motion/02-falha-foto-ia-9x16.mp4`,
+        ],
+        speed: 1.6,
+      },
+      { image: `${CASES}/portonave/retrato/m07-resultado-liberado.png` },
     ],
-    to: 8.8,
-    poster: 4,
+    to: 8.5,
+    poster: 5,
   },
   { out: "til-group/triagem-ia", video: `${CASES}/portonave/motion/03-triagem-ia.mp4`, poster: 4 },
-  { out: "til-group/editor-fluxo", video: `${CASES}/til-group/motion/03-editor-fluxo.mp4`, poster: 4 },
+  { out: "til-group/contratos-painel", image: `${CASES}/til-group/stills@2x/10-contratos-painel.png` },
   // netLex: a gestão de contrato e o dashboard.
   { out: "netlex/contrato-detalhe", image: `${CASES}/netlex/figma/06-contrato-detalhe-v1-2.png` },
   { out: "netlex/dashboard-juridico", image: `${CASES}/netlex/figma/02-home-juridico.png` },
@@ -99,6 +108,29 @@ const SCREENS = [
   { out: "solan-group/relatorios-personalizado", image: `${CASES}/solan-group/figma/02-relatorios-personalizado.png` },
   { out: "solan-group/mobile-home", image: `${CASES}/solan-group/figma/03-mobile-home.png` },
 ];
+
+const SCRATCH = mkdtempSync(join(tmpdir(), "vitrine-"));
+
+/**
+ * O vídeo de uma parte: a fonte, ou, com lista ou `speed`, um arquivo
+ * provisório com os vídeos em sequência e acelerados.
+ * @param {Part} part
+ */
+function partVideo(part) {
+  const list = Array.isArray(part.video) ? part.video : [part.video ?? ""];
+  if (list.length === 1 && part.speed === undefined) return list[0];
+  const out = join(SCRATCH, `part-${Math.random().toString(36).slice(2)}.mp4`);
+  const chain = list.map((_, i) => `[${i}:v]fps=30,setsar=1[v${i}]`).join(";");
+  const joined = list.map((_, i) => `[v${i}]`).join("");
+  execFileSync("ffmpeg", [
+    "-v", "error", "-y",
+    ...list.flatMap((file) => ["-i", file]),
+    "-filter_complex",
+    `${chain};${joined}concat=n=${list.length}:v=1:a=0,setpts=PTS/${part.speed ?? 1}[out]`,
+    "-map", "[out]", "-an", "-c:v", "libx264", "-crf", "16", out,
+  ]);
+  return out;
+}
 
 /** O quadro parado de um vídeo, em PNG na memória. */
 function frameAt(file, at) {
@@ -143,7 +175,7 @@ for (const screen of SCREENS) {
   if (screen.stack !== undefined) {
     const inputs = screen.stack.flatMap((part) =>
       part.video !== undefined
-        ? ["-stream_loop", "-1", "-i", part.video]
+        ? ["-stream_loop", "-1", "-i", partVideo(part)]
         : ["-loop", "1", "-framerate", "30", "-i", part.image ?? ""],
     );
     const pads = screen.stack
@@ -163,7 +195,7 @@ for (const screen of SCREENS) {
   } else if (screen.video !== undefined) {
     const from = screen.from ?? 0;
     encode(
-      ["-ss", String(from), ...(screen.to !== undefined ? ["-to", String(screen.to)] : []), "-i", screen.video],
+      ["-ss", String(from), ...(screen.to !== undefined ? ["-to", String(screen.to)] : []), "-i", partVideo(screen)],
       [
         "-vf",
         // Reduz até 1600 no maior lado; nunca amplia.
@@ -192,4 +224,5 @@ for (const screen of SCREENS) {
     `  ${screen.out.padEnd(32)} ${kB(size)} + ${kB(tile.size)}  aspect ${aspect.toFixed(3)}`,
   );
 }
+rmSync(SCRATCH, { recursive: true, force: true });
 console.log(`  total ${kB(total)}`);
