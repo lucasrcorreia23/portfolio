@@ -48,9 +48,10 @@ const PLATE = "0x1f3037";
  * vira um só, um depois do outro, e `speed` acelera. `stack`: telas em pé,
  * lado a lado, numa tela só (os vídeos curtos repetem até `to`).
  * `from`/`to`: o trecho do vídeo, em segundos. `poster`: o instante do quadro
- * parado, a partir de `from`.
+ * parado, a partir de `from`. `crop`: o recorte de uma imagem, em px da fonte.
  * @typedef {{ video?: string | string[]; speed?: number; image?: string }} Part
- * @type {(Part & { out: string; stack?: Part[]; from?: number; to?: number; poster?: number })[]}
+ * @typedef {{ left: number; top: number; width: number; height: number }} Crop
+ * @type {(Part & { out: string; stack?: Part[]; from?: number; to?: number; poster?: number; crop?: Crop })[]}
  */
 const SCREENS = [
   // TiL: o checklist de pré-operação, três celulares num quadro — a home do
@@ -87,10 +88,15 @@ const SCREENS = [
   { out: "ifood/webapp-e-rede", video: `${CASES}/ifood/motion/02-webapp-e-rede.mp4`, to: 15, poster: 1 },
   { out: "ifood/totens-portal-mobile", video: `${CASES}/ifood/motion/03-totens-portal-mobile.mp4`, to: 15, poster: 2 },
   { out: "ifood/webapp-pratos", image: `${CASES}/ifood/figma/09-webapp-pratos.png` },
-  // Itaú: o conceito da home do Cubo e a auditoria de UX.
+  // Itaú: o conceito da home do Cubo (rolando e, parado, só a parte de cima)
+  // e a auditoria de UX.
   { out: "itau/conceito-home-scroll", video: `${CASES}/cubo-workspace/motion/03-conceito-home-scroll.mp4`, poster: 0.5 },
   { out: "itau/auditoria-ux", video: `${CASES}/cubo-workspace/motion/01-deck-auditoria-ux.mp4`, from: 10, to: 22, poster: 4 },
-  { out: "itau/conceito-home", image: `${CASES}/cubo-workspace/figma/11-conceito-home.png` },
+  {
+    out: "itau/conceito-home",
+    image: `${CASES}/cubo-workspace/figma/11-conceito-home.png`,
+    crop: { left: 0, top: 0, width: 2880, height: 2016 },
+  },
   // Atlas Gov: só as telas.
   { out: "atlas-gov/glass-desktop", video: `${CASES}/atlas-gov/motion/02-glass-desktop.mp4`, to: 15, poster: 1 },
   { out: "atlas-gov/glass-mobile", video: `${CASES}/atlas-gov/motion/03-glass-mobile.mp4`, poster: 2 },
@@ -206,12 +212,16 @@ for (const screen of SCREENS) {
     size = statSync(`${base}.mp4`).size;
     still = frameAt(`${base}.mp4`, screen.poster ?? 0);
   } else if (screen.image !== undefined) {
-    const info = await sharp(screen.image)
+    let image = sharp(screen.image);
+    if (screen.crop !== undefined) {
+      image = sharp(await image.extract(screen.crop).png().toBuffer());
+    }
+    still = await image.clone().png().toBuffer();
+    const info = await image
       .resize({ width: IMAGE_SIDE, height: IMAGE_SIDE, fit: "inside", withoutEnlargement: true })
       .webp({ quality: 82, effort: 6 })
       .toFile(`${base}.webp`);
     size = info.size;
-    still = screen.image;
   }
   const tile = await sharp(still)
     .resize({ ...TILE, fit: "inside", withoutEnlargement: true })

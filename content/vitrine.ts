@@ -80,7 +80,7 @@ export const VITRINE: readonly VitrineItem[] = [
     screens: [
       { src: `${V}/itau/conceito-home-scroll.mp4`, aspect: WIDE },
       { src: `${V}/itau/auditoria-ux.mp4`, aspect: WIDE },
-      { src: `${V}/itau/conceito-home.webp`, aspect: 0.659 },
+      { src: `${V}/itau/conceito-home.webp`, aspect: 1.429 },
     ],
   },
   {
