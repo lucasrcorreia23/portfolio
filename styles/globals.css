@@ -567,6 +567,11 @@
     cursor: pointer;
   }
 
+  /* A tela da vitrine debaixo do ponteiro abre no clique (`SceneWorld`). */
+  html[data-wall-point] {
+    cursor: pointer;
+  }
+
   /* A âncora do véu da coluna de leitura. Não desenha nada: ela existe para
      `readVeilBoxes` ter uma caixa da largura da medida e da altura do artigo. */
   .case-veil {

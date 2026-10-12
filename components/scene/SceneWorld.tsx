@@ -13,7 +13,7 @@ import { CASE_FOG } from "@/lib/scene/case-pose";
 import { industrySettled } from "@/lib/scene/industry";
 import { plantsSettled } from "@/lib/scene/plants";
 import { getQuality } from "@/lib/scene/quality";
-import { getPointer, hasPointer, installPointer } from "@/lib/scene/pointer";
+import { getPointer, hasPointer, installPointer, takeClick } from "@/lib/scene/pointer";
 import {
   apertureAt,
   applyReveal,
@@ -72,12 +72,7 @@ const PLANTS_WAIT_MS = 4000;
 const LOOK_YAW = (25 * Math.PI) / 180;
 const LOOK_PITCH = 0.2;
 
-/**
- * O foco da vitrine: quanto o ponteiro fica parado numa tela até a câmera ir
- * até ela, quanto fica fora dela até voltar, e quanto de scroll a solta.
- */
-const FOCUS_DWELL_S = 0.35;
-const FOCUS_AWAY_S = 0.3;
+/** O foco da vitrine: quanto de scroll solta a tela aberta pelo clique. */
 const FOCUS_PAN = 0.015;
 
 /** O passo de câmera, em metros num quadro, que já é um salto e não um movimento. */
@@ -122,17 +117,7 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
   const focusRangeRef = useRef(34);
   const sway = useRef({ x: 0, y: 0 });
   const drop = useRef(0);
-  const focus = useRef({
-    on: false,
-    armed: false,
-    dwellCell: -1,
-    dwell: 0,
-    away: 0,
-    pan: 0,
-    lastPan: 0,
-    x: 0,
-    y: 0,
-  });
+  const focus = useRef({ on: false, pan: 0, pointing: false });
   /** Falso até o primeiro quadro: antes dele não há posição anterior. */
   const moved = useRef(false);
   /** A HUD no quadro anterior, e se o segredo do CTA já foi achado. */
@@ -201,39 +186,25 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
     );
     shared.fork.value = fork;
 
-    // O foco: o ponteiro parado numa tela leva a câmera até ela. Só conta o
-    // ponteiro que se mexeu depois do último scroll — rolar com ele parado
-    // em cima das telas não abre nada.
+    // O foco: o clique numa tela leva a câmera até ela; outro clique, ou
+    // rolar, solta. O clique é lido todo quadro, para não valer depois.
     const pan = wallPan(progress);
-    const aim = getPointer();
     const f = focus.current;
-    if (aim.x !== f.x || aim.y !== f.y) f.armed = true;
-    if (Math.abs(pan - f.lastPan) > 1e-4) f.armed = false;
-    f.x = aim.x;
-    f.y = aim.y;
-    f.lastPan = pan;
+    const click = takeClick();
     const hover = wallFocus.hover;
     const open = !still && fork >= 0.5 && hasPointer() && shared.caseRecess.value < 0.02;
     if (f.on) {
-      // Enquanto a câmera ainda chega, a tela passa por baixo do ponteiro.
-      f.away = hover === wallFocus.cell || wallFocus.weight < 0.9 ? 0 : f.away + dt;
-      if (!open || f.away > FOCUS_AWAY_S || Math.abs(pan - f.pan) > FOCUS_PAN) {
-        f.on = false;
-        f.dwell = 0;
-        f.dwellCell = -1;
-      }
-    } else if (open && f.armed && hover >= 0 && wallFocus.weight < 0.05) {
-      f.dwell = hover === f.dwellCell ? f.dwell + dt : 0;
-      f.dwellCell = hover;
-      if (f.dwell >= FOCUS_DWELL_S) {
-        f.on = true;
-        f.away = 0;
-        f.pan = pan;
-        wallFocus.cell = hover;
-      }
-    } else {
-      f.dwell = 0;
-      f.dwellCell = -1;
+      if (!open || click || Math.abs(pan - f.pan) > FOCUS_PAN) f.on = false;
+    } else if (open && click && hover >= 0 && wallFocus.weight < 0.05) {
+      f.on = true;
+      f.pan = pan;
+      wallFocus.cell = hover;
+    }
+    // A mão no cursor diz que a tela debaixo dele abre.
+    const pointing = open && !f.on && hover >= 0;
+    if (pointing !== f.pointing) {
+      f.pointing = pointing;
+      document.documentElement.toggleAttribute("data-wall-point", pointing);
     }
     wallFocus.weight = still ? 0 : damp(wallFocus.weight, f.on ? 1 : 0, 3, dt);
     if (!f.on && wallFocus.weight < 1e-3) {
@@ -403,7 +374,13 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
     );
   }, -10);
 
-  useEffect(() => installPointer(), []);
+  useEffect(() => {
+    const uninstall = installPointer();
+    return () => {
+      uninstall();
+      document.documentElement.removeAttribute("data-wall-point");
+    };
+  }, []);
   useEffect(() => clearSoundField, []);
 
   return (
