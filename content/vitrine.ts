@@ -88,7 +88,7 @@ export const VITRINE: readonly VitrineItem[] = [
     name: "Atlas Gov",
     screens: [
       { src: `${V}/atlas-gov/glass-desktop.mp4`, aspect: WIDE },
-      { src: `${V}/atlas-gov/glass-mobile.mp4`, aspect: WIDE },
+      { src: `${V}/atlas-gov/mobile.webp`, aspect: 2.006 },
       { src: `${V}/atlas-gov/home-dashboard.webp`, aspect: 1.406 },
     ],
   },

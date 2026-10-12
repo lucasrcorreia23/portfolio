@@ -111,7 +111,17 @@ const SCREENS = [
   },
   // Atlas Gov: só as telas.
   { out: "atlas-gov/glass-desktop", video: `${CASES}/atlas-gov/motion/02-glass-desktop.mp4`, to: 15, poster: 1 },
-  { out: "atlas-gov/glass-mobile", video: `${CASES}/atlas-gov/motion/03-glass-mobile.mp4`, poster: 2 },
+  {
+    // O app mobile em quatro celulares, sem os rótulos dos boards do Figma:
+    // a home, a reunião, o resumo do Atlas AI e o tempo de fala.
+    out: "atlas-gov/mobile",
+    stack: [
+      { image: `${CASES}/atlas-gov/figma/glass-09-mobile-home.png` },
+      { image: `${CASES}/atlas-gov/figma/glass-10-mobile-meeting.png` },
+      { image: `${CASES}/atlas-gov/figma/glass-11-mobile-ai-summary.png` },
+      { image: `${CASES}/atlas-gov/figma/glass-12-mobile-speaking-time.png` },
+    ],
+  },
   { out: "atlas-gov/home-dashboard", image: `${CASES}/atlas-gov/figma/01-home-dashboard.png` },
   // Agentes de IA (WeCann Care): a conversa com a Athena e, em montagens de
   // duas, as telas de dentro que a placa e o vídeo não mostram.
