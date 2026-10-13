@@ -17,6 +17,7 @@ import { getPointer, hasPointer, installPointer, takeClick } from "@/lib/scene/p
 import {
   apertureAt,
   applyReveal,
+  applyStopFit,
   applyWallApproach,
   applyWallFocus,
   astroAt,
@@ -169,7 +170,9 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
           : easeStrong(clamp01((performance.now() - entry.at) / REVEAL_MS));
 
     // --- câmera -------------------------------------------------------------
+    const aspect = state.size.width / Math.max(state.size.height, 1);
     cameraPose(progress, pose);
+    applyStopFit(pose, progress, aspect);
     applyReveal(pose, reveal);
 
     // Na vitrine a trilha desvia: a câmera chega perto da parede de telas.
@@ -182,7 +185,7 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
       fork,
       wallPan(progress),
       drop.current,
-      state.size.width / Math.max(state.size.height, 1),
+      aspect,
     );
     shared.fork.value = fork;
 
@@ -215,7 +218,7 @@ export function SceneWorld({ panels, instant, canvasRef }: SceneWorldProps) {
       pose,
       wallFocus.cell,
       wallFocus.weight,
-      state.size.width / Math.max(state.size.height, 1),
+      aspect,
     );
 
     // A travessia para o case é misturada aqui dentro, por cima da trilha.

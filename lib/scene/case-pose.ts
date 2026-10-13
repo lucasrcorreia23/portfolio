@@ -21,6 +21,11 @@ const PROVISIONAL_FILL = 0.7;
 const REST_BACK = 9;
 const REST_LIFT = 5.5;
 const REST_LOOK_AHEAD = 30;
+/**
+ * No retrato o texto ocupa a largura toda: a câmera sobe mais e olha reto, e
+ * o painel sai pela borda de baixo em vez de virar uma faixa atrás da coluna.
+ */
+const REST_LIFT_TALL = 7;
 
 /** A névoa dentro de um case: fechada, para o texto morar no escuro. */
 export const CASE_FOG = 0.075;
@@ -77,13 +82,15 @@ export function dockPose(
   return out;
 }
 
-export function restPose(panel: Vector4, out: CameraPose): CameraPose {
+export function restPose(panel: Vector4, aspect: number, out: CameraPose): CameraPose {
+  const tall = aspect < 1;
+  const lift = tall ? REST_LIFT_TALL : REST_LIFT;
   NORMAL.set(Math.sin(panel.w), 0, Math.cos(panel.w));
   out.position
-    .set(panel.x, panel.y + REST_LIFT, panel.z)
+    .set(panel.x, panel.y + lift, panel.z)
     .addScaledVector(NORMAL, REST_BACK);
   out.target
-    .set(panel.x, panel.y + REST_LIFT * 0.55, panel.z)
+    .set(panel.x, panel.y + (tall ? lift : lift * 0.55), panel.z)
     .addScaledVector(NORMAL, -REST_LOOK_AHEAD);
   return out;
 }

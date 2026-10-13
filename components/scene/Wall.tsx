@@ -185,9 +185,18 @@ export function Wall({ shared }: WallProps) {
         side: DoubleSide,
       });
 
+    // No toque a parede fica parada e o atlas vai pela metade: os vídeos e o
+    // atlas inteiro passavam da memória do Safari do iPhone, e a cena congelava
+    // na chegada à vitrine. Sem vídeo, a tela mostra o quadro dela no atlas.
+    const touch = window.matchMedia("(pointer: coarse)").matches;
     const cells = WALL_SCREENS.map((_, cell) => cell);
     const atlases = Array.from({ length: ATLAS_COUNT }, (_, k) =>
-      createWallAtlas(WALL_SCREENS.slice(k * ATLAS_CELLS, (k + 1) * ATLAS_CELLS), ATLAS_COLUMNS, WALL_ROWS),
+      createWallAtlas(
+        WALL_SCREENS.slice(k * ATLAS_CELLS, (k + 1) * ATLAS_CELLS),
+        ATLAS_COLUMNS,
+        WALL_ROWS,
+        touch ? 0.5 : 1,
+      ),
     );
     const geometry = createPlates(cells, true);
     // Um grupo por textura, um terço da parede cada.
@@ -198,7 +207,7 @@ export function Wall({ shared }: WallProps) {
 
     const lives: Live[] = cells.map((cell) => {
       const screen = WALL_SCREENS[cell];
-      const video = screen?.video === true ? document.createElement("video") : undefined;
+      const video = screen?.video === true && !touch ? document.createElement("video") : undefined;
       let texture: Texture | undefined;
       if (video !== undefined) {
         video.muted = true;

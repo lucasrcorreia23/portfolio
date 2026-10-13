@@ -130,7 +130,7 @@ export function createCaseDrive(): CaseDrive {
         handed = instant || performance.now() - handoffAt >= HANDOFF_HOLD_MS;
       }
     }
-    restPose(panel, rest);
+    restPose(panel, viewportWidth / Math.max(viewportHeight, 1), rest);
 
     const settled = handed && flying ? 1 : 0;
     recede = instant ? settled : damp(recede, settled, RECEDE_DAMP, dt);

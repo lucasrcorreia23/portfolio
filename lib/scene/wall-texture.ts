@@ -24,16 +24,20 @@ function load(src: string): Promise<HTMLImageElement> {
 /**
  * As telas pequenas da parede numa textura só, `columns` × `rows` células, a
  * primeira em cima à esquerda e descendo por coluna, como na parede. A
- * textura nasce vazia e é pintada uma vez, quando as imagens chegam.
+ * textura nasce vazia e é pintada uma vez, quando as imagens chegam. `scale`
+ * encolhe a célula: no celular o atlas inteiro não cabe na memória do Safari.
  */
 export function createWallAtlas(
   tiles: readonly { tile: string; aspect: number }[],
   columns: number,
   rows: number,
+  scale = 1,
 ): CanvasTexture {
+  const cellWidth = WALL_TILE.width * scale;
+  const cellHeight = WALL_TILE.height * scale;
   const canvas = document.createElement("canvas");
-  canvas.width = WALL_TILE.width * columns;
-  canvas.height = WALL_TILE.height * rows;
+  canvas.width = cellWidth * columns;
+  canvas.height = cellHeight * rows;
   const g = canvas.getContext("2d");
   if (g !== null) {
     g.fillStyle = readPalette().deep;
@@ -52,10 +56,10 @@ export function createWallAtlas(
       const tile = tiles[index];
       if (result.status !== "fulfilled" || tile === undefined) return;
       const [spanX, spanY] = tileSpan(tile.aspect);
-      const width = WALL_TILE.width * spanX;
-      const height = WALL_TILE.height * spanY;
-      const left = Math.floor(index / rows) * WALL_TILE.width + (WALL_TILE.width - width) / 2;
-      const top = (index % rows) * WALL_TILE.height + (WALL_TILE.height - height) / 2;
+      const width = cellWidth * spanX;
+      const height = cellHeight * spanY;
+      const left = Math.floor(index / rows) * cellWidth + (cellWidth - width) / 2;
+      const top = (index % rows) * cellHeight + (cellHeight - height) / 2;
       g.drawImage(result.value, left, top, width, height);
     });
     texture.needsUpdate = true;

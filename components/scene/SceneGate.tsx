@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSceneMode } from "@/lib/capabilities/use-scene-mode";
 import { stripLocale } from "@/lib/i18n/config";
@@ -40,9 +40,23 @@ function caseSlugOf(pathname: string): string | null {
  * nenhum passa pelo clique. Ver `lib/work/case-transition.ts`.
  */
 export function SceneGate({ panels }: SceneGateProps) {
-  const mode = useSceneMode();
+  const detected = useSceneMode();
   const pathname = usePathname();
   const [Scene, setScene] = useState<SceneComponent | null>(null);
+  const holder = useRef<HTMLDivElement>(null);
+  // O contexto perdido vira poster: no iPhone, sem memória, o Safari derruba o
+  // WebGL e o canvas ficaria congelado no último quadro, com a página parada.
+  const [lost, setLost] = useState(false);
+  const mode = lost ? "poster" : detected;
+
+  useEffect(() => {
+    const node = holder.current;
+    if (node === null) return;
+    const onLost = () => setLost(true);
+    // O evento não sobe do canvas: a captura no contêiner o pega.
+    node.addEventListener("webglcontextlost", onLost, true);
+    return () => node.removeEventListener("webglcontextlost", onLost, true);
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -77,6 +91,7 @@ export function SceneGate({ panels }: SceneGateProps) {
 
   return (
     <div
+      ref={holder}
       aria-hidden="true"
       data-scene-mode={mode}
       className="pointer-events-none fixed inset-0 -z-10 bg-void"
@@ -84,7 +99,7 @@ export function SceneGate({ panels }: SceneGateProps) {
       {/* Sem WebGL, o poster da composição do beat — só na descida: dentro de
           um case a cena é névoa parada nos dois modos, e ali o fundo é o void. */}
       {mode === "poster" && stripLocale(pathname) === "/" ? <ScenePoster /> : null}
-      {Scene === null ? null : (
+      {Scene === null || mode === "poster" ? null : (
         <Scene panels={panels} composed={mode === "composed"} />
       )}
     </div>

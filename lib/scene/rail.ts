@@ -13,6 +13,7 @@ import {
   WALL_SPAN,
   WALL_TALL,
 } from "./world";
+import { PANEL_ASPECT, STOP_COUNT } from "./stops";
 import { WALL_SCREENS } from "./wall-screens";
 
 /**
@@ -88,6 +89,48 @@ export function cameraPose(progress: number, out: CameraPose): CameraPose {
     out.position.y += 1.2 * fork;
   }
   return out;
+}
+
+/** Meia largura da placa. A altura é a de `case-pose.ts`, que importa daqui. */
+const PANEL_HALF_WIDTH = (3.2 * PANEL_ASPECT) / 2;
+/** Quanto da largura do quadro a placa ocupa no retrato. */
+const STOP_FILL_TALL = 0.9;
+/** Ao passar por uma placa no retrato: a que distância em z e com que folga do poste. */
+const STOP_PASS_REACH = 8;
+const STOP_PASS_CLEAR = 1.6;
+
+/**
+ * A parada no retrato, por cima da pose: a folga da HUD à esquerda sai (no
+ * celular a HUD fica em cima) e a câmera recua na própria linha de visada até
+ * a placa caber na largura. Sem isso, com a tela em pé, a placa saía pela
+ * borda direita.
+ */
+export function applyStopFit(pose: CameraPose, progress: number, aspect: number): void {
+  if (aspect >= 1) return;
+  // A trilha passa rente ao poste esquerdo de cada placa: com a tela estreita
+  // o poste enchia o quadro. Perto da placa a câmera se afasta para a esquerda.
+  for (let k = 0; k < STOP_COUNT; k += 1) {
+    const beside = panelPlacement(k);
+    const near = 1 - smooth(Math.abs(pose.position.z - beside.z) / STOP_PASS_REACH);
+    const clear = beside.x - PANEL_HALF_WIDTH - STOP_PASS_CLEAR;
+    if (near <= 0 || pose.position.x <= clear) continue;
+    const step = (pose.position.x - clear) * near;
+    pose.position.x -= step;
+    pose.target.x -= step;
+  }
+  const { index, weight } = stopWeight(progress);
+  if (index < 0 || weight <= 0) return;
+  const panel = panelPlacement(index);
+  pose.target.x += 1.1 * weight;
+  const half = Math.tan((CAMERA_FOV * Math.PI) / 360) * aspect;
+  const need = PANEL_HALF_WIDTH / (half * STOP_FILL_TALL);
+  const dx = pose.position.x - panel.x;
+  const dz = pose.position.z - panel.z;
+  const reach = Math.hypot(dx, dz);
+  if (reach >= need || reach < 1e-3) return;
+  const push = ((need - reach) / reach) * weight;
+  pose.position.x += dx * push;
+  pose.position.z += dz * push;
 }
 
 /**
