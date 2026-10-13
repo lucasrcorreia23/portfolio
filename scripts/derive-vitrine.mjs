@@ -47,8 +47,7 @@ const PLATE = "0x1f3037";
 const MONTAGE = { width: 1920, height: 1200 };
 
 /**
- * `out`: destino sem extensão. `video` ou `image`: a fonte; uma lista de vídeos
- * vira um só, um depois do outro, e `speed` acelera. `cover`: uma foto por cima
+ * `out`: destino sem extensão. `video` ou `image`: a fonte. `cover`: uma foto por cima
  * de `image`, no retângulo dela, que some aos poucos e revela a tela (`hold`
  * segundos parada, `fade` sumindo, o vídeo dura `length`). `stack`: telas em pé,
  * lado a lado, numa tela só (os vídeos curtos repetem até `to`).
@@ -58,49 +57,43 @@ const MONTAGE = { width: 1920, height: 1200 };
  * para a frente, em px dele; `dim` escurece a de trás. `reel`: o mesmo com
  * vídeos (os curtos repetem até `length`).
  * @typedef {{ src: string; x: number; y: number; width: number; height: number; hold: number; fade: number; length: number }} Cover
- * @typedef {{ video?: string | string[]; speed?: number; image?: string; cover?: Cover; crop?: Crop }} Part
+ * @typedef {{ video?: string; image?: string; cover?: Cover; crop?: Crop }} Part
  * @typedef {{ left: number; top: number; width: number; height: number }} Crop
  * @typedef {{ src: string; crop?: Crop; x: number; y: number; width: number; dim?: number }} Layer
  * @typedef {{ video: string; from?: number; x: number; y: number; width: number }} ReelLayer
  * @type {(Part & { out: string; stack?: Part[]; montage?: Layer[]; reel?: { layers: ReelLayer[]; length: number }; from?: number; to?: number; poster?: number; crop?: Crop })[]}
  */
 const SCREENS = [
-  // TiL: o checklist de pré-operação em três quadros de três celulares. Em
-  // cima, a busca de item, o uso negado por habilitação e as liberações do
-  // supervisor (capturadas do protótipo em 390 × 844, @3x).
+  // TiL: o checklist de pré-operação em três quadros de três celulares, cada
+  // um uma jornada da esquerda para a direita. Em cima, achar o item: a home,
+  // a busca e a TP-02 encontrada. No meio, verificar a mesma TP-02: o
+  // checklist, a falha com foto e IA (em vídeo) e o liberado. Embaixo, quando
+  // o uso é negado: manutenção, supervisor e habilitação. A busca e a
+  // habilitação foram capturadas do protótipo em 390 × 844, @3x.
   {
-    out: "til-group/busca-e-liberacoes",
+    out: "til-group/busca",
     stack: [
+      { image: `${CASES}/portonave/retrato/m03-operador-home.png` },
       { image: `${CASES}/portonave/retrato/m10-buscar-item.png` },
-      { image: `${CASES}/portonave/retrato/m11-rs02-sem-habilitacao.png` },
-      { image: `${CASES}/portonave/retrato/m12-supervisor-liberacoes.png` },
+      { image: `${CASES}/portonave/retrato/m04-equipamento-disponivel.png` },
     ],
   },
-  // No meio, a home do operador, a jornada inteira acelerada (QR,
-  // equipamento, falha com foto e IA) e o equipamento liberado; embaixo, os
-  // estados que os outros quadros não mostram.
   {
     out: "til-group/checklist-mobile",
     stack: [
-      { image: `${CASES}/portonave/retrato/m03-operador-home.png` },
-      {
-        video: [
-          `${CASES}/portonave/motion/01-scanner-qr-9x16.mp4`,
-          `${CASES}/portonave/motion/02-falha-foto-ia-9x16.mp4`,
-        ],
-        speed: 1.6,
-      },
+      { image: `${CASES}/portonave/retrato/m05-checklist-secao-1.png` },
+      { video: `${CASES}/portonave/motion/02-falha-foto-ia-9x16.mp4` },
       { image: `${CASES}/portonave/retrato/m07-resultado-liberado.png` },
     ],
-    to: 8.5,
-    poster: 5,
+    to: 8.7,
+    poster: 6,
   },
   {
-    out: "til-group/estados-mobile",
+    out: "til-group/uso-negado",
     stack: [
-      { image: `${CASES}/portonave/retrato/m02-bem-vindo.png` },
       { image: `${CASES}/portonave/retrato/m08-emp03-uso-negado.png` },
       { image: `${CASES}/portonave/retrato/m09-rs01-aguardando.png` },
+      { image: `${CASES}/portonave/retrato/m11-rs02-sem-habilitacao.png` },
     ],
   },
   // netLex: a gestão de contrato e o dashboard.
@@ -230,25 +223,12 @@ const SCREENS = [
 const SCRATCH = mkdtempSync(join(tmpdir(), "vitrine-"));
 
 /**
- * O vídeo de uma parte: a fonte, ou, com lista ou `speed`, um arquivo
- * provisório com os vídeos em sequência e acelerados.
+ * O vídeo de uma parte: a fonte, ou a tela com a foto por cima (`cover`).
  * @param {Part} part
  */
 function partVideo(part) {
   if (part.cover !== undefined) return coverVideo(part.image ?? "", part.cover);
-  const list = Array.isArray(part.video) ? part.video : [part.video ?? ""];
-  if (list.length === 1 && part.speed === undefined) return list[0];
-  const out = join(SCRATCH, `part-${Math.random().toString(36).slice(2)}.mp4`);
-  const chain = list.map((_, i) => `[${i}:v]fps=30,setsar=1[v${i}]`).join(";");
-  const joined = list.map((_, i) => `[v${i}]`).join("");
-  execFileSync("ffmpeg", [
-    "-v", "error", "-y",
-    ...list.flatMap((file) => ["-i", file]),
-    "-filter_complex",
-    `${chain};${joined}concat=n=${list.length}:v=1:a=0,setpts=PTS/${part.speed ?? 1}[out]`,
-    "-map", "[out]", "-an", "-c:v", "libx264", "-crf", "16", out,
-  ]);
-  return out;
+  return part.video ?? "";
 }
 
 /**
