@@ -96,10 +96,11 @@ const SCREENS = [
       { image: `${CASES}/portonave/retrato/m11-rs02-sem-habilitacao.png` },
     ],
   },
-  // netLex: a gestão de contrato e o dashboard.
+  // netLex: a gestão de contrato, o dashboard e o onboarding em cinco etapas
+  // (cortado antes de chegar ao dashboard, que já está ao lado).
   { out: "netlex/contrato-detalhe", image: `${CASES}/netlex/figma/06-contrato-detalhe-v1-2.png` },
   { out: "netlex/dashboard-juridico", image: `${CASES}/netlex/figma/02-home-juridico.png` },
-  { out: "netlex/home-rh", video: `${CASES}/netlex/motion/02-home-rh-scroll.mp4`, poster: 0.5 },
+  { out: "netlex/onboarding", video: `${CASES}/netlex/motion/03-onboarding.mp4`, to: 12.4, poster: 6 },
   // Perfecting: o analytics do gestor, o antes e o durante da ligação, o resultado.
   // O analytics e o resultado de uma sessão, regravados na homologação em 1920
   // (sem o painel admin), para o cabeçalho caber numa linha.

@@ -52,7 +52,7 @@ export const VITRINE: readonly VitrineItem[] = [
     screens: [
       { src: `${V}/netlex/contrato-detalhe.webp`, aspect: 1.773 },
       { src: `${V}/netlex/dashboard-juridico.webp`, aspect: 1.667 },
-      { src: `${V}/netlex/home-rh.mp4`, aspect: WIDE },
+      { src: `${V}/netlex/onboarding.mp4`, aspect: WIDE },
     ],
   },
   {
