@@ -65,9 +65,19 @@ const MONTAGE = { width: 1920, height: 1200 };
  * @type {(Part & { out: string; stack?: Part[]; montage?: Layer[]; reel?: { layers: ReelLayer[]; length: number }; from?: number; to?: number; poster?: number; crop?: Crop })[]}
  */
 const SCREENS = [
-  // TiL: o checklist de pré-operação, três celulares num quadro — a home do
-  // operador, a jornada inteira acelerada (QR, equipamento, falha com foto e
-  // IA) e o equipamento liberado; o checklist parado, passo a passo; e os
+  // TiL: o checklist de pré-operação em três quadros de três celulares. Em
+  // cima, a busca de item, o uso negado por habilitação e as liberações do
+  // supervisor (capturadas do protótipo em 390 × 844, @3x).
+  {
+    out: "til-group/busca-e-liberacoes",
+    stack: [
+      { image: `${CASES}/portonave/retrato/m10-buscar-item.png` },
+      { image: `${CASES}/portonave/retrato/m11-rs02-sem-habilitacao.png` },
+      { image: `${CASES}/portonave/retrato/m12-supervisor-liberacoes.png` },
+    ],
+  },
+  // No meio, a home do operador, a jornada inteira acelerada (QR,
+  // equipamento, falha com foto e IA) e o equipamento liberado; embaixo, os
   // estados que os outros quadros não mostram.
   {
     out: "til-group/checklist-mobile",
@@ -84,14 +94,6 @@ const SCREENS = [
     ],
     to: 8.5,
     poster: 5,
-  },
-  {
-    out: "til-group/checklist-passos",
-    stack: [
-      { image: `${CASES}/portonave/retrato/m04-equipamento-disponivel.png` },
-      { image: `${CASES}/portonave/retrato/m05-checklist-secao-1.png` },
-      { image: `${CASES}/portonave/retrato/m06b-falha-ia-descricao.png` },
-    ],
   },
   {
     out: "til-group/estados-mobile",
