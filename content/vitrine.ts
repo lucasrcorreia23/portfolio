@@ -116,9 +116,9 @@ export const VITRINE: readonly VitrineItem[] = [
   {
     name: "Solan Group",
     screens: [
-      { src: `${V}/solan-group/relatorios-personalizado.webp`, aspect: 1.636 },
-      { src: `${V}/solan-group/relatorios-problemas.webp`, aspect: 0.901 },
-      { src: `${V}/solan-group/mobile.webp`, aspect: 1.973 },
+      { src: `${V}/solan-group/relatorios-problemas.webp`, aspect: 1.6 },
+      { src: `${V}/solan-group/mobile-visao-e-tickets.webp`, aspect: 1.016 },
+      { src: `${V}/solan-group/mobile-financeiro-e-perfil.webp`, aspect: 0.957 },
     ],
   },
 ];

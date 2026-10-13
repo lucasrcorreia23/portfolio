@@ -204,17 +204,25 @@ const SCREENS = [
     to: 11.6,
     poster: 1,
   },
-  // Solan Group: exportadas em 2× e 3× do arquivo do Figma (maZhN17n2AZxNL3mfrSiWt).
-  { out: "solan-group/relatorios-problemas", image: `${CASES}/solan-group/figma/01-relatorios-problemas.png` },
-  { out: "solan-group/relatorios-personalizado", image: `${CASES}/solan-group/figma/02-relatorios-personalizado.png` },
+  // Solan Group: um dashboard e o app do cliente. O relatório de problemas e
+  // causas, só a parte de cima (indicadores e gráficos), do arquivo
+  // maZhN17n2AZxNL3mfrSiWt; os celulares, dois a dois por módulo da barra de
+  // baixo, do arquivo D3jdlLxDMXIIONUoSLnS3O.
   {
-    // O app do cliente em quatro celulares, um por módulo da barra de baixo:
-    // visão geral, tickets, financeiro e perfil (os três últimos do arquivo
-    // D3jdlLxDMXIIONUoSLnS3O).
-    out: "solan-group/mobile",
+    out: "solan-group/relatorios-problemas",
+    image: `${CASES}/solan-group/figma/01-relatorios-problemas.png`,
+    crop: { left: 0, top: 0, width: 2880, height: 1800 },
+  },
+  {
+    out: "solan-group/mobile-visao-e-tickets",
     stack: [
       { image: `${CASES}/solan-group/figma/03-mobile-home.png` },
       { image: `${CASES}/solan-group/figma/10-mobile-tickets.png` },
+    ],
+  },
+  {
+    out: "solan-group/mobile-financeiro-e-perfil",
+    stack: [
       { image: `${CASES}/solan-group/figma/11-mobile-financeiro.png` },
       { image: `${CASES}/solan-group/figma/12-mobile-perfil.png` },
     ],
