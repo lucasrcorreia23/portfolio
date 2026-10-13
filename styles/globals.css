@@ -129,12 +129,26 @@
   /* A flor do loading. `--p` (0 a 1) é o progresso, escrito por
      `components/gate/Loading.tsx`. A foto entra só como máscara, embutida em
      `styles/loading-flower.css` (`scripts/derive-loading-flower.mjs`); a cor é
-     dos tokens. O brilho fica no elemento de fora: no mesmo elemento, a
-     máscara o recortaria. */
+     dos tokens. O brilho é um gradiente atrás da flor, fora do grupo das
+     pétalas: um `filter` naquele grupo isolado fazia o Safari do iOS desenhar
+     a borda da camada, um quadrado com um fio em cima. */
+  .loading-bloom {
+    position: relative;
+  }
+  .loading-bloom::before {
+    content: "";
+    position: absolute;
+    inset: -12%;
+    background: radial-gradient(
+      circle closest-side,
+      color-mix(in oklab, var(--cyan) calc(var(--p) * 32%), transparent) 40%,
+      transparent
+    );
+    pointer-events: none;
+  }
   .loading-flower {
     width: min(44vmin, 18rem);
     aspect-ratio: 1;
-    filter: drop-shadow(0 0 1.5rem color-mix(in oklab, var(--cyan) calc(var(--p) * 55%), transparent));
   }
   /* Carregou e espera o gesto: passa um vento, de cinco em cinco segundos, e
      só três pétalas cedem, uma depois da outra, pouco, e assentam. Cada uma é

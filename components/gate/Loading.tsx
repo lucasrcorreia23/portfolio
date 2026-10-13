@@ -185,18 +185,17 @@ export function Loading({ label, status, done, enter }: LoadingProps) {
       className={`loading bg-void fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6${waiting ? " cursor-pointer" : ""}`}
       style={{ "--p": 0 } as CSSProperties}
     >
-      <div
-        className={`loading-flower${waiting ? " loading-flower-wind" : ""}`}
-        aria-hidden="true"
-      >
-        <div className="loading-flower-head">
-          <span className="loading-flower-light" />
-        </div>
-        {PETALS.map((petal) => (
-          <div key={petal} className={`loading-flower-head loading-flower-petal ${petal}`}>
+      <div className="loading-bloom" aria-hidden="true">
+        <div className={`loading-flower${waiting ? " loading-flower-wind" : ""}`}>
+          <div className="loading-flower-head">
             <span className="loading-flower-light" />
           </div>
-        ))}
+          {PETALS.map((petal) => (
+            <div key={petal} className={`loading-flower-head loading-flower-petal ${petal}`}>
+              <span className="loading-flower-light" />
+            </div>
+          ))}
+        </div>
       </div>
       {waiting ? (
         <p aria-hidden="true" className="type-mono text-hud text-cyan">
