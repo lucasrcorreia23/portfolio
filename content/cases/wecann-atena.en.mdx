@@ -1,0 +1,141 @@
+2026
+
+Product Designer @ WeCann Care, via Atomsix
+
+# An AI health record for doctors who prescribe cannabis, designed to tire less and earn trust.
+
+### An AI health record cannot look like a control panel. The doctor only trusts the answer when they can see where it comes from.
+
+**My role**\
+Product Designer at Atomsix. Discovery, information architecture, interface, design system and a navigable wireframe in code.
+
+**Period**\
+2026
+
+**Team**\
+Head of Design, Product Designer (me) and Product Manager
+
+WeCann Care is an electronic health record with AI agents for doctors who prescribe medical cannabis. The doctor schedules, sees, documents and follows up the patient in one place, with an AI assistant, Athena, that researches, summarises and validates alongside them. The work ran from product discovery to a high-fidelity wireframe in code.
+
+---
+
+#### If you read only one part
+
+## Doctors do not want another dense system. For them, density does not communicate capability, it communicates fatigue. And a fast AI is not enough: they need to see where the answer comes from.
+
+## What I did was treat the AI as a clinical copilot, with the evidence always visible, and organise the whole consultation journey around the doctor.
+
+## The result is a product with a copilot home, answers with scientific references, the complete consultation journey and a design system with rules that protect the doctor's attention.
+
+---
+
+#### The problem
+
+The doctor does not need more screen. They need more time with the patient.
+
+Before the project, the consultation already existed in a first version: anamnesis, notes and Athena in three columns, with eight specialty packs at the top and everything competing for the same gaze.
+
+![The previous version of the consultation](/assets/img/wecann-atena/versao-anterior.webp)
+
+In the interviews, four findings came through strongly:
+
+- Visual overload. Density does not communicate capability, it communicates fatigue.
+- Trust in AI. It comes from traceability, not speed. The doctor is the author, and the AI expands their knowledge.
+- Fragmented flows. The promise to centralise does not need to be sold, it needs to be kept.
+- Medicine is being present. Technology cannot stand between the doctor and the patient.
+
+![The four interview findings](/assets/img/wecann-atena/insights-entrevistas.webp)
+
+The temptation was to fill the screen with features to show how much the AI knows. What the product needed first was to decide what the doctor sees, and when.
+
+---
+
+#### Where I started
+
+#### 01.
+### How does an AI earn a doctor's trust?
+
+#### 02.
+### How do you show a lot of capability without showing a lot of things?
+
+#### 03.
+### How do you bring together schedule, consultation, documents and follow-up without becoming a heavy system?
+
+#### 04.
+### Where does technology help, and where does it get in the way of the consultation?
+
+---
+
+#### What I did in discovery
+
+### I anchored the product in two convictions.
+
+In the workshop, the team arrived at two lines that guided everything else. "The force that gives medicine back to the doctor", with the image of a rocket whose panel must not frighten. And "the tool the doctor is proud to use". Both became the criterion for every screen: if it frightens or tires, it does not go in.
+
+### I organised the product around the doctor's journey.
+
+The sitemap started from the doctor's day, not from the system's modules: schedule, Patient 360, in-person and telemedicine consultation, documents, follow-up and case series. Each module answers a moment in the journey, before, during or after the consultation, and Athena runs through all of them.
+
+![Health record sitemap](/assets/img/wecann-atena/sitemap.webp)
+
+### I chose the SaaS direction over the editorial one.
+
+The creative direction compared two versions of the same screen: an editorial one, more like a magazine, and a SaaS one, more like a tool. The final interface went with the light SaaS.
+
+![Editorial and SaaS directions side by side](/assets/img/wecann-atena/editorial-vs-saas.webp)
+
+---
+
+#### What I did in the product
+
+### I turned the home into a clinical copilot.
+
+The home opens with Athena and a greeting. Below, a command field with shortcuts: clinical decision support, documentation, calculators, guidelines and medication safety. Beside it, the day's schedule and recent sessions. Instead of a panel full of numbers, a question: what do you need now?
+
+![Opening animation of the wireframe](/assets/img/wecann-atena/intro.mp4)
+
+### I made every answer show where it came from.
+
+If trust comes from traceability, the answer has to prove what it says. Athena shows what it is doing while it thinks, answers in a structured way and ends with the scientific references and questions to carry on.
+
+![Athena answering a clinical question](/assets/img/wecann-atena/conversa-agente.mp4)
+
+### I put the patient inside the conversation.
+
+In "Discuss a case" mode, the doctor pins a patient to the question field. From then on, Athena answers with that patient's history in mind: the question stops being generic and becomes about that person.
+
+![Discuss a case with the patient pinned](/assets/img/wecann-atena/discutir-caso.webp)
+
+### I designed the whole consultation journey.
+
+Schedule, Patient 360, in-person and telemedicine consultation, document generation, follow-up after the consultation and case series. In the consultation, the transcription runs on its own and the record organises itself in SOAP, so the doctor looks at the patient and not at the keyboard. The special-control prescription comes out validated by Athena.
+
+![In-person consultation screen](/assets/img/wecann-atena/consulta-presencial.webp)
+
+![Prescriptions generated with Athena's validation](/assets/img/wecann-atena/gerar-documentos.webp)
+
+![Follow-up after the consultation and case series](/assets/img/wecann-atena/acompanhamento-e-casuistica.webp)
+
+### I wrote interface rules to protect attention.
+
+Accent colours only appear when they carry clinical meaning. There are no shadows, only contrast and thin dividers, and each screen has a single primary button. The typography has three voices: a serif for titles, a sans-serif for the interface and a mono for dosages and tables. Each rule exists to reduce what competes for the doctor's gaze.
+
+### I put the experience in code to feel the rhythm.
+
+We built a navigable high-fidelity wireframe in Next.js, three.js and GSAP. Pre-consultation, consultation and post-consultation sit in one continuous space, with the camera travelling between screens and Athena always present. The agent's answer there is simulated, but the rhythm of the conversation is the real one.
+
+---
+
+#### What changed
+
+### WeCann Care gained a product that treats AI as support for the doctor, not as spectacle.
+
+The interface trades density for focus. The consultation journey fits in one place. And the AI shows the evidence for every answer, which is what the doctors said they needed in order to trust it. Today the product presents itself as "an intelligence that works in your favour".
+
+---
+
+#### In hindsight
+
+### In a product with AI, the easy thing is to show everything it does. I learned that the design work is the opposite: show only what the doctor needs and keep the evidence one click away.
+
+### Putting the wireframe in code early changed the conversation with the client. Watching Athena answer in real time convinces more than any static screen.

@@ -7,7 +7,7 @@ import { Glyphs } from "@/components/text/Glyphs";
 import { CaseExit } from "@/components/work/CaseExit";
 import { CaseReveal } from "@/components/work/CaseReveal";
 import { PlateHud } from "@/components/work/PlateHud";
-import { caseSummary, getCaseSlugs, getCases, loadCase } from "@/lib/cases";
+import { getCaseSlugs, getCases, loadCase } from "@/lib/cases";
 import { alternatesFor, localizePath } from "@/lib/i18n/config";
 import { requireLocale } from "@/lib/i18n/locale";
 import { plateImage } from "@/lib/plate";
@@ -33,13 +33,13 @@ export async function generateMetadata({
   const slugs = await getCaseSlugs();
   if (!slugs.includes(slug)) notFound();
 
-  const { frontmatter } = await loadCase(slug);
   const typed = requireLocale(locale);
+  const { frontmatter } = await loadCase(slug, typed);
   const t = await getTranslations({ locale: typed, namespace: "meta" });
 
   return {
     title: t("workTitle", { title: frontmatter.title }),
-    description: caseSummary(frontmatter, locale),
+    description: frontmatter.summary,
     alternates: alternatesFor(`/work/${slug}`, typed),
     // Case com senha fica fora dos buscadores.
     ...(isLocked(slug) ? { robots: { index: false, follow: false } } : {}),
@@ -47,7 +47,7 @@ export async function generateMetadata({
       ...openGraphBase(typed, { siteName: t("title"), imageAlt: t("ogAlt") }),
       type: "article",
       title: t("workTitle", { title: frontmatter.title }),
-      description: caseSummary(frontmatter, locale),
+      description: frontmatter.summary,
     },
   };
 }
@@ -66,13 +66,6 @@ export async function generateMetadata({
  * chegada, e `aspect-ratio` vindo de `PANEL_ASPECT` porque o retângulo
  * precisa existir com o tamanho final **antes** de a imagem chegar: é ele que a
  * cena lê para saber onde parar.
- *
- * ## O que não é traduzido, e está declarado
- *
- * O corpo do MDX é único e está em português; `summary_en` dos quatro cases
- * migrados é hoje uma cópia literal de `summary_pt`. A rota em inglês existe,
- * resolve e é indexável — o que falta nela é tradução, não estrutura. Ver
- * AGENTS.md, "O que falta", item 1.
  */
 export default async function CasePage({
   params,
@@ -84,10 +77,10 @@ export default async function CasePage({
   const slugs = await getCaseSlugs();
   if (!slugs.includes(slug)) notFound();
 
-  const { frontmatter, Content, sizes } = await loadCase(slug);
+  const { frontmatter, Content, sizes } = await loadCase(slug, typed);
   const t = await getTranslations("cases");
 
-  const cases = await getCases();
+  const cases = await getCases(typed);
   const here = cases.findIndex((entry) => entry.slug === slug);
   const next = here < 0 ? undefined : cases[(here + 1) % cases.length];
 
@@ -157,7 +150,6 @@ export default async function CasePage({
           <Content
             components={caseComponents({
               frontmatter,
-              locale: typed,
               sizes,
               generatedLabel: t("case.generated"),
             })}

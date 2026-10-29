@@ -28,7 +28,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
   setRequestLocale(typed);
   const t = await getTranslations();
 
-  const cases = await getCases();
+  const cases = await getCases(typed);
   const stations = cases.map((entry) => ({
     slug: entry.slug,
     href: localizePath(`/work/${entry.slug}`, typed),
@@ -40,8 +40,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
   const captions = cases.map((entry) => ({
     title: entry.frontmatter.title,
     client: entry.frontmatter.client,
-    market:
-      typed === "pt" ? entry.frontmatter.market_pt : entry.frontmatter.market_en,
+    market: entry.frontmatter.market,
     year: entry.frontmatter.year,
     disciplines: entry.frontmatter.disciplines
       .map((discipline) => t(`cases.disciplines.${discipline}`))
@@ -108,7 +107,9 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
               // para leitor de tela.
               <ul className="sr-only">
                 {VITRINE.map((item) => (
-                  <li key={item.name}>{item.name}</li>
+                  <li key={item.name}>
+                    {typed === "pt" ? item.name : (item.name_en ?? item.name)}
+                  </li>
                 ))}
               </ul>
             ) : null}

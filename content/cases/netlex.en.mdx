@@ -1,0 +1,123 @@
+2025
+
+Product Designer @ netLex, via Atomsix
+
+# A legal platform showed the tool's structure. The redesign made it show each team's work.
+
+### Legal, Sales and HR use the same base without it becoming three products, and the AI recommends the next action at each stage of the contract.
+
+**My role**\
+Product Designer at Atomsix. Discovery, information architecture, onboarding, contract management with AI-recommended actions and the final screens.
+
+netLex is a legal and contract management platform. Legal, sales and HR departments use the product for documents, workflows, queries, powers of attorney and minutes. The project was a redesign of the web app: discovery, benchmark, sitemap and four interface iterations up to the final version.
+
+![Managing a contract in netLex](/assets/img/netlex/contrato-detalhe-v2.webp)
+
+---
+
+#### If you read only one part
+
+## The product was organised by folders, tabs and lists. Each team's journey did not show, and the contract was a raw document with no owner, deadline or next step.
+
+## What I did was reorganise the product around each team's work: Spaces with their own home, an onboarding that builds that home and an AI-recommended action to guide decision-making on the contract.
+
+## The result is a single base for different teams, with due dates and bottlenecks visible from the home and a contract that shows which stage it is at and what the next action is.
+
+---
+
+#### The problem
+
+The interface spoke the tool's language, not the language of the people using it.
+
+- Navigation followed the system's structure: folders, generic tabs and documents in a list.
+- The contract detail was the raw document, with no owners, deadlines or next step.
+- Legal, Sales and Procurement have different journeys, and the product treated them all the same.
+- Due dates, SLAs and bottlenecks were hidden inside the lists.
+
+![Before and after of contract management](/assets/img/netlex/antes-depois-contrato-v2.webp)
+
+The temptation was to redesign screen by screen. What the product needed first was to understand each team's work.
+
+---
+
+#### Where I started
+
+#### 01.
+### What does each team need to see when it opens the product?
+
+#### 02.
+### How do we serve different teams without creating three products?
+
+#### 03.
+### How do we guide the decision of someone who does not know which action to take at each stage of the contract?
+
+#### 04.
+### How does the product learn who the user is without a tiresome sign-up?
+
+---
+
+#### What I did in discovery
+
+### I mapped each team's work before touching the interface.
+
+I wrote the jobs to be done and the journeys of three teams, each with stages, actions and expected outcome. Legal goes from internal review to approval, signature, storage, monitoring and reports. Sales goes from creation to external negotiation and post-signature. Procurement tracks contracts, due dates and alerts. Each journey became a proposed flow, from login to action.
+
+![Jobs to be done and journeys per team](/assets/img/netlex/jornadas-jtbd.webp)
+
+### I used the benchmark to separate structure from use case.
+
+Monday and Asana showed how a single product organises different workflows by use case. Ironclad was the direct reference for legal contract management, with a repository and a dashboard. From there came the architecture decision: common modules for everyone, and Spaces per team on top of them.
+
+### I turned the findings into insights per module.
+
+For each part of the product, I wrote what to change. The home now shows the status that matters to each team: Procurement sees what is about to expire, Legal what is under review, Sales what is close to closing. Filters by profile move to the foreground. And the document gets a next-step panel.
+
+---
+
+#### What I did in the product
+
+### I designed an onboarding that builds the product for each person.
+
+Instead of a generic sign-up, the onboarding asks five things: the role, the department, the main use cases, what the company calls its document types and which indicators the person tracks. The taxonomy comes with suggestions, and a step can be skipped and revisited later. At the end, the product sets up that Space's home with the chosen indicators.
+
+![The five onboarding steps](/assets/img/netlex/onboarding-etapas-v2.webp)
+
+### I organised the product into Spaces per team.
+
+Each team has its own Space, with its own home, on top of common modules: Workflow, Documents, Contacts, Intel and Settings. Spaces open like browser tabs, and when the tabs overflow the width, a search appears to find the hidden ones. On the home, the metrics show what is due today and the SLA, with the change against the previous month.
+
+![Legal Space home](/assets/img/netlex/home-juridico-v2.webp)
+
+### I wrote the rules for the home grid.
+
+For the same home to serve different teams without breaking, I defined rules for each block. The actions row has one to four items and cannot be hidden. Metrics use three or four columns, with one or two large numbers, and cannot be hidden either. Contacts, documents and activity use one or two columns and can be hidden. The rules sat on sticky notes in Figma itself, next to the screens.
+
+![Rules of the modular home grid](/assets/img/netlex/home-regras-de-layout.webp)
+
+### I made the document list show where each one stands.
+
+The repository gained a folder tree, search by document content and, on each row, the author, the folder and the workflow stage. Before, the list was generic. Now it answers where each document stands without opening it.
+
+![Before and after of the document list](/assets/img/netlex/antes-depois-documentos-v2.webp)
+
+![Document repository](/assets/img/netlex/documentos-v2.webp)
+
+### I put the AI to work recommending the next action at each stage of the contract.
+
+It came up that users did not know which action to take at that stage of the contract. Contract management became leaner: a stepper with the stages, from drafting to negotiation, financial approval and signature, the contract tabs and the Recommended Actions button, where the AI suggests the next step of the current stage to guide decision-making. The tools sit in a floating toolbar. It took three rounds of layout to get here, and the panel kept opening on the right, as in the current product, so as not to break the habit of those already using it.
+
+---
+
+#### What changed
+
+### The product became organised around each team's work, not the tool's structure.
+
+The same base serves Legal, Sales and HR. The onboarding sets up each profile's home. The document list shows the stage of each one. And, on the contract, the AI recommends the next action at each stage.
+
+---
+
+#### In hindsight
+
+### Writing the grid rules on sticky notes, next to the screens, is what made the modular home work. Without a rule, each team would ask for its own exception.
+
+### Keeping the document panel on the right, as it already was, was a small choice that avoided a large cost. In a redesign, not every change needs to be a change.

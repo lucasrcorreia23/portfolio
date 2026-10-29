@@ -1,0 +1,204 @@
+January 2026 to today
+
+Partner and Product Engineer @ Perfecting
+
+# An AI salestech that learned to see itself before it grew, and design that goes from data to code.
+
+### Sales practice only works if it feels like a real call. Everything else follows from that.
+
+**My role**\
+Partner, Product Engineer. Product, interface, frontend and data.
+
+**Period**\
+January 2026 to today
+
+**Team**\
+Lean startup, with CEO, engineering, research and operations
+
+**Clients**\
+FIESC, a pilot with RD Station and other B2B companies
+
+**Status**\
+Ongoing, in stealth
+
+Perfecting is a Brazilian salestech startup still operating in stealth. On the platform, reps practise voice calls with AI-simulated buyers before facing the real customer, and managers follow the team's progress. When I joined as a partner, in January 2026, there was barely an API. The product took shape, but with no way of knowing whether it worked well.
+
+![Pre-training briefing and call in progress](/assets/img/perfecting/antes-e-durante.webp)
+
+---
+
+#### If you read only one part
+
+## When I joined, Perfecting barely had an API. As the product grew, there was no reliable way to know how it was used, and every product decision ended in opinion.
+
+## What I led was turning the product into something that lets itself be observed, and using that reading to decide what to build and, above all, what to refuse.
+
+## The instrumentation and the principle of realism over didacticism are now the foundation the product is built on.
+
+---
+
+#### The problem
+
+There was no shortage of ideas. There was a shortage of evidence.
+
+With a small team, every week of work in the wrong direction is expensive. And without data, every direction looks right to whoever defends it.
+
+- No reliable reading of where the rep got stuck or gave up.
+- A third of the events we needed to measure had no backend endpoint to come from.
+- Internal users contaminating the dashboards even after being filtered out. My profile alone had more than seventeen merged anonymous identities.
+- A 47-second wait between the end of the call and the feedback.
+- Usage still far from the frequency practice needs to become a habit.
+
+Each of these problems called for a new screen. The temptation was to start designing. What the product needed first was to learn to see itself.
+
+---
+
+#### Where I started
+
+It was not possible to solve everything at once, so the work began with questions, not answers.
+
+#### 01.
+### How do we decide with evidence, not opinion?
+
+#### 02.
+### Where exactly does the rep give up?
+
+#### 03.
+### What makes AI practice feel real?
+
+#### 04.
+### How do we prioritise with a small team and scarce backend?
+
+#### 05.
+### How does design arrive before the decision, not after it?
+
+---
+
+#### What I did with the data
+
+### I instrumented the whole journey before touching any screen.
+
+I designed the tracking plan in PostHog from sign-up to the end of each roleplay, with attributes for plan, organisation, role and team size. That let us compare rep with manager and company with company, instead of looking at an average that represented no one.
+
+### I renegotiated the scope instead of waiting for the backend.
+
+I cross-checked every event against the API and found that a third of them had nowhere to come from. Waiting would have meant months with no data at all. I took billing and chat out of this phase, sent default values where information was missing, derived on the frontend everything it already knew and marked in the code what depended on a new endpoint. A tracking plan that waits for the perfect API never reaches production.
+
+### I found that the data was lying, and fixed it in the code.
+
+Internal users kept showing up in the dashboards even when filtered out. The cause was in how anonymous sessions were merged after login, carrying events with no email and no organisation. I implemented the fix on the frontend myself, with direct exclusion in the SDK, a layer that only fires events with an identified user and a single identifier across the whole app. Data is only useful for deciding when you can trust it, and trust in data is engineering work, not dashboard work.
+
+---
+
+#### What I did in the product
+
+### I turned twelve interviews into five problems and one sprint.
+
+The team's researcher ran twelve interviews with reps and managers. I structured the discovery in Figma in seven phases, from evidence to instrumentation, and held the team back from jumping to features before the hypotheses were written down. Out came three rep profiles, three indicators for the sprint and five macro-problems.
+
+### I used RICE as a tool, not as an oracle.
+
+I corrected inflated effort estimates, because I knew part of the work was frontend and I could do it myself. That changed the ranking. But the ranking alone lied in another way, because it treated the problems as independent. Creating a reason to come back in a product that breaks immersion only speeds up churn. The sprint combined three fronts in parallel, with the backend on immersion and the frontend on the post-call and onboarding. Of the 86 solutions generated, only what made sense in the impact-by-effort matrix stayed.
+
+### I took out of the call everything that felt like a lesson.
+
+Live transcription, on-screen tips, real-time indicators. I rejected all of it on purpose. The product's value lies in the pressure of a real conversation, and every bit of help during the call pulls the rep out of that state. The rule became structure. Before the call comes the context, during it there is only the conversation, and after it comes all the learning, with feedback and a clear invitation to try again.
+
+![Before the call: the context](/assets/img/perfecting/briefing.webp)
+
+![During the call: only the conversation](/assets/img/perfecting/ligacao.webp)
+
+![After the call: the learning](/assets/img/perfecting/resultado.webp)
+
+### I treated the persona as interface.
+
+On a roleplay platform, the simulated buyer is the product's most important screen. I designed the personas' behaviour based on real sales methodologies, wrote the prompts for the voice agents and reviewed the rubrics that generate the feedback. A persona that gives in too easily teaches the rep to sell wrong.
+
+![Growth areas and strengths in the result](/assets/img/perfecting/resultado-crescimento.webp)
+
+### I reorganised practice around the way consultative sales actually happen.
+
+For clients with their own playbook, practice now follows the stages of that playbook. At FIESC, which already sells with SPIN Selling, the roleplay tracks were built on that method instead of imposing one of ours. Today the product works with SPIN, MEDDIC and SPICED, and the AI buyer is assembled from each company's offer, objections and customer profile. The roleplay list, which was grouped by offer, is moving to grouping by conversation stage, because in consultative selling the offer often does not even exist yet at the diagnosis stage.
+
+---
+
+#### What I did with customers
+
+### I went into the field at RD Station.
+
+I made a research visit with recorded interviews and conversations with the sales team. I found that a rep spent between 10 and 40 minutes preparing each lead, and that this preparation was simply skipped in some cases. The rep's problem did not start on the call; it started before it. Being close to the people who buy the product changed how I design for the people who use it.
+
+### A pilot that was going well, and a business case that did not close.
+
+RD was a pilot, and the reps' feedback was very positive, to the point that the sales manager was already sending the platform purchase to legal. The contract did not come through for a reason outside the product: a company RD had acquired also launched roleplays, and a roleplay integrated into what they already used, with value on day one, beat ours, which needed eight weeks of implementation. The loss did not invalidate the product's thesis. It invalidated the order of entry: something light first, the heavy implementation later.
+
+### I audited the product before putting 120 reps on it.
+
+FIESC signed with Perfecting to have 120 reps practising between September and November. Before release, I ran an audit of the roleplays in staging, with manual tests and an end-to-end simulation of 22 steps.
+
+The result was harsh. In 6 of the 22 calls the feedback never arrived, because of a race condition in the pipeline. The live checklist took 10.5 seconds at p90, against a target of 3. A third of the checks were triggered by the buyer's speech, not the rep's. And the buyer hung up on its own, because the instruction to end the call was in 21 of the 22 prompts. In total, 23 critical and 97 serious problems came out.
+
+The conclusion was that the roleplays were not yet ready for reps. Finding that out internally, before launch, is exactly what an audit is for. Each finding became a measurable acceptance criterion, and the launch came to depend on numbers, not impressions.
+
+---
+
+#### What I did in engineering
+
+### I got my hands on the infrastructure and the models.
+
+I took part in the load tests to understand how many simultaneous calls the product could handle before the experience degraded. I built a synthetic data pipeline in Python for fine-tuning the models, with conversations generated between agents and a quality-scoring step.
+
+### I wrote the website from the product that exists.
+
+I built the product page using as the source of truth a feature inventory I took straight from the app. The site talks about the real product, not the product we would like to have.
+
+---
+
+#### In numbers
+
+# 12
+interviews with reps and managers turned into five macro-problems
+
+# 86
+solutions generated and filtered through an impact-by-effort matrix
+
+# 13
+production-ready AI personas in a single client package
+
+# 22
+steps simulated end to end in the audit before the launch for FIESC
+
+# 120
+problems mapped before a single rep saw the product, 23 of them critical
+
+---
+
+#### Today
+
+### Open a session on Perfecting today. The context before the call, the conversation with no interference, all the learning concentrated at the end and the events that measure every step. These are the definitions I wrote, and they still guide every new product decision.
+
+All of this happens in a product with a look of its own: indigo as the main colour, amber as the accent and terracotta in the framing. The look and feel comes from the product itself and keeps evolving with it.
+
+![Perfecting login screen](/assets/img/perfecting/login.webp)
+
+After each session, the rep receives a scorecard for clarity, active listening and objection handling. The manager sees skill gaps and the team ranking in real time. And getting into the client became light, the lesson from the RD pilot: sessions start within 48 hours of onboarding, with around two hours of configuration.
+
+![Manager analytics](/assets/img/perfecting/analytics.mp4)
+
+![Heatmap by rep and criterion](/assets/img/perfecting/analytics-mapa.webp)
+
+![Manager home](/assets/img/perfecting/home.webp)
+
+The screens were never the main deliverable. The deliverable was a product that lets itself be observed and a set of principles clear enough that anyone on the team can decide without asking me.
+
+---
+
+#### In hindsight
+
+### When I arrived, I wanted to redesign everything straight away, and holding back felt slow. Looking at it now, the weeks spent instrumenting and fixing data were the most important of the project. Without them, every new screen would be just another well-drawn opinion.
+
+### In a small team, it is easy to become the person who executes everything. It took me a while to understand that my most valuable contribution was not in the execution but in the decisions that came before it. Today I fight for the authorship of those decisions with the same energy I give to the screens.
+
+### The RD pilot taught me that good feedback does not guarantee a contract. The product can be right and the way into the client, wrong.
+
+### At Perfecting, my medium stopped being just Figma. It became PostHog, the persona prompt, the repository and the conversation with the client. A design decision that does not reach the data and the code does not really exist.

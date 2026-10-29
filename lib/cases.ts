@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import type { MDXProps } from "mdx/types";
 import { DISCIPLINES, type Discipline } from "./disciplines";
+import type { Locale } from "./i18n/config";
 import { imageSize, type MediaSize } from "./media-size";
 import type { PaletteToken } from "./palette";
 
@@ -19,15 +20,21 @@ import type { PaletteToken } from "./palette";
  * repositório e não tem rota (hoje: `nestle`, `zoomtecnologia` e
  * `unifique-energia`, que ficou só com uma tela na vitrine).
  *
- * `title` sobrepõe o do frontmatter sem tocar no arquivo.
+ * ## Dois idiomas, dois arquivos
+ *
+ * `{slug}.mdx` é o português e carrega o frontmatter, com os campos de texto
+ * em par (`title` / `title_en`, `summary_pt` / `summary_en`…). `{slug}.en.mdx`
+ * é só o corpo em inglês. A rota em inglês importa o segundo; se ele não
+ * existir, ou faltar um campo `_en`, o `next build` quebra — é assim que uma
+ * mudança no português não vai ao ar sem a contraparte.
  */
-const PUBLISHED: readonly { slug: string; title?: string }[] = [
-  { slug: "netlex" },
-  { slug: "perfecting" },
-  { slug: "wecann-atena" },
-  { slug: "portonave" },
-  { slug: "decision-suite" },
-  { slug: "prime8" },
+const PUBLISHED: readonly string[] = [
+  "netlex",
+  "perfecting",
+  "wecann-atena",
+  "portonave",
+  "decision-suite",
+  "prime8",
 ];
 
 export const ACCENT_TOKENS = [
@@ -42,10 +49,18 @@ export type AccentToken = (typeof ACCENT_TOKENS)[number];
 
 export { DISCIPLINES, type Discipline };
 
-export type CaseMedia = {
+type CaseMediaInput = {
   src: string;
   alt_pt: string;
   alt_en: string;
+  generated?: boolean;
+  poster?: string;
+};
+
+/** A mídia já no idioma da rota. */
+export type CaseMedia = {
+  src: string;
+  alt: string;
   generated: boolean;
   /**
    * O quadro parado de um vídeo (`.mp4`). É dele que saem as dimensões, porque
@@ -57,10 +72,15 @@ export type CaseMedia = {
 /** O que um `.mdx` escreve. `river_rank` é da direção antiga e é ignorado. */
 export type CaseFrontmatterInput = {
   title: string;
+  title_en: string;
   client: string;
+  /** Só quando o cliente não é nome próprio ("Agentes de IA"). */
+  client_en?: string;
   year: number;
   role: string;
+  role_en: string;
   stack: string[];
+  stack_en: string[];
   summary_pt: string;
   summary_en: string;
   /** O mercado do projeto, na legenda da home: "Salestech", "Energia". */
@@ -68,22 +88,21 @@ export type CaseFrontmatterInput = {
   market_en: string;
   accent: AccentToken;
   cover: string;
-  media: Array<Omit<CaseMedia, "generated"> & { generated?: boolean }>;
+  media: CaseMediaInput[];
   disciplines: Discipline[];
   river_rank?: number;
   generated?: boolean;
 };
 
+/** O frontmatter já no idioma da rota: um texto por campo. */
 export type CaseFrontmatter = {
   title: string;
   client: string;
   year: number;
   role: string;
   stack: readonly string[];
-  summary_pt: string;
-  summary_en: string;
-  market_pt: string;
-  market_en: string;
+  summary: string;
+  market: string;
   accent: AccentToken;
   /** A capa do frontmatter. A capa exibida é a montagem da placa (`lib/plate.ts`). */
   cover: string;
@@ -110,14 +129,19 @@ type CaseModule = {
 
 /** Os slugs publicados, na ordem fixa. É o que gera as rotas e o sitemap. */
 export async function getCaseSlugs(): Promise<string[]> {
-  return PUBLISHED.map((entry) => entry.slug);
+  return [...PUBLISHED];
 }
 
-export async function loadCase(slug: string): Promise<LoadedCase> {
-  const mod = (await import(`@/content/cases/${slug}.mdx`)) as CaseModule;
-  const parsed = parseFrontmatter(slug, mod.frontmatter);
-  const title = PUBLISHED.find((entry) => entry.slug === slug)?.title;
-  const frontmatter = title === undefined ? parsed : { ...parsed, title };
+export async function loadCase(
+  slug: string,
+  locale: Locale,
+): Promise<LoadedCase> {
+  const pt = (await import(`@/content/cases/${slug}.mdx`)) as CaseModule;
+  const frontmatter = parseFrontmatter(slug, pt.frontmatter, locale);
+  const Content =
+    locale === "pt"
+      ? pt.default
+      : ((await import(`@/content/cases/${slug}.en.mdx`)) as CaseModule).default;
 
   const sizes: Record<string, MediaSize> = {};
   await Promise.all(
@@ -126,25 +150,18 @@ export async function loadCase(slug: string): Promise<LoadedCase> {
       if (size !== null) sizes[item.src] = size;
     }),
   );
-  return { slug, frontmatter, Content: mod.default, sizes };
+  return { slug, frontmatter, Content, sizes };
 }
 
-/** Os cases publicados, na ordem fixa de `PUBLISHED`. */
-export async function getCases(): Promise<CaseEntry[]> {
+/** Os cases publicados, na ordem fixa de `PUBLISHED`, no idioma pedido. */
+export async function getCases(locale: Locale): Promise<CaseEntry[]> {
   const slugs = await getCaseSlugs();
   return Promise.all(
     slugs.map(async (slug) => {
-      const { frontmatter } = await loadCase(slug);
+      const { frontmatter } = await loadCase(slug, locale);
       return { slug, frontmatter };
     }),
   );
-}
-
-export function caseSummary(
-  frontmatter: CaseFrontmatter,
-  locale: string,
-): string {
-  return locale === "pt" ? frontmatter.summary_pt : frontmatter.summary_en;
 }
 
 function fail(slug: string, message: string): never {
@@ -200,7 +217,7 @@ function requireOneOf<T extends string>(
   return value as T;
 }
 
-function parseMedia(slug: string, raw: unknown): CaseMedia[] {
+function parseMedia(slug: string, raw: unknown, locale: Locale): CaseMedia[] {
   if (!Array.isArray(raw)) {
     fail(slug, "`media` precisa ser um array (pode ser vazio).");
   }
@@ -211,10 +228,11 @@ function parseMedia(slug: string, raw: unknown): CaseMedia[] {
     const entry = item as Record<string, unknown>;
     const where = `media[${index}]`;
     const src = requireString(slug, entry, "src", where);
+    const alt_pt = requireString(slug, entry, "alt_pt", where);
+    const alt_en = requireString(slug, entry, "alt_en", where);
     const media: CaseMedia = {
       src,
-      alt_pt: requireString(slug, entry, "alt_pt", where),
-      alt_en: requireString(slug, entry, "alt_en", where),
+      alt: locale === "pt" ? alt_pt : alt_en,
       generated: entry["generated"] === true,
     };
     if (src.toLowerCase().endsWith(".mp4")) {
@@ -224,8 +242,13 @@ function parseMedia(slug: string, raw: unknown): CaseMedia[] {
   });
 }
 
-export function parseFrontmatter(slug: string, raw: unknown): CaseFrontmatter {
+export function parseFrontmatter(
+  slug: string,
+  raw: unknown,
+  locale: Locale,
+): CaseFrontmatter {
   const record = asRecord(slug, raw);
+  const pick = <T,>(pt: T, en: T): T => (locale === "pt" ? pt : en);
 
   const year = record["year"];
   if (typeof year !== "number" || !Number.isInteger(year)) {
@@ -247,19 +270,36 @@ export function parseFrontmatter(slug: string, raw: unknown): CaseFrontmatter {
     );
   }
 
+  const client = requireString(slug, record, "client");
   return {
-    title: requireString(slug, record, "title"),
-    client: requireString(slug, record, "client"),
+    title: pick(
+      requireString(slug, record, "title"),
+      requireString(slug, record, "title_en"),
+    ),
+    client: pick(
+      client,
+      typeof record["client_en"] === "string" ? record["client_en"] : client,
+    ),
     year,
-    role: requireString(slug, record, "role"),
-    stack: requireStringArray(slug, record, "stack"),
-    summary_pt: requireString(slug, record, "summary_pt"),
-    summary_en: requireString(slug, record, "summary_en"),
-    market_pt: requireString(slug, record, "market_pt"),
-    market_en: requireString(slug, record, "market_en"),
+    role: pick(
+      requireString(slug, record, "role"),
+      requireString(slug, record, "role_en"),
+    ),
+    stack: pick(
+      requireStringArray(slug, record, "stack"),
+      requireStringArray(slug, record, "stack_en"),
+    ),
+    summary: pick(
+      requireString(slug, record, "summary_pt"),
+      requireString(slug, record, "summary_en"),
+    ),
+    market: pick(
+      requireString(slug, record, "market_pt"),
+      requireString(slug, record, "market_en"),
+    ),
     accent: requireOneOf(slug, record, "accent", ACCENT_TOKENS),
     cover: requireString(slug, record, "cover"),
-    media: parseMedia(slug, record["media"]),
+    media: parseMedia(slug, record["media"], locale),
     disciplines: disciplines as Discipline[],
     generated: record["generated"] === true,
   };

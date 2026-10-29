@@ -4,7 +4,6 @@ import Image from "next/image";
 import type { MDXComponents } from "mdx/types";
 import type { CaseFrontmatter } from "@/lib/cases";
 import type { MediaSize } from "@/lib/media-size";
-import type { Locale } from "@/lib/i18n/config";
 
 /**
  * O corpo de um case, com a mídia dele intercalada no texto.
@@ -19,20 +18,14 @@ import type { Locale } from "@/lib/i18n/config";
  *
  * ## O texto alternativo sai do `media[]`, não do Markdown
  *
- * O `![alt](src)` dos quatro cases migrados carrega o alt em português, porque
- * foi assim que o corpo foi escrito. Mas o `frontmatter.media[]` já tem
- * `alt_pt` **e** `alt_en` — descrições escritas para a migração, não tradução de
- * conteúdo do Lucas (o site antigo não tinha alt text nenhum). Buscar ali pelo
- * `src` é o que faz a rota em inglês parar de descrever imagens em português, e
- * de graça: os dois campos já existem e já são validados.
- *
- * O alt do Markdown fica como reserva, para uma imagem que esteja no corpo e não
- * no `media[]`.
+ * O `frontmatter.media[]` chega do loader já no idioma da rota, com o `alt`
+ * resolvido. Buscar ali pelo `src` é o que garante a mesma descrição nos dois
+ * idiomas, validada no build. O alt do Markdown fica como reserva, para uma
+ * imagem que esteja no corpo e não no `media[]`.
  */
 
 type CaseComponentDeps = {
   frontmatter: CaseFrontmatter;
-  locale: Locale;
   sizes: Readonly<Record<string, MediaSize>>;
   /** `work.case.generated`, para marcar a imagem que ainda não é a definitiva. */
   generatedLabel: string;
@@ -87,7 +80,6 @@ function countImages(children: ReactNode, Img: unknown): {
 
 export function caseComponents({
   frontmatter,
-  locale,
   sizes,
   generatedLabel,
 }: CaseComponentDeps): MDXComponents {
@@ -96,12 +88,7 @@ export function caseComponents({
   const Img: MDXComponents["img"] = (props) => {
     const src = typeof props.src === "string" ? props.src : "";
     const entry = bySrc.get(src);
-    const alt =
-      entry === undefined
-        ? (props.alt ?? "")
-        : locale === "pt"
-          ? entry.alt_pt
-          : entry.alt_en;
+    const alt = entry === undefined ? (props.alt ?? "") : entry.alt;
     const size = sizes[src];
 
     // Vídeo é um loop curto e mudo, no lugar de um GIF: toca sozinho, sem

@@ -23,6 +23,8 @@ export type VitrineScreen = {
 
 export type VitrineItem = {
   name: string;
+  /** Só quando o nome não é nome próprio ("Agentes de IA"). */
+  name_en?: string;
   year?: number;
   discipline?: string;
   type?: string;
@@ -93,6 +95,7 @@ export const VITRINE: readonly VitrineItem[] = [
   },
   {
     name: "Agentes de IA",
+    name_en: "AI agents",
     year: 2026,
     discipline: "Produto · Sistema",
     slug: "wecann-atena",

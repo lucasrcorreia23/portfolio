@@ -17,9 +17,10 @@ export default async function SceneLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  setRequestLocale(requireLocale(locale));
+  const typed = requireLocale(locale);
+  setRequestLocale(typed);
 
-  const panels = (await getCases()).map((entry, index) => ({
+  const panels = (await getCases(typed)).map((entry, index) => ({
     slug: entry.slug,
     title: entry.frontmatter.title,
     client: entry.frontmatter.client,
