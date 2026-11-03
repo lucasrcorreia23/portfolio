@@ -20,6 +20,6 @@ export function openGraphBase(
     siteName: text.siteName,
     locale: locale === "pt" ? "pt_BR" : "en_US",
     alternateLocale: locale === "pt" ? "en_US" : "pt_BR",
-    images: [{ url: "/og.jpg", width: 1200, height: 630, alt: text.imageAlt }],
+    images: [{ url: "/og.jpg?v=2", width: 1200, height: 630, alt: text.imageAlt }],
   };
 }
