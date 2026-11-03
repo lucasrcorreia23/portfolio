@@ -11,6 +11,7 @@ import { stops } from "@/lib/scene/stops";
 import { descentFromScroll, scrollFromDescent } from "./descent-map";
 import { publishFrame } from "./frame-bus";
 import {
+  consumePageScroll,
   consumeScrollRequest,
   consumeScrollResize,
   getScrollRole,
@@ -58,6 +59,8 @@ export default function ScrollDriver() {
         if (wanted !== null) {
           window.scrollTo({ top: wanted * limitOf(), behavior: "auto" });
         }
+        const page = consumePageScroll();
+        if (page !== null) window.scrollTo({ top: page, behavior: "auto" });
         readNativeScroll();
       };
 
@@ -156,6 +159,8 @@ export default function ScrollDriver() {
       if (wanted !== null) {
         lenis.scrollTo(wanted * lenis.limit, { immediate: true, force: true });
       }
+      const page = consumePageScroll();
+      if (page !== null) lenis.scrollTo(page);
 
       // O ticker do GSAP conta em segundos; o Lenis quer milissegundos.
       lenis.raf(time * 1000);

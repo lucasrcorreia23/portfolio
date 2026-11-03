@@ -91,6 +91,8 @@ let pendingScrollTo: number | null = null;
  * a curva.
  */
 let pendingResize = false;
+/** Um salto da página do case, em pixels do documento (`requestPageScroll`). */
+let pendingPageScroll: number | null = null;
 
 function clamp01(value: number): number {
   if (!Number.isFinite(value)) return 0;
@@ -177,6 +179,22 @@ export function consumeScrollRequest(): number | null {
   pendingScrollTo = null;
   // O pedido vem em progresso da descida; o driver rola o documento.
   return value === null ? null : scrollFromDescent(value);
+}
+
+/**
+ * Pede ao driver para levar a página a este pixel, em qualquer rota. É o
+ * sumário do case (`CaseToc`): com o Lenis ligado, um `window.scrollTo` direto
+ * volta para a posição dele no quadro seguinte.
+ */
+export function requestPageScroll(top: number): void {
+  pendingPageScroll = Math.max(top, 0);
+}
+
+/** Consumido pelo driver, dentro do ticker. */
+export function consumePageScroll(): number | null {
+  const value = pendingPageScroll;
+  pendingPageScroll = null;
+  return value;
 }
 
 /** Idem, para a remedida. */

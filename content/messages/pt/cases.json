@@ -15,10 +15,11 @@
     "back": "Voltar",
     "backTitle": "Voltar à descida",
     "next": "Próximo",
-    "role": "Papel",
-    "stack": "Stack",
-    "disciplines": "Disciplinas",
+    "stack": "Serviços",
     "cover": "{title} — capa do projeto",
-    "generated": "Imagem gerada"
+    "generated": "Imagem gerada",
+    "toc": "Sumário",
+    "intro": "Introdução",
+    "period": "Período"
   }
 }

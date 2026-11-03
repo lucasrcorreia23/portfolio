@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Glyphs } from "@/components/text/Glyphs";
 import { CaseExit } from "@/components/work/CaseExit";
 import { CaseReveal } from "@/components/work/CaseReveal";
+import { CaseToc } from "@/components/work/CaseToc";
 import { PlateHud } from "@/components/work/PlateHud";
 import { getCaseSlugs, getCases, loadCase } from "@/lib/cases";
 import { alternatesFor, localizePath } from "@/lib/i18n/config";
@@ -130,31 +131,30 @@ export default async function CasePage({
             className="case-meta type-mono w-fit"
             style={{ "--wait": "700ms" } as CSSProperties}
           >
-            <dt>{t("case.role")}</dt>
-            <dd>{frontmatter.role}</dd>
-            <dt>{t("case.disciplines")}</dt>
-            <dd>
-              {frontmatter.disciplines
-                .map((discipline) => t(`disciplines.${discipline}`))
-                .join(" · ")}
-            </dd>
             <dt>{t("case.stack")}</dt>
             <dd>{frontmatter.stack.join(" · ")}</dd>
+            <dt>{t("case.period")}</dt>
+            <dd>{frontmatter.period}</dd>
           </dl>
         </div>
 
-        <article className="case-body">
-          {/* A âncora do véu do corpo: uma caixa da largura da medida de
-              leitura, aparada pela janela em `readVeilBoxes`. */}
-          <span aria-hidden="true" data-veil className="case-veil" />
-          <Content
-            components={caseComponents({
-              frontmatter,
-              sizes,
-              generatedLabel: t("case.generated"),
-            })}
-          />
-        </article>
+        {/* O corpo e o sumário: em tela larga, o sumário fica fixo numa
+            coluna à direita; abaixo disso ele não aparece. */}
+        <div className="case-shell">
+          <article className="case-body">
+            {/* A âncora do véu do corpo: uma caixa da largura da medida de
+                leitura, aparada pela janela em `readVeilBoxes`. */}
+            <span aria-hidden="true" data-veil className="case-veil" />
+            <Content
+              components={caseComponents({
+                frontmatter,
+                sizes,
+                generatedLabel: t("case.generated"),
+              })}
+            />
+          </article>
+          <CaseToc title={t("case.toc")} intro={t("case.intro")} />
+        </div>
 
         {next === undefined ? null : (
           <footer data-veil className="case-foot type-mono text-hud">

@@ -15,10 +15,11 @@
     "back": "Back",
     "backTitle": "Back to the descent",
     "next": "Next",
-    "role": "Role",
-    "stack": "Stack",
-    "disciplines": "Disciplines",
+    "stack": "Services",
     "cover": "{title} — project cover",
-    "generated": "Generated image"
+    "generated": "Generated image",
+    "toc": "Contents",
+    "intro": "Introduction",
+    "period": "Period"
   }
 }

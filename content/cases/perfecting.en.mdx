@@ -1,27 +1,21 @@
-January 2026 to today
+Head of Product and Design, Design Engineer @ Perfecting
 
-Partner and Product Engineer @ Perfecting
+# An AI salestech that learned to prove its own value before it grew, and that today trains the reps of the FIESC System.
 
-# An AI salestech that learned to see itself before it grew, and design that goes from data to code.
-
-### Sales practice only works if it feels like a real call. Everything else follows from that.
-
-**My role**\
-Partner, Product Engineer. Product, interface, frontend and data.
-
-**Period**\
-January 2026 to today
+### Sales practice only pays off if it feels like a real call, and if the manager can show the return to whoever signs the contract.
 
 **Team**\
-Lean startup, with CEO, engineering, research and operations
+Four people: the CEO, me on product, a fractional CTO focused on DevOps and someone who runs sales and CS operations
 
 **Clients**\
-FIESC, a pilot with RD Station and other B2B companies
+FIESC System (FIESC, SESI, SENAI, IEL and CIESC), a pilot with RD Station and other B2B companies
 
 **Status**\
-Ongoing, in stealth
+In operation, with FIESC committed to buying in the federation's next procurement window
 
-Perfecting is a Brazilian salestech startup still operating in stealth. On the platform, reps practise voice calls with AI-simulated buyers before facing the real customer, and managers follow the team's progress. When I joined as a partner, in January 2026, there was barely an API. The product took shape, but with no way of knowing whether it worked well.
+Perfecting is a Brazilian salestech startup. On the platform, reps practise voice calls with AI-simulated buyers before facing the real customer, and managers follow the team's progress. When I joined, in January 2026, there was barely an API. There was no defined price, no way to measure usage and no way to show the client that the practice paid off. I took on discovery, product, design and the entire frontend, and when the CTO left I took on the backend too.
+
+In a four-person startup, the pace is fast and everyone takes on more than their own scope. I also covered CS and marketing, but this case stays with product, data, design and engineering.
 
 ![Pre-training briefing and call in progress](/assets/img/perfecting/antes-e-durante.webp)
 
@@ -29,64 +23,63 @@ Perfecting is a Brazilian salestech startup still operating in stealth. On the p
 
 #### If you read only one part
 
-## When I joined, Perfecting barely had an API. As the product grew, there was no reliable way to know how it was used, and every product decision ended in opinion.
+## When I joined, Perfecting had a good idea and no evidence. Nobody knew how the product was used, what it should cost or how to prove it was worth the investment.
 
-## What I led was turning the product into something that lets itself be observed, and using that reading to decide what to build and, above all, what to refuse.
+## I led product and design for a complete AI-driven product where every decision was based on data: what to build, how to build it, what to refuse and how to sell.
 
-## The instrumentation and the principle of realism over didacticism are now the foundation the product is built on.
+## In three weeks of operation at FIESC, 77 of 135 reps were already practising regularly, adding up to 470 sessions. The federation committed to buying the tool in its next procurement window.
 
 ---
 
 #### The problem
 
-There was no shortage of ideas. There was a shortage of evidence.
+There was no shortage of ideas. There was a shortage of evidence of value.
 
-With a small team, every week of work in the wrong direction is expensive. And without data, every direction looks right to whoever defends it.
+In a small startup, every week in the wrong direction is expensive. And in a B2B product, the person who uses it is not the person who pays. The rep needs to feel that the practice helps, and the manager needs to prove it to finance.
 
 - No reliable reading of where the rep got stuck or gave up.
-- A third of the events we needed to measure had no backend endpoint to come from.
-- Internal users contaminating the dashboards even after being filtered out. My profile alone had more than seventeen merged anonymous identities.
-- A 47-second wait between the end of the call and the feedback.
-- Usage still far from the frequency practice needs to become a habit.
+- No number the manager could take to whoever approves the purchase.
+- A price still undefined, in a product where every minute of a call has a language model and infrastructure cost.
+- An implementation done by hand, slow and hard to repeat for every new client.
 
-Each of these problems called for a new screen. The temptation was to start designing. What the product needed first was to learn to see itself.
+Each of these problems called for a new screen. The temptation was to start designing. What the product needed first was to learn to see itself, and to explain itself to the people who buy it.
 
 ---
 
 #### Where I started
 
-It was not possible to solve everything at once, so the work began with questions, not answers.
+The first questions were about willingness to pay, product-market fit, usefulness, product and experience. They guided the discovery work with real reps and managers.
 
 #### 01.
-### How do we decide with evidence, not opinion?
+### How much is the client willing to pay, and per what unit?
 
 #### 02.
-### Where exactly does the rep give up?
+### Is there product-market fit, and with whom?
 
 #### 03.
-### What makes AI practice feel real?
+### Is the practice useful in the rep's day-to-day?
 
 #### 04.
-### How do we prioritise with a small team and scarce backend?
+### What does the product need to do now, and what can wait?
 
 #### 05.
-### How does design arrive before the decision, not after it?
+### What makes practising with AI feel real?
 
 ---
 
-#### What I did with the data
+#### What I did in the business
 
-### I instrumented the whole journey before touching any screen.
+### I priced by what the client actually uses.
 
-I designed the tracking plan in PostHog from sign-up to the end of each roleplay, with attributes for plan, organisation, role and team size. That let us compare rep with manager and company with company, instead of looking at an average that represented no one.
+In January, we ran demos with sales managers, with a conversation before and another after, to understand their willingness to pay. I cross-checked those answers with a competitor benchmark and the real cost of each session, adding up the language model, infrastructure and the margin the team needed to operate. Together with the CEO, we arrived at a model per rep hour, with an implementation fee. The price follows usage, and the client pays for the practice that happens, not for idle licences.
 
-### I renegotiated the scope instead of waiting for the backend.
+### I shortened the path to the first session.
 
-I cross-checked every event against the API and found that a third of them had nowhere to come from. Waiting would have meant months with no data at all. I took billing and chat out of this phase, sent default values where information was missing, derived on the frontend everything it already knew and marked in the code what depended on a new endpoint. A tracking plan that waits for the perfect API never reaches production.
+At first, every implementation was done by hand, and so it was slow. Over time, we learned which materials to ask the client for, which technology to use and how to model the agents from them, and building roleplays stopped being manual. Today implementation takes two weeks and starts with what matters most, understanding the team's gaps before building any roleplay. The sooner the rep practises, the sooner the manager has numbers to defend the purchase.
 
-### I found that the data was lying, and fixed it in the code.
+### I gave the manager the numbers to take to finance.
 
-Internal users kept showing up in the dashboards even when filtered out. The cause was in how anonymous sessions were merged after login, carrying events with no email and no organisation. I implemented the fix on the frontend myself, with direct exclusion in the SDK, a layer that only fires events with an identified user and a single identifier across the whole app. Data is only useful for deciding when you can trust it, and trust in data is engineering work, not dashboard work.
+I designed and coded an ROI calculator that runs inside PerfectingOS, our hub of internal tools, and is used at the end of every proof of concept. It looks at the return from two angles. The first is the manager's time, no longer spent running every roleplay and every review by hand, now covering the whole team. The second is revenue, which grows when the rep learns faster to handle the playbook's objections and shortens the ramp-up (the time until the rep is ready). In an illustrative scenario of 30 reps and 3 managers, the hours saved are the easiest argument to grasp, but what pays for the tool several times over is one extra point of conversion. The assumptions come from the conversations around the January demos, internal data and the benchmark, and they are stated on screen, because a projection only convinces when the client can question it.
 
 ---
 
@@ -94,111 +87,183 @@ Internal users kept showing up in the dashboards even when filtered out. The cau
 
 ### I turned twelve interviews into five problems and one sprint.
 
-The team's researcher ran twelve interviews with reps and managers. I structured the discovery in Figma in seven phases, from evidence to instrumentation, and held the team back from jumping to features before the hypotheses were written down. Out came three rep profiles, three indicators for the sprint and five macro-problems.
+I ran twelve interviews with reps and managers and structured the discovery in Figma, holding the team back from jumping to features before the hypotheses were written down. Out came three rep profiles, five macro-problems and 86 solutions, prioritised with MoSCoW and an impact-by-effort matrix.
 
-### I used RICE as a tool, not as an oracle.
+When prioritising, I reviewed the effort of each solution. Part of the work was frontend and I could do it myself, so several solutions cost less than they seemed and moved up the list. I also looked at the problems together, not one by one. There was no point giving the rep a reason to come back while the call still broke immersion. So the sprint had three fronts in parallel, with the backend on immersion and the frontend on the post-call and onboarding.
 
-I corrected inflated effort estimates, because I knew part of the work was frontend and I could do it myself. That changed the ranking. But the ranking alone lied in another way, because it treated the problems as independent. Creating a reason to come back in a product that breaks immersion only speeds up churn. The sprint combined three fronts in parallel, with the backend on immersion and the frontend on the post-call and onboarding. Of the 86 solutions generated, only what made sense in the impact-by-effort matrix stayed.
+### I went into the field at RD Station.
 
-### I took out of the call everything that felt like a lesson.
+On a research visit with recorded interviews, I found that a rep spent between 10 and 40 minutes preparing each lead, and that this preparation was skipped in some cases. The rep's problem did not start on the call; it started before it. On Perfecting, that context comes ready on the roleplay details screen: who the buyer is, what is being sold and what will be practised.
 
-Live transcription, on-screen tips, real-time indicators. I rejected all of it on purpose. The product's value lies in the pressure of a real conversation, and every bit of help during the call pulls the rep out of that state. The rule became structure. Before the call comes the context, during it there is only the conversation, and after it comes all the learning, with feedback and a clear invitation to try again.
+![Roleplay details: the context before the call](/assets/img/perfecting/briefing.webp)
 
-![Before the call: the context](/assets/img/perfecting/briefing.webp)
+### I put the rep's competitiveness to work for practice.
+
+The first interviews already made it clear that reps are highly competitive, and that this kind of stimulus was needed for them to come back and practise. So the product gained scores, points and a ranking, and it was great to watch users competing for position among themselves.
+
+The ranking also taught me that the rule matters as much as the screen. It started from the simple average score, and the problem took a while to show. The reps themselves surfaced it, talking to CS through Crisp, the support chat I implemented in the product. In those conversations we understood what was happening: some did a few roleplays, got a high score and stopped, protecting their position. I changed the rule to the average of the three best sessions. That way, practising again never brings anyone down, it can only raise the score, and a bad attempt stops being a risk. It greatly increased the number of sessions, and it reinforced the principle that practice is a safe place to make mistakes.
+
+### I defended realism against the benchmark's features.
+
+In the benchmark of Hyperbound and Yoodli, the references in AI sales roleplay and coaching, the proposal was to bring into the call what competitors showed: live transcription, tips on what to say and a real-time score. I raised that this went against realism. The product's value lies in the pressure of a real conversation, and a screen that feeds the answer pulls the rep out of that state. The proposal was well received and became a product rule. The call keeps only what a real rep would have: the call's goals, checked off as they progress, and what the buyer already knows, like notes on the side that can be collapsed. Score, transcript and feedback come afterwards.
 
 ![During the call: only the conversation](/assets/img/perfecting/ligacao.webp)
 
 ![After the call: the learning](/assets/img/perfecting/resultado.webp)
 
-### I treated the persona as interface.
+### I treated the agent as interface and the client's playbook as the rule.
 
-On a roleplay platform, the simulated buyer is the product's most important screen. I designed the personas' behaviour based on real sales methodologies, wrote the prompts for the voice agents and reviewed the rubrics that generate the feedback. A persona that gives in too easily teaches the rep to sell wrong.
+On a roleplay platform, the simulated buyer is the product's most important screen. I designed the agents' behaviour based on real sales methodologies, wrote the prompts for the voice agents and reviewed the rubrics that generate the feedback. I trained the models on articles by well-known salespeople, so that they assess each call the right way in each methodology. This is part of the implementation. Perfecting's business model is to calibrate the agents to each company's sales process and method. At FIESC, which sells with SPIN Selling, the tracks were built on that method. Today the product works with SPIN, MEDDIC and SPICED.
 
 ![Growth areas and strengths in the result](/assets/img/perfecting/resultado-crescimento.webp)
 
-### I reorganised practice around the way consultative sales actually happen.
-
-For clients with their own playbook, practice now follows the stages of that playbook. At FIESC, which already sells with SPIN Selling, the roleplay tracks were built on that method instead of imposing one of ours. Today the product works with SPIN, MEDDIC and SPICED, and the AI buyer is assembled from each company's offer, objections and customer profile. The roleplay list, which was grouped by offer, is moving to grouping by conversation stage, because in consultative selling the offer often does not even exist yet at the diagnosis stage.
-
 ---
 
-#### What I did with customers
+#### What I did in design
 
-### I went into the field at RD Station.
+I did all of the product's design, from the rep's screens to the manager's, and took much of it into code myself, as I did with the company website, perfecting.com.br. From the start, I set myself two goals that seemed to pull against each other. The rep needed to feel calm and safe to make mistakes, without feeling watched. And the people who buy needed to see a platform with the trust of an enterprise B2B tool.
 
-I made a research visit with recorded interviews and conversations with the sales team. I found that a rep spent between 10 and 40 minutes preparing each lead, and that this preparation was simply skipped in some cases. The rep's problem did not start on the call; it started before it. Being close to the people who buy the product changed how I design for the people who use it.
+Building on the same benchmark, I explored in Figma what made sense to bring into Perfecting. The principles that guide the product came out of it.
 
-### A pilot that was going well, and a business case that did not close.
+- **Realism over didacticism.** The call feels like a real call, with nothing on screen feeding the rep the answer.
+- **The rep's day-to-day, simulated.** Practice follows the real routine: getting the lead's context, calling, taking notes and seeing the learnings recorded afterwards, as in a CRM.
+- **A safe place to make mistakes.** The practice belongs to the rep. The feedback talks to them about what to improve, and the manager follows progress rather than watching every step.
+- **Enterprise trust.** A calm, sober look, colour with meaning and numbers the manager can take to whoever signs the contract.
 
-RD was a pilot, and the reps' feedback was very positive, to the point that the sales manager was already sending the platform purchase to legal. The contract did not come through for a reason outside the product: a company RD had acquired also launched roleplays, and a roleplay integrated into what they already used, with value on day one, beat ours, which needed eight weeks of implementation. The loss did not invalidate the product's thesis. It invalidated the order of entry: something light first, the heavy implementation later.
+Before the screens, I drew the rep's and the manager's flows, from login to the session result.
 
-### I audited the product before putting 120 reps on it.
+![The rep's flow](/assets/img/perfecting/fluxo-vendedor.webp)
 
-FIESC signed with Perfecting to have 120 reps practising between September and November. Before release, I ran an audit of the roleplays in staging, with manual tests and an end-to-end simulation of 22 steps.
+On the Figma canvas, I explored the alternatives side by side. One example is choosing what to practise before the call, by methodology letter or by playbook moment, and how each choice shows up during the call.
 
-The result was harsh. In 6 of the 22 calls the feedback never arrived, because of a race condition in the pipeline. The live checklist took 10.5 seconds at p90, against a target of 3. A third of the checks were triggered by the buyer's speech, not the rep's. And the buyer hung up on its own, because the instruction to end the call was in 21 of the 22 prompts. In total, 23 critical and 97 serious problems came out.
+![Explorations of the practice choice and the call](/assets/img/perfecting/figma-exploracoes.webp)
 
-The conclusion was that the roleplays were not yet ready for reps. Finding that out internally, before launch, is exactly what an audit is for. Each finding became a measurable acceptance criterion, and the launch came to depend on numbers, not impressions.
+What was approved became a design system. The tokens were born in Figma and are the same in the code. I organised everything in Storybook in four layers: foundations (colour, typography, spacing, radii, borders and elevation), patterns, components and screens, in 284 stories, each pointing to the full rule in the design guide. The product has a look of its own, with the brand indigo as the main colour, amber as the accent and terracotta in the framing, and every token says where it belongs. The indigo, for example, never fills large blocks: it appears only on the CTA, the active state, focus and the highlighted number.
 
----
+![Foundations: colour and typography](/assets/img/perfecting/ds-fundamentos.webp)
 
-#### What I did in engineering
+![Patterns: radii and buttons](/assets/img/perfecting/ds-padroes.webp)
 
-### I got my hands on the infrastructure and the models.
+![The product's Storybook](/assets/img/perfecting/storybook.webp)
 
-I took part in the load tests to understand how many simultaneous calls the product could handle before the experience degraded. I built a synthetic data pipeline in Python for fine-tuning the models, with conversations generated between agents and a quality-scoring step.
+### I designed the dashboard the manager opens in the morning.
 
-### I wrote the website from the product that exists.
+Managers have no time to explore dashboards. The home screen answers in seconds whether the team is practising, with four indicators (sessions, average score, practice time and active reps) over seven- and thirty-day windows. Next to them, the team ranking. Below, a map of objections handled per rep shows where each one still slips. For newcomers, a four-step walkthrough goes from adding the team to analysing the metrics. It is the same set of numbers the calculator promises, now actually measured.
 
-I built the product page using as the source of truth a feature inventory I took straight from the app. The site talks about the real product, not the product we would like to have.
-
----
-
-#### In numbers
-
-# 12
-interviews with reps and managers turned into five macro-problems
-
-# 86
-solutions generated and filtered through an impact-by-effort matrix
-
-# 13
-production-ready AI personas in a single client package
-
-# 22
-steps simulated end to end in the audit before the launch for FIESC
-
-# 120
-problems mapped before a single rep saw the product, 23 of them critical
-
----
-
-#### Today
-
-### Open a session on Perfecting today. The context before the call, the conversation with no interference, all the learning concentrated at the end and the events that measure every step. These are the definitions I wrote, and they still guide every new product decision.
-
-All of this happens in a product with a look of its own: indigo as the main colour, amber as the accent and terracotta in the framing. The look and feel comes from the product itself and keeps evolving with it.
-
-![Perfecting login screen](/assets/img/perfecting/login.webp)
-
-After each session, the rep receives a scorecard for clarity, active listening and objection handling. The manager sees skill gaps and the team ranking in real time. And getting into the client became light, the lesson from the RD pilot: sessions start within 48 hours of onboarding, with around two hours of configuration.
+![Manager home](/assets/img/perfecting/home.webp)
 
 ![Manager analytics](/assets/img/perfecting/analytics.mp4)
 
 ![Heatmap by rep and criterion](/assets/img/perfecting/analytics-mapa.webp)
 
-![Manager home](/assets/img/perfecting/home.webp)
+### I made a minute and fifteen seconds of waiting disappear.
 
-The screens were never the main deliverable. The deliverable was a product that lets itself be observed and a set of principles clear enough that anyone on the team can decide without asking me.
+After each call, the feedback takes on average a minute and fifteen seconds to process. That is too long for a spinner. I redesigned the wait so it became part of the post-call, showing each part of the analysis as it is ready while the scorecard assembles, and asking the rep to rate the call in the meantime. In practice, reps stopped noticing the wait, without the backend having to get any faster.
+
+![The wait after the call](/assets/img/perfecting/loading.webp)
+
+### I reorganised practice around the way the sale happens.
+
+The roleplay list, which was grouped by offer, is now grouped by playbook moment and call type, because in consultative selling the offer often does not even exist yet at the diagnosis stage.
+
+![Roleplays grouped by playbook moment](/assets/img/perfecting/roleplays.webp)
+
+---
+
+#### What I did in engineering
+
+In the code, I built the entire frontend, took on the backend when the CTO left and now share it with the fractional CTO. I also built the internal tools and set up the AI operations behind the roleplays.
+
+### I built Facility, Perfecting's roleplay generator.
+
+Building a roleplay meant filling in field after field, for every client. Facility is an internal piece of software I built end to end, based on feedback from clients and the team and on ideas I had to speed up our processes. In express creation, the team pastes a text or uploads a client file, and the AI structures the offer, the audience profile, the objections, the scenario and the rubrics. With one click, the roleplay goes to the right account, where Perfecting's AI generates the agents, the company, the dialogues, the criteria and the voice. Around that, Facility organises tracks, playbooks, the roleplay library and calibration, each client's guidelines and a readiness area for assessment. It was one of the best-received tools inside the company, and part of what brought implementation down to two weeks.
+
+![Facility, the roleplay generator](/assets/img/perfecting/facility.webp)
+
+### I set up AI Ops for the roleplays, with evals and fine-tuning.
+
+Every change to one agent can make another worse. I set up an evals process for the roleplays in which autonomous agents simulate the calls, a blind judge compares the new version with the previous one, and nothing goes to production without passing. For fine-tuning, I built a synthetic data pipeline in Python, with conversations generated between agents and a quality-scoring step.
+
+---
+
+#### What I did with the data
+
+### I instrumented the whole product in PostHog.
+
+I designed and implemented the tracking plan in PostHog, from sign-up to the end of each roleplay, with attributes for plan, organisation, role and team size. That let us compare rep with manager and company with company, instead of looking at an average that represented no one. That plan produced the metrics that now support the conversation with the client.
+
+### I watched the session recordings, and fixed what they showed.
+
+The session recordings showed what no number did. I saw users clicking on dead areas of the screen and bugs that only appeared at certain moments of the journey, and I often fixed them straight in the code, with the fix live almost immediately. The most important finding was at the end of the session. Reps reached the result and often did not know what to do next, so I changed the copy to show them the next steps. Another finding came from clicks on the roleplay cards: almost nobody clicked "Practise now". I swapped the button for "View details", which goes deeper into the roleplay before the rep takes action and gives them the context of the call.
+
+---
+
+#### What I did with clients
+
+### I learned from a contract that did not come.
+
+RD Station was our pilot, and the reps' feedback was so positive that the contract had already been sent to legal. What stopped the purchase was a business decision on the client's side. A company RD had acquired also launched roleplays, and it already had call transcription inside the reps' workflow. Doing a roleplay there became just one more step in what the team already did. The loss did not invalidate the product's thesis, since the reps approved of the practice. It showed that, in B2B, a well-rated pilot and a contract with legal are still not revenue, and that the workflow the client already lives in weighs as much as the product.
+
+### I audited the product with autonomous agents before putting the FIESC System on it.
+
+Before releasing the platform to the federation's reps, I ran an audit in staging with autonomous agents. An AI rep called the AI buyer, end to end, in a lab without voice, in a 22-step simulation. The result was harsh. In 6 of the 22 calls the feedback never arrived. The live checklist took 10.5 seconds at p90, against a target of 3. A third of the checks were triggered by the buyer's speech. In total, 23 critical and 97 serious problems.
+
+I closed the audit with a final report for the team, and each finding became a measurable acceptance criterion. From it came an execution plan in waves, by owner and by risk, which I put together with the fractional CTO, who at that point also took on backend because of the workload. The launch came to depend on numbers, not impressions. Switching the language model brought latency within target, and the product reached the reps ready to be used every day.
+
+### I put the product under load before launch.
+
+An audit shows whether each call works on its own. It does not show what happens when a whole team practises at the same time, which is exactly what a launch at a federation causes. Testing that beforehand was my idea. I had more than 20 agents calling simultaneously to find out how many calls the product could handle before the experience degraded. It was better to find that limit in staging than on FIESC's first day.
+
+### Every week I put together a report that proves the value of the practice.
+
+Every week, I prepare a report for managers from the practice sessions, comparing the team's usage and progress with the previous week. It also brings recurrence, a reading by team, the bottleneck of the period and a focus plan for the next cycle. Managers do not need to open any dashboard to know whether the team improved, and it is with that data that they defend the purchase.
+
+![Top of the weekly report for one FIESC organisation](/assets/img/perfecting/relatorio.webp)
+
+---
+
+#### In numbers
+
+# 77 of 135
+FIESC System reps active in the first three weeks
+
+# 470
+roleplay sessions in the same period, around six per active rep
+
+# 38 h 54 min
+of call practice, in short sessions of around five minutes
+
+# 2 weeks
+of implementation, from diagnosing the client's gaps to the team practising
+
+# 120
+problems mapped before a single rep saw the product, 23 of them critical
+
+# 20+
+agents calling at the same time in the load test before launch
+
+---
+
+#### Today
+
+### The FIESC System's reps practise on Perfecting, from the federation to SESI, SENAI, IEL and CIESC.
+
+Every week, the report closes the loop. The rep sees their own progress, the manager follows the team just by reading the report, and Perfecting proves the platform's value with real usage.
+
+In every follow-up meeting, managers come back to two points. The first is how real the conversation feels. The second is being able to test questions and approaches with an agent before using them with a client, without burning a single lead. The federation has committed to acquiring the tool in its next procurement window, and the revenue business case is being closed with them.
+
+The product is also starting to grow beyond the screen. Perfecting On Field is a new product that complements the manager's journey, bringing the same visibility to people who sell in person, with remote coaching.
+
+The screens were never the main deliverable. The deliverable was a product that can be measured, a price that follows usage and a set of principles clear enough that anyone on the team can decide without asking me.
 
 ---
 
 #### In hindsight
 
-### When I arrived, I wanted to redesign everything straight away, and holding back felt slow. Looking at it now, the weeks spent instrumenting and fixing data were the most important of the project. Without them, every new screen would be just another well-drawn opinion.
+### When I arrived, almost nothing existed, and the natural urge was to build one screen after another. Stopping to define what to measure before there was anything to measure felt slow. Looking at it now, those were the most important weeks of the project. Without them, every new screen would be just another well-drawn opinion.
 
-### In a small team, it is easy to become the person who executes everything. It took me a while to understand that my most valuable contribution was not in the execution but in the decisions that came before it. Today I fight for the authorship of those decisions with the same energy I give to the screens.
+### Pricing per rep hour tied the price to usage. That changed what we needed to measure, how implementation had to work and what the manager needed to show finance. Pricing became a product decision.
 
-### The RD pilot taught me that good feedback does not guarantee a contract. The product can be right and the way into the client, wrong.
+### The RD pilot taught me that good feedback does not guarantee a contract. In B2B, the workflow the client already lives in weighs as much as the product, and no pilot is revenue before the signature.
 
-### At Perfecting, my medium stopped being just Figma. It became PostHog, the persona prompt, the repository and the conversation with the client. A design decision that does not reach the data and the code does not really exist.
+### At Perfecting, my medium stopped being just Figma and FigJam. It became the cost-per-session spreadsheet, PostHog, the agent prompt, the evals, the repository and the many meetings with users and with the people who pay, bringing ready-made reports that show the team's performance. That path, from design to the numbers, is where I work today.

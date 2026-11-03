@@ -37,11 +37,11 @@ export function IntroBeat({
             </span>
           ))}
         </h1>
-        <div className="flex flex-col gap-8 md:flex-row md:gap-16">
+        <div className="flex flex-col gap-8 md:flex-row md:items-baseline md:gap-16">
           <p
             data-veil
             data-readout
-            className="type-mono text-hud text-mist w-fit max-w-[26ch] shrink-0 text-balance"
+            className="type-mono text-hud text-mist w-fit max-w-[26ch] shrink-0 text-balance md:relative md:-top-[0.45em]"
             style={{ "--wait": "200ms" } as CSSProperties}
           >
             {position}

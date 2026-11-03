@@ -2,7 +2,7 @@
  * A vitrine: os itens da parede de telas da cena, num arquivo só. Não há
  * página: a parede mostra as telas, e o nome dos itens vai em DOM só para
  * leitor de tela. `year`, `discipline`, `type` e `slug` não são desenhados hoje.
- * Dos seis cases da trilha, Perfecting, Agentes de IA e netLex entram também
+ * Dos seis cases da trilha, Perfecting, WeCann Care e netLex entram também
  * aqui; os outros ficam só com a placa deles.
  *
  * A parede tem 27 telas, 9 colunas de 3 (`lib/scene/world.ts`), preenchidas
@@ -23,7 +23,7 @@ export type VitrineScreen = {
 
 export type VitrineItem = {
   name: string;
-  /** Só quando o nome não é nome próprio ("Agentes de IA"). */
+  /** Só quando o nome não é nome próprio. */
   name_en?: string;
   year?: number;
   discipline?: string;
@@ -94,8 +94,7 @@ export const VITRINE: readonly VitrineItem[] = [
     ],
   },
   {
-    name: "Agentes de IA",
-    name_en: "AI agents",
+    name: "WeCann Care",
     year: 2026,
     discipline: "Produto · Sistema",
     slug: "wecann-atena",

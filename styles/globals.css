@@ -480,6 +480,12 @@
     --case-col: var(--measure);
   }
 
+  /* Em tela larga a coluna inteira fica no centro do espaço livre. */
+  .case > [data-case] {
+    max-width: var(--case-wide);
+    margin-inline: auto;
+  }
+
   /* A capa do case. A razão de aspecto chega inline, de `PANEL_ASPECT`: a
      mesma do painel na cena. */
   .case-cover {
@@ -538,6 +544,63 @@
     position: relative;
     margin-top: 7rem;
     color: var(--mist);
+  }
+
+  /* O sumário (`CaseToc`). Abaixo de xl ele não aparece, e o corpo segue na
+     largura de sempre. Em tela larga o corpo e o sumário dividem a largura do
+     case: as figuras encolhem um pouco para o sumário não cobrir nenhuma. */
+  .case-toc {
+    display: none;
+  }
+
+  @media (min-width: 80rem) {
+    .case-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 11rem;
+      column-gap: 3rem;
+      max-width: var(--case-wide);
+    }
+
+    .case-toc {
+      display: block;
+      position: sticky;
+      top: 30vh;
+      align-self: start;
+      margin-top: 7rem;
+      font-size: var(--text-label);
+      font-weight: var(--text-label--font-weight);
+      line-height: 1.5;
+      letter-spacing: var(--text-label--letter-spacing);
+      text-transform: uppercase;
+    }
+
+    .case-toc ol {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      border-left: 1px solid var(--deep);
+    }
+
+    .case-toc button {
+      display: block;
+      margin-left: -1px;
+      border-left: 1px solid transparent;
+      padding-left: 1rem;
+      text-align: left;
+      color: color-mix(in oklab, var(--mist) 55%, transparent);
+      text-transform: inherit;
+      letter-spacing: inherit;
+      transition: color var(--dur-snap) var(--ease-strong);
+    }
+
+    .case-toc button:hover,
+    .case-toc button[aria-current] {
+      color: var(--mist);
+    }
+
+    .case-toc button[aria-current] {
+      border-left-color: var(--cyan);
+    }
   }
 
   /* A HUD desligada (`HudToggle` escreve o atributo no <html>): some tudo,
@@ -746,6 +809,7 @@
   [data-case] .case-cover,
   [data-case] .case-head,
   [data-case] .case-body,
+  [data-case] .case-toc,
   [data-case] .case-foot {
     opacity: 1;
     transition: opacity var(--dur-cut) linear;
@@ -754,6 +818,7 @@
   [data-case="arriving"] .case-cover,
   [data-case="arriving"] .case-head,
   [data-case="arriving"] .case-body,
+  [data-case="arriving"] .case-toc,
   [data-case="arriving"] .case-foot {
     opacity: 0;
   }

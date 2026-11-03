@@ -2,84 +2,85 @@ export const frontmatter = {
   title: "Roleplay de vendas com IA",
   title_en: "AI sales roleplay",
   client: "Perfecting",
-  // "2026 até hoje" — o schema guarda um ano só; o período por extenso está no
-  // corpo, no bloco de papel.
   year: 2026,
-  role: "Sócio, Product Engineer",
-  role_en: "Partner, Product Engineer",
-  // Ferramentas citadas no texto do case, e só elas.
+  period: "Janeiro de 2026 até hoje",
+  period_en: "January 2026 to today",
+  // Serviços que prestei no case; a página mostra o campo como "Serviços".
   stack: [
-    "Entrevistas",
-    "Plano de tracking",
-    "PostHog",
-    "Análise de funil",
-    "RICE",
-    "Design de persona com IA",
+    "Discovery",
+    "Estratégia de produto",
+    "Design de produto",
+    "Design de agentes de IA",
+    "Instrumentação e analytics",
     "Pesquisa de campo",
     "Auditoria de produto",
-    "Protótipo",
-    "Dados sintéticos",
+    "AI Ops (evals e fine-tuning)",
+    "Frontend e backend",
+    "Ferramentas internas",
   ],
   stack_en: [
-    "Interviews",
-    "Tracking plan",
-    "PostHog",
-    "Funnel analysis",
-    "RICE",
-    "AI persona design",
+    "Discovery",
+    "Product strategy",
+    "Product design",
+    "AI agent design",
+    "Instrumentation and analytics",
     "Field research",
     "Product audit",
-    "Prototype",
-    "Synthetic data",
+    "AI Ops (evals and fine-tuning)",
+    "Frontend and backend",
+    "Internal tools",
   ],
   summary_pt:
-    "Uma salestech de IA em que o vendedor treina por voz com um comprador simulado. Fiz o produto aprender a se enxergar antes de crescer, do dado ao código.",
+    "Uma salestech de IA em que o vendedor treina por voz com um comprador simulado. Fiz o produto provar o próprio valor, do preço ao painel do gestor, e hoje ele treina os vendedores do Sistema FIESC.",
   summary_en:
-    "An AI salestech where reps practise by voice with a simulated buyer. I made the product able to see itself before it grew, from data to code.",
+    "An AI salestech where reps practise by voice with a simulated buyer. I made the product prove its own value, from pricing to the manager's dashboard, and today it trains the reps of the FIESC System.",
   market_pt: "Salestech",
   market_en: "Salestech",
   accent: "cyan",
   cover: "/assets/img/perfecting/antes-e-durante.webp",
-  // Prints do app com nomes de vendedores trocados por fictícios na captura.
+  // Prints do app com nomes de vendedores, clientes e empresas trocados por
+  // fictícios na captura. O relatório é só o topo, sem nomes.
   media: [
     { src: "/assets/img/perfecting/antes-e-durante.webp", alt_pt: "Duas telas da Perfecting sobrepostas: o briefing antes do treino, com etapas do playbook e o perfil do comprador, e a ligação em andamento com o comprador de IA", alt_en: "Two Perfecting screens overlapping: the pre-training briefing, with playbook stages and the buyer profile, and the call in progress with the AI buyer", generated: false },
-    { src: "/assets/img/perfecting/briefing.webp", alt_pt: "Tela antes do treino: escolha do momento do playbook, das etapas e da dificuldade, e o perfil do comprador com o que o vendedor vai praticar", alt_en: "Pre-training screen: choosing the playbook moment, stages and difficulty, with the buyer profile and what the rep will practise", generated: false },
+    { src: "/assets/img/perfecting/relatorio.webp", alt_pt: "Topo do relatório semanal de treino de uma organização da FIESC, de 17 a 27 de outubro: 176 sessões, 17h37 de prática, score médio de 43,2, objeções contornadas e o comparativo com a semana anterior", alt_en: "Top of the weekly training report for one FIESC organisation, 17 to 27 October: 176 sessions, 17h37 of practice, an average score of 43.2, objections handled and the comparison with the previous week", generated: false },
     { src: "/assets/img/perfecting/ligacao.webp", alt_pt: "Ligação em andamento: o comprador de IA falando, a onda de voz e o botão de encerrar, com os objetivos da chamada na lateral", alt_en: "Call in progress: the AI buyer speaking, the voice wave and the end-call button, with the call goals on the side", generated: false },
     { src: "/assets/img/perfecting/resultado.webp", alt_pt: "Resultado de uma sessão: a transcrição da ligação, a nota 72 de 100, o feedback e as rubricas com os critérios atendidos", alt_en: "Session result: the call transcript, a score of 72 out of 100, the feedback and the rubrics with the criteria met", generated: false },
     { src: "/assets/img/perfecting/resultado-crescimento.webp", alt_pt: "Continuação do resultado: área de crescimento e forças do vendedor, separadas em objeções, linguagem e oferta", alt_en: "Result continued: the rep's growth areas and strengths, split into objections, language and offer", generated: false },
-    { src: "/assets/img/perfecting/login.webp", alt_pt: "Tela de login da Perfecting com o diamante azul da marca à esquerda", alt_en: "Perfecting login screen with the blue diamond on the left", generated: false },
+    { src: "/assets/img/perfecting/fluxo-vendedor.webp", alt_pt: "Fluxo do vendedor no Figma, do login à home, aos roleplays, à chamada, ao processamento do feedback e ao resultado da sessão", alt_en: "The rep's flow in Figma, from login to home, roleplays, the call, feedback processing and the session result", generated: false },
+    { src: "/assets/img/perfecting/figma-exploracoes.webp", alt_pt: "Explorações no Figma em duas linhas simétricas: a escolha do treino pela letra da metodologia e pelo momento do playbook, cada uma seguida das telas da chamada com o checklist ao lado", alt_en: "Figma explorations in two symmetrical rows: choosing the practice by methodology letter and by playbook moment, each followed by the call screens with the checklist alongside", generated: false },
+    { src: "/assets/img/perfecting/ds-fundamentos.webp", alt_pt: "Fundamentos do design system no Storybook: as cores da marca e a escala de neutros, cada uma com o token e o papel na interface, e a tipografia com famílias e a escala de texto ligada às classes do código", alt_en: "Design system foundations in Storybook: brand colours and the neutral scale, each with its token and role in the interface, and typography with families and the text scale tied to the code classes", generated: false },
+    { src: "/assets/img/perfecting/ds-padroes.webp", alt_pt: "Raios e botões no Storybook: a escala de raios e os raios concêntricos de menus e segmentos, e as variantes, alturas e usos de cada botão", alt_en: "Radii and buttons in Storybook: the radius scale and the concentric radii of menus and segments, and each button's variants, heights and uses", generated: false },
+    { src: "/assets/img/perfecting/storybook.webp", alt_pt: "Storybook do produto: a árvore de componentes de resultados e o componente da nota final aberto, com a composição por rubricas, metodologia, linguagem, objeções e oferta e o peso de cada uma", alt_en: "The product's Storybook: the results component tree and the final score component open, with the breakdown by rubrics, methodology, language, objections and offer and the weight of each", generated: false },
+    { src: "/assets/img/perfecting/home.webp", alt_pt: "Home do gestor com total de sessões, score médio, tempo de prática, representantes ativos e o top 6 da equipe", alt_en: "Manager home with total sessions, average score, practice time, active reps and the team's top 6", generated: false },
     { src: "/assets/img/perfecting/analytics.mp4", poster: "/assets/img/perfecting/analytics-poster.webp", alt_pt: "Analytics do gestor: os indicadores mudam entre 7 dias, 30 dias e 6 meses, e a tela desce até o mapa de calor de taxa de sucesso por representante", alt_en: "Manager analytics: the indicators change between 7 days, 30 days and 6 months, and the screen scrolls down to the success-rate heatmap per rep", generated: false },
     { src: "/assets/img/perfecting/analytics-mapa.webp", alt_pt: "Mapa de calor com a taxa de sucesso de cada representante em cada critério, agrupado por tipo de ligação", alt_en: "Heatmap with each rep's success rate on each criterion, grouped by call type", generated: false },
-    { src: "/assets/img/perfecting/home.webp", alt_pt: "Home do gestor com total de sessões, score médio, tempo de prática, representantes ativos e o top 6 da equipe", alt_en: "Manager home with total sessions, average score, practice time, active reps and the team's top 6", generated: false },
+    { src: "/assets/img/perfecting/loading.webp", alt_pt: "Espera depois da ligação: o comprador de IA, o pedido de nota da chamada e a análise em andamento, com rubricas, metodologia, objeções e linguagem já pontuadas e a oferta ainda carregando", alt_en: "The wait after the call: the AI buyer, the request to rate the call and the analysis in progress, with rubrics, methodology, objections and language already scored and the offer still loading", generated: false },
+    { src: "/assets/img/perfecting/roleplays.webp", alt_pt: "Lista de roleplays agrupada por momento do playbook, com cards que mostram a fase, o cenário, o comprador de IA e o botão de ver detalhes", alt_en: "Roleplay list grouped by playbook moment, with cards showing the stage, the scenario, the AI buyer and the view-details button", generated: false },
+    { src: "/assets/img/perfecting/briefing.webp", alt_pt: "Tela antes do treino: escolha do momento do playbook, das etapas e da dificuldade, e o perfil do comprador com o que o vendedor vai praticar", alt_en: "Pre-training screen: choosing the playbook moment, stages and difficulty, with the buyer profile and what the rep will practise", generated: false },
+    { src: "/assets/img/perfecting/facility.webp", alt_pt: "Facility, o gerador de roleplays: a criação express, com entrada por texto ou arquivo e processamento com IA, e o menu com trilhas, playbooks, biblioteca, calibração, prontidão e diretrizes", alt_en: "Facility, the roleplay generator: express creation, with text or file input and AI processing, and the menu with tracks, playbooks, library, calibration, readiness and guidelines", generated: false },
   ],
   disciplines: ["produto", "marca", "engenharia", "startup"],
   generated: false,
 };
 
-Janeiro de 2026 até hoje
+Head de Produto e Design, Design Engineer @ Perfecting
 
-Sócio e Product Engineer @ Perfecting
+# Uma salestech de IA que aprendeu a provar o próprio valor antes de crescer, e que hoje treina os vendedores do Sistema FIESC.
 
-# Uma salestech de IA que aprendeu a se enxergar antes de crescer, e um design que vai do dado ao código.
-
-### Um treino de vendas só funciona se parecer uma ligação de verdade. Todo o resto é consequência disso.
-
-**Meu papel**\
-Sócio, Product Engineer. Produto, interface, frontend e dados.
-
-**Período**\
-Janeiro de 2026 até hoje
+### Um treino de vendas só se paga se parecer uma ligação de verdade, e se o gestor conseguir mostrar o retorno para quem assina o contrato.
 
 **Time**\
-Startup enxuta, com CEO, engenharia, pesquisa e operações
+Quatro pessoas: o CEO, eu no produto, um CTO fractional focado em DevOps e quem coordena o comercial e a operação de CS
 
 **Clientes**\
-FIESC, piloto com a RD Station e outras empresas B2B
+Sistema FIESC (FIESC, SESI, SENAI, IEL e CIESC), piloto com a RD Station e outras empresas B2B
 
 **Status**\
-Em andamento, em stealth
+Em operação, com o compromisso de compra da FIESC para a próxima janela de aquisição da federação
 
-A Perfecting é uma startup brasileira de salestech que ainda opera em stealth. Na plataforma, o vendedor pratica ligações por voz com compradores simulados por inteligência artificial antes de encarar o cliente de verdade, e o gestor acompanha a evolução do time. Quando entrei como sócio, em janeiro de 2026, mal existia uma API. O produto foi tomando corpo, mas sem nenhum jeito de saber se funcionava bem.
+A Perfecting é uma startup brasileira de salestech. Na plataforma, o vendedor pratica ligações por voz com compradores simulados por inteligência artificial antes de encarar o cliente de verdade, e o gestor acompanha a evolução do time. Quando entrei, em janeiro de 2026, mal existia uma API. Não havia preço definido, nem forma de medir uso, nem um jeito de mostrar ao cliente que o treino dava retorno. Fiquei responsável pelo discovery, pelo produto, pelo design e por todo o frontend, e quando o CTO saiu assumi também o backend.
+
+Numa startup de quatro pessoas, o ritmo é acelerado e todo mundo pega mais do que o próprio escopo. Passei também por CS e por marketing, mas este case fica no produto, nos dados, no design e na engenharia.
 
 ![Briefing antes do treino e ligação em andamento](/assets/img/perfecting/antes-e-durante.webp)
 
@@ -87,68 +88,63 @@ A Perfecting é uma startup brasileira de salestech que ainda opera em stealth. 
 
 #### Se você ler só uma parte
 
-## Quando entrei, a Perfecting mal tinha uma API. Conforme o produto cresceu, não havia nenhum jeito confiável de saber como ele era usado, e toda decisão de produto terminava em opinião.
+## Quando entrei, a Perfecting tinha uma boa ideia e nenhuma evidência. Ninguém sabia como o produto era usado, quanto ele devia custar ou como provar que valia o investimento.
 
-## O que eu liderei foi transformar o produto em algo que se deixa observar, e usar essa leitura para decidir o que construir e, principalmente, o que recusar.
+## Liderei produto e design de um produto AI-driven completo, em que todas as decisões eram baseadas em dados: o que construir, como construir, o que recusar e como vender.
 
-## A instrumentação e o princípio de realismo acima de didatismo são hoje a base sobre a qual o produto é construído.
+## Em três semanas de operação na FIESC, 77 de 135 vendedores já treinavam com frequência, somando 470 sessões. A federação se comprometeu a comprar a ferramenta na próxima janela de aquisição.
 
 ---
 
 #### O problema
 
-Não faltava ideia. Faltava evidência.
+Não faltava ideia. Faltava evidência de valor.
 
-Com um time pequeno, cada semana de trabalho na direção errada custa caro. E sem dado, toda direção parece certa para quem a defende.
-
-{/* ⚠️ Saiu da lista uma linha incompleta do texto recebido ("Personassa e quebravam a imersão."). Mandar a frase inteira para ela voltar. */}
+Numa startup pequena, cada semana na direção errada custa caro. E num produto B2B, quem usa não é quem paga. O vendedor precisa sentir que o treino ajuda, e o gestor precisa provar isso para o financeiro.
 
 - Nenhuma leitura confiável de onde o vendedor travava ou desistia.
-- Um terço dos eventos que a gente precisava medir sem nenhum endpoint no backend para existir.
-- Usuários internos contaminando os dashboards mesmo depois de filtrados. Só o meu perfil acumulava mais de dezessete identidades anônimas fundidas.
-- 47 segundos de espera entre o fim da ligação e o feedback.
-- Um uso ainda longe da frequência que um treino precisa para virar hábito.
+- Nenhum número que o gestor pudesse levar para quem aprova a compra.
+- Um preço ainda indefinido, num produto em que cada minuto de ligação tem custo de modelo de linguagem e de infraestrutura.
+- Uma implantação feita à mão, lenta e difícil de repetir a cada cliente novo.
 
-Cada um desses problemas pedia uma tela nova. A tentação era sair desenhando. O que o produto precisava primeiro era aprender a se enxergar.
+Cada um desses problemas pedia uma tela nova. A tentação era sair desenhando. O que o produto precisava primeiro era aprender a se enxergar, e a se explicar para quem compra.
 
 ---
 
 #### Por onde comecei
 
-Não dava para resolver tudo ao mesmo tempo, então o trabalho começou com perguntas, e não com respostas.
+As primeiras perguntas eram sobre willing to pay, product-market fit, utilidade, produto e experiência. Foram elas que guiaram os discoveries com vendedores e gestores reais.
 
 #### 01.
-### Como a gente decide com evidência, e não com opinião?
+### Quanto o cliente topa pagar, e por qual unidade?
 
 #### 02.
-### Onde exatamente o vendedor desiste?
+### Existe product-market fit, e com quem?
 
 #### 03.
-### O que faz um treino com IA parecer real?
+### O treino é útil no dia a dia do vendedor?
 
 #### 04.
-### Como priorizar com um time pequeno e backend escasso?
+### O que o produto precisa fazer agora, e o que pode esperar?
 
 #### 05.
-### Como o design chega antes da decisão, e não depois dela?
+### O que faz a experiência de treinar com IA parecer real?
 
 ---
 
-#### O que eu fiz nos dados
+#### O que eu fiz no negócio
 
-### Instrumentei a jornada inteira antes de mexer em qualquer tela.
+### Precifiquei pelo que o cliente realmente usa.
 
-{/* ⚠️ Trecho reconstruído: o texto recebido dizia "empresa com empolhar uma média". Confirmar com o Lucas. */}
+Em janeiro, fizemos demos com gestores comerciais, com uma conversa antes e outra depois, para entender o willing to pay. Cruzei essas respostas com benchmark de concorrentes e com o custo real de cada sessão, somando modelo de linguagem, infraestrutura e a margem que o time precisava para operar. Junto com o CEO, chegamos a um modelo por hora de vendedor, com uma taxa de implantação. O preço acompanha o uso, e o cliente paga pelo treino que acontece, e não por licenças paradas.
 
-Desenhei o plano de tracking no PostHog do cadastro ao fim de cada roleplay, com atributos de plano, organização, papel e tamanho do time. Assim a gente passou a comparar vendedor com gestor e empresa com empresa, em vez de olhar uma média que não representava ninguém.
+### Encurtei o caminho até o primeiro treino.
 
-### Renegociei o escopo em vez de esperar o backend.
+No começo, cada implantação era feita à mão, e por isso demorava. Com o tempo, a gente aprendeu quais materiais pedir ao cliente, qual tecnologia usar e como modelar os agentes a partir deles, e a criação dos roleplays deixou de ser manual. Hoje a implantação leva duas semanas e começa pelo que mais importa, entender os gaps do time antes de montar qualquer roleplay. Quanto mais cedo o vendedor treina, mais cedo o gestor tem números para defender a compra.
 
-Cruzei cada evento com a API e descobri que um terço deles não tinha de onde vir. Esperar significaria meses sem dado nenhum. Tirei cobrança e chat dessa fase, enviei valores padrão onde faltava informação, derivei no frontend tudo que ele já sabia e deixei marcado no código o que dependia de endpoint novo. Um plano de tracking que espera a API perfeita nunca entra em produção.
+### Dei ao gestor a conta para levar ao financeiro.
 
-### Descobri que os dados mentiam, e corrigi no código.
-
-Os usuários internos continuavam nos dashboards mesmo filtrados. A causa estava na forma como as sessões anônimas eram fundidas depois do login, levando eventos sem email nem organização. Implementei eu mesmo a correção no frontend, com exclusão direta no SDK, uma camada que só dispara eventos com usuário identificado e um identificador único em todo o app. Dado só serve para decidir quando dá para confiar nele, e confiança em dado é trabalho de engenharia, não de dashboard.
+Desenhei e programei uma calculadora de ROI que roda dentro do PerfectingOS, nossa central de ferramentas internas, e é usada no fim de cada prova de conceito. Ela olha o retorno por duas óticas. A primeira é o tempo do gestor, que deixa de conduzir cada roleplay e cada análise à mão e passa a cobrir o time inteiro. A segunda é a receita, que cresce quando o vendedor aprende mais rápido a contornar as objeções do playbook e encurta o ramp-up (o tempo até o vendedor ficar pronto). Num cenário ilustrativo de 30 vendedores e 3 gestores, a economia de horas é o argumento mais fácil de entender, mas o que paga a ferramenta várias vezes é um ponto a mais de conversão. As premissas vêm das conversas das demos de janeiro, de dados internos e do benchmark, e ficam declaradas na tela, porque uma projeção só convence quando o cliente consegue questioná-la.
 
 ---
 
@@ -156,115 +152,183 @@ Os usuários internos continuavam nos dashboards mesmo filtrados. A causa estava
 
 ### Transformei doze entrevistas em cinco problemas e uma sprint.
 
-A pesquisadora do time conduziu doze entrevistas com vendedores e gestores. Estruturei o discovery no Figma em sete fases, das evidências à instrumentação, e segurei o time para não pular para features antes de ter hipóteses escritas. Saíram três perfis de vendedor, três indicadores para a sprint e cinco macroproblemas.
+Conduzi doze entrevistas com vendedores e gestores e estruturei o discovery no Figma, segurando o time para não pular para features antes de ter hipóteses escritas. Saíram três perfis de vendedor, cinco macroproblemas e 86 soluções, priorizadas com MoSCoW e uma matriz de impacto por esforço.
 
-### Usei o RICE como ferramenta, e não como oráculo.
+Na priorização, revisei o esforço de cada solução. Parte do trabalho era de frontend e eu mesmo conseguia fazer, então várias soluções custavam menos do que parecia e subiram na lista. Também olhei os problemas juntos, e não um por um. Não adiantava dar ao vendedor um motivo para voltar enquanto a ligação ainda quebrava a imersão. Por isso a sprint teve três frentes em paralelo, com o backend na imersão e o frontend no pós-call e no onboarding.
 
-Corrigi estimativas de esforço infladas, porque sabia que parte do trabalho era de frontend e eu mesmo conseguia fazer. Isso mudou o ranking. Mas o ranking sozinho mentia de outro jeito, porque tratava os problemas como independentes. Criar um motivo para voltar num produto que quebra a imersão só acelera o abandono. A sprint combinou três frentes em paralelo, com o backend na imersão e o frontend no pós-call e no onboarding. Das 86 soluções geradas, só ficou o que fazia sentido na matriz de impacto por esforço.
+### Fui a campo na RD Station.
 
-### Tirei da ligação tudo que parecia aula.
+Numa visita de pesquisa com entrevistas gravadas, descobri que um vendedor gastava entre 10 e 40 minutos preparando cada lead, e que essa preparação era pulada em parte dos casos. O problema do vendedor não começava na ligação, começava antes dela. Na Perfecting, esse contexto vem pronto na tela de detalhes do roleplay: quem é o comprador, o que se está vendendo e o que vai ser treinado.
 
-Transcrição ao vivo, dicas na tela, indicadores em tempo real. Rejeitei tudo isso de propósito. O valor do produto está na pressão de uma conversa de verdade, e cada ajuda durante a chamada tira o vendedor desse estado. A regra virou estrutura. Antes da ligação vem o contexto, durante existe só a conversa, e depois vem todo o aprendizado, com feedback e um convite claro para tentar de novo.
+![Detalhes do roleplay: o contexto antes da ligação](/assets/img/perfecting/briefing.webp)
 
-![Antes da ligação: o contexto](/assets/img/perfecting/briefing.webp)
+### Usei a competição do vendedor a favor do treino.
+
+Já nas primeiras entrevistas ficou claro que o vendedor é muito competitivo, e que esse tipo de estímulo era necessário para ele voltar a treinar. Por isso o produto ganhou score, pontos e ranking, e foi muito legal observar os usuários disputando posição entre si.
+
+O ranking também me ensinou que a regra importa tanto quanto a tela. Ele começou pela média simples do score, e o problema demorou a aparecer. Quem mostrou foram os próprios vendedores, falando com o CS pelo Crisp, o chat de suporte que eu implementei no produto. Nessas conversas entendemos a fundo o que acontecia: alguns faziam poucos roleplays, tiravam uma nota alta e paravam, protegendo a posição. Mudei a regra para a média das três melhores sessões. Assim, treinar de novo nunca derruba ninguém, só pode subir a nota, e uma tentativa ruim deixa de ser um risco. Isso aumentou muito o número de sessões, e ainda reforçou o princípio de que o treino é um lugar seguro para errar.
+
+### Defendi o realismo contra as features do benchmark.
+
+No benchmarking de Hyperbound e Yoodli, as referências de roleplay e coaching de vendas com IA, a proposta era trazer para dentro da ligação o que os concorrentes mostravam: transcrição ao vivo, dicas do que falar e nota em tempo real. Levantei que isso ia contra o realismo. O valor do produto está na pressão de uma conversa de verdade, e uma tela que sopra a resposta tira o vendedor desse estado. A proposta foi bem recebida e virou regra do produto. Na ligação fica só o que um vendedor teria de verdade: os objetivos da chamada, que vão sendo marcados conforme ele avança, e o que o comprador já sabe, como anotações ao lado, que ele pode recolher. Nota, transcrição e feedback vêm depois.
 
 ![Durante a ligação: só a conversa](/assets/img/perfecting/ligacao.webp)
 
 ![Depois da ligação: o aprendizado](/assets/img/perfecting/resultado.webp)
 
-### Tratei a persona como interface.
+### Tratei o agente como interface e o playbook do cliente como regra.
 
-Numa plataforma de roleplay, o comprador simulado é a tela mais importante do produto. Desenhei o comportamento das personas com base em metodologias de vendas reais, escrevi os prompts dos agentes de voz e revisei as rubricas que geram o feedback. Uma persona que cede fácil demais ensina o vendedor a vender errado.
+Numa plataforma de roleplay, o comprador simulado é a tela mais importante do produto. Desenhei o comportamento dos agentes com base em metodologias de vendas reais, escrevi os prompts dos agentes de voz e revisei as rubricas que geram o feedback. Treinei os modelos com base em artigos de vendedores famosos, para que avaliem cada ligação do jeito certo em cada metodologia. Isso faz parte da implantação. O modelo de negócio da Perfecting é calibrar os agentes com base no processo de venda e no método de cada empresa. Na FIESC, que vende com SPIN Selling, as trilhas foram montadas sobre esse método. Hoje o produto trabalha com SPIN, MEDDIC e SPICED.
 
 ![Área de crescimento e forças no resultado](/assets/img/perfecting/resultado-crescimento.webp)
 
-### Reorganizei o treino para o jeito como vendas consultivas acontecem.
-
-Para clientes com playbook próprio, o treino passou a seguir as etapas desse playbook. Na FIESC, que já vende com SPIN Selling, as trilhas de roleplay foram montadas sobre esse método, em vez de impor um nosso. Hoje o produto trabalha com SPIN, MEDDIC e SPICED, e o comprador de IA é montado com a oferta, as objeções e o perfil de cliente de cada empresa. A lista de roleplays, que era agrupada por oferta, está migrando para um agrupamento por estágio da conversa, porque em venda consultiva a oferta muitas vezes ainda nem existe na hora do diagnóstico.
-
 ---
 
-#### O que eu fiz com os clientes
+#### O que eu fiz no design
 
-### Fui a campo na RD Station.
+Fiz todo o design do produto, das telas do vendedor às do gestor, e levei boa parte dele eu mesmo para o código, assim como o site da empresa, o perfecting.com.br. Desde o começo, me coloquei dois objetivos que pareciam brigar. O vendedor precisava se sentir tranquilo e seguro para errar, sem a sensação de estar sendo vigiado. E quem compra precisava ver uma plataforma com a confiança de uma ferramenta B2B enterprise.
 
-Fiz uma visita de pesquisa com entrevistas gravadas e conversas com o time comercial. Descobri que um vendedor gastava entre 10 e 40 minutos preparando cada lead, e que essa preparação era simplesmente pulada em parte dos casos. O problema do vendedor não começava na ligação, começava antes dela. Estar perto de quem compra o produto mudou a forma como eu desenho para quem usa.
+A partir do mesmo benchmarking, explorei no Figma o que fazia sentido trazer para a Perfecting. Dele saíram os princípios que guiam o produto.
 
-### Um piloto que ia bem, e um business case que não fechou.
+- **Realismo acima de didatismo.** A ligação parece uma ligação de verdade, sem nada na tela que sopre a resposta ao vendedor.
+- **O dia a dia do vendedor, simulado.** O treino segue a rotina real: pegar o contexto do lead, ligar, anotar e ver os aprendizados registrados depois, como num CRM.
+- **Um lugar seguro para errar.** O treino é do vendedor. O feedback fala com ele sobre o que melhorar, e o gestor acompanha evolução, não vigia cada passo.
+- **Confiança de enterprise.** Visual calmo e sóbrio, cor com significado e números que o gestor consegue levar para quem assina o contrato.
 
-A RD foi um piloto, e o feedback dos vendedores estava sendo bem positivo, a ponto de o gerente comercial já estar encaminhando a compra da plataforma para o jurídico. O contrato não veio por um motivo fora do produto: uma empresa que a RD comprou também lançou roleplays, e um roleplay integrado ao que eles já usavam, com valor no primeiro dia, venceu o nosso, que pedia oito semanas de implantação. A perda não invalidou a tese do produto. Invalidou a ordem de entrada: primeiro algo leve, depois a implantação pesada.
+Antes das telas, desenhei os fluxos do vendedor e do gestor, do login ao resultado da sessão.
 
-### Auditei o produto antes de colocar 120 vendedores nele.
+![Fluxo do vendedor](/assets/img/perfecting/fluxo-vendedor.webp)
 
-A FIESC fechou com a Perfecting para colocar 120 vendedores praticando entre setembro e novembro. Antes de liberar, conduzi uma auditoria dos roleplays em homologação, com testes manuais e uma simulação ponta a ponta de 22 etapas.
+No canvas do Figma, explorei as alternativas lado a lado. Um exemplo é a escolha do que treinar antes da ligação, pela letra da metodologia ou pelo momento do playbook, e como cada escolha aparece durante a chamada.
 
-O resultado foi duro. Em 6 das 22 chamadas o feedback nunca chegava, por uma condição de corrida no pipeline. O checklist ao vivo levava 10,5 segundos no p90, contra uma meta de 3. Um terço das marcações era disparado pela fala do comprador, e não pela do vendedor. E o comprador desligava sozinho, porque a instrução de encerrar a chamada estava em 21 dos 22 prompts. No total, saíram 23 problemas críticos e 97 graves.
+![Explorações da escolha do treino e da chamada](/assets/img/perfecting/figma-exploracoes.webp)
 
-A conclusão foi que os roleplays ainda não estavam prontos para vendedores. Descobrir isso internamente, antes do lançamento, é exatamente para que serve uma auditoria. Cada achado virou um critério de aceite mensurável, e o lançamento passou a depender de números, e não de impressão.
+O que foi aprovado virou design system. Os tokens nasceram no Figma e são os mesmos no código. Organizei tudo no Storybook em quatro camadas: fundamentos (cor, tipografia, espaçamento, raios, bordas e elevação), padrões, componentes e telas, em 284 histórias, cada uma apontando para a regra completa no guia de design. O produto tem um visual próprio, com o índigo da marca como cor principal, âmbar como acento e terracota nos enquadramentos, e cada token diz onde entra. O índigo, por exemplo, nunca preenche blocos grandes: aparece só no CTA, no estado ativo, no foco e no número de destaque.
 
----
+![Fundamentos: cor e tipografia](/assets/img/perfecting/ds-fundamentos.webp)
 
-#### O que eu fiz na engenharia
+![Padrões: raios e botões](/assets/img/perfecting/ds-padroes.webp)
 
-### Coloquei a mão na infraestrutura e nos modelos.
+![Storybook do produto](/assets/img/perfecting/storybook.webp)
 
-Participei dos testes de carga para entender quantas ligações simultâneas o produto aguentava antes de degradar a experiência. Construí em Python um pipeline de dados sintéticos para o fine-tuning dos modelos, com conversas geradas entre agentes e uma etapa de pontuação de qualidade.
+### Desenhei o painel que o gestor abre de manhã.
 
-### Escrevi o site a partir do produto que existe.
+O gestor não tem tempo para explorar dashboards. A tela inicial responde em segundos se o time está treinando, com quatro indicadores (sessões, score médio, tempo de prática e vendedores ativos) em recortes de sete e trinta dias. Ao lado, o ranking do time. Abaixo, um mapa de objeções contornadas por vendedor mostra onde cada um ainda erra. Para quem acabou de chegar, um passo a passo em quatro etapas leva de adicionar o time a analisar as métricas. É o mesmo conjunto de números que a calculadora promete, agora medido de verdade.
 
-Desenvolvi a página de produto usando como fonte de verdade um inventário de features que levantei direto do app. O site fala do produto real, e não do produto que a gente gostaria de ter.
-
----
-
-#### Em números
-
-# 12
-entrevistas com vendedores e gestores transformadas em cinco macroproblemas
-
-# 86
-soluções geradas e filtradas numa matriz de impacto por esforço
-
-# 13
-personas de IA prontas para produção num único pacote de cliente
-
-# 22
-etapas simuladas ponta a ponta na auditoria antes do lançamento para a FIESC
-
-# 120
-problemas mapeados antes que um único vendedor visse o produto, 23 deles críticos
-
-{/* Espaço para o resultado do reteste das 22 etapas depois das correções, como chamadas com nota (meta 22 de 22) e p90 do checklist ao vivo (meta de 3 segundos). */}
-
----
-
-#### Hoje
-
-### Abra uma sessão na Perfecting hoje. O contexto antes da ligação, a conversa sem nenhuma interferência, o aprendizado todo concentrado no final e os eventos que medem cada passo. São as definições que eu escrevi, e elas continuam orientando cada decisão nova do produto.
-
-Tudo isso acontece num produto com visual próprio: índigo como cor principal, âmbar como acento e terracota nos enquadramentos. O look and feel nasce do próprio produto e continua evoluindo junto com ele.
-
-![Tela de login da Perfecting](/assets/img/perfecting/login.webp)
-
-Depois de cada sessão, o vendedor recebe um scorecard de clareza, escuta ativa e tratamento de objeções. O gestor vê as lacunas de habilidade e o ranking do time em tempo real. E a entrada no cliente ficou leve, a lição que veio do piloto da RD: as sessões começam em até 48 horas depois do onboarding, com cerca de duas horas de configuração.
+![Home do gestor](/assets/img/perfecting/home.webp)
 
 ![Analytics do gestor](/assets/img/perfecting/analytics.mp4)
 
 ![Mapa de calor por representante e critério](/assets/img/perfecting/analytics-mapa.webp)
 
-![Home do gestor](/assets/img/perfecting/home.webp)
+### Fiz um minuto e quinze de espera desaparecer.
 
-{/* ⚠️ Confirmar se a entrada em 48 horas foi uma resposta direta ao piloto da RD e qual foi o seu papel nela. */}
+Depois de cada ligação, o feedback leva em média um minuto e quinze segundos para ser processado. É tempo demais para um spinner. Redesenhei a espera para que ela já fosse parte do pós-call, mostrando cada parte da análise que fica pronta enquanto o scorecard se monta, e pedindo ao vendedor que avalie a ligação nesse meio-tempo. Na prática, o vendedor deixou de perceber a espera, sem que o backend precisasse ficar mais rápido.
 
-As telas nunca foram a entrega principal. A entrega foi um produto que se deixa observar e um conjunto de princípios claros o bastante para que qualquer pessoa do time consiga decidir sem me perguntar.
+![A espera depois da ligação](/assets/img/perfecting/loading.webp)
+
+### Reorganizei o treino pelo jeito como a venda acontece.
+
+A lista de roleplays, que era agrupada por oferta, passou a ser agrupada por momento do playbook e tipo de ligação, porque em venda consultiva a oferta muitas vezes ainda nem existe na hora do diagnóstico.
+
+![Roleplays agrupados por momento do playbook](/assets/img/perfecting/roleplays.webp)
+
+---
+
+#### O que eu fiz na engenharia
+
+No código, fiz o frontend inteiro, assumi o backend quando o CTO saiu e hoje divido essa parte com o CTO fractional. Também construí as ferramentas internas e montei a operação de IA dos roleplays.
+
+### Construí a Facility, o gerador de roleplays da Perfecting.
+
+Montar um roleplay era preencher campo por campo, para cada cliente. A Facility é um software interno que fiz inteiro, a partir do feedback de clientes e do time e de ideias que eu tinha para agilizar os nossos processos. Na criação express, o time cola um texto ou sobe um arquivo do cliente, e a IA estrutura a oferta, o perfil do público, as objeções, o cenário e as rubricas. Com um clique, o roleplay vai para a conta certa, onde a IA da Perfecting gera os agentes, a empresa, os diálogos, os critérios e a voz. Em volta disso, a Facility organiza trilhas, playbooks, a biblioteca e a calibração dos roleplays, as diretrizes de cada cliente e uma área de prontidão para avaliação. Foi uma das ferramentas mais bem recebidas dentro da empresa, e é parte do que levou a implantação para duas semanas.
+
+![Facility, o gerador de roleplays](/assets/img/perfecting/facility.webp)
+
+### Montei o AI Ops dos roleplays, com evals e fine-tuning.
+
+Cada mudança num agente pode piorar outro. Montei um processo de evals para os roleplays em que agentes autônomos simulam as ligações, um juiz cego compara a versão nova com a anterior, e nada vai para produção sem passar. Para o fine-tuning, construí em Python um pipeline de dados sintéticos, com conversas geradas entre agentes e uma etapa de pontuação de qualidade.
+
+---
+
+#### O que eu fiz nos dados
+
+### Instrumentei o produto inteiro no PostHog.
+
+Desenhei e implementei o plano de tracking no PostHog, do cadastro ao fim de cada roleplay, com atributos de plano, organização, papel e tamanho do time. Assim a gente passou a comparar vendedor com gestor e empresa com empresa, em vez de olhar uma média que não representava ninguém. Desse plano saíram as métricas que hoje sustentam a conversa com o cliente.
+
+### Assisti às gravações das sessões, e corrigi o que elas mostravam.
+
+As gravações de sessão mostraram o que nenhum número mostrava. Vi usuários clicando em áreas mortas da tela e bugs que só apareciam em certos momentos da jornada, e muitas vezes corrigi direto no código, com a correção no ar praticamente na mesma hora. O achado mais importante foi no fim da sessão. O vendedor chegava ao resultado e muitas vezes não sabia o que fazer depois, então mudei a copy para mostrar a ele os próximos passos. Outro achado veio dos cliques nos cards de roleplay: quase ninguém clicava em "Praticar agora". Troquei o botão por "Ver detalhes", que aprofunda o roleplay antes de o vendedor entrar em ação e dá a ele o contexto da ligação.
+
+---
+
+#### O que eu fiz com os clientes
+
+### Aprendi com um contrato que não veio.
+
+A RD Station foi nosso piloto, e o feedback dos vendedores era tão positivo que o contrato já tinha sido encaminhado para o jurídico. O que travou a compra foi uma decisão de negócio do próprio cliente. Uma empresa que a RD tinha comprado também lançou roleplays, e ela já tinha a transcrição das ligações dentro do fluxo dos vendedores. Fazer um roleplay ali virou só mais um passo do que o time já fazia. A perda não invalidou a tese do produto, já que os vendedores aprovavam o treino. Mostrou que, num B2B, um piloto bem avaliado e um contrato no jurídico ainda não são receita, e que o fluxo em que o cliente já trabalha pesa tanto quanto o produto.
+
+### Auditei o produto com agentes autônomos antes de colocar o Sistema FIESC dentro dele.
+
+Antes de liberar a plataforma para os vendedores da federação, conduzi uma auditoria em homologação com agentes autônomos. Um vendedor de IA ligava para o comprador de IA, ponta a ponta, num laboratório sem voz, numa simulação de 22 etapas. O resultado foi duro. Em 6 das 22 chamadas o feedback nunca chegava. O checklist ao vivo levava 10,5 segundos no p90, contra uma meta de 3. Um terço das marcações era disparado pela fala do comprador. No total, 23 problemas críticos e 97 graves.
+
+Fechei a auditoria com um report final para o time, e cada achado virou um critério de aceite mensurável. Dele saiu um plano de execução em ondas, por dono e por risco, que montei com o CTO fractional, que naquele momento também pegou backend pelo volume de trabalho. O lançamento passou a depender de números, e não de impressão. A troca do modelo de linguagem levou a latência para dentro da meta, e o produto chegou aos vendedores pronto para ser usado todos os dias.
+
+### Coloquei o produto sob carga antes do lançamento.
+
+Uma auditoria mostra se cada ligação funciona sozinha. Ela não mostra o que acontece quando um time inteiro treina ao mesmo tempo, que é exatamente o que um lançamento numa federação provoca. A ideia de testar isso antes veio de mim. Coloquei mais de 20 agentes ligando simultaneamente para descobrir quantas ligações o produto aguentava antes de degradar a experiência. Era melhor achar esse limite em homologação do que no primeiro dia da FIESC.
+
+### Monto toda semana um relatório que prova o valor do treino.
+
+Toda semana, preparo para os gestores um relatório a partir das sessões de treino, comparando o uso e a evolução do time com a semana anterior. Ele traz também a recorrência, a leitura por equipe, o gargalo do período e um plano de foco para o ciclo seguinte. O gestor não precisa abrir nenhum dashboard para saber se o time evoluiu, e é com esse dado que ele defende a compra.
+
+![Topo do relatório semanal de uma organização da FIESC](/assets/img/perfecting/relatorio.webp)
+
+---
+
+#### Em números
+
+# 77 de 135
+vendedores do Sistema FIESC ativos nas três primeiras semanas
+
+# 470
+sessões de roleplay no mesmo período, cerca de seis por vendedor ativo
+
+# 38 h 54 min
+de prática de ligação, em sessões curtas de cerca de cinco minutos
+
+# 2 semanas
+de implantação, do diagnóstico dos gaps do cliente ao time treinando
+
+# 120
+problemas mapeados antes que um único vendedor visse o produto, 23 deles críticos
+
+# 20+
+agentes ligando ao mesmo tempo no teste de carga antes do lançamento
+
+---
+
+#### Hoje
+
+### Os vendedores do Sistema FIESC treinam na Perfecting, da federação ao SESI, ao SENAI, ao IEL e ao CIESC.
+
+Toda semana, o relatório fecha o ciclo. O vendedor vê a própria evolução, o gestor acompanha o time só lendo o report, e a Perfecting prova o valor da plataforma com o uso de verdade.
+
+Em cada reunião de acompanhamento, os gestores voltam a dois pontos. O primeiro é o realismo da conversa. O segundo é poder testar perguntas e abordagens com um agente antes de usar com um cliente, sem queimar nenhum lead. A federação se comprometeu a adquirir a ferramenta na próxima janela de compra, e o business case da receita está sendo fechado com eles.
+
+O produto também começa a crescer para fora da tela. O Perfecting On Field nasce como um novo produto que complementa a jornada do gestor, levando a mesma visibilidade para quem vende presencialmente, com coaching a distância.
+
+As telas nunca foram a entrega principal. A entrega foi um produto que se deixa medir, um preço que acompanha o uso e um conjunto de princípios claros o bastante para que qualquer pessoa do time consiga decidir sem me perguntar.
 
 ---
 
 #### Em retrospecto
 
-### Quando cheguei, eu quis redesenhar tudo logo de cara, e segurar isso pareceu lento. Olhando agora, as semanas gastas instrumentando e corrigindo dados foram as mais importantes do projeto. Sem elas, cada tela nova seria só mais uma opinião bem desenhada.
+### Quando cheguei, quase nada existia, e a vontade natural era sair construindo uma tela atrás da outra. Parar para definir o que medir antes de ter o que medir pareceu lento. Olhando agora, foram as semanas mais importantes do projeto. Sem elas, cada tela nova seria só mais uma opinião bem desenhada.
 
-### Num time pequeno, é fácil virar a pessoa que executa tudo. Demorei para entender que a minha contribuição mais valiosa não estava na execução, e sim nas decisões que vinham antes dela. Hoje eu brigo pela autoria dessas decisões com a mesma energia que dedico às telas.
+### Precificar por hora de vendedor amarrou o preço ao uso. Isso mudou o que a gente precisava medir, como a implantação tinha que ser e o que o gestor precisava mostrar ao financeiro. Preço virou uma decisão de produto.
 
-### O piloto da RD me ensinou que feedback bom não garante contrato. O produto pode estar certo e a forma de entrar no cliente, errada.
+### O piloto da RD me ensinou que feedback bom não garante contrato. Num B2B, o fluxo em que o cliente já trabalha pesa tanto quanto o produto, e nenhum piloto é receita antes da assinatura.
 
-### Na Perfecting, meu meio deixou de ser só o Figma. Virou o PostHog, o prompt da persona, o repositório e a conversa com o cliente. Uma decisão de design que não chega no dado e no código não existe de verdade.
+### Na Perfecting, meu meio deixou de ser só o Figma e o FigJam. Virou a planilha de custo por sessão, o PostHog, o prompt do agente, os evals, o repositório e as muitas reuniões com usuários e com quem paga, levando relatórios prontos que mostram a performance do time. É nesse caminho, do design ao número, que eu trabalho hoje.

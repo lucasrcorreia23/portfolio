@@ -74,11 +74,12 @@ export type CaseFrontmatterInput = {
   title: string;
   title_en: string;
   client: string;
-  /** Só quando o cliente não é nome próprio ("Agentes de IA"). */
+  /** Só quando o cliente não é nome próprio. */
   client_en?: string;
   year: number;
-  role: string;
-  role_en: string;
+  /** O período por extenso ("Janeiro de 2026 até hoje"); sem ele, vale o `year`. */
+  period?: string;
+  period_en?: string;
   stack: string[];
   stack_en: string[];
   summary_pt: string;
@@ -99,7 +100,8 @@ export type CaseFrontmatter = {
   title: string;
   client: string;
   year: number;
-  role: string;
+  /** O período no idioma da rota, ou o ano quando o case não traz um. */
+  period: string;
   stack: readonly string[];
   summary: string;
   market: string;
@@ -281,10 +283,13 @@ export function parseFrontmatter(
       typeof record["client_en"] === "string" ? record["client_en"] : client,
     ),
     year,
-    role: pick(
-      requireString(slug, record, "role"),
-      requireString(slug, record, "role_en"),
-    ),
+    period:
+      typeof record["period"] === "string"
+        ? pick(
+            record["period"],
+            typeof record["period_en"] === "string" ? record["period_en"] : record["period"],
+          )
+        : String(year),
     stack: pick(
       requireStringArray(slug, record, "stack"),
       requireStringArray(slug, record, "stack_en"),

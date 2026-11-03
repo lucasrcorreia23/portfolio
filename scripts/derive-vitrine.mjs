@@ -134,7 +134,7 @@ const SCREENS = [
     ],
   },
   { out: "atlas-gov/home-dashboard", image: `${CASES}/atlas-gov/figma/01-home-dashboard.png` },
-  // Agentes de IA (WeCann Care): a conversa com a Athena e, em montagens de
+  // WeCann Care: a conversa com a Athena e, em montagens de
   // duas, as telas de dentro que a placa e o vídeo não mostram.
   {
     // A intro por cima, grande; da conversa atrás aparece só a ponta.

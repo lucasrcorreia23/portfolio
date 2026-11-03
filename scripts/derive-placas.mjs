@@ -103,7 +103,7 @@ const RECIPES = {
     },
     {
       // A home com a esfera da Athena, a capa do case. Sem o logo
-      // "wecann.care": a placa diz "Agentes de IA".
+      // "wecann.care": o nome do cliente já vai desenhado por cima, na placa.
       src: join(ACERVO, "wecann-atena/stills@2x/03-home.png"),
       crop: { left: 0, top: 200, width: 3840, height: 1960 },
       x: 140,
